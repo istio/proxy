@@ -16,6 +16,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "source/common/router/string_accessor_impl.h"
 #include "src/envoy/workload_metadata/config/workload_metadata.pb.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/stats/mocks.h"
@@ -74,10 +75,12 @@ TEST_F(FilterTest, OnAccept) {
 
   EXPECT_EQ(filter->onAccept(callbacks_), Network::FilterStatus::Continue);
   EXPECT_TRUE(filter_state->hasDataWithName(
-      WorkloadMetadataObject::kSourceMetadataObjectKey));
-  auto found = filter_state->getDataReadOnly<WorkloadMetadataObject>(
-      WorkloadMetadataObject::kSourceMetadataObjectKey);
-  EXPECT_EQ(found->instanceName(), "foo-pod-12345");
+      WorkloadMetadataObject::kSourceMetadataBaggageKey));
+  auto found = filter_state->getDataReadOnly<Envoy::Router::StringAccessor>(
+      WorkloadMetadataObject::kSourceMetadataBaggageKey);
+  EXPECT_EQ(found->asString(),
+            "k8s.cluster.name=my-cluster,k8s.namespace.name=default,k8s."
+            "deployment.name=foo,service.name=foo-svc,service.version=v2beta1");
 
   setAddressToReturn("tcp://192.168.1.1:5555");
   filter_state = std::make_shared<StreamInfo::FilterStateImpl>(
@@ -87,11 +90,13 @@ TEST_F(FilterTest, OnAccept) {
           Invoke([&]() -> StreamInfo::FilterState& { return *filter_state; }));
   EXPECT_EQ(filter->onAccept(callbacks_), Network::FilterStatus::Continue);
   EXPECT_TRUE(filter_state->hasDataWithName(
-      WorkloadMetadataObject::kSourceMetadataObjectKey));
+      WorkloadMetadataObject::kSourceMetadataBaggageKey));
 
-  found = filter_state->getDataReadOnly<WorkloadMetadataObject>(
-      WorkloadMetadataObject::kSourceMetadataObjectKey);
-  EXPECT_EQ(found->instanceName(), "foo-pod-12345");
+  found = filter_state->getDataReadOnly<Envoy::Router::StringAccessor>(
+      WorkloadMetadataObject::kSourceMetadataBaggageKey);
+  EXPECT_EQ(found->asString(),
+            "k8s.cluster.name=my-cluster,k8s.namespace.name=default,k8s."
+            "deployment.name=foo,service.name=foo-svc,service.version=v2beta1");
 
   setAddressToReturn("tcp://4.22.1.1:4343");
   EXPECT_CALL(callbacks_, filterState()).Times(0);

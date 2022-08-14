@@ -39,6 +39,7 @@ envoy_cc_library(
         "@envoy//envoy/network:listen_socket_interface",
         "@envoy//source/common/network:address_lib",
         "@envoy//source/common/network:utility_lib",
+        "@envoy//source/common/router:string_accessor_lib",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
@@ -51,6 +52,7 @@ envoy_cc_test(
         ":workload_metadata_lib",
         "//src/envoy/workload_metadata/config:workload_metadata_cc_proto",
         "@envoy//source/common/network:socket_option_lib",
+        "@envoy//source/common/router:string_accessor_lib",
         "@envoy//test/mocks:common_lib",
         "@envoy//test/mocks/network:network_mocks",
         "@envoy//test/mocks/stats:stats_mocks",

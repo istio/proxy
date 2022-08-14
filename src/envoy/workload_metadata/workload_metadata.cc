@@ -17,6 +17,7 @@
 #include "envoy/network/listen_socket.h"
 #include "envoy/stats/scope.h"
 #include "envoy/stream_info/filter_state.h"
+#include "source/common/router/string_accessor_impl.h"
 
 using namespace Envoy::Common;
 
@@ -95,11 +96,19 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
   ENVOY_LOG(trace, "workload metadata: found metadata for {}",
             metadata->workloadName());
 
-  // TODO: remove? as of 7/2022 only the dynamic metadata is used.
+  // Setting a StringAccessor filter state with the baggage string which can be
+  // assigned to custom header with PER_REQUEST_STATE.
+  // We set this filter state in addition to the dynamic metadata to cover
+  // cases where the dynamic metadata can not be passed through (e.g. when
+  // traffic goes through an internal lisener).
+  auto accessor =
+      std::make_shared<Envoy::Router::StringAccessorImpl>(metadata->baggage());
   StreamInfo::FilterState& filter_state = cb.filterState();
-  filter_state.setData(WorkloadMetadataObject::kSourceMetadataObjectKey,
-                       metadata, StreamInfo::FilterState::StateType::ReadOnly,
-                       StreamInfo::FilterState::LifeSpan::Connection);
+  filter_state.setData(
+      WorkloadMetadataObject::kSourceMetadataBaggageKey, accessor,
+      StreamInfo::FilterState::StateType::ReadOnly,
+      StreamInfo::FilterState::LifeSpan::Request,
+      StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
 
   ProtobufWkt::Struct dynamic_meta;
   auto& mutable_fields = *dynamic_meta.mutable_fields();
