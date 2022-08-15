@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "envoy/common/hashable.h"
 #include "envoy/network/filter.h"
 #include "envoy/ssl/connection.h"
 #include "envoy/stream_info/filter_state.h"
@@ -23,20 +24,28 @@ namespace TLSPassthrough {
 
 constexpr absl::string_view SslInfoFilterStateKey = "istio.passthrough_tls";
 
-class SslInfoObject : public Envoy::StreamInfo::FilterState::Object {
-public:
-  SslInfoObject(Envoy::Ssl::ConnectionInfoConstSharedPtr ssl_info) : ssl_info_(std::move(ssl_info)) {}
-  const Envoy::Ssl::ConnectionInfoConstSharedPtr& ssl() const { return ssl_info_; }
-private:
+class SslInfoObject : public Envoy::StreamInfo::FilterState::Object,
+                      public Envoy::Hashable {
+ public:
+  SslInfoObject(Envoy::Ssl::ConnectionInfoConstSharedPtr ssl_info)
+      : ssl_info_(std::move(ssl_info)) {
+    ASSERT(ssl_info_ != nullptr);
+  }
+  const Envoy::Ssl::ConnectionInfoConstSharedPtr& ssl() const {
+    return ssl_info_;
+  }
+  // Envoy::Hashable
+  absl::optional<uint64_t> hash() const override;
+
+ private:
   const Envoy::Ssl::ConnectionInfoConstSharedPtr ssl_info_;
 };
 
-class BaseFilter: public Envoy::Network::ReadFilter,
-                  public Envoy::Logger::Loggable<Envoy::Logger::Id::filter> {
-public:
-  // Network::ReadFilter
-  Envoy::Network::FilterStatus onData(Envoy::Buffer::Instance&,
-                                      bool) override {
+class BaseFilter : public Envoy::Network::ReadFilter,
+                   public Envoy::Logger::Loggable<Envoy::Logger::Id::filter> {
+ public:
+  // Envoy::Network::ReadFilter
+  Envoy::Network::FilterStatus onData(Envoy::Buffer::Instance&, bool) override {
     return Envoy::Network::FilterStatus::Continue;
   }
 
@@ -45,7 +54,7 @@ public:
     read_callbacks_ = &callbacks;
   }
 
-protected:
+ protected:
   Envoy::Network::ReadFilterCallbacks* read_callbacks_{};
 };
 

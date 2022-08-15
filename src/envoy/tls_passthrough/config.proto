@@ -16,9 +16,9 @@ syntax = "proto3";
 
 package istio.tls_passthrough.v1;
 
-// Network filter that captures SSL info in a filter state to be passed through internal listener.
+// Network filter that captures SSL info in a filter state to be passed through
+// internal listener.
 message CaptureTLS {};
 
 // Network filter that restores SSL info from a filter state captured earlier.
 message RestoreTLS {};
-

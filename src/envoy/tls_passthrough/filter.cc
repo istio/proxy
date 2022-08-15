@@ -21,29 +21,46 @@
 namespace Istio {
 namespace TLSPassthrough {
 
+// Implementation considers that peer URI SAN is a hash key for TLS connections,
+// that is two downstream TLS connections can share upstream internal connection
+// if they have the same peer URI SAN.
+absl::optional<uint64_t> SslInfoObject::hash() const {
+  if (ssl_info_) {
+    auto peer_uri_san = ssl_info_->uriSanPeerCertificate();
+    if (!peer_uri_san.empty()) {
+      std::cout << "HASHING!" << absl::StrJoin(peer_uri_san, ",") << std::endl;
+      return Envoy::HashUtil::xxHash64(absl::StrJoin(peer_uri_san, ","));
+    }
+  }
+  return {};
+}
+
 Envoy::Network::FilterStatus CaptureTLSFilter::onNewConnection() {
   const auto ssl_info = read_callbacks_->connection().ssl();
-  if (ssl_info) {
+  if (ssl_info != nullptr) {
     read_callbacks_->connection().streamInfo().filterState()->setData(
         SslInfoFilterStateKey,
-        std::make_shared<SslInfoObject>(read_callbacks_->connection().ssl()),
+        std::make_shared<SslInfoObject>(ssl_info),
         Envoy::StreamInfo::FilterState::StateType::Mutable,
         Envoy::StreamInfo::FilterState::LifeSpan::Connection,
-        Envoy::StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
+        Envoy::StreamInfo::FilterState::StreamSharing::
+            SharedWithUpstreamConnection);
   } else {
-    ENVOY_LOG(info, "CaptureTLS: plaintext connection");
+    ENVOY_LOG(trace, "CaptureTLS: plaintext connection, expect TLS");
   }
   return Envoy::Network::FilterStatus::Continue;
 }
 
 Envoy::Network::FilterStatus RestoreTLSFilter::onNewConnection() {
-  const auto filter_state = read_callbacks_->connection().streamInfo().filterState();
+  const auto filter_state =
+      read_callbacks_->connection().streamInfo().filterState();
   const SslInfoObject* ssl_object =
       filter_state->getDataMutable<SslInfoObject>(SslInfoFilterStateKey);
-  if (ssl_object) {
-    read_callbacks_->connection().connectionInfoSetter().setSslConnection(ssl_object->ssl());
+  if (ssl_object && ssl_object->ssl()) {
+    read_callbacks_->connection().connectionInfoSetter().setSslConnection(
+        ssl_object->ssl());
   } else {
-    ENVOY_LOG(info, "RestoreTLS: filter state object not found");
+    ENVOY_LOG(trace, "RestoreTLS: filter state object not found");
   }
   return Envoy::Network::FilterStatus::Continue;
 }
@@ -52,12 +69,11 @@ class CaptureTLSFilterFactory
     : public Envoy::Server::Configuration::NamedNetworkFilterConfigFactory {
  public:
   // NamedNetworkFilterConfigFactory
-  Envoy::Network::FilterFactoryCb createFilterFactoryFromProto (
+  Envoy::Network::FilterFactoryCb createFilterFactoryFromProto(
       const Envoy::Protobuf::Message&,
       Envoy::Server::Configuration::FactoryContext&) override {
     return [](Envoy::Network::FilterManager& filter_manager) {
-      filter_manager.addReadFilter(
-          std::make_shared<CaptureTLSFilter>());
+      filter_manager.addReadFilter(std::make_shared<CaptureTLSFilter>());
     };
   }
 
@@ -72,12 +88,11 @@ class RestoreTLSFilterFactory
     : public Envoy::Server::Configuration::NamedNetworkFilterConfigFactory {
  public:
   // NamedNetworkFilterConfigFactory
-  Envoy::Network::FilterFactoryCb createFilterFactoryFromProto (
+  Envoy::Network::FilterFactoryCb createFilterFactoryFromProto(
       const Envoy::Protobuf::Message&,
       Envoy::Server::Configuration::FactoryContext&) override {
     return [](Envoy::Network::FilterManager& filter_manager) {
-      filter_manager.addReadFilter(
-          std::make_shared<RestoreTLSFilter>());
+      filter_manager.addReadFilter(std::make_shared<RestoreTLSFilter>());
     };
   }
 
@@ -88,13 +103,11 @@ class RestoreTLSFilterFactory
   std::string name() const override { return "istio.restore_tls"; }
 };
 
-REGISTER_FACTORY(
-    CaptureTLSFilterFactory,
-    Envoy::Server::Configuration::NamedNetworkFilterConfigFactory);
+REGISTER_FACTORY(CaptureTLSFilterFactory,
+                 Envoy::Server::Configuration::NamedNetworkFilterConfigFactory);
 
-REGISTER_FACTORY(
-    RestoreTLSFilterFactory,
-    Envoy::Server::Configuration::NamedNetworkFilterConfigFactory);
+REGISTER_FACTORY(RestoreTLSFilterFactory,
+                 Envoy::Server::Configuration::NamedNetworkFilterConfigFactory);
 
 }  // namespace TLSPassthrough
 }  // namespace Istio
