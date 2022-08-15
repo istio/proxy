@@ -505,6 +505,8 @@ bool PluginRootContext::configure(size_t configuration_size) {
   auto mode = JsonGetField<std::string_view>(j, "metadata_mode").value_or("");
   if (mode == "AMBIENT_PEP_METADATA_MODE") {
     metadata_mode_ = MetadataMode::kAmbientPep;
+  } else if (mode == "AMBIENT_UPROXY_METADATA_MODE") {
+    metadata_mode_ = MetadataMode::kAmbientUproxy;
   } else {
     metadata_mode_ = MetadataMode::kSidecar;
   }
@@ -632,14 +634,21 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   }
 
   // handle server-side (inbound) PEPs specially
-  if (metadata_mode_ == MetadataMode::kAmbientPep && !outbound_) {
-    // in PEP Server mode, we must remap the "local" node info per request
-    // as the proxy is no longer serving a single workload
+  if (!outbound_ && (metadata_mode_ == MetadataMode::kAmbientPep ||
+                     metadata_mode_ == MetadataMode::kAmbientUproxy)) {
+    // in PEP or uProxy Server mode, we must remap the "local" node info per
+    // request as the proxy is no longer serving a single workload
     auto detached = Wasm::Common::extractEmptyNodeFlatBuffer();
 
     flatbuffers::FlatBufferBuilder fbb;
-    if (Wasm::Common::extractPeerMetadataFromUpstreamHostMetadata(fbb)) {
-      detached = fbb.Release();
+    if (metadata_mode_ == MetadataMode::kAmbientPep) {
+      if (Wasm::Common::extractPeerMetadataFromUpstreamHostMetadata(fbb)) {
+        detached = fbb.Release();
+      }
+    } else {
+      if (Wasm::Common::extractPeerMetadataFromUpstreamClusterMetadata(fbb)) {
+        detached = fbb.Release();
+      }
     }
 
     const auto& node =
