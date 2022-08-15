@@ -119,7 +119,7 @@ message PluginConfig {
     AMBIENT_PEP_METADATA_MODE = 1;
 
     // Ambient uProxy mode instructs the stats filter to pull local node
-    // information from cluster metadata provided by the control plane. This 
+    // information from cluster metadata provided by the control plane. This
     // will be combined with peer metadata from Envoy filter state to build
     // Istio service metrics.
     AMBIENT_UPROXY_METADATA_MODE = 2;
