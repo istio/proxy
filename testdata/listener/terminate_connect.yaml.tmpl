@@ -46,7 +46,7 @@ filter_chains:
       value:
         common_tls_context:
           tls_certificate_sds_secret_configs:
-            name: server{{.N}}
+            name: server
             sds_config:
               api_config_source:
                 api_type: GRPC

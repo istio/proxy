@@ -16,7 +16,7 @@ transport_socket:
     value:
       common_tls_context:
         tls_certificate_sds_secret_configs:
-          name: client{{.N}}
+          name: client
           sds_config:
             api_config_source:
               api_type: GRPC

@@ -28,7 +28,6 @@ absl::optional<uint64_t> SslInfoObject::hash() const {
   if (ssl_info_) {
     auto peer_uri_san = ssl_info_->uriSanPeerCertificate();
     if (!peer_uri_san.empty()) {
-      std::cout << "HASHING!" << absl::StrJoin(peer_uri_san, ",") << std::endl;
       return Envoy::HashUtil::xxHash64(absl::StrJoin(peer_uri_san, ","));
     }
   }
