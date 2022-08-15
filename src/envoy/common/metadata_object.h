@@ -34,6 +34,8 @@ class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
  public:
   static constexpr absl::string_view kSourceMetadataObjectKey =
       "ambient.source.workloadMetadata";
+  static constexpr absl::string_view kSourceMetadataBaggageKey =
+      "ambient.source.workloadMetadataBaggage";
   static constexpr absl::string_view kDestinationMetadataObjectKey =
       "ambient.destination.workloadMetadata";
 
