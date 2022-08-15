@@ -39,6 +39,7 @@ envoy_cc_library(
         "@envoy//envoy/server:filter_config_interface",
         "@envoy//source/common/http:header_utility_lib",
         "@envoy//source/common/http:utility_lib",
+        "@envoy//source/common/router:string_accessor_lib",
     ],
 )
 
