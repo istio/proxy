@@ -356,7 +356,7 @@ bool extractPeerMetadataFromUpstreamClusterMetadata(
 
 bool extractPeerMetadataFromUpstreamHostMetadata(
     flatbuffers::FlatBufferBuilder& fbb) {
-  return extractPeerMetadataFromUpstreamMetadata("host_metadata", fbb);
+  return extractPeerMetadataFromUpstreamMetadata("upstream_host_metadata", fbb);
 }
 
 PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
