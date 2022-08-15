@@ -17,6 +17,7 @@ address:
 {{- end }}
 filter_chains:
 - filters:
+{{ .Vars.ServerNetworkFilters | fill | indent 2 }}
   - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
@@ -38,6 +39,12 @@ filter_chains:
             route:
               cluster: server-inbound-cluster
               timeout: 0s
+      access_log:
+      - name: stdout
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+          log_format:
+            text_format: "INTERNAL PEER SNI: %DOWNSTREAM_PEER_URI_SAN%\n"
 {{ .Vars.ServerRouteRateLimits | fill | indent 14 }}
 {{ .Vars.ServerTLSContext | indent 2 }}
 {{- end }}

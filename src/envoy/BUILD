@@ -36,6 +36,7 @@ envoy_cc_binary(
         "//src/envoy/internal_ssl_forwarder:config_lib",
         "//src/envoy/metadata_to_peer_node:config_lib",
         "//src/envoy/set_internal_dst_address:filter_lib",
+        "//src/envoy/tls_passthrough:filter_lib",
         "//src/envoy/tcp/forward_downstream_sni:config_lib",
         "//src/envoy/tcp/metadata_exchange:config_lib",
         "//src/envoy/tcp/sni_verifier:config_lib",
