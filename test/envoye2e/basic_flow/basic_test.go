@@ -169,16 +169,16 @@ func TestBasicCONNECT(t *testing.T) {
 			&driver.Sleep{Duration: 1 * time.Second},
 			driver.Get(params.Ports.ClientPort, "hello, world!"),
 			// xDS load generator:
-			&driver.Repeat{
-				Duration: time.Second * 20,
-				Step: &driver.Scenario{
-					[]driver.Step{
-						&driver.Sleep{10000 * time.Millisecond},
-						//			updateClient, updateServer,
-						// may need short delay so we don't eat all the CPU
-					},
-				},
-			},
+			// &driver.Repeat{
+			// 	Duration: time.Second * 20,
+			// 	Step: &driver.Scenario{
+			// 		[]driver.Step{
+			// 			&driver.Sleep{10000 * time.Millisecond},
+			// 			updateClient, updateServer,
+			// 			// may need short delay so we don't eat all the CPU
+			// 		},
+			// 	},
+			// },
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
