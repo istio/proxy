@@ -48,22 +48,21 @@ class BaseFilter : public Envoy::Network::ReadFilter,
   Envoy::Network::FilterStatus onData(Envoy::Buffer::Instance&, bool) override {
     return Envoy::Network::FilterStatus::Continue;
   }
-
-  void initializeReadFilterCallbacks(
-      Envoy::Network::ReadFilterCallbacks& callbacks) override {
-    read_callbacks_ = &callbacks;
+  Envoy::Network::FilterStatus onNewConnection() override {
+    return Envoy::Network::FilterStatus::Continue;
   }
-
- protected:
-  Envoy::Network::ReadFilterCallbacks* read_callbacks_{};
 };
 
 class CaptureTLSFilter : public BaseFilter {
-  Envoy::Network::FilterStatus onNewConnection() override;
+  void initializeReadFilterCallbacks(
+      Envoy::Network::ReadFilterCallbacks& callbacks) override;
 };
 
+/** Note: setting TLS info must happen as early as possible since HCM checks for
+ * SSL presence. */
 class RestoreTLSFilter : public BaseFilter {
-  Envoy::Network::FilterStatus onNewConnection() override;
+  void initializeReadFilterCallbacks(
+      Envoy::Network::ReadFilterCallbacks& callbacks) override;
 };
 
 }  // namespace TLSPassthrough

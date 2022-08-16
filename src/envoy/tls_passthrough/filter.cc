@@ -34,10 +34,11 @@ absl::optional<uint64_t> SslInfoObject::hash() const {
   return {};
 }
 
-Envoy::Network::FilterStatus CaptureTLSFilter::onNewConnection() {
-  const auto ssl_info = read_callbacks_->connection().ssl();
+void CaptureTLSFilter::initializeReadFilterCallbacks(
+    Envoy::Network::ReadFilterCallbacks& callbacks) {
+  const auto ssl_info = callbacks.connection().ssl();
   if (ssl_info != nullptr) {
-    read_callbacks_->connection().streamInfo().filterState()->setData(
+    callbacks.connection().streamInfo().filterState()->setData(
         SslInfoFilterStateKey, std::make_shared<SslInfoObject>(ssl_info),
         Envoy::StreamInfo::FilterState::StateType::Mutable,
         Envoy::StreamInfo::FilterState::LifeSpan::Connection,
@@ -46,21 +47,19 @@ Envoy::Network::FilterStatus CaptureTLSFilter::onNewConnection() {
   } else {
     ENVOY_LOG(trace, "CaptureTLS: plaintext connection, expect TLS");
   }
-  return Envoy::Network::FilterStatus::Continue;
 }
 
-Envoy::Network::FilterStatus RestoreTLSFilter::onNewConnection() {
-  const auto filter_state =
-      read_callbacks_->connection().streamInfo().filterState();
+void RestoreTLSFilter::initializeReadFilterCallbacks(
+    Envoy::Network::ReadFilterCallbacks& callbacks) {
+  const auto filter_state = callbacks.connection().streamInfo().filterState();
   const SslInfoObject* ssl_object =
       filter_state->getDataMutable<SslInfoObject>(SslInfoFilterStateKey);
   if (ssl_object && ssl_object->ssl()) {
-    read_callbacks_->connection().connectionInfoSetter().setSslConnection(
+    callbacks.connection().connectionInfoSetter().setSslConnection(
         ssl_object->ssl());
   } else {
     ENVOY_LOG(trace, "RestoreTLS: filter state object not found");
   }
-  return Envoy::Network::FilterStatus::Continue;
 }
 
 class CaptureTLSFilterFactory
