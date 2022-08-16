@@ -14,6 +14,7 @@
 
 FROM ubuntu:bionic
 
-COPY main /usr/bin/stackdriver-server
+ARG TARGETARCH
+COPY main-${TARGETARCH:-amd64} /usr/bin/stackdriver-server
 
 ENTRYPOINT [ "/usr/bin/stackdriver-server" ]
