@@ -38,8 +38,7 @@ Envoy::Network::FilterStatus CaptureTLSFilter::onNewConnection() {
   const auto ssl_info = read_callbacks_->connection().ssl();
   if (ssl_info != nullptr) {
     read_callbacks_->connection().streamInfo().filterState()->setData(
-        SslInfoFilterStateKey,
-        std::make_shared<SslInfoObject>(ssl_info),
+        SslInfoFilterStateKey, std::make_shared<SslInfoObject>(ssl_info),
         Envoy::StreamInfo::FilterState::StateType::Mutable,
         Envoy::StreamInfo::FilterState::LifeSpan::Connection,
         Envoy::StreamInfo::FilterState::StreamSharing::
