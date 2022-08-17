@@ -7,3 +7,11 @@ load_assignment:
         address:
           envoy_internal_address:
             server_listener_name: {{ .Vars.ServerInternalAddress }}
+transport_socket:
+  name: envoy.transport_sockets.internal_upstream
+  typed_config:
+    "@type": type.googleapis.com/envoy.extensions.transport_sockets.internal_upstream.v3.InternalUpstreamTransport
+    transport_socket:
+      name: envoy.transport_sockets.raw_buffer
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.raw_buffer.v3.RawBuffer

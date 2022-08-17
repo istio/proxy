@@ -40,6 +40,7 @@ envoy_cc_binary(
         "//src/envoy/tcp/metadata_exchange:config_lib",
         "//src/envoy/tcp/sni_verifier:config_lib",
         "//src/envoy/tcp/tcp_cluster_rewrite:config_lib",
+        "//src/envoy/tls_passthrough:filter_lib",
         "//src/envoy/workload_metadata:config_lib",
         "@envoy//source/exe:envoy_main_entry_lib",
     ],

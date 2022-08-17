@@ -17,6 +17,7 @@ address:
 {{- end }}
 filter_chains:
 - filters:
+{{ .Vars.ServerNetworkFilters | fill | indent 2 }}
   - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager

@@ -151,6 +151,9 @@ func (p *Params) Fill(s string) (string, error) {
 				}
 				return out
 			},
+			"divisible": func(i, j int) bool {
+				return i%j == 0
+			},
 		}).
 		Parse(s))
 	var b bytes.Buffer
