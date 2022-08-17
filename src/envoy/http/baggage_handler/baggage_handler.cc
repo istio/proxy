@@ -17,6 +17,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "source/common/http/header_utility.h"
+#include "source/common/router/string_accessor_impl.h"
 #include "src/envoy/common/metadata_object.h"
 #include "src/envoy/http/baggage_handler/config/baggage_handler.pb.h"
 
@@ -46,6 +47,16 @@ Http::FilterHeadersStatus BaggageHandlerFilter::decodeHeaders(
         trace,
         absl::StrCat("baggage header found. filter state set: ",
                      Common::WorkloadMetadataObject::kSourceMetadataObjectKey));
+
+    // Setting a StringAccessor filter state which can be assigned to custom
+    // header with PER_REQUEST_STATE
+    auto accessor = std::make_shared<Envoy::Router::StringAccessorImpl>(
+        header_value.value());
+    filter_state->setData(
+        Common::WorkloadMetadataObject::kSourceMetadataBaggageKey, accessor,
+        StreamInfo::FilterState::StateType::ReadOnly,
+        StreamInfo::FilterState::LifeSpan::Request,
+        StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
   } else {
     ENVOY_LOG(trace, "no baggage header found.");
   }
