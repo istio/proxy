@@ -228,6 +228,11 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer();
 bool extractPeerMetadataFromUpstreamHostMetadata(
     flatbuffers::FlatBufferBuilder& fbb);
 
+// Extract upstream peer metadata from upstream cluster metadata.
+// Returns true if the metadata is found in the upstream cluster metadata.
+bool extractPeerMetadataFromUpstreamClusterMetadata(
+    flatbuffers::FlatBufferBuilder& fbb);
+
 // Returns flatbuffer schema for node info.
 std::string_view nodeInfoSchema();
 
