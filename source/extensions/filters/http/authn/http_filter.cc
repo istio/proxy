@@ -57,7 +57,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(
 
   filter_context_.reset(new Istio::AuthN::FilterContext(
       decoder_callbacks_->streamInfo().dynamicMetadata(), headers,
-      decoder_callbacks_->connection(), filter_config_));
+      decoder_callbacks_->connection().ptr(), filter_config_));
 
   Payload payload;
 
