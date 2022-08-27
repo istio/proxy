@@ -51,8 +51,11 @@ class BaggageHandlerFilterTest : public testing::Test {
     ON_CALL(decoder_callbacks_.stream_info_, filterState())
         .WillByDefault(::testing::ReturnRef(filter_state_));
 
+    auto connRef =
+        OptRef<NiceMock<Envoy::Network::MockConnection>>{connection_};
     ON_CALL(decoder_callbacks_, connection())
-        .WillByDefault(Return(&connection_));
+        .WillByDefault(
+            ::testing::Return(OptRef<const Network::Connection>{connection_}));
 
     filter_->setDecoderFilterCallbacks(decoder_callbacks_);
   }
