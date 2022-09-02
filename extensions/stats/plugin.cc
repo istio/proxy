@@ -503,12 +503,12 @@ bool PluginRootContext::configure(size_t configuration_size) {
   }
 
   auto mode = JsonGetField<std::string_view>(j, "metadata_mode").value_or("");
-  if (mode == "AMBIENT_WAYPOINT_PROXY_METADATA_MODE") {
-    metadata_mode_ = MetadataMode::kAmbientWaypointProxy;
-  } else if (mode == "AMBIENT_ZTUNNEL_METADATA_MODE") {
-    metadata_mode_ = MetadataMode::kAmbientZtunnel;
+  if (mode == "UPSTREAM_HOST_METADATA_MODE") {
+    metadata_mode_ = MetadataMode::kHostMetadataMode;
+  } else if (mode == "CLUSTER_METADATA_MODE") {
+    metadata_mode_ = MetadataMode::kClusterMetadataMode;
   } else {
-    metadata_mode_ = MetadataMode::kSidecar;
+    metadata_mode_ = MetadataMode::kLocalNodeMetadataMode;
   }
 
   // TODO: rename to reporting_duration
@@ -634,14 +634,14 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   }
 
   // handle server-side (inbound) waypoint proxies specially
-  if (!outbound_ && (metadata_mode_ == MetadataMode::kAmbientWaypointProxy ||
-                     metadata_mode_ == MetadataMode::kAmbientZtunnel)) {
+  if (!outbound_ && (metadata_mode_ == MetadataMode::kHostMetadataMode ||
+                     metadata_mode_ == MetadataMode::kClusterMetadataMode)) {
     // in waypoint proxy or ztunnel Server mode, we must remap the "local" node
     // info per request as the proxy is no longer serving a single workload
     auto detached = Wasm::Common::extractEmptyNodeFlatBuffer();
 
     flatbuffers::FlatBufferBuilder fbb;
-    if (metadata_mode_ == MetadataMode::kAmbientWaypointProxy) {
+    if (metadata_mode_ == MetadataMode::kHostMetadataMode) {
       if (Wasm::Common::extractPeerMetadataFromUpstreamHostMetadata(fbb)) {
         detached = fbb.Release();
       }
