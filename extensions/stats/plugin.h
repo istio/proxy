@@ -231,8 +231,8 @@ class StatGen {
 
 enum class MetadataMode : uint8_t {
   kSidecar = 0,
-  kAmbientPep = 1,
-  kAmbientUproxy = 2,
+  kAmbientWaypointProxy = 1,
+  kAmbientZtunnel = 2,
 };
 
 // PluginRootContext is the root context for all streams processed by the

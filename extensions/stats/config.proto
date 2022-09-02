@@ -112,17 +112,17 @@ message PluginConfig {
     // metadata from Envoy filter state to build Istio service metrics.
     SIDECAR_METADATA_MODE = 0;
 
-    // Ambient PEP mode instructs the stats filter to pull local node
-    // information host metadata provided by the control plane. This will be
-    // combined with peer metadata from Envoy filter state to build Istio
+    // Ambient waypoint proxy mode instructs the stats filter to pull local node
+    // information from host metadata provided by the control plane. This will
+    // be combined with peer metadata from Envoy filter state to build Istio
     // service metrics.
-    AMBIENT_PEP_METADATA_MODE = 1;
+    AMBIENT_WAYPOINT_PROXY_METADATA_MODE = 1;
 
-    // Ambient uProxy mode instructs the stats filter to pull local node
+    // Ambient ztunnel mode instructs the stats filter to pull local node
     // information from cluster metadata provided by the control plane. This
     // will be combined with peer metadata from Envoy filter state to build
     // Istio service metrics.
-    AMBIENT_UPROXY_METADATA_MODE = 2;
+    AMBIENT_ZTUNNEL_METADATA_MODE = 2;
 
     // next id: 3
   }
