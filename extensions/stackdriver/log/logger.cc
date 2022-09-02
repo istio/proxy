@@ -16,6 +16,7 @@
 #include "extensions/stackdriver/log/logger.h"
 
 #include "absl/strings/match.h"
+#include "extensions/common/util.h"
 #include "extensions/stackdriver/common/constants.h"
 #include "google/logging/v2/log_entry.pb.h"
 #include "google/protobuf/util/time_util.h"
@@ -334,7 +335,14 @@ void Logger::fillAndFlushLogEntry(
     const ::Wasm::Common::FlatNode& peer_node_info,
     const std::unordered_map<std::string, std::string>& extra_labels,
     google::logging::v2::LogEntry* new_entry, bool outbound, bool audit) {
-  new_entry->set_severity(::google::logging::type::INFO);
+  // match logic from stackdriver.cc that determines if error-only logging.
+  if (request_info.response_code >= 400 ||
+      request_info.response_flag != ::Wasm::Common::NONE) {
+    new_entry->set_severity(::google::logging::type::ERROR);
+  } else {
+    new_entry->set_severity(::google::logging::type::INFO);
+  }
+
   auto label_map = new_entry->mutable_labels();
 
   if (outbound) {
