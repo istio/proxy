@@ -639,7 +639,7 @@ func TestStatsEndpointLabels(t *testing.T) {
 	}
 }
 
-func TestStatsServerPEP(t *testing.T) {
+func TestStatsServerWaypointProxy(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"RequestCount":               "10",
 		"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
@@ -647,10 +647,10 @@ func TestStatsServerPEP(t *testing.T) {
 		"WasmRuntime":                "envoy.wasm.runtime.null",
 		"EnableEndpointMetadata":     "true",
 		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-		"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_pep_config.yaml"),
+		"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_waypoint_proxy_config.yaml"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
-	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_pep_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_waypoint_proxy_node_metadata.json.tmpl")
 	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
 		driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl")
@@ -673,7 +673,7 @@ func TestStatsServerPEP(t *testing.T) {
 			&driver.Stats{
 				AdminPort: params.Ports.ServerAdmin,
 				Matchers: map[string]driver.StatMatcher{
-					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_pep_request_total.yaml.tmpl"},
+					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_waypoint_proxy_request_total.yaml.tmpl"},
 				},
 			},
 		},

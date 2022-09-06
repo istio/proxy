@@ -107,22 +107,20 @@ message PluginConfig {
   repeated MetricDefinition definitions = 9;
 
   enum MetadataMode {
-    // Sidecar mode instructs the stats filter to pull local node information
-    // from the Envoy node metadata alone. This will be combined with peer
+    // Instructs the stats filter to pull node information
+    // from the Envoy local node metadata alone. This will be combined with peer
     // metadata from Envoy filter state to build Istio service metrics.
-    SIDECAR_METADATA_MODE = 0;
+    LOCAL_NODE_METADATA_MODE = 0;
 
-    // Ambient PEP mode instructs the stats filter to pull local node
-    // information host metadata provided by the control plane. This will be
-    // combined with peer metadata from Envoy filter state to build Istio
-    // service metrics.
-    AMBIENT_PEP_METADATA_MODE = 1;
+    // Instructs the stats filter to pull node information from host
+    // metadata provided by the control plane. This will be combined with peer
+    // metadata from Envoy filter state to build Istio service metrics.
+    UPSTREAM_HOST_METADATA_MODE = 1;
 
-    // Ambient uProxy mode instructs the stats filter to pull local node
-    // information from cluster metadata provided by the control plane. This
-    // will be combined with peer metadata from Envoy filter state to build
-    // Istio service metrics.
-    AMBIENT_UPROXY_METADATA_MODE = 2;
+    // Instructs the stats filter to pull node information from cluster metadata
+    // provided by the control plane. This will be combined with peer metadata
+    // from Envoy filter state to build Istio service metrics.
+    CLUSTER_METADATA_MODE = 2;
 
     // next id: 3
   }

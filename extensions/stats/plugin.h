@@ -230,9 +230,9 @@ class StatGen {
 };
 
 enum class MetadataMode : uint8_t {
-  kSidecar = 0,
-  kAmbientPep = 1,
-  kAmbientUproxy = 2,
+  kLocalNodeMetadataMode = 0,
+  kHostMetadataMode = 1,
+  kClusterMetadataMode = 2,
 };
 
 // PluginRootContext is the root context for all streams processed by the
