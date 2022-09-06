@@ -83,7 +83,7 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 						})
 						for _, point := range ts.Points {
 							point.Interval = nil
-							sd.ts[key] = sd.ts[key] + point.Value.GetInt64Value()
+							sd.ts[key] += point.Value.GetInt64Value()
 						}
 					} else {
 						log.Printf("skipping metric type %q\n", ts.Metric.Type)
