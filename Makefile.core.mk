@@ -21,7 +21,7 @@ BAZEL_TARGETS ?= //...
 # Don't build Debian packages and Docker images in tests.
 BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS}
 E2E_TEST_TARGETS ?= $$(go list ./...)
-E2E_TEST_FLAGS ?= -p=1 -parallel=1
+E2E_TEST_FLAGS := -p=1 -parallel=1
 HUB ?=
 TAG ?=
 repo_dir := .
