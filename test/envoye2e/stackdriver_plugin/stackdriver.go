@@ -74,11 +74,16 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 						strings.HasSuffix(ts.Metric.Type, "request_bytes") ||
 						strings.HasSuffix(ts.Metric.Type, "received_bytes_count") {
 						// clear the timestamps for comparison
-						var key monitoring.TimeSeries = *ts
-						key.Points = nil
+						var key = prototext.Format(&monitoring.TimeSeries{
+							Metric:     ts.Metric,
+							Resource:   ts.Resource,
+							Metadata:   ts.Metadata,
+							MetricKind: ts.MetricKind,
+							ValueType:  ts.ValueType,
+						})
 						for _, point := range ts.Points {
 							point.Interval = nil
-							sd.ts[prototext.Format(&key)] = sd.ts[prototext.Format(&key)] + point.Value.GetInt64Value()
+							sd.ts[key] = sd.ts[key] + point.Value.GetInt64Value()
 						}
 					} else {
 						log.Printf("skipping metric type %q\n", ts.Metric.Type)
