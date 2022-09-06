@@ -133,7 +133,7 @@ func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLog
 		pb := &monitoring.TimeSeries{}
 		p.LoadTestProto(t, pb)
 		if len(pb.Points) != 1 || pb.Points[0].Value.GetInt64Value() == 0 {
-			panic("malformed metric golden")
+			log.Fatal("malformed metric golden")
 		}
 		point := pb.Points[0]
 		pb.Points = nil

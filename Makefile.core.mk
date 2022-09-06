@@ -21,7 +21,7 @@ BAZEL_TARGETS ?= //...
 # Don't build Debian packages and Docker images in tests.
 BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS}
 E2E_TEST_TARGETS ?= $$(go list ./...)
-E2E_TEST_FLAGS ?=
+E2E_TEST_FLAGS ?= -p=1 -parallel=1
 HUB ?=
 TAG ?=
 repo_dir := .
@@ -127,12 +127,10 @@ test:
 	fi
 
 test_asan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
-test_asan: E2E_TEST_FLAGS = -p=1 -parallel=1
 test_asan: E2E_TEST_ENVS = ASAN=true
 test_asan: test
 
 test_tsan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_TSAN)
-test_tsan: E2E_TEST_FLAGS = -p=1 -parallel=1
 test_tsan: E2E_TEST_ENVS = TSAN=true
 test_tsan: test
 
