@@ -49,4 +49,8 @@ labels:
   upstream_cluster: "server-outbound-cluster"
   route_name: client_route
   response_details: "via_upstream"
+{{- if eq .Vars.SDLogStatusCode "200" }}
 severity: INFO
+{{- else }}
+severity: ERROR
+{{- end }}

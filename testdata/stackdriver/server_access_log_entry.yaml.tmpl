@@ -57,4 +57,8 @@ labels:
   dry_run_policy_name: "foo.httpbin-dryrun-allow"
   dry_run_policy_rule: "0"
   {{- end }}
+{{- if eq .Vars.SDLogStatusCode "200" }}
 severity: INFO
+{{- else }}
+severity: ERROR
+{{- end }}
