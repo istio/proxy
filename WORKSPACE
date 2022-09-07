@@ -43,7 +43,7 @@ ENVOY_SHA = "cc9bfc0b956cf2d53bc00675fdb11e4a505d3dd2"
 
 ENVOY_SHA256 = ""
 
-ENVOY_ORG = "stevenctl"
+ENVOY_ORG = "istio"
 
 ENVOY_REPO = "envoy"
 
