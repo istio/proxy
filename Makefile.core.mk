@@ -67,6 +67,7 @@ BAZEL_CONFIG_CURRENT ?= $(BAZEL_CONFIG_DEV)
 BAZEL_BIN_PATH ?= $(shell bazel info $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) bazel-bin)
 TEST_ENVOY_PATH ?= $(BAZEL_BIN_PATH)/src/envoy/envoy
 TEST_ENVOY_TARGET ?= //src/envoy:envoy
+TEST_ENVOY_DEBUG ?= trace
 
 CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE_GLIBCXX_USE_CXX11_ABI_ERROR=1
 # WASM is not build on CentOS, skip it
@@ -123,7 +124,7 @@ test:
 	  export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) $(BAZEL_TEST_ARGS) -- $(BAZEL_TEST_TARGETS); \
 	fi
 	if [ -n "$(E2E_TEST_TARGETS)" ]; then \
-	  env ENVOY_DEBUG=trace ENVOY_PATH=$(TEST_ENVOY_PATH) $(E2E_TEST_ENVS) GO111MODULE=on go test -timeout 30m $(E2E_TEST_FLAGS) $(E2E_TEST_TARGETS); \
+	  env ENVOY_DEBUG=$(TEST_ENVOY_DEBUG) ENVOY_PATH=$(TEST_ENVOY_PATH) $(E2E_TEST_ENVS) GO111MODULE=on go test -timeout 30m $(E2E_TEST_FLAGS) $(E2E_TEST_TARGETS); \
 	fi
 
 test_asan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
@@ -132,6 +133,7 @@ test_asan: test
 
 test_tsan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_TSAN)
 test_tsan: E2E_TEST_ENVS = TSAN=true
+test_tsan: TEST_ENVOY_DEBUG = debug # tsan is too slow for trace
 test_tsan: test
 
 test_centos: BAZEL_BUILD_ARGS := $(CENTOS_BUILD_ARGS) $(BAZEL_BUILD_ARGS)
