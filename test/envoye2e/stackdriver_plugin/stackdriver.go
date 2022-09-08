@@ -42,7 +42,7 @@ type Stackdriver struct {
 
 	done  chan error
 	tsReq []*monitoring.CreateTimeSeriesRequest
-	ts    map[string]struct{}
+	ts    map[string]int64
 	ls    map[string]struct{}
 }
 
@@ -57,7 +57,7 @@ var _ driver.Step = &Stackdriver{}
 func (sd *Stackdriver) Run(p *driver.Params) error {
 	sd.done = make(chan error, 1)
 	sd.ls = make(map[string]struct{})
-	sd.ts = make(map[string]struct{})
+	sd.ts = make(map[string]int64)
 	sd.tsReq = make([]*monitoring.CreateTimeSeriesRequest, 0, 20)
 	metrics, logging, _, _ := NewFakeStackdriver(sd.Port, sd.Delay, true, ExpectedBearer)
 
@@ -74,9 +74,17 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 						strings.HasSuffix(ts.Metric.Type, "request_bytes") ||
 						strings.HasSuffix(ts.Metric.Type, "received_bytes_count") {
 						// clear the timestamps for comparison
-						ts.Points[0].Interval = nil
-
-						sd.ts[prototext.Format(ts)] = struct{}{}
+						var key = prototext.Format(&monitoring.TimeSeries{
+							Metric:     ts.Metric,
+							Resource:   ts.Resource,
+							Metadata:   ts.Metadata,
+							MetricKind: ts.MetricKind,
+							ValueType:  ts.ValueType,
+						})
+						for _, point := range ts.Points {
+							point.Interval = nil
+							sd.ts[key] += point.Value.GetInt64Value()
+						}
 					} else {
 						log.Printf("skipping metric type %q\n", ts.Metric.Type)
 					}
@@ -120,11 +128,16 @@ func (sd *Stackdriver) Cleanup() {
 
 func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLogEntry, verifyLatency bool) driver.Step {
 	// check as sets of strings by marshaling to proto
-	twant := make(map[string]struct{})
+	twant := make(map[string]int64)
 	for _, t := range tsFiles {
 		pb := &monitoring.TimeSeries{}
 		p.LoadTestProto(t, pb)
-		twant[prototext.Format(pb)] = struct{}{}
+		if len(pb.Points) != 1 || pb.Points[0].Value.GetInt64Value() == 0 {
+			log.Fatal("malformed metric golden")
+		}
+		point := pb.Points[0]
+		pb.Points = nil
+		twant[prototext.Format(pb)] = point.Value.GetInt64Value()
 	}
 	lwant := make(map[string]struct{})
 	for _, l := range lsFiles {
@@ -159,7 +172,7 @@ func (r *resetStackdriver) Run(p *driver.Params) error {
 	r.sd.Lock()
 	defer r.sd.Unlock()
 	r.sd.ls = make(map[string]struct{})
-	r.sd.ts = make(map[string]struct{})
+	r.sd.ts = make(map[string]int64)
 	r.sd.tsReq = make([]*monitoring.CreateTimeSeriesRequest, 0, 20)
 	return nil
 }
@@ -168,7 +181,7 @@ func (r *resetStackdriver) Cleanup() {}
 
 type checkStackdriver struct {
 	sd                    *Stackdriver
-	twant                 map[string]struct{}
+	twant                 map[string]int64
 	lwant                 map[string]struct{}
 	verifyResponseLatency bool
 }
@@ -206,20 +219,6 @@ func (s *checkStackdriver) Run(p *driver.Params) error {
 		} else {
 			foundAllMetrics = reflect.DeepEqual(s.sd.ts, s.twant)
 		}
-		if !foundAllMetrics {
-			log.Printf("got metrics %d, want %d\n", len(s.sd.ts), len(s.twant))
-			if len(s.sd.ts) >= len(s.twant) {
-				for got := range s.sd.ts {
-					log.Println(got)
-				}
-				log.Println("--- but want ---")
-				for want := range s.twant {
-					log.Println(want)
-				}
-				return fmt.Errorf("failed to receive expected metrics")
-			}
-		}
-
 		if !s.verifyResponseLatency {
 			verfiedLatency = true
 		} else {
@@ -242,6 +241,17 @@ func (s *checkStackdriver) Run(p *driver.Params) error {
 		log.Println("sleeping till next check")
 		time.Sleep(1 * time.Second)
 	}
+	if !foundAllMetrics {
+		log.Printf("got metrics %d, want %d\n", len(s.sd.ts), len(s.twant))
+		for got, value := range s.sd.ts {
+			log.Printf("%s=%d\n", got, value)
+		}
+		log.Println("--- but want ---")
+		for want, value := range s.twant {
+			log.Printf("%s=%d\n", want, value)
+		}
+	}
+
 	return fmt.Errorf("found all metrics %v, all logs %v, verified latency %v", foundAllMetrics, foundAllLogs, verfiedLatency)
 }
 
