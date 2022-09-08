@@ -186,14 +186,16 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
         plugin_, scope_, cluster_manager_, init_manager_, dispatcher_, *api,
         lifecycle_notifier_, remote_data_provider_,
         [this](WasmHandleSharedPtr wasm) { wasm_ = wasm; },
-        [](Wasm* wasm, const std::shared_ptr<Common::Wasm::Plugin>& plugin) {
+        [](Wasm* wasm,
+           const std::shared_ptr<Extensions::Common::Wasm::Plugin>& plugin) {
           return new TestRoot(wasm, plugin);
         });
     if (wasm_) {
       plugin_handle_ = getOrCreateThreadLocalPlugin(
           wasm_, plugin_, dispatcher_,
           [root_context = &root_context_](
-              Wasm* wasm, const std::shared_ptr<Common::Wasm::Plugin>& plugin) {
+              Wasm* wasm,
+              const std::shared_ptr<Extensions::Common::Wasm::Plugin>& plugin) {
             *root_context = new TestRoot(wasm, plugin);
             return *root_context;
           });
