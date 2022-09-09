@@ -85,7 +85,7 @@ dynamic_resources:
     resource_api_version: V3
 static_resources:
   clusters:
-  - connect_timeout: 1s
+  - connect_timeout: 5s
     load_assignment:
       cluster_name: xds_cluster
       endpoints:
@@ -98,7 +98,7 @@ static_resources:
     http2_protocol_options: {}
     name: xds_cluster
   - name: server-outbound-cluster
-    connect_timeout: 1s
+    connect_timeout: 5s
     type: STATIC
     http2_protocol_options: {}
     {{- if ne .Vars.ElideServerMetadata "true" }}
@@ -170,7 +170,7 @@ dynamic_resources:
     resource_api_version: V3
 static_resources:
   clusters:
-  - connect_timeout: 1s
+  - connect_timeout: 5s
     load_assignment:
       cluster_name: xds_cluster
       endpoints:
@@ -183,7 +183,7 @@ static_resources:
     http2_protocol_options: {}
     name: xds_cluster
   - name: server-inbound-cluster
-    connect_timeout: 1s
+    connect_timeout: 5s
     type: STATIC
     {{- if eq .Vars.UsingGrpcBackend "true" }}
     http2_protocol_options: {}
