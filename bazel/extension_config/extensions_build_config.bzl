@@ -42,6 +42,7 @@ ENVOY_EXTENSIONS = {
     #
 
     "envoy.bootstrap.wasm":                             "//source/extensions/bootstrap/wasm:config",
+    "envoy.bootstrap.internal_listener":                "//source/extensions/bootstrap/internal_listener:config",
 
     #
     # Health checkers
@@ -193,6 +194,7 @@ ENVOY_EXTENSIONS = {
     #
 
     "envoy.transport_sockets.alts":                     "//source/extensions/transport_sockets/alts:config",
+    "envoy.transport_sockets.internal_upstream":        "//source/extensions/transport_sockets/internal_upstream:config",
     "envoy.transport_sockets.upstream_proxy_protocol":  "//source/extensions/transport_sockets/proxy_protocol:upstream_config",
     "envoy.transport_sockets.raw_buffer":               "//source/extensions/transport_sockets/raw_buffer:config",
     "envoy.transport_sockets.tap":                      "//source/extensions/transport_sockets/tap:config",
@@ -321,10 +323,6 @@ ENVOY_EXTENSIONS = {
 
     # apple DNS resolver extension is only needed in MacOS build plus one want to use apple library for DNS resolving.
     "envoy.network.dns_resolver.apple":                "//source/extensions/network/dns_resolver/apple:config",
-  
-    # Sidecarless
-    "envoy.transport_sockets.internal_upstream":       "//source/extensions/transport_sockets/internal_upstream:config",
-    "envoy.bootstrap.internal_listener":               "//source/extensions/bootstrap/internal_listener:config",
 }
 
 ENVOY_CONTRIB_EXTENSIONS = {
