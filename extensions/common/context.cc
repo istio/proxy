@@ -301,8 +301,10 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
   return fbb.Release();
 }
 
+namespace {
+
 bool extractPeerMetadataFromUpstreamMetadata(
-    std::string metadata_type, flatbuffers::FlatBufferBuilder& fbb) {
+    const std::string& metadata_type, flatbuffers::FlatBufferBuilder& fbb) {
   std::string endpoint_labels;
   if (!getValue({metadata_type, "filter_metadata", "istio", "workload"},
                 &endpoint_labels)) {
@@ -348,6 +350,8 @@ bool extractPeerMetadataFromUpstreamMetadata(
   fbb.Finish(data);
   return true;
 }
+
+}  // namespace
 
 bool extractPeerMetadataFromUpstreamClusterMetadata(
     flatbuffers::FlatBufferBuilder& fbb) {
