@@ -66,3 +66,8 @@ static_resources:
           {{- end }}
 {{ .Vars.ClientTLSContext | indent 4 }}
 {{ .Vars.ClientStaticCluster | indent 2 }}
+bootstrap_extensions:
+- name: envoy.bootstrap.internal_listener
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/envoy.extensions.bootstrap.internal_listener.v3.InternalListener

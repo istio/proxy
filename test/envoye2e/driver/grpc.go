@@ -20,6 +20,7 @@ import (
 	"log"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 
 	"istio.io/proxy/test/envoye2e/env"
@@ -55,7 +56,7 @@ type GrpcCall struct {
 
 func (g *GrpcCall) Run(p *Params) error {
 	proxyAddr := fmt.Sprintf("127.0.0.1:%d", p.Ports.ClientPort)
-	conn, err := grpc.Dial(proxyAddr, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(proxyAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
 		return fmt.Errorf("could not establish client connection to gRPC server: %v", err)
 	}
@@ -85,7 +86,7 @@ type GrpcStream struct {
 func (g *GrpcStream) Run(p *Params) error {
 	proxyAddr := fmt.Sprintf("127.0.0.1:%d", p.Ports.ClientPort)
 	var err error
-	g.conn, err = grpc.Dial(proxyAddr, grpc.WithInsecure(), grpc.WithBlock())
+	g.conn, err = grpc.Dial(proxyAddr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
 		return fmt.Errorf("could not establish client connection to gRPC server: %v", err)
 	}

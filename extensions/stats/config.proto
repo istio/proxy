@@ -69,7 +69,6 @@ message MetricDefinition {
 }
 
 message PluginConfig {
-  // next id: 7
   // The following settings should be rarely used.
   // Enable debug for this filter.
   // DEPRECATED.
@@ -106,4 +105,29 @@ message PluginConfig {
 
   // Metric definitions.
   repeated MetricDefinition definitions = 9;
+
+  enum MetadataMode {
+    // Instructs the stats filter to pull node information
+    // from the Envoy local node metadata alone. This will be combined with peer
+    // metadata from Envoy filter state to build Istio service metrics.
+    LOCAL_NODE_METADATA_MODE = 0;
+
+    // Instructs the stats filter to pull node information from host
+    // metadata provided by the control plane. This will be combined with peer
+    // metadata from Envoy filter state to build Istio service metrics.
+    UPSTREAM_HOST_METADATA_MODE = 1;
+
+    // Instructs the stats filter to pull node information from cluster metadata
+    // provided by the control plane. This will be combined with peer metadata
+    // from Envoy filter state to build Istio service metrics.
+    CLUSTER_METADATA_MODE = 2;
+
+    // next id: 3
+  }
+
+  // This will control how the stats filter discovers metadata for the workloads
+  // involved in a request / connection.
+  MetadataMode metadata_mode = 10;
+
+  // next id: 11
 }

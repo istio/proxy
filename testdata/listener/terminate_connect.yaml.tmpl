@@ -1,0 +1,61 @@
+name: terminate_connect
+address:
+  socket_address:
+    address: 127.0.0.1
+    port_value: {{ .Ports.ServerTunnelPort }}
+filter_chains:
+- filters:
+  # Capture SSL info for the internal listener passthrough
+  - name: capture_tls
+    typed_config:
+      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: istio.tls_passthrough.v1.CaptureTLS
+  - name: envoy.filters.network.http_connection_manager
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+      stat_prefix: terminate_connect
+      route_config:
+        name: local_route
+        virtual_hosts:
+        - name: local_service
+          domains:
+          - "*"
+          routes:
+          - match:
+              connect_matcher:
+                {}
+            route:
+              cluster: internal_inbound
+              upgrade_configs:
+              - upgrade_type: CONNECT
+                connect_config:
+                  {}
+      http_filters:
+      - name: envoy.filters.http.router
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+      http2_protocol_options:
+        allow_connect: true
+      upgrade_configs:
+      - upgrade_type: CONNECT
+  transport_socket:
+    name: tls
+    typed_config:
+      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+      value:
+        common_tls_context:
+          tls_certificate_sds_secret_configs:
+            name: server
+            sds_config:
+              api_config_source:
+                api_type: GRPC
+                grpc_services:
+                - envoy_grpc:
+                    cluster_name: xds_cluster
+                set_node_on_first_message_only: true
+                transport_api_version: V3
+              resource_api_version: V3
+          validation_context:
+            trusted_ca: { filename: "testdata/certs/root.cert" }
+        require_client_certificate: true

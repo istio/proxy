@@ -1,14 +1,23 @@
 {{- if ne .Vars.ServerListeners "" }}
 {{ .Vars.ServerListeners }}
 {{- else }}
+{{- if ne .Vars.ServerInternalAddress "" }}
+name: {{ .Vars.ServerInternalAddress }}
+{{- else }}
 name: server
+{{- end }}
 traffic_direction: INBOUND
+{{- if ne .Vars.ServerInternalAddress "" }}
+internal_listener: {}
+{{- else }}
 address:
   socket_address:
     address: 127.0.0.1
     port_value: {{ .Ports.ServerPort }}
+{{- end }}
 filter_chains:
 - filters:
+{{ .Vars.ServerNetworkFilters | fill | indent 2 }}
   - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager

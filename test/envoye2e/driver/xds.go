@@ -23,8 +23,10 @@ import (
 	cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	extensionservice "github.com/envoyproxy/go-control-plane/envoy/service/extension/v3"
+	secret "github.com/envoyproxy/go-control-plane/envoy/service/secret/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
@@ -53,6 +55,7 @@ func (x *XDS) Run(p *Params) error {
 	p.Config.Cache = cache.NewSnapshotCache(false, cache.IDHash{}, x)
 	xdsServer := server.NewServer(context.Background(), p.Config.Cache, nil)
 	discovery.RegisterAggregatedDiscoveryServiceServer(x.grpc, xdsServer)
+	secret.RegisterSecretDiscoveryServiceServer(x.grpc, xdsServer)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", p.Ports.XDSPort))
 	if err != nil {
 		return err
@@ -91,6 +94,7 @@ type Update struct {
 	Version   string
 	Listeners []string
 	Clusters  []string
+	Secrets   []string
 }
 
 var _ Step = &Update{}
@@ -121,10 +125,20 @@ func (u *Update) Run(p *Params) error {
 		listeners = append(listeners, out)
 	}
 
-	snap := cache.Snapshot{}
+	secrets := make([]types.Resource, 0, len(u.Secrets))
+	for _, secret := range u.Secrets {
+		out := &tls.Secret{}
+		if err := p.FillYAML(secret, out); err != nil {
+			return err
+		}
+		secrets = append(secrets, out)
+	}
+
+	snap := &cache.Snapshot{}
 	snap.Resources[types.Cluster] = cache.NewResources(version, clusters)
 	snap.Resources[types.Listener] = cache.NewResources(version, listeners)
-	return p.Config.Cache.SetSnapshot(u.Node, snap)
+	snap.Resources[types.Secret] = cache.NewResources(version, secrets)
+	return p.Config.Cache.SetSnapshot(context.Background(), u.Node, snap)
 }
 
 func (u *Update) Cleanup() {}

@@ -229,6 +229,12 @@ class StatGen {
   Metric metric_;
 };
 
+enum class MetadataMode : uint8_t {
+  kLocalNodeMetadataMode = 0,
+  kHostMetadataMode = 1,
+  kClusterMetadataMode = 2,
+};
+
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target
 // for interactions that outlives individual stream, e.g. timer, async calls.
@@ -297,6 +303,7 @@ class PluginRootContext : public RootContext {
   std::string_view peer_metadata_id_key_;
   std::string_view peer_metadata_key_;
   bool use_host_header_fallback_;
+  MetadataMode metadata_mode_;
 
   int64_t cache_hits_accumulator_ = 0;
   uint32_t cache_hits_;

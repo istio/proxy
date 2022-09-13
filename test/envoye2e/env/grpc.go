@@ -24,6 +24,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
@@ -99,7 +100,8 @@ func (g *GRPCServer) EchoStream(stream grpc_echo.Echo_EchoStreamServer) error {
 func tryWaitForGRPCServer(addr string) error {
 	for i := 0; i < 10; i++ {
 		log.Println("Attempting to establish connection to gRPC server: ", addr)
-		if conn, err := grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock()); err == nil {
+		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+		if err == nil {
 			conn.Close()
 			return nil
 		}
