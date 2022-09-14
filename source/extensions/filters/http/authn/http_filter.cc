@@ -89,7 +89,7 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(
     if (!filter_config_.disable_clear_route_cache()) {
       // Clear the route cache after saving the dynamic metadata for routing
       // based on JWT claims.
-      decoder_callbacks_->clearRouteCache();
+      decoder_callbacks_->downstreamCallbacks()->clearRouteCache();
       ENVOY_LOG(debug, "Istio authn filter cleared route cache.");
     }
   }
