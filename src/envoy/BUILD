@@ -36,6 +36,12 @@ envoy_cc_binary(
         "//source/extensions/filters/network/metadata_exchange:config_lib",
         "//source/extensions/filters/network/sni_verifier:config_lib",
         "//source/extensions/filters/network/tcp_cluster_rewrite:config_lib",
+        "//src/envoy/http/baggage_handler:config_lib",  # Experimental: Ambient
+        "//src/envoy/internal_ssl_forwarder:config_lib",  # Experimental: Ambient
+        "//src/envoy/metadata_to_peer_node:config_lib",  # Experimental: Ambient
+        "//src/envoy/set_internal_dst_address:filter_lib",  # Experimental: Ambient
+        "//src/envoy/tls_passthrough:filter_lib",  # Experimental: Ambient
+        "//src/envoy/workload_metadata:config_lib",  # Experimental: Ambient
         "@envoy//source/exe:envoy_main_entry_lib",
     ],
 )

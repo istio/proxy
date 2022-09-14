@@ -37,7 +37,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
-	proto "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"istio.io/proxy/test/envoye2e/driver"
 )
@@ -127,6 +128,10 @@ func (s *MetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.C
 	return &empty.Empty{}, nil
 }
 
+func (s *MetricServer) CreateServiceTimeSeries(ctx context.Context, request *monitoringpb.CreateTimeSeriesRequest) (*emptypb.Empty, error) {
+	return s.CreateTimeSeries(ctx, request)
+}
+
 // DeleteLog implements DeleteLog method.
 func (s *LoggingServer) DeleteLog(context.Context, *logging.DeleteLogRequest) (*empty.Empty, error) {
 	return &empty.Empty{}, nil
@@ -170,6 +175,10 @@ func (s *LoggingServer) ListMonitoredResourceDescriptors(
 	*logging.ListMonitoredResourceDescriptorsResponse, error,
 ) {
 	return &logging.ListMonitoredResourceDescriptorsResponse{}, nil
+}
+
+func (s *LoggingServer) TailLogEntries(server logging.LoggingServiceV2_TailLogEntriesServer) error {
+	panic("TailLogEntries: implement me")
 }
 
 // GetTimeSeries returns all received time series in a ListTimeSeriesResponse as a marshaled json string

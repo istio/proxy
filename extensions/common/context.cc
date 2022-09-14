@@ -301,12 +301,13 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
   return fbb.Release();
 }
 
-bool extractPeerMetadataFromUpstreamHostMetadata(
-    flatbuffers::FlatBufferBuilder& fbb) {
+namespace {
+
+bool extractPeerMetadataFromUpstreamMetadata(
+    const std::string& metadata_type, flatbuffers::FlatBufferBuilder& fbb) {
   std::string endpoint_labels;
-  if (!getValue(
-          {"upstream_host_metadata", "filter_metadata", "istio", "workload"},
-          &endpoint_labels)) {
+  if (!getValue({metadata_type, "filter_metadata", "istio", "workload"},
+                &endpoint_labels)) {
     return false;
   }
   std::vector<absl::string_view> parts = absl::StrSplit(endpoint_labels, ';');
@@ -348,6 +349,18 @@ bool extractPeerMetadataFromUpstreamHostMetadata(
   auto data = node.Finish();
   fbb.Finish(data);
   return true;
+}
+
+}  // namespace
+
+bool extractPeerMetadataFromUpstreamClusterMetadata(
+    flatbuffers::FlatBufferBuilder& fbb) {
+  return extractPeerMetadataFromUpstreamMetadata("cluster_metadata", fbb);
+}
+
+bool extractPeerMetadataFromUpstreamHostMetadata(
+    flatbuffers::FlatBufferBuilder& fbb) {
+  return extractPeerMetadataFromUpstreamMetadata("upstream_host_metadata", fbb);
 }
 
 PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,

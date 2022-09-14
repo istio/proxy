@@ -60,6 +60,12 @@ static_resources:
               socket_address:
                 address: 127.0.0.1
                 port_value: {{ .Ports.BackendPort }}
+          {{- if eq .Vars.EnableEndpointMetadata "true" }}
+          metadata:
+            filter_metadata:
+              istio:
+                workload: ratings-v1;default;ratings;version-1;server-cluster
+          {{- end }}
 {{ .Vars.ServerStaticCluster | indent 2 }}
 {{- if ne .Vars.DisableDirectResponse "true" }}
   listeners:
@@ -96,3 +102,8 @@ static_resources:
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 {{- end }}
+bootstrap_extensions:
+- name: envoy.bootstrap.internal_listener
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/envoy.extensions.bootstrap.internal_listener.v3.InternalListener

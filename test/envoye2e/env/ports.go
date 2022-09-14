@@ -31,13 +31,14 @@ const (
 
 // Ports stores all used ports
 type Ports struct {
-	BackendPort uint16
-	ClientAdmin uint16
-	ClientPort  uint16
-	ServerPort  uint16
-	ServerAdmin uint16
-	XDSPort     uint16
-	Max         uint16
+	BackendPort      uint16
+	ClientAdmin      uint16
+	ClientPort       uint16
+	ServerPort       uint16
+	ServerAdmin      uint16
+	XDSPort          uint16
+	ServerTunnelPort uint16
+	Max              uint16
 }
 
 func allocPortBase(name uint16) uint16 {
@@ -67,12 +68,13 @@ func allPortFree(base uint16, ports uint16) bool {
 func NewPorts(name uint16) *Ports {
 	base := allocPortBase(name)
 	return &Ports{
-		BackendPort: base,
-		ClientAdmin: base + 1,
-		ClientPort:  base + 2,
-		ServerPort:  base + 3,
-		ServerAdmin: base + 4,
-		XDSPort:     base + 5,
-		Max:         base + 5,
+		BackendPort:      base,
+		ClientAdmin:      base + 1,
+		ClientPort:       base + 2,
+		ServerPort:       base + 3,
+		ServerAdmin:      base + 4,
+		XDSPort:          base + 5,
+		ServerTunnelPort: base + 6,
+		Max:              base + 6,
 	}
 }

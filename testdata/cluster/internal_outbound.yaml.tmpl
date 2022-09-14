@@ -1,0 +1,25 @@
+name: internal_outbound
+load_assignment:
+  cluster_name: internal_outbound
+  endpoints:
+  - lb_endpoints:
+    - endpoint:
+        address:
+          envoy_internal_address:
+            server_listener_name: internal_outbound
+      metadata:
+        filter_metadata:
+          tunnel:
+            address: 127.0.0.1:{{ .Ports.ServerTunnelPort }}
+            destination: 127.0.0.1:{{ .Ports.ServerPort }}
+transport_socket:
+  name: envoy.transport_sockets.internal_upstream
+  typed_config:
+    "@type": type.googleapis.com/envoy.extensions.transport_sockets.internal_upstream.v3.InternalUpstreamTransport
+    passthrough_metadata:
+    - name: tunnel
+      kind: { host: {}}
+    transport_socket:
+      name: envoy.transport_sockets.raw_buffer
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.raw_buffer.v3.RawBuffer

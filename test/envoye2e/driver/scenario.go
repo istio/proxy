@@ -151,6 +151,9 @@ func (p *Params) Fill(s string) (string, error) {
 				}
 				return out
 			},
+			"divisible": func(i, j int) bool {
+				return i%j == 0
+			},
 		}).
 		Parse(s))
 	var b bytes.Buffer
@@ -207,7 +210,7 @@ func ReadYAML(input string, pb legacyproto.Message) error {
 	var jsonObj interface{}
 	err := yamlv2.Unmarshal([]byte(input), &jsonObj)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot parse: %v for %q", err, input)
 	}
 	// As a special case, convert [x] to x.
 	// This is needed because jsonpb is unable to parse arrays.
@@ -220,11 +223,11 @@ func ReadYAML(input string, pb legacyproto.Message) error {
 	}
 	yml, err := yamlv2.Marshal(jsonObj)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot marshal: %v for %q", err, input)
 	}
 	js, err := yaml.YAMLToJSON(yml)
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot unmarshal: %v for %q", err, input)
 	}
 	reader := strings.NewReader(string(js))
 	m := jsonpb.Unmarshaler{}
@@ -236,6 +239,5 @@ func (p *Params) FillYAML(input string, pb legacyproto.Message) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(out)
 	return ReadYAML(out, pb)
 }
