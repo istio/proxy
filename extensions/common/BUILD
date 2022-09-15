@@ -163,7 +163,10 @@ cc_library(
     hdrs = [":node_info_fbs"],
     features = ["-parse_headers"],
     linkstatic = True,
-    deps = ["@com_github_google_flatbuffers//:runtime_cc"],
+    deps = [
+        "@com_github_google_flatbuffers//:flatbuffers",
+        "@com_github_google_flatbuffers//:runtime_cc",
+    ],
 )
 
 envoy_cc_library(
