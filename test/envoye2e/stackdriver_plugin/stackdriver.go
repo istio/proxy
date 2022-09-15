@@ -17,6 +17,7 @@ package stackdriverplugin
 import (
 	"fmt"
 	"log"
+	"net"
 	"reflect"
 	"strings"
 	"sync"
@@ -25,6 +26,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	logging "google.golang.org/genproto/googleapis/logging/v2"
 	monitoring "google.golang.org/genproto/googleapis/monitoring/v3"
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/testing/protocmp"
 
@@ -44,6 +46,9 @@ type Stackdriver struct {
 	tsReq []*monitoring.CreateTimeSeriesRequest
 	ts    map[string]int64
 	ls    map[string]struct{}
+
+	grpcServer *grpc.Server
+	lis        net.Listener
 }
 
 type SDLogEntry struct {
@@ -59,7 +64,9 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 	sd.ls = make(map[string]struct{})
 	sd.ts = make(map[string]int64)
 	sd.tsReq = make([]*monitoring.CreateTimeSeriesRequest, 0, 20)
-	metrics, logging, _, _ := NewFakeStackdriver(sd.Port, sd.Delay, true, ExpectedBearer)
+	var metrics *MetricServer
+	var logging *LoggingServer
+	metrics, logging, _, sd.grpcServer, sd.lis = NewFakeStackdriver(sd.Port, sd.Delay, true, ExpectedBearer)
 
 	go func() {
 		for {
@@ -124,6 +131,8 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 
 func (sd *Stackdriver) Cleanup() {
 	close(sd.done)
+	sd.grpcServer.GracefulStop()
+	sd.lis.Close()
 }
 
 func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLogEntry, verifyLatency bool) driver.Step {

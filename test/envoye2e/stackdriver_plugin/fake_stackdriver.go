@@ -352,7 +352,7 @@ func (s *TracesServer) CreateSpan(ctx context.Context, req *cloudtracev2.Span) (
 // NewFakeStackdriver creates a new fake Stackdriver server.
 func NewFakeStackdriver(port uint16, delay time.Duration,
 	enableTLS bool, bearer string,
-) (*MetricServer, *LoggingServer, *TracesServer, *grpc.Server) {
+) (*MetricServer, *LoggingServer, *TracesServer, *grpc.Server, net.Listener) {
 	log.Printf("Stackdriver server listening on port %v\n", port)
 
 	var options []grpc.ServerOption
@@ -403,17 +403,17 @@ func NewFakeStackdriver(port uint16, delay time.Duration,
 	cloudtracev1.RegisterTraceServiceServer(grpcServer, traceSvc)
 	cloudtracev2.RegisterTraceServiceServer(grpcServer, traceSvc)
 
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
 	go func() {
-		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-		if err != nil {
-			log.Fatalf("failed to listen: %v", err)
-		}
 		err = grpcServer.Serve(lis)
 		if err != nil {
 			log.Fatalf("fake stackdriver server terminated abnormally: %v", err)
 		}
 	}()
-	return fsdms, fsdls, traceSvc, grpcServer
+	return fsdms, fsdls, traceSvc, grpcServer, lis
 }
 
 func RunFakeStackdriver(port uint16) error {

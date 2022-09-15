@@ -35,6 +35,7 @@ import (
 
 // XDS creates an xDS server
 type XDS struct {
+	lis  net.Listener
 	grpc *grpc.Server
 }
 
@@ -56,13 +57,14 @@ func (x *XDS) Run(p *Params) error {
 	xdsServer := server.NewServer(context.Background(), p.Config.Cache, nil)
 	discovery.RegisterAggregatedDiscoveryServiceServer(x.grpc, xdsServer)
 	secret.RegisterSecretDiscoveryServiceServer(x.grpc, xdsServer)
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", p.Ports.XDSPort))
+	var err error
+	x.lis, err = net.Listen("tcp", fmt.Sprintf(":%d", p.Ports.XDSPort))
 	if err != nil {
 		return err
 	}
 
 	go func() {
-		_ = x.grpc.Serve(lis)
+		_ = x.grpc.Serve(x.lis)
 	}()
 	return nil
 }
@@ -71,6 +73,7 @@ func (x *XDS) Run(p *Params) error {
 func (x *XDS) Cleanup() {
 	log.Println("stopping XDS server")
 	x.grpc.GracefulStop()
+	x.lis.Close()
 }
 
 func (x *XDS) Debugf(format string, args ...interface{}) {
