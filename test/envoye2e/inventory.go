@@ -54,7 +54,6 @@ func init() {
 			"TestStackdriverRbacAccessDenied/ActionAllow",
 			"TestStackdriverRbacAccessDenied/ActionBoth",
 			"TestStackdriverRbacAccessDenied/ActionDeny",
-			"TestStackdriverRbacTCPDryRun",
 			"TestStackdriverRbacTCPDryRun/BaseCase",
 			"TestStackdriverRbacTCPDryRun/NoAlpn",
 			"TestStackdriverReload",
