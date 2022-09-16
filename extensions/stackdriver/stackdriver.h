@@ -225,6 +225,7 @@ class StackdriverContext : public Context {
     if (!is_initialized_) {
       return FilterStatus::Continue;
     }
+    LOG_TRACE(absl::StrCat("SD incrementReceivedBytes: ", size));
     getRootContext()->incrementReceivedBytes(context_id_, size);
     getRootContext()->setConnectionState(
         context_id_, ::Wasm::Common::TCPConnectionState::Connected);
@@ -235,6 +236,7 @@ class StackdriverContext : public Context {
     if (!is_initialized_) {
       return FilterStatus::Continue;
     }
+    LOG_TRACE(absl::StrCat("SD incrementSentBytes: ", size));
     getRootContext()->incrementSentBytes(context_id_, size);
     getRootContext()->setConnectionState(
         context_id_, ::Wasm::Common::TCPConnectionState::Connected);
