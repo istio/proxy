@@ -458,6 +458,13 @@ void recordTCP(bool is_outbound,
         opencensus::stats::Record({{clientReceivedBytesCountMeasure(),
                                     request_info.tcp_received_bytes}},
                                   tagMap);
+        std::cout << absl::StrCat("tcp_received_bytes: ",
+                                  request_info.tcp_received_bytes)
+                  << std::endl;
+        for (const auto& [tag, value] : tagMap) {
+          std::cout << absl::StrCat("tag: ", tag.name(), " value: ", value)
+                    << std::endl;
+        }
       } else {
         opencensus::stats::Record({{clientReceivedBytesCountMeasure(),
                                     request_info.tcp_received_bytes}},
