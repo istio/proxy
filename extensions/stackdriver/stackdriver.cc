@@ -654,9 +654,15 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   bool log_open_on_timeout =
       !record_info.tcp_open_entry_logged &&
       (cur - request_info.start_time) > tcp_log_entry_timeout_;
-  if (waiting_for_metadata && no_error && !log_open_on_timeout) {
-    return false;
+  if (waiting_for_metadata && no_error) {
+    LOG_TRACE(absl::StrCat("Waiting for peer metadata, timeout: ",
+                           log_open_on_timeout));
+    if (!log_open_on_timeout) {
+      return false;
+    }
   }
+  LOG_TRACE(absl::StrCat("Reporting sent: ", request_info.tcp_sent_bytes,
+                         " received: ", request_info.tcp_received_bytes));
   if (!request_info.is_populated) {
     ::Wasm::Common::populateTCPRequestInfo(outbound, &request_info);
   }
