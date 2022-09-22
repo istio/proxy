@@ -42,6 +42,7 @@ envoy_cc_binary(
         "//src/envoy/set_internal_dst_address:filter_lib",  # Experimental: Ambient
         "//src/envoy/tls_passthrough:filter_lib",  # Experimental: Ambient
         "//src/envoy/workload_metadata:config_lib",  # Experimental: Ambient
+        "//source/extensions/filters/http/istio_stats",
         "@envoy//source/exe:envoy_main_entry_lib",
     ],
 )
