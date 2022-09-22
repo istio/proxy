@@ -32,8 +32,8 @@ Http::FilterHeadersStatus BaggageHandlerFilter::decodeHeaders(
                                 .result();
 
   if (header_value.has_value()) {
-    auto source_meta = Common::WorkloadMetadataObject::fromBaggage(
-        header_value.value(), decoder_callbacks_->connection()->ssl());
+    auto source_meta =
+        Common::WorkloadMetadataObject::fromBaggage(header_value.value());
 
     auto filter_state = decoder_callbacks_->streamInfo().filterState();
 

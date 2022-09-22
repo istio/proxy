@@ -94,8 +94,6 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
                        StreamInfo::FilterState::StateType::ReadOnly,
                        StreamInfo::FilterState::LifeSpan::Connection);
 
-  cb.socket().connectionInfoProvider().setSslConnection(meta_obj->ssl());
-
   ENVOY_LOG(
       trace,
       absl::StrCat(
