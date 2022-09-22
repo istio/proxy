@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "metadata_object.h"
+#include "src/envoy/common/metadata_object.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "test/mocks/ssl/mocks.h"
 
 namespace Envoy {
 namespace Common {
@@ -82,11 +81,6 @@ TEST_F(WorkloadMetadataObjectTest, Baggage) {
 using ::testing::NiceMock;
 
 TEST_F(WorkloadMetadataObjectTest, FromBaggage) {
-  const std::string ver = "v1.2";
-  auto connection_info = std::make_shared<NiceMock<Ssl::MockConnectionInfo>>();
-  ON_CALL(*connection_info, tlsVersion())
-      .WillByDefault(testing::ReturnRef(ver));
-
   auto gotDeploy = WorkloadMetadataObject::fromBaggage(
       absl::StrCat("k8s.cluster.name=my-cluster,k8s.namespace.name=default,",
                    "k8s.deployment.name=foo,service.name=foo-service,",
@@ -98,7 +92,6 @@ TEST_F(WorkloadMetadataObjectTest, FromBaggage) {
   EXPECT_EQ(gotDeploy->workloadName(), "foo");
   EXPECT_EQ(gotDeploy->namespaceName(), "default");
   EXPECT_EQ(gotDeploy->clusterName(), "my-cluster");
-  EXPECT_EQ(gotDeploy->ssl(), nullptr);
 
   auto gotPod = WorkloadMetadataObject::fromBaggage(
       absl::StrCat("k8s.cluster.name=my-cluster,k8s.namespace.name=test,k8s."
@@ -112,7 +105,6 @@ TEST_F(WorkloadMetadataObjectTest, FromBaggage) {
   EXPECT_EQ(gotPod->instanceName(), "foo-pod-435");
   EXPECT_EQ(gotPod->namespaceName(), "test");
   EXPECT_EQ(gotPod->clusterName(), "my-cluster");
-  EXPECT_EQ(gotPod->ssl(), nullptr);
 
   auto gotJob = WorkloadMetadataObject::fromBaggage(
       absl::StrCat("k8s.cluster.name=my-cluster,k8s.namespace.name=test,",
@@ -126,7 +118,6 @@ TEST_F(WorkloadMetadataObjectTest, FromBaggage) {
   EXPECT_EQ(gotJob->instanceName(), "foo-job-435");
   EXPECT_EQ(gotJob->namespaceName(), "test");
   EXPECT_EQ(gotJob->clusterName(), "my-cluster");
-  EXPECT_EQ(gotJob->ssl(), nullptr);
 
   auto gotCron = WorkloadMetadataObject::fromBaggage(
       absl::StrCat("k8s.cluster.name=my-cluster,k8s.namespace.name=test,",
@@ -139,22 +130,6 @@ TEST_F(WorkloadMetadataObjectTest, FromBaggage) {
   EXPECT_EQ(gotCron->workloadName(), "foo-cronjob");
   EXPECT_EQ(gotCron->namespaceName(), "test");
   EXPECT_EQ(gotCron->clusterName(), "my-cluster");
-  EXPECT_EQ(gotCron->ssl(), nullptr);
-
-  auto gotDeployWithSsl = WorkloadMetadataObject::fromBaggage(
-      absl::StrCat("k8s.cluster.name=my-cluster,k8s.namespace.name=default,",
-                   "k8s.deployment.name=foo,service.name=foo-service,",
-                   "service.version=v1alpha3"),
-      connection_info);
-
-  EXPECT_EQ(gotDeployWithSsl->canonicalName(), "foo-service");
-  EXPECT_EQ(gotDeployWithSsl->canonicalRevision(), "v1alpha3");
-  EXPECT_EQ(gotDeployWithSsl->workloadType(),
-            WorkloadType::KUBERNETES_DEPLOYMENT);
-  EXPECT_EQ(gotDeployWithSsl->workloadName(), "foo");
-  EXPECT_EQ(gotDeployWithSsl->namespaceName(), "default");
-  EXPECT_EQ(gotDeployWithSsl->clusterName(), "my-cluster");
-  EXPECT_EQ(gotDeployWithSsl->ssl()->tlsVersion(), ver);
 
   auto gotNoCluster = WorkloadMetadataObject::fromBaggage(
       absl::StrCat("k8s.namespace.name=default,",
@@ -167,7 +142,6 @@ TEST_F(WorkloadMetadataObjectTest, FromBaggage) {
   EXPECT_EQ(gotNoCluster->workloadName(), "foo");
   EXPECT_EQ(gotNoCluster->namespaceName(), "default");
   EXPECT_EQ(gotNoCluster->clusterName(), "");
-  EXPECT_EQ(gotNoCluster->ssl(), nullptr);
 }
 
 }  // namespace Common

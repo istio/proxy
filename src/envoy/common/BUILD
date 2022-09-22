@@ -30,7 +30,6 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@envoy//envoy/network:filter_interface",
-        "@envoy//envoy/ssl:connection_interface",
         "@envoy//source/exe:envoy_common_lib",
     ],
 )
