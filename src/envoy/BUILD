@@ -32,6 +32,7 @@ envoy_cc_binary(
         "//extensions/stats:stats_plugin",
         "//source/extensions/filters/http/alpn:config_lib",
         "//source/extensions/filters/http/authn:filter_lib",
+        "//source/extensions/filters/http/istio_stats",
         "//source/extensions/filters/network/forward_downstream_sni:config_lib",
         "//source/extensions/filters/network/metadata_exchange:config_lib",
         "//source/extensions/filters/network/sni_verifier:config_lib",
@@ -42,7 +43,6 @@ envoy_cc_binary(
         "//src/envoy/set_internal_dst_address:filter_lib",  # Experimental: Ambient
         "//src/envoy/tls_passthrough:filter_lib",  # Experimental: Ambient
         "//src/envoy/workload_metadata:config_lib",  # Experimental: Ambient
-        "//source/extensions/filters/http/istio_stats",
         "@envoy//source/exe:envoy_main_entry_lib",
     ],
 )
