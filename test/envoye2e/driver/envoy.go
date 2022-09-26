@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -88,7 +87,7 @@ func (e *Envoy) Run(p *Params) error {
 	}
 	log.Printf("admin port %d", e.adminPort)
 
-	tmp, err := ioutil.TempFile(os.TempDir(), "envoy-bootstrap-*.yaml")
+	tmp, err := os.CreateTemp(os.TempDir(), "envoy-bootstrap-*.yaml")
 	if err != nil {
 		return err
 	}
@@ -210,7 +209,7 @@ func downloadEnvoy(ver string) (string, error) {
 		return "", fmt.Errorf("cannot get envoy sha from %v: %v", proxyDepURL, err)
 	}
 	defer resp.Body.Close()
-	istioDeps, err := ioutil.ReadAll(resp.Body)
+	istioDeps, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("cannot read body of istio deps: %v", err)
 	}
