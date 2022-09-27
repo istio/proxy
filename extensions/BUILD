@@ -36,6 +36,8 @@ envoy_wasm_cc_binary(
     srcs = [
         "//extensions/common:context.cc",
         "//extensions/common:context.h",
+        "//extensions/common:metadata_object.cc",
+        "//extensions/common:metadata_object.h",
         "//extensions/common:util.cc",
         "//extensions/common:util.h",
         "//extensions/stats:plugin.cc",
@@ -57,6 +59,8 @@ envoy_wasm_cc_binary(
     srcs = [
         "//extensions/common:context.cc",
         "//extensions/common:context.h",
+        "//extensions/common:metadata_object.cc",
+        "//extensions/common:metadata_object.h",
         "//extensions/common:proto_util.cc",
         "//extensions/common:proto_util.h",
         "//extensions/common:util.cc",
@@ -85,6 +89,8 @@ envoy_wasm_cc_binary(
         "//extensions/attributegen:plugin.h",
         "//extensions/common:context.cc",
         "//extensions/common:context.h",
+        "//extensions/common:metadata_object.cc",
+        "//extensions/common:metadata_object.h",
         "//extensions/common:util.cc",
         "//extensions/common:util.h",
     ],

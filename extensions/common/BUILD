@@ -204,3 +204,13 @@ envoy_cc_test(
         "@envoy//test/mocks/ssl:ssl_mocks",
     ],
 )
+
+envoy_cc_test(
+    name = "context_test",
+    size = "small",
+    srcs = ["context_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":context",
+    ],
+)

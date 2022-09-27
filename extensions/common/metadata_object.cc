@@ -22,7 +22,8 @@ namespace Common {
 
 WorkloadMetadataObject WorkloadMetadataObject::fromBaggage(
     absl::string_view baggage_header_value) {
-  // TODO: check for well-formed-ness of the baggage string
+  // TODO: check for well-formed-ness of the baggage string: duplication,
+  // inconsistency
   absl::string_view instance;
   absl::string_view cluster;
   absl::string_view workload;
@@ -31,7 +32,7 @@ WorkloadMetadataObject WorkloadMetadataObject::fromBaggage(
   absl::string_view canonical_revision;
   absl::string_view app_name;
   absl::string_view app_version;
-  WorkloadType workload_type = WorkloadType::UNKNOWN;
+  WorkloadType workload_type = WorkloadType::KUBERNETES_POD;
   const std::vector<std::string> empty;
 
   std::vector<absl::string_view> properties =

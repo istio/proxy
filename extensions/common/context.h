@@ -301,6 +301,13 @@ static inline std::string_view GetFromFbStringView(
   return str ? std::string_view(str->c_str(), str->size()) : std::string_view();
 }
 
+// Returns a string view stored in a flatbuffers string.
+static inline absl::string_view GetFromFbAbslStringView(
+    const flatbuffers::String* str) {
+  return str ? absl::string_view(str->c_str(), str->size())
+             : absl::string_view();
+}
+
 // Sanitizes a possible UTF-8 byte buffer to a UTF-8 string.
 // Invalid byte sequences are replaced by spaces.
 // Returns true if the string was modified.
@@ -308,9 +315,13 @@ bool sanitizeBytes(std::string* buf);
 
 std::string getServiceNameFallback();
 
-// Convert metadata object to flatbuffer
+// Convert metadata object to flatbuffer.
 flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
     const Istio::Common::WorkloadMetadataObject& obj);
+
+// Convert flatbuffer to metadata object.
+Istio::Common::WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
+    const FlatNode& node);
 
 }  // namespace Common
 }  // namespace Wasm

@@ -25,10 +25,9 @@ namespace Istio {
 namespace Common {
 
 enum class WorkloadType {
-  UNKNOWN,
+  KUBERNETES_POD,
   KUBERNETES_DEPLOYMENT,
   KUBERNETES_CRONJOB,
-  KUBERNETES_POD,
   KUBERNETES_JOB,
 };
 

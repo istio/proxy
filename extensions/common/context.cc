@@ -593,7 +593,6 @@ std::string getServiceNameFallback() {
   return "unknown";
 }
 
-// TODO: implement reverse conversion (shim) and verify with tests.
 flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
     const Istio::Common::WorkloadMetadataObject& obj) {
   flatbuffers::FlatBufferBuilder fbb;
@@ -629,6 +628,45 @@ flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
   auto data = node.Finish();
   fbb.Finish(data);
   return fbb.Release();
+}
+
+Istio::Common::WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
+    const FlatNode& node) {
+  const absl::string_view instance = GetFromFbAbslStringView(node.name());
+  const absl::string_view cluster = GetFromFbAbslStringView(node.cluster_id());
+  const absl::string_view workload =
+      GetFromFbAbslStringView(node.workload_name());
+  const absl::string_view namespace_name =
+      GetFromFbAbslStringView(node.namespace_());
+  const auto* labels = node.labels();
+
+  const auto* name_iter =
+      labels->LookupByKey("service.istio.io/canonical-name");
+  const auto* name = name_iter ? name_iter->value() : nullptr;
+  const absl::string_view canonical_name = GetFromFbAbslStringView(name);
+
+  const auto* revision_iter =
+      labels->LookupByKey("service.istio.io/canonical-revision");
+  const auto* revision = revision_iter ? revision_iter->value() : nullptr;
+  const absl::string_view canonical_revision =
+      GetFromFbAbslStringView(revision);
+
+  const auto* app_iter = labels->LookupByKey("app");
+  const auto* app = app_iter ? app_iter->value() : nullptr;
+  const absl::string_view app_name = GetFromFbAbslStringView(app);
+
+  const auto* version_iter = labels->LookupByKey("version");
+  const auto* version = version_iter ? version_iter->value() : nullptr;
+  const absl::string_view app_version = GetFromFbAbslStringView(version);
+
+  // TODO: lossy translation for workload type, containers, ips, mesh_id.
+  Istio::Common::WorkloadType workload_type =
+      Istio::Common::WorkloadType::KUBERNETES_POD;
+  const std::vector<std::string> empty;
+
+  return Istio::Common::WorkloadMetadataObject(
+      instance, cluster, namespace_name, workload, canonical_name,
+      canonical_revision, app_name, app_version, workload_type, empty, empty);
 }
 
 }  // namespace Common
