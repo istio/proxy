@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 #include "absl/types/optional.h"
 #include "envoy/common/hashable.h"

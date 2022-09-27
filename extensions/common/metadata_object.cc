@@ -14,7 +14,6 @@
 
 #include "extensions/common/metadata_object.h"
 
-#include "absl/strings/str_join.h"
 #include "source/common/common/hash.h"
 
 namespace Istio {
@@ -73,10 +72,6 @@ WorkloadMetadataObject WorkloadMetadataObject::fromBaggage(
                                 app_version, workload_type, empty, empty);
 }
 
-constexpr absl::string_view kBaggageFormat =
-    "k8s.cluster.name=%s,k8s.namespace.name=%s,k8s.%s.name=%s,service.name=%"
-    "s,service.version=%s,app.name=%s,app.version=%s";
-
 std::string WorkloadMetadataObject::baggage() const {
   absl::string_view wlType = "pod";
   switch (workload_type_) {
@@ -95,9 +90,12 @@ std::string WorkloadMetadataObject::baggage() const {
     default:
       wlType = "pod";
   }
-  return absl::StrFormat(kBaggageFormat, cluster_name_, namespace_name_, wlType,
-                         workload_name_, canonical_name_, canonical_revision_,
-                         app_name_, app_version_);
+  return absl::StrCat("k8s.cluster.name=", cluster_name_,
+                      ",k8s.namespace.name=", namespace_name_, ",k8s.", wlType,
+                      ".name=", workload_name_,
+                      ",service.name=", canonical_name_,
+                      ",service.version=", canonical_revision_,
+                      ",app.name=", app_name_, ",app.version=", app_version_);
 }
 
 absl::optional<uint64_t> WorkloadMetadataObject::hash() const {
