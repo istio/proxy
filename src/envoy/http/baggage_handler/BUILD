@@ -34,7 +34,7 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//extensions/common:context",
-        "//src/envoy/common:metadata_object_lib",
+        "//extensions/common:metadata_object_lib",
         "//src/envoy/http/baggage_handler/config:baggage_handler_cc_proto",
         "@envoy//envoy/server:filter_config_interface",
         "@envoy//source/common/http:header_utility_lib",

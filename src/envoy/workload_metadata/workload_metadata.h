@@ -18,12 +18,12 @@
 #include "envoy/network/filter.h"
 #include "envoy/stats/scope.h"
 #include "envoy/stats/stats_macros.h"
+#include "extensions/common/metadata_object.h"
 #include "source/common/common/logger.h"
-#include "src/envoy/common/metadata_object.h"
 #include "src/envoy/workload_metadata/config/workload_metadata.pb.h"
 
 using namespace istio::telemetry::workloadmetadata;
-using namespace Envoy::Common;
+using Istio::Common::WorkloadMetadataObject;
 
 namespace Envoy {
 namespace WorkloadMetadata {

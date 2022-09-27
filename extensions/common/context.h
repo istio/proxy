@@ -17,6 +17,7 @@
 
 #include <set>
 
+#include "extensions/common/metadata_object.h"
 #include "extensions/common/node_info_generated.h"
 #include "flatbuffers/flatbuffers.h"
 
@@ -306,6 +307,10 @@ static inline std::string_view GetFromFbStringView(
 bool sanitizeBytes(std::string* buf);
 
 std::string getServiceNameFallback();
+
+// Convert metadata object to flatbuffer
+flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
+    const Istio::Common::WorkloadMetadataObject& obj);
 
 }  // namespace Common
 }  // namespace Wasm

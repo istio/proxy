@@ -593,5 +593,43 @@ std::string getServiceNameFallback() {
   return "unknown";
 }
 
+// TODO: implement reverse conversion (shim) and verify with tests.
+flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
+    const Istio::Common::WorkloadMetadataObject& obj) {
+  flatbuffers::FlatBufferBuilder fbb;
+
+  flatbuffers::Offset<flatbuffers::String> name, cluster, namespace_,
+      workload_name;
+  std::vector<flatbuffers::Offset<Wasm::Common::KeyVal>> labels;
+
+  name = fbb.CreateString(toStdStringView(obj.instance_name_));
+  namespace_ = fbb.CreateString(toStdStringView(obj.namespace_name_));
+  cluster = fbb.CreateString(toStdStringView(obj.cluster_name_));
+  workload_name = fbb.CreateString(toStdStringView(obj.workload_name_));
+  labels.push_back(Wasm::Common::CreateKeyVal(
+      fbb, fbb.CreateString("service.istio.io/canonical-name"),
+      fbb.CreateString(toStdStringView(obj.canonical_name_))));
+  labels.push_back(Wasm::Common::CreateKeyVal(
+      fbb, fbb.CreateString("service.istio.io/canonical-revision"),
+      fbb.CreateString(toStdStringView(obj.canonical_revision_))));
+  labels.push_back(Wasm::Common::CreateKeyVal(
+      fbb, fbb.CreateString("app"),
+      fbb.CreateString(toStdStringView(obj.app_name_))));
+  labels.push_back(Wasm::Common::CreateKeyVal(
+      fbb, fbb.CreateString("version"),
+      fbb.CreateString(toStdStringView(obj.app_version_))));
+  // TODO: containers, ips, mesh id ?
+  auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
+  Wasm::Common::FlatNodeBuilder node(fbb);
+  node.add_name(name);
+  node.add_cluster_id(cluster);
+  node.add_namespace_(namespace_);
+  node.add_workload_name(workload_name);
+  node.add_labels(labels_offset);
+  auto data = node.Finish();
+  fbb.Finish(data);
+  return fbb.Release();
+}
+
 }  // namespace Common
 }  // namespace Wasm

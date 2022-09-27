@@ -19,7 +19,8 @@
 #include "envoy/stream_info/filter_state.h"
 #include "source/common/router/string_accessor_impl.h"
 
-using namespace Envoy::Common;
+using Istio::Common::WorkloadMetadataObject;
+using Istio::Common::WorkloadType;
 
 namespace Envoy {
 namespace WorkloadMetadata {
@@ -57,11 +58,11 @@ Config::Config(Stats::Scope& scope, const std::string& cluster_name,
     WorkloadMetadataObject workload(
         resource.instance_name(), cluster_name_, resource.namespace_name(),
         resource.workload_name(), resource.canonical_name(),
-        resource.canonical_revision(), workload_type, ips, containers);
+        resource.canonical_revision(), "", "", workload_type, ips, containers);
 
     for (const auto& ip_addr : resource.ip_addresses()) {
       workloads_by_ips_[ip_addr] =
-          std::make_shared<Common::WorkloadMetadataObject>(workload);
+          std::make_shared<WorkloadMetadataObject>(workload);
     }
   }
 }
@@ -94,7 +95,7 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
   }
 
   ENVOY_LOG(trace, "workload metadata: found metadata for {}",
-            metadata->workloadName());
+            metadata->workload_name_);
 
   // Setting a StringAccessor filter state with the baggage string which can be
   // assigned to custom header with PER_REQUEST_STATE.
@@ -105,7 +106,7 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
       std::make_shared<Envoy::Router::StringAccessorImpl>(metadata->baggage());
   StreamInfo::FilterState& filter_state = cb.filterState();
   filter_state.setData(
-      WorkloadMetadataObject::kSourceMetadataBaggageKey, accessor,
+      Istio::Common::kSourceMetadataBaggageKey, accessor,
       StreamInfo::FilterState::StateType::ReadOnly,
       StreamInfo::FilterState::LifeSpan::Request,
       StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);

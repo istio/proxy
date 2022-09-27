@@ -34,7 +34,7 @@ envoy_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//extensions/common:context",
-        "//src/envoy/common:metadata_object_lib",
+        "//extensions/common:metadata_object_lib",
         "//src/envoy/metadata_to_peer_node/config:metadata_to_peer_node_cc_proto",
         "@envoy//envoy/network:filter_interface",
         "@envoy//envoy/network:listen_socket_interface",
