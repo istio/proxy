@@ -273,13 +273,21 @@ class IstioStatsFilter : public Http::PassThroughFilter {
                          context_.canonical_name_});
         tags_.push_back({context_.destination_canonical_revision_,
                          context_.canonical_revision_});
-        // Specific to reporter:
+
         const auto& info = decoder_callbacks_->streamInfo();
+        const auto ssl_info = info.downstreamAddressProvider().sslConnection();
+        tags_.push_back(
+            {context_.source_principal_,
+             ssl_info ? config_->resolve(absl::StrJoin(ssl_info->uriSanPeerCertificate(), ","))
+                      : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_principal_,
+             ssl_info ? config_->resolve(absl::StrJoin(ssl_info->uriSanLocalCertificate(), ","))
+                      : context_.unknown_});
+
+        // Specific to reporter:
         const auto mtls =
-            info.downstreamAddressProvider().sslConnection() != nullptr &&
-            info.downstreamAddressProvider()
-                .sslConnection()
-                ->peerCertificatePresented();
+            ssl_info != nullptr && ssl_info->peerCertificatePresented();
         tags_.push_back({context_.connection_security_policy_,
                          mtls ? context_.mtls_ : context_.none_});
         break;
@@ -309,7 +317,6 @@ class IstioStatsFilter : public Http::PassThroughFilter {
              peer ? config_->resolve(peer->clusterName()) : context_.unknown_});
         break;
     }
-    // principal
     // app, version
     return Http::FilterHeadersStatus::Continue;
   }
@@ -324,6 +331,26 @@ class IstioStatsFilter : public Http::PassThroughFilter {
     tags_.push_back(
         {context_.response_flags_,
          config_->resolve(StreamInfo::ResponseFlagUtils::toShortString(info))});
+
+    // Complete info from upstream connection if missing.
+    switch (config_->reporter()) {
+      case Reporter::ClientSidecar: {
+        const auto upstream_info = info.upstreamInfo();
+        const Ssl::ConnectionInfoConstSharedPtr ssl_info =
+            upstream_info ? upstream_info->upstreamSslConnection() : nullptr;
+        tags_.push_back(
+            {context_.source_principal_,
+             ssl_info ? config_->resolve(absl::StrJoin(ssl_info->uriSanLocalCertificate(), ","))
+                      : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_principal_,
+             ssl_info ? config_->resolve(absl::StrJoin(ssl_info->uriSanPeerCertificate(), ","))
+                      : context_.unknown_});
+        break;
+      }
+      default:
+        break;
+    }
 
     Stats::Utility::counterFromElements(
         config_->scope_, {context_.stat_namespace_, context_.requests_total_},
