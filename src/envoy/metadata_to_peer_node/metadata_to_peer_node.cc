@@ -19,6 +19,7 @@
 #include "envoy/stats/scope.h"
 #include "envoy/stream_info/filter_state.h"
 #include "extensions/common/context.h"
+#include "extensions/common/metadata_object.h"
 #include "extensions/common/util.h"
 
 using Envoy::Extensions::Filters::Common::Expr::CelState;
@@ -50,7 +51,7 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
       std::move(peer_id_state), StreamInfo::FilterState::StateType::ReadOnly,
       StreamInfo::FilterState::LifeSpan::Connection);
 
-  const auto fb = Wasm::Common::convertWorkloadMetadataToFlatNode(*meta_obj);
+  const auto fb = Istio::Common::convertWorkloadMetadataToFlatNode(*meta_obj);
   auto peer_state = std::make_unique<CelState>(Config::nodeInfoPrototype());
   peer_state->setValue(
       absl::string_view(reinterpret_cast<const char*>(fb.data()), fb.size()));

@@ -19,6 +19,7 @@
 #include "envoy/common/hashable.h"
 #include "envoy/ssl/connection.h"
 #include "envoy/stream_info/filter_state.h"
+#include "extensions/common/node_info_generated.h"
 
 namespace Istio {
 namespace Common {
@@ -82,6 +83,14 @@ struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
   const std::vector<std::string> ip_addresses_;
   const std::vector<std::string> containers_;
 };
+
+// Convert metadata object to flatbuffer.
+flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
+    const Istio::Common::WorkloadMetadataObject& obj);
+
+// Convert flatbuffer to metadata object.
+Istio::Common::WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
+    const Wasm::Common::FlatNode& node);
 
 }  // namespace Common
 }  // namespace Istio

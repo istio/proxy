@@ -20,12 +20,9 @@
 namespace Istio {
 namespace Common {
 
-class WorkloadMetadataObjectTest : public testing::Test {
- public:
-  WorkloadMetadataObjectTest() { ENVOY_LOG_MISC(info, "test"); }
-};
+using ::testing::NiceMock;
 
-TEST_F(WorkloadMetadataObjectTest, Hash) {
+TEST(WorkloadMetadataObjectTest, Hash) {
   WorkloadMetadataObject obj1("foo-pod-12345", "my-cluster", "default", "foo",
                               "foo", "latest", "foo-app", "v1",
                               WorkloadType::KUBERNETES_DEPLOYMENT, {}, {});
@@ -36,7 +33,7 @@ TEST_F(WorkloadMetadataObjectTest, Hash) {
   EXPECT_EQ(obj1.hash().value(), obj2.hash().value());
 }
 
-TEST_F(WorkloadMetadataObjectTest, Baggage) {
+TEST(WorkloadMetadataObjectTest, Baggage) {
   WorkloadMetadataObject deploy(
       "pod-foo-1234", "my-cluster", "default", "foo", "foo-service", "v1alpha3",
       "foo-app", "v1", WorkloadType::KUBERNETES_DEPLOYMENT,
@@ -82,9 +79,7 @@ TEST_F(WorkloadMetadataObjectTest, Baggage) {
                          "app.name=foo-app,app.version=v1"));
 }
 
-using ::testing::NiceMock;
-
-TEST_F(WorkloadMetadataObjectTest, FromBaggage) {
+TEST(WorkloadMetadataObjectTest, FromBaggage) {
   {
     auto obj = WorkloadMetadataObject::fromBaggage(
         absl::StrCat("k8s.cluster.name=my-cluster,k8s.namespace.name=default,",
@@ -160,6 +155,20 @@ TEST_F(WorkloadMetadataObjectTest, FromBaggage) {
     EXPECT_EQ(obj.app_name_, "foo-app");
     EXPECT_EQ(obj.app_version_, "v1");
   }
+}
+
+TEST(WorkloadMetadataObjectTest, WorkloadMetadataObjectConverson) {
+  const std::string baggage =
+      "k8s.cluster.name=my-cluster,"
+      "k8s.namespace.name=default,k8s.pod.name=foo,"
+      "service.name=foo-service,service.version=v1alpha3,"
+      "app.name=foo-app,app.version=v1";
+  auto obj = Istio::Common::WorkloadMetadataObject::fromBaggage(baggage);
+  auto buffer = convertWorkloadMetadataToFlatNode(obj);
+  const auto& node =
+      *flatbuffers::GetRoot<Wasm::Common::FlatNode>(buffer.data());
+  auto obj2 = convertFlatNodeToWorkloadMetadata(node);
+  EXPECT_EQ(obj2.baggage(), baggage);
 }
 
 }  // namespace Common

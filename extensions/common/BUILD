@@ -49,7 +49,6 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        ":metadata_object_lib",
         ":node_info_fb_cc",
         ":util",
         "@proxy_wasm_cpp_host//:null_lib",
@@ -190,6 +189,7 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
+        ":node_info_fb_cc",
         "@envoy//envoy/network:filter_interface",
         "@envoy//source/exe:envoy_common_lib",
     ],
@@ -202,15 +202,5 @@ envoy_cc_test(
     deps = [
         ":metadata_object_lib",
         "@envoy//test/mocks/ssl:ssl_mocks",
-    ],
-)
-
-envoy_cc_test(
-    name = "context_test",
-    size = "small",
-    srcs = ["context_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":context",
     ],
 )
