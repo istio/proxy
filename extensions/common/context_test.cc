@@ -21,10 +21,11 @@ namespace Common {
 namespace {
 
 TEST(Context, WorkloadMetadataObjectConverson) {
-  const std::string baggage = "k8s.cluster.name=my-cluster,"
-                         "k8s.namespace.name=default,k8s.pod.name=foo,"
-                         "service.name=foo-service,service.version=v1alpha3,"
-                         "app.name=foo-app,app.version=v1";
+  const std::string baggage =
+      "k8s.cluster.name=my-cluster,"
+      "k8s.namespace.name=default,k8s.pod.name=foo,"
+      "service.name=foo-service,service.version=v1alpha3,"
+      "app.name=foo-app,app.version=v1";
   auto obj = Istio::Common::WorkloadMetadataObject::fromBaggage(baggage);
   auto buffer = convertWorkloadMetadataToFlatNode(obj);
   const auto& node =
