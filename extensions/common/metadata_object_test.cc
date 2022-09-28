@@ -79,19 +79,27 @@ TEST(WorkloadMetadataObjectTest, Baggage) {
                          "app.name=foo-app,app.version=v1"));
 }
 
+void checkFlatNodeConversion(const WorkloadMetadataObject& obj) {
+  auto buffer = convertWorkloadMetadataToFlatNode(obj);
+  const auto& node =
+      *flatbuffers::GetRoot<Wasm::Common::FlatNode>(buffer.data());
+  auto obj2 = convertFlatNodeToWorkloadMetadata(node);
+  EXPECT_EQ(obj2.baggage(), obj.baggage());
+}
+
 TEST(WorkloadMetadataObjectTest, FromBaggage) {
   {
     auto obj = WorkloadMetadataObject::fromBaggage(
         absl::StrCat("k8s.cluster.name=my-cluster,k8s.namespace.name=default,",
                      "k8s.deployment.name=foo,service.name=foo-service,",
                      "service.version=v1alpha3"));
-
     EXPECT_EQ(obj.canonical_name_, "foo-service");
     EXPECT_EQ(obj.canonical_revision_, "v1alpha3");
     EXPECT_EQ(obj.workload_type_, WorkloadType::KUBERNETES_DEPLOYMENT);
     EXPECT_EQ(obj.workload_name_, "foo");
     EXPECT_EQ(obj.namespace_name_, "default");
     EXPECT_EQ(obj.cluster_name_, "my-cluster");
+    checkFlatNodeConversion(obj);
   }
 
   {
@@ -107,6 +115,7 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
     EXPECT_EQ(obj.instance_name_, "foo-pod-435");
     EXPECT_EQ(obj.namespace_name_, "test");
     EXPECT_EQ(obj.cluster_name_, "my-cluster");
+    checkFlatNodeConversion(obj);
   }
 
   {
@@ -122,6 +131,7 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
     EXPECT_EQ(obj.instance_name_, "foo-job-435");
     EXPECT_EQ(obj.namespace_name_, "test");
     EXPECT_EQ(obj.cluster_name_, "my-cluster");
+    checkFlatNodeConversion(obj);
   }
 
   {
@@ -138,6 +148,7 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
     EXPECT_EQ(obj.cluster_name_, "my-cluster");
     EXPECT_EQ(obj.app_name_, "");
     EXPECT_EQ(obj.app_version_, "");
+    checkFlatNodeConversion(obj);
   }
 
   {
@@ -154,21 +165,8 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
     EXPECT_EQ(obj.cluster_name_, "");
     EXPECT_EQ(obj.app_name_, "foo-app");
     EXPECT_EQ(obj.app_version_, "v1");
+    checkFlatNodeConversion(obj);
   }
-}
-
-TEST(WorkloadMetadataObjectTest, WorkloadMetadataObjectConverson) {
-  const std::string baggage =
-      "k8s.cluster.name=my-cluster,"
-      "k8s.namespace.name=default,k8s.pod.name=foo,"
-      "service.name=foo-service,service.version=v1alpha3,"
-      "app.name=foo-app,app.version=v1";
-  auto obj = Istio::Common::WorkloadMetadataObject::fromBaggage(baggage);
-  auto buffer = convertWorkloadMetadataToFlatNode(obj);
-  const auto& node =
-      *flatbuffers::GetRoot<Wasm::Common::FlatNode>(buffer.data());
-  auto obj2 = convertFlatNodeToWorkloadMetadata(node);
-  EXPECT_EQ(obj2.baggage(), baggage);
 }
 
 }  // namespace Common

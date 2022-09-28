@@ -139,6 +139,7 @@ envoy_extension_cc_benchmark_binary(
     ],
     repository = "@envoy",
     deps = [
+        ":metadata_object_lib",
         ":node_info_fb_cc",
         ":proto_util",
         "@envoy//source/common/stream_info:filter_state_lib",

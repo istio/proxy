@@ -121,13 +121,35 @@ flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
   flatbuffers::FlatBufferBuilder fbb;
 
   flatbuffers::Offset<flatbuffers::String> name, cluster, namespace_,
-      workload_name;
+      workload_name, owner;
   std::vector<flatbuffers::Offset<Wasm::Common::KeyVal>> labels;
 
   name = fbb.CreateString(toStdStringView(obj.instance_name_));
   namespace_ = fbb.CreateString(toStdStringView(obj.namespace_name_));
   cluster = fbb.CreateString(toStdStringView(obj.cluster_name_));
   workload_name = fbb.CreateString(toStdStringView(obj.workload_name_));
+
+  static constexpr absl::string_view owner_prefix =
+      "kubernetes://apis/apps/v1/namespaces/";
+  switch (obj.workload_type_) {
+    case Istio::Common::WorkloadType::KUBERNETES_DEPLOYMENT:
+      owner =
+          fbb.CreateString(absl::StrCat(owner_prefix, obj.namespace_name_,
+                                        "/deployments/", obj.workload_name_));
+      break;
+    case Istio::Common::WorkloadType::KUBERNETES_JOB:
+      owner = fbb.CreateString(absl::StrCat(owner_prefix, obj.namespace_name_,
+                                            "/jobs/", obj.workload_name_));
+      break;
+    case Istio::Common::WorkloadType::KUBERNETES_CRONJOB:
+      owner = fbb.CreateString(absl::StrCat(owner_prefix, obj.namespace_name_,
+                                            "/cronjobs/", obj.workload_name_));
+      break;
+    case Istio::Common::WorkloadType::KUBERNETES_POD:
+      owner = fbb.CreateString(absl::StrCat(owner_prefix, obj.namespace_name_,
+                                            "/pods/", obj.workload_name_));
+      break;
+  }
   labels.push_back(Wasm::Common::CreateKeyVal(
       fbb, fbb.CreateString("service.istio.io/canonical-name"),
       fbb.CreateString(toStdStringView(obj.canonical_name_))));
@@ -147,6 +169,7 @@ flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
   node.add_cluster_id(cluster);
   node.add_namespace_(namespace_);
   node.add_workload_name(workload_name);
+  node.add_owner(owner);
   node.add_labels(labels_offset);
   auto data = node.Finish();
   fbb.Finish(data);
@@ -179,9 +202,20 @@ Istio::Common::WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
   const auto* version = version_iter ? version_iter->value() : nullptr;
   const absl::string_view app_version = toAbslStringView(version);
 
-  // TODO: lossy translation for workload type, containers, ips, mesh_id.
   Istio::Common::WorkloadType workload_type =
       Istio::Common::WorkloadType::KUBERNETES_POD;
+  // Strip "/workload_name" and check for workload type.
+  absl::string_view owner = toAbslStringView(node.owner());
+  owner.remove_suffix(workload.size() + 1);
+  if (absl::EndsWith(owner, "/deployments")) {
+    workload_type = Istio::Common::WorkloadType::KUBERNETES_DEPLOYMENT;
+  } else if (absl::EndsWith(owner, "/cronjobs")) {
+    workload_type = Istio::Common::WorkloadType::KUBERNETES_CRONJOB;
+  } else if (absl::EndsWith(owner, "/jobs")) {
+    workload_type = Istio::Common::WorkloadType::KUBERNETES_JOB;
+  } else if (absl::EndsWith(owner, "/pods")) {
+    workload_type = Istio::Common::WorkloadType::KUBERNETES_POD;
+  }
   const std::vector<std::string> empty;
 
   return Istio::Common::WorkloadMetadataObject(
