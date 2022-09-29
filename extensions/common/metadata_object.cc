@@ -20,6 +20,28 @@
 namespace Istio {
 namespace Common {
 
+static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_BAGGAGE_TOKENS =
+    {
+        {NamespaceNameToken, BaggageToken::NamespaceName},
+        {ClusterNameToken, BaggageToken::ClusterName},
+        {ServiceNameToken, BaggageToken::ServiceName},
+        {ServiceVersionToken, BaggageToken::ServiceVersion},
+        {PodNameToken, BaggageToken::PodName},
+        {DeploymentNameToken, BaggageToken::DeploymentName},
+        {JobNameToken, BaggageToken::JobName},
+        {CronJobNameToken, BaggageToken::CronJobName},
+        {AppNameToken, BaggageToken::AppName},
+        {AppVersionToken, BaggageToken::AppVersion},
+};
+
+static absl::flat_hash_map<absl::string_view, WorkloadType>
+    ALL_WORKLOAD_TOKENS = {
+        {PodSuffix, WorkloadType::Pod},
+        {DeploymentSuffix, WorkloadType::Deployment},
+        {JobSuffix, WorkloadType::Job},
+        {CronJobSuffix, WorkloadType::CronJob},
+};
+
 WorkloadMetadataObject WorkloadMetadataObject::fromBaggage(
     absl::string_view baggage_header_value) {
   // TODO: check for well-formed-ness of the baggage string: duplication,
@@ -32,68 +54,81 @@ WorkloadMetadataObject WorkloadMetadataObject::fromBaggage(
   absl::string_view canonical_revision;
   absl::string_view app_name;
   absl::string_view app_version;
-  WorkloadType workload_type = WorkloadType::KUBERNETES_POD;
-  const std::vector<std::string> empty;
+  WorkloadType workload_type = WorkloadType::Pod;
 
   std::vector<absl::string_view> properties =
       absl::StrSplit(baggage_header_value, ',');
   for (absl::string_view property : properties) {
     std::pair<absl::string_view, absl::string_view> parts =
         absl::StrSplit(property, "=");
-    if (parts.first == "k8s.namespace.name") {
-      namespace_name = parts.second;
-    } else if (parts.first == "k8s.cluster.name") {
-      cluster = parts.second;
-    } else if (parts.first == "service.name") {
-      canonical_name = parts.second;
-    } else if (parts.first == "service.version") {
-      canonical_revision = parts.second;
-    } else if (parts.first == "k8s.pod.name") {
-      workload_type = WorkloadType::KUBERNETES_POD;
-      instance = parts.second;
-      workload = parts.second;
-    } else if (parts.first == "k8s.deployment.name") {
-      workload_type = WorkloadType::KUBERNETES_DEPLOYMENT;
-      workload = parts.second;
-    } else if (parts.first == "k8s.job.name") {
-      workload_type = WorkloadType::KUBERNETES_JOB;
-      instance = parts.second;
-      workload = parts.second;
-    } else if (parts.first == "k8s.cronjob.name") {
-      workload_type = WorkloadType::KUBERNETES_CRONJOB;
-      workload = parts.second;
-    } else if (parts.first == "app.name") {
-      app_name = parts.second;
-    } else if (parts.first == "app.version") {
-      app_version = parts.second;
+    const auto it = ALL_BAGGAGE_TOKENS.find(parts.first);
+    if (it != ALL_BAGGAGE_TOKENS.end()) {
+      switch (it->second) {
+        case BaggageToken::NamespaceName:
+          namespace_name = parts.second;
+          break;
+        case BaggageToken::ClusterName:
+          cluster = parts.second;
+          break;
+        case BaggageToken::ServiceName:
+          canonical_name = parts.second;
+          break;
+        case BaggageToken::ServiceVersion:
+          canonical_revision = parts.second;
+          break;
+        case BaggageToken::PodName:
+          workload_type = WorkloadType::Pod;
+          instance = parts.second;
+          workload = parts.second;
+          break;
+        case BaggageToken::DeploymentName:
+          workload_type = WorkloadType::Deployment;
+          workload = parts.second;
+          break;
+        case BaggageToken::JobName:
+          workload_type = WorkloadType::Job;
+          instance = parts.second;
+          workload = parts.second;
+          break;
+        case BaggageToken::CronJobName:
+          workload_type = WorkloadType::CronJob;
+          workload = parts.second;
+          break;
+        case BaggageToken::AppName:
+          app_name = parts.second;
+          break;
+        case BaggageToken::AppVersion:
+          app_version = parts.second;
+          break;
+      }
     }
   }
   return WorkloadMetadataObject(instance, cluster, namespace_name, workload,
                                 canonical_name, canonical_revision, app_name,
-                                app_version, workload_type, empty, empty);
+                                app_version, workload_type);
 }
 
 std::string WorkloadMetadataObject::baggage() const {
-  absl::string_view wlType = "pod";
+  absl::string_view workload_type = PodSuffix;
   switch (workload_type_) {
-    case WorkloadType::KUBERNETES_DEPLOYMENT:
-      wlType = "deployment";
+    case WorkloadType::Deployment:
+      workload_type = DeploymentSuffix;
       break;
-    case WorkloadType::KUBERNETES_CRONJOB:
-      wlType = "cronjob";
+    case WorkloadType::CronJob:
+      workload_type = CronJobSuffix;
       break;
-    case WorkloadType::KUBERNETES_JOB:
-      wlType = "job";
+    case WorkloadType::Job:
+      workload_type = JobSuffix;
       break;
-    case WorkloadType::KUBERNETES_POD:
-      wlType = "pod";
+    case WorkloadType::Pod:
+      workload_type = PodSuffix;
       break;
     default:
-      wlType = "pod";
+      break;
   }
   return absl::StrCat("k8s.cluster.name=", cluster_name_,
-                      ",k8s.namespace.name=", namespace_name_, ",k8s.", wlType,
-                      ".name=", workload_name_,
+                      ",k8s.namespace.name=", namespace_name_, ",k8s.",
+                      workload_type, ".name=", workload_name_,
                       ",service.name=", canonical_name_,
                       ",service.version=", canonical_revision_,
                       ",app.name=", app_name_, ",app.version=", app_version_);
@@ -129,27 +164,29 @@ flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
   cluster = fbb.CreateString(toStdStringView(obj.cluster_name_));
   workload_name = fbb.CreateString(toStdStringView(obj.workload_name_));
 
-  static constexpr absl::string_view owner_prefix =
-      "kubernetes://apis/apps/v1/namespaces/";
   switch (obj.workload_type_) {
-    case Istio::Common::WorkloadType::KUBERNETES_DEPLOYMENT:
+    case Istio::Common::WorkloadType::Deployment:
+      owner = fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_,
+                                            "/", DeploymentSuffix, "s/",
+                                            obj.workload_name_));
+      break;
+    case Istio::Common::WorkloadType::Job:
       owner =
-          fbb.CreateString(absl::StrCat(owner_prefix, obj.namespace_name_,
-                                        "/deployments/", obj.workload_name_));
+          fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_, "/",
+                                        JobSuffix, "s/", obj.workload_name_));
       break;
-    case Istio::Common::WorkloadType::KUBERNETES_JOB:
-      owner = fbb.CreateString(absl::StrCat(owner_prefix, obj.namespace_name_,
-                                            "/jobs/", obj.workload_name_));
+    case Istio::Common::WorkloadType::CronJob:
+      owner = fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_,
+                                            "/", CronJobSuffix, "s/",
+                                            obj.workload_name_));
       break;
-    case Istio::Common::WorkloadType::KUBERNETES_CRONJOB:
-      owner = fbb.CreateString(absl::StrCat(owner_prefix, obj.namespace_name_,
-                                            "/cronjobs/", obj.workload_name_));
-      break;
-    case Istio::Common::WorkloadType::KUBERNETES_POD:
-      owner = fbb.CreateString(absl::StrCat(owner_prefix, obj.namespace_name_,
-                                            "/pods/", obj.workload_name_));
+    case Istio::Common::WorkloadType::Pod:
+      owner =
+          fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_, "/",
+                                        PodSuffix, "s/", obj.workload_name_));
       break;
   }
+
   labels.push_back(Wasm::Common::CreateKeyVal(
       fbb, fbb.CreateString("service.istio.io/canonical-name"),
       fbb.CreateString(toStdStringView(obj.canonical_name_))));
@@ -162,7 +199,7 @@ flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
   labels.push_back(Wasm::Common::CreateKeyVal(
       fbb, fbb.CreateString("version"),
       fbb.CreateString(toStdStringView(obj.app_version_))));
-  // TODO: containers, ips, mesh id ?
+
   auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
   Wasm::Common::FlatNodeBuilder node(fbb);
   node.add_name(name);
@@ -202,25 +239,36 @@ Istio::Common::WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
   const auto* version = version_iter ? version_iter->value() : nullptr;
   const absl::string_view app_version = toAbslStringView(version);
 
-  Istio::Common::WorkloadType workload_type =
-      Istio::Common::WorkloadType::KUBERNETES_POD;
-  // Strip "/workload_name" and check for workload type.
+  Istio::Common::WorkloadType workload_type = Istio::Common::WorkloadType::Pod;
+  // Strip "s/workload_name" and check for workload type.
   absl::string_view owner = toAbslStringView(node.owner());
-  owner.remove_suffix(workload.size() + 1);
-  if (absl::EndsWith(owner, "/deployments")) {
-    workload_type = Istio::Common::WorkloadType::KUBERNETES_DEPLOYMENT;
-  } else if (absl::EndsWith(owner, "/cronjobs")) {
-    workload_type = Istio::Common::WorkloadType::KUBERNETES_CRONJOB;
-  } else if (absl::EndsWith(owner, "/jobs")) {
-    workload_type = Istio::Common::WorkloadType::KUBERNETES_JOB;
-  } else if (absl::EndsWith(owner, "/pods")) {
-    workload_type = Istio::Common::WorkloadType::KUBERNETES_POD;
+  owner.remove_suffix(workload.size() + 2);
+  size_t last = owner.rfind('/');
+  if (last != absl::string_view::npos) {
+    const auto it = ALL_WORKLOAD_TOKENS.find(owner.substr(last + 1));
+    if (it != ALL_WORKLOAD_TOKENS.end()) {
+      switch (it->second) {
+        case WorkloadType::Deployment:
+          workload_type = Istio::Common::WorkloadType::Deployment;
+          break;
+        case WorkloadType::CronJob:
+          workload_type = Istio::Common::WorkloadType::CronJob;
+          break;
+        case WorkloadType::Job:
+          workload_type = Istio::Common::WorkloadType::Job;
+          break;
+        case WorkloadType::Pod:
+          workload_type = Istio::Common::WorkloadType::Pod;
+          break;
+        default:
+          break;
+      }
+    }
   }
-  const std::vector<std::string> empty;
 
   return Istio::Common::WorkloadMetadataObject(
       instance, cluster, namespace_name, workload, canonical_name,
-      canonical_revision, app_name, app_version, workload_type, empty, empty);
+      canonical_revision, app_name, app_version, workload_type);
 }
 
 }  // namespace Common

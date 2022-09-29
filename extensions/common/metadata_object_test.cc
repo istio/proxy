@@ -25,34 +25,30 @@ using ::testing::NiceMock;
 TEST(WorkloadMetadataObjectTest, Hash) {
   WorkloadMetadataObject obj1("foo-pod-12345", "my-cluster", "default", "foo",
                               "foo", "latest", "foo-app", "v1",
-                              WorkloadType::KUBERNETES_DEPLOYMENT, {}, {});
+                              WorkloadType::Deployment);
   WorkloadMetadataObject obj2("foo-pod-12345", "my-cluster", "default", "bar",
                               "baz", "first", "foo-app", "v1",
-                              WorkloadType::KUBERNETES_JOB, {}, {});
+                              WorkloadType::Job);
 
   EXPECT_EQ(obj1.hash().value(), obj2.hash().value());
 }
 
 TEST(WorkloadMetadataObjectTest, Baggage) {
-  WorkloadMetadataObject deploy(
-      "pod-foo-1234", "my-cluster", "default", "foo", "foo-service", "v1alpha3",
-      "foo-app", "v1", WorkloadType::KUBERNETES_DEPLOYMENT,
-      {"10.10.10.1", "192.168.1.1"}, {"app", "storage"});
+  WorkloadMetadataObject deploy("pod-foo-1234", "my-cluster", "default", "foo",
+                                "foo-service", "v1alpha3", "foo-app", "v1",
+                                WorkloadType::Deployment);
 
   WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo",
                              "foo-service", "v1alpha3", "foo-app", "v1",
-                             WorkloadType::KUBERNETES_POD,
-                             {"10.10.10.1", "192.168.1.1"}, {"app", "storage"});
+                             WorkloadType::Pod);
 
-  WorkloadMetadataObject cronjob(
-      "pod-foo-1234", "my-cluster", "default", "foo", "foo-service", "v1alpha3",
-      "foo-app", "v1", WorkloadType::KUBERNETES_CRONJOB,
-      {"10.10.10.1", "192.168.1.1"}, {"app", "storage"});
+  WorkloadMetadataObject cronjob("pod-foo-1234", "my-cluster", "default", "foo",
+                                 "foo-service", "v1alpha3", "foo-app", "v1",
+                                 WorkloadType::CronJob);
 
   WorkloadMetadataObject job("pod-foo-1234", "my-cluster", "default", "foo",
                              "foo-service", "v1alpha3", "foo-app", "v1",
-                             WorkloadType::KUBERNETES_JOB,
-                             {"10.10.10.1", "192.168.1.1"}, {"app", "storage"});
+                             WorkloadType::Job);
 
   EXPECT_EQ(deploy.baggage(),
             absl::StrCat("k8s.cluster.name=my-cluster,",
@@ -95,7 +91,7 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
                      "service.version=v1alpha3"));
     EXPECT_EQ(obj.canonical_name_, "foo-service");
     EXPECT_EQ(obj.canonical_revision_, "v1alpha3");
-    EXPECT_EQ(obj.workload_type_, WorkloadType::KUBERNETES_DEPLOYMENT);
+    EXPECT_EQ(obj.workload_type_, WorkloadType::Deployment);
     EXPECT_EQ(obj.workload_name_, "foo");
     EXPECT_EQ(obj.namespace_name_, "default");
     EXPECT_EQ(obj.cluster_name_, "my-cluster");
@@ -110,7 +106,7 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
 
     EXPECT_EQ(obj.canonical_name_, "foo-service");
     EXPECT_EQ(obj.canonical_revision_, "v1beta2");
-    EXPECT_EQ(obj.workload_type_, WorkloadType::KUBERNETES_POD);
+    EXPECT_EQ(obj.workload_type_, WorkloadType::Pod);
     EXPECT_EQ(obj.workload_name_, "foo-pod-435");
     EXPECT_EQ(obj.instance_name_, "foo-pod-435");
     EXPECT_EQ(obj.namespace_name_, "test");
@@ -126,7 +122,7 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
 
     EXPECT_EQ(obj.canonical_name_, "foo-service");
     EXPECT_EQ(obj.canonical_revision_, "v1beta4");
-    EXPECT_EQ(obj.workload_type_, WorkloadType::KUBERNETES_JOB);
+    EXPECT_EQ(obj.workload_type_, WorkloadType::Job);
     EXPECT_EQ(obj.workload_name_, "foo-job-435");
     EXPECT_EQ(obj.instance_name_, "foo-job-435");
     EXPECT_EQ(obj.namespace_name_, "test");
@@ -142,7 +138,7 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
 
     EXPECT_EQ(obj.canonical_name_, "foo-service");
     EXPECT_EQ(obj.canonical_revision_, "v1beta4");
-    EXPECT_EQ(obj.workload_type_, WorkloadType::KUBERNETES_CRONJOB);
+    EXPECT_EQ(obj.workload_type_, WorkloadType::CronJob);
     EXPECT_EQ(obj.workload_name_, "foo-cronjob");
     EXPECT_EQ(obj.namespace_name_, "test");
     EXPECT_EQ(obj.cluster_name_, "my-cluster");
@@ -159,7 +155,7 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
 
     EXPECT_EQ(obj.canonical_name_, "foo-service");
     EXPECT_EQ(obj.canonical_revision_, "v1alpha3");
-    EXPECT_EQ(obj.workload_type_, WorkloadType::KUBERNETES_DEPLOYMENT);
+    EXPECT_EQ(obj.workload_type_, WorkloadType::Deployment);
     EXPECT_EQ(obj.workload_name_, "foo");
     EXPECT_EQ(obj.namespace_name_, "default");
     EXPECT_EQ(obj.cluster_name_, "");

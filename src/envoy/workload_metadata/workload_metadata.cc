@@ -32,33 +32,27 @@ Config::Config(Stats::Scope& scope, const std::string& cluster_name,
       cluster_name_(cluster_name) {
   // TODO: update config counter
   for (const auto& resource : proto_config.workload_metadata_resources()) {
-    WorkloadType workload_type;
+    WorkloadType workload_type = WorkloadType::Pod;
     switch (resource.workload_type()) {
       case v1::WorkloadMetadataResource_WorkloadType_KUBERNETES_DEPLOYMENT:
-        workload_type = WorkloadType::KUBERNETES_DEPLOYMENT;
+        workload_type = WorkloadType::Deployment;
         break;
       case v1::WorkloadMetadataResource_WorkloadType_KUBERNETES_CRONJOB:
-        workload_type = WorkloadType::KUBERNETES_CRONJOB;
+        workload_type = WorkloadType::CronJob;
         break;
       case v1::WorkloadMetadataResource_WorkloadType_KUBERNETES_POD:
-        workload_type = WorkloadType::KUBERNETES_POD;
+        workload_type = WorkloadType::Pod;
         break;
       case v1::WorkloadMetadataResource_WorkloadType_KUBERNETES_JOB:
-        workload_type = WorkloadType::KUBERNETES_JOB;
+        workload_type = WorkloadType::Job;
         break;
       default:
-        workload_type = WorkloadType::KUBERNETES_POD;
+        break;
     }
-    std::vector<std::string> ips;
-    std::copy(resource.ip_addresses().begin(), resource.ip_addresses().end(),
-              std::back_inserter(ips));
-    std::vector<std::string> containers;
-    std::copy(resource.containers().begin(), resource.containers().end(),
-              std::back_inserter(containers));
     WorkloadMetadataObject workload(
         resource.instance_name(), cluster_name_, resource.namespace_name(),
         resource.workload_name(), resource.canonical_name(),
-        resource.canonical_revision(), "", "", workload_type, ips, containers);
+        resource.canonical_revision(), "", "", workload_type);
 
     for (const auto& ip_addr : resource.ip_addresses()) {
       workloads_by_ips_[ip_addr] =
