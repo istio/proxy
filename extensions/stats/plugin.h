@@ -269,6 +269,8 @@ class PluginRootContext : public RootContext {
                          ::Wasm::Common::RequestInfo* request_info);
   void deleteFromRequestQueue(uint32_t context_id);
 
+  MetadataMode metadataMode();
+
  protected:
   const std::vector<MetricTag>& defaultTags();
   const std::vector<MetricFactory>& defaultMetrics();
@@ -340,7 +342,8 @@ class PluginContext : public Context {
   // Called for both HTTP and TCP streams, as a final data callback.
   void onLog() override {
     rootContext()->deleteFromRequestQueue(id());
-    if (request_info_.request_protocol == ::Wasm::Common::Protocol::TCP) {
+    if (request_info_.request_protocol == ::Wasm::Common::Protocol::TCP ||
+        rootContext()->metadataMode() == MetadataMode::kClusterMetadataMode) {
       request_info_.tcp_connections_closed++;
     }
     rootContext()->report(request_info_, true);
@@ -355,7 +358,24 @@ class PluginContext : public Context {
     if (rootContext()->useHostHeaderFallback()) {
       getValue({"request", "host"}, &request_info_.url_host);
     }
+    if (rootContext()->metadataMode() == MetadataMode::kClusterMetadataMode) {
+      request_info_.tcp_connections_opened++;
+    }
     return FilterHeadersStatus::Continue;
+  }
+
+  FilterDataStatus onRequestBody(size_t size, bool) override {
+    if (rootContext()->metadataMode() == MetadataMode::kClusterMetadataMode) {
+      request_info_.tcp_received_bytes += size;
+    }
+    return FilterDataStatus::Continue;
+  }
+
+  FilterDataStatus onResponseBody(size_t size, bool) override {
+    if (rootContext()->metadataMode() == MetadataMode::kClusterMetadataMode) {
+      request_info_.tcp_sent_bytes += size;
+    }
+    return FilterDataStatus::Continue;
   }
 
   // Metadata should be available (if any) at the time of adding to the queue.

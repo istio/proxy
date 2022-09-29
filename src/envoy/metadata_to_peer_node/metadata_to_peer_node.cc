@@ -70,6 +70,11 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
           WorkloadMetadataObject::kSourceMetadataObjectKey);
 
   if (meta_obj == nullptr) {
+    meta_obj = filter_state.getDataReadOnly<WorkloadMetadataObject>(
+        WorkloadMetadataObject::kDestinationMetadataObjectKey);
+  }
+
+  if (meta_obj == nullptr) {
     ENVOY_LOG(trace, "metadata to peer: no metadata object found");
     return Network::FilterStatus::Continue;
   }
