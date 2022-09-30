@@ -223,14 +223,13 @@ flatbuffers::DetachedBuffer extractEmptyNodeFlatBuffer();
 // address access.
 flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer();
 
+// Extract peer metadata from workload labels.
+bool extractPeerMetadataFromWorkloadLabels(std::string workload_labels,
+                                           flatbuffers::FlatBufferBuilder& fbb);
+
 // Extract upstream peer metadata from upstream host metadata.
 // Returns true if the metadata is found in the upstream host metadata.
 bool extractPeerMetadataFromUpstreamHostMetadata(
-    flatbuffers::FlatBufferBuilder& fbb);
-
-// Extract upstream peer metadata from upstream cluster metadata.
-// Returns true if the metadata is found in the upstream cluster metadata.
-bool extractPeerMetadataFromUpstreamClusterMetadata(
     flatbuffers::FlatBufferBuilder& fbb);
 
 // Returns flatbuffer schema for node info.

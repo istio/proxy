@@ -80,6 +80,20 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
   ENVOY_LOG(debug, "workload metadata: new connection accepted");
 
   const Network::ConnectionSocket& socket = cb.socket();
+
+  if (socket.connectionInfoProvider().localAddress()->ip()) {
+    std::string dest_ip_addr =
+        socket.connectionInfoProvider().localAddress()->ip()->addressAsString();
+    auto dest_metadata = config_->metadata(dest_ip_addr);
+    if (dest_metadata != nullptr) {
+      cb.filterState().setData(
+          WorkloadMetadataObject::kDestinationMetadataObjectKey, dest_metadata,
+          StreamInfo::FilterState::StateType::ReadOnly,
+          StreamInfo::FilterState::LifeSpan::Request,
+          StreamInfo::FilterState::StreamSharing::None);
+    }
+  }
+
   auto remote_ip =
       socket.connectionInfoProvider().remoteAddress()->ip()->addressAsString();
 

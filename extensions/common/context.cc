@@ -301,16 +301,9 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
   return fbb.Release();
 }
 
-namespace {
-
-bool extractPeerMetadataFromUpstreamMetadata(
-    const std::string& metadata_type, flatbuffers::FlatBufferBuilder& fbb) {
-  std::string endpoint_labels;
-  if (!getValue({metadata_type, "filter_metadata", "istio", "workload"},
-                &endpoint_labels)) {
-    return false;
-  }
-  std::vector<absl::string_view> parts = absl::StrSplit(endpoint_labels, ';');
+bool extractPeerMetadataFromWorkloadLabels(
+    std::string workload_labels, flatbuffers::FlatBufferBuilder& fbb) {
+  std::vector<absl::string_view> parts = absl::StrSplit(workload_labels, ';');
   // workload label should semicolon separated four parts string:
   // workload_name;namespace;canonical_service;canonical_revision;cluster_id.
   if (parts.size() < 4) {
@@ -351,16 +344,15 @@ bool extractPeerMetadataFromUpstreamMetadata(
   return true;
 }
 
-}  // namespace
-
-bool extractPeerMetadataFromUpstreamClusterMetadata(
-    flatbuffers::FlatBufferBuilder& fbb) {
-  return extractPeerMetadataFromUpstreamMetadata("cluster_metadata", fbb);
-}
-
 bool extractPeerMetadataFromUpstreamHostMetadata(
     flatbuffers::FlatBufferBuilder& fbb) {
-  return extractPeerMetadataFromUpstreamMetadata("upstream_host_metadata", fbb);
+  std::string workload_labels;
+  if (!getValue(
+          {"upstream_host_metadata", "filter_metadata", "istio", "workload"},
+          &workload_labels)) {
+    return false;
+  }
+  return extractPeerMetadataFromWorkloadLabels(workload_labels, fbb);
 }
 
 PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,

@@ -18,6 +18,8 @@
 #include <iterator>
 
 #include "absl/strings/ascii.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
 #include "absl/time/time.h"
 #include "extensions/common/util.h"
 
@@ -177,6 +179,17 @@ void map(IstioDimensions& instance, bool outbound,
   } else {
     instance[grpc_response_status] = "";
   }
+}
+
+// Conversion of a baggage string to workload labels string
+std::string baggageToLabels(std::string baggage) {
+  std::vector<std::string> tokens =
+      absl::StrSplit(baggage, absl::ByAnyChar(",="));
+  if (tokens.size() != 10) {
+    return "";
+  }
+  return absl::StrJoin({tokens[5], tokens[3], tokens[7], tokens[9], tokens[1]},
+                       ";");
 }
 
 }  // namespace
@@ -634,21 +647,14 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   }
 
   // handle server-side (inbound) waypoint proxies specially
-  if (!outbound_ && (metadata_mode_ == MetadataMode::kHostMetadataMode ||
-                     metadata_mode_ == MetadataMode::kClusterMetadataMode)) {
+  if (!outbound_ && metadata_mode_ == MetadataMode::kHostMetadataMode) {
     // in waypoint proxy or ztunnel Server mode, we must remap the "local" node
     // info per request as the proxy is no longer serving a single workload
     auto detached = Wasm::Common::extractEmptyNodeFlatBuffer();
 
     flatbuffers::FlatBufferBuilder fbb;
-    if (metadata_mode_ == MetadataMode::kHostMetadataMode) {
-      if (Wasm::Common::extractPeerMetadataFromUpstreamHostMetadata(fbb)) {
-        detached = fbb.Release();
-      }
-    } else {
-      if (Wasm::Common::extractPeerMetadataFromUpstreamClusterMetadata(fbb)) {
-        detached = fbb.Release();
-      }
+    if (Wasm::Common::extractPeerMetadataFromUpstreamHostMetadata(fbb)) {
+      detached = fbb.Release();
     }
 
     const auto& node =
@@ -656,7 +662,42 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
     map_node(istio_dimensions_, false, node);
   }
 
-  map(istio_dimensions_, outbound_, peer_node_info.get(), request_info);
+  // handle server-side (inbound) ztunnel proxy specifically
+  if (!outbound_ && metadata_mode_ == MetadataMode::kClusterMetadataMode) {
+    ::Wasm::Common::populateTCPRequestInfo(outbound_, &request_info);
+
+    // Map destination node from peer_node_info
+    map_node(istio_dimensions_, false, peer_node_info.get());
+
+    std::string baggage;
+    if (!getValue({"filter_state", "ambient.source.workloadMetadataBaggage"},
+                  &baggage)) {
+      LOG_ERROR("stats plugin: source baggage filter state not found");
+      return;
+    }
+    std::string workload_labels = baggageToLabels(baggage);
+    if (workload_labels == "") {
+      LOG_ERROR(
+          absl::StrCat("stats plugin: failed to convert baggage to workload "
+                       "labels. Baggage: ",
+                       baggage));
+      return;
+    }
+
+    auto detached = Wasm::Common::extractEmptyNodeFlatBuffer();
+    flatbuffers::FlatBufferBuilder fbb;
+    if (Wasm::Common::extractPeerMetadataFromWorkloadLabels(workload_labels,
+                                                            fbb)) {
+      detached = fbb.Release();
+    }
+    const auto& src_node =
+        *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(detached.data());
+
+    // Map source node
+    map(istio_dimensions_, outbound_, src_node, request_info);
+  } else {
+    map(istio_dimensions_, outbound_, peer_node_info.get(), request_info);
+  }
 
   for (size_t i = 0; i < expressions_.size(); i++) {
     if (!evaluateExpression(expressions_[i].token,
@@ -712,6 +753,8 @@ void PluginRootContext::addToRequestQueue(
 void PluginRootContext::deleteFromRequestQueue(uint32_t context_id) {
   request_queue_.erase(context_id);
 }
+
+MetadataMode PluginRootContext::metadataMode() { return metadata_mode_; }
 
 #ifdef NULL_PLUGIN
 NullPluginRegistry* context_registry_{};
