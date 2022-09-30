@@ -223,6 +223,7 @@ flatbuffers::DetachedBuffer extractEmptyNodeFlatBuffer();
 // address access.
 flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer();
 
+// Extract peer metadata from workload labels.
 bool extractPeerMetadataFromWorkloadLabels(std::string workload_labels,
                                            flatbuffers::FlatBufferBuilder& fbb);
 

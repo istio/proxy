@@ -15,7 +15,7 @@
 package driver
 
 import (
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -44,7 +44,7 @@ func TestPath(testFileName string) string {
 
 // Loads a test file content
 func LoadTestData(testFileName string) string {
-	data, err := ioutil.ReadFile(TestPath(testFileName))
+	data, err := os.ReadFile(TestPath(testFileName))
 	if err != nil {
 		panic(err)
 	}

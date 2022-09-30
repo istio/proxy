@@ -467,7 +467,7 @@ func TestStackdriverAccessLog(t *testing.T) {
 		destinationUnknown     string
 	}{
 		{"StackdriverAndAccessLogPlugin", "15s", 0, "200", 1, "", true, "", ""},
-		{"RequestGetsLoggedAgain", "1s", 1 * time.Second, "201", 2, "", true, "", ""},
+		{"RequestGetsLoggedAgain", "1s", 1 * time.Second, "200", 2, "", true, "", ""},
 		{"AllErrorRequestsGetsLogged", "1s", 0, "403", 10, "", true, "", ""},
 		{"AllClientErrorRequestsGetsLoggedOnNoMxAndError", "1s", 0, "403", 10, "true", false, "true", "true"},
 		{"NoClientRequestsGetsLoggedOnErrorConfigAndAllSuccessRequests", "15s", 0, "200", 1, "true", false, "true", "true"},

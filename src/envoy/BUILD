@@ -30,18 +30,18 @@ envoy_cc_binary(
         "//extensions/metadata_exchange:metadata_exchange_lib",
         "//extensions/stackdriver:stackdriver_plugin",
         "//extensions/stats:stats_plugin",
-        "//src/envoy/http/alpn:config_lib",
-        "//src/envoy/http/authn:filter_lib",
-        "//src/envoy/http/baggage_handler:config_lib",
-        "//src/envoy/internal_ssl_forwarder:config_lib",
-        "//src/envoy/metadata_to_peer_node:config_lib",
-        "//src/envoy/set_internal_dst_address:filter_lib",
-        "//src/envoy/tcp/forward_downstream_sni:config_lib",
-        "//src/envoy/tcp/metadata_exchange:config_lib",
-        "//src/envoy/tcp/sni_verifier:config_lib",
-        "//src/envoy/tcp/tcp_cluster_rewrite:config_lib",
-        "//src/envoy/tls_passthrough:filter_lib",
-        "//src/envoy/workload_metadata:config_lib",
+        "//source/extensions/filters/http/alpn:config_lib",
+        "//source/extensions/filters/http/authn:filter_lib",
+        "//source/extensions/filters/network/forward_downstream_sni:config_lib",
+        "//source/extensions/filters/network/metadata_exchange:config_lib",
+        "//source/extensions/filters/network/sni_verifier:config_lib",
+        "//source/extensions/filters/network/tcp_cluster_rewrite:config_lib",
+        "//src/envoy/http/baggage_handler:config_lib",  # Experimental: Ambient
+        "//src/envoy/internal_ssl_forwarder:config_lib",  # Experimental: Ambient
+        "//src/envoy/metadata_to_peer_node:config_lib",  # Experimental: Ambient
+        "//src/envoy/set_internal_dst_address:filter_lib",  # Experimental: Ambient
+        "//src/envoy/tls_passthrough:filter_lib",  # Experimental: Ambient
+        "//src/envoy/workload_metadata:config_lib",  # Experimental: Ambient
         "@envoy//source/exe:envoy_main_entry_lib",
     ],
 )

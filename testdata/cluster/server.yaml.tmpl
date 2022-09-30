@@ -10,7 +10,7 @@ metadata:
           name: server
           namespace: default
 {{- end }}
-connect_timeout: 1s
+connect_timeout: 5s
 type: STATIC
 load_assignment:
   {{- if .Vars.ServerClusterName }}

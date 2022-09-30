@@ -666,9 +666,6 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   if (!outbound_ && metadata_mode_ == MetadataMode::kClusterMetadataMode) {
     ::Wasm::Common::populateTCPRequestInfo(outbound_, &request_info);
 
-    // request_info.destination_service_host = "dst_service_host";
-    // request_info.destination_service_name = "dst_service_name";
-
     // Map destination node from peer_node_info
     map_node(istio_dimensions_, false, peer_node_info.get());
 

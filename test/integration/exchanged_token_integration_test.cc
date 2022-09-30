@@ -20,8 +20,8 @@
 
 #include "fmt/printf.h"
 #include "gmock/gmock.h"
+#include "source/extensions/common/filter_names.h"
 #include "source/extensions/filters/http/well_known_names.h"
-#include "src/envoy/utils/filter_names.h"
 #include "src/istio/utils/attribute_names.h"
 #include "test/integration/http_protocol_integration.h"
 

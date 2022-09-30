@@ -4,9 +4,11 @@
 // bootstrap/server.yaml.tmpl
 // bootstrap/stats.yaml.tmpl
 // listener/client.yaml.tmpl
+// listener/internal_outbound.yaml.tmpl
 // listener/server.yaml.tmpl
 // listener/tcp_client.yaml.tmpl
 // listener/tcp_server.yaml.tmpl
+// listener/terminate_connect.yaml.tmpl
 package testdata
 
 import (
@@ -85,7 +87,7 @@ dynamic_resources:
     resource_api_version: V3
 static_resources:
   clusters:
-  - connect_timeout: 1s
+  - connect_timeout: 5s
     load_assignment:
       cluster_name: xds_cluster
       endpoints:
@@ -98,7 +100,7 @@ static_resources:
     http2_protocol_options: {}
     name: xds_cluster
   - name: server-outbound-cluster
-    connect_timeout: 1s
+    connect_timeout: 5s
     type: STATIC
     http2_protocol_options: {}
     {{- if ne .Vars.ElideServerMetadata "true" }}
@@ -127,6 +129,11 @@ static_resources:
           {{- end }}
 {{ .Vars.ClientTLSContext | indent 4 }}
 {{ .Vars.ClientStaticCluster | indent 2 }}
+bootstrap_extensions:
+- name: envoy.bootstrap.internal_listener
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/envoy.extensions.bootstrap.internal_listener.v3.InternalListener
 `)
 
 func bootstrapClientYamlTmplBytes() ([]byte, error) {
@@ -170,7 +177,7 @@ dynamic_resources:
     resource_api_version: V3
 static_resources:
   clusters:
-  - connect_timeout: 1s
+  - connect_timeout: 5s
     load_assignment:
       cluster_name: xds_cluster
       endpoints:
@@ -183,7 +190,7 @@ static_resources:
     http2_protocol_options: {}
     name: xds_cluster
   - name: server-inbound-cluster
-    connect_timeout: 1s
+    connect_timeout: 5s
     type: STATIC
     {{- if eq .Vars.UsingGrpcBackend "true" }}
     http2_protocol_options: {}
@@ -206,6 +213,12 @@ static_resources:
               socket_address:
                 address: 127.0.0.1
                 port_value: {{ .Ports.BackendPort }}
+          {{- if eq .Vars.EnableEndpointMetadata "true" }}
+          metadata:
+            filter_metadata:
+              istio:
+                workload: ratings-v1;default;ratings;version-1;server-cluster
+          {{- end }}
 {{ .Vars.ServerStaticCluster | indent 2 }}
 {{- if ne .Vars.DisableDirectResponse "true" }}
   listeners:
@@ -242,6 +255,11 @@ static_resources:
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 {{- end }}
+bootstrap_extensions:
+- name: envoy.bootstrap.internal_listener
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/envoy.extensions.bootstrap.internal_listener.v3.InternalListener
 `)
 
 func bootstrapServerYamlTmplBytes() ([]byte, error) {
@@ -403,17 +421,59 @@ func listenerClientYamlTmpl() (*asset, error) {
 	return a, nil
 }
 
+var _listenerInternal_outboundYamlTmpl = []byte(`name: internal_outbound
+internal_listener: {}
+listener_filters:
+- name: set_dst_address
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/istio.set_internal_dst_address.v1.Config
+filter_chains:
+- filters:
+  - name: tcp_proxy
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+      cluster: original_dst
+      tunneling_config:
+        hostname: host.com:443
+      stat_prefix: outbound
+`)
+
+func listenerInternal_outboundYamlTmplBytes() ([]byte, error) {
+	return _listenerInternal_outboundYamlTmpl, nil
+}
+
+func listenerInternal_outboundYamlTmpl() (*asset, error) {
+	bytes, err := listenerInternal_outboundYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "listener/internal_outbound.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var _listenerServerYamlTmpl = []byte(`{{- if ne .Vars.ServerListeners "" }}
 {{ .Vars.ServerListeners }}
 {{- else }}
+{{- if ne .Vars.ServerInternalAddress "" }}
+name: {{ .Vars.ServerInternalAddress }}
+{{- else }}
 name: server
+{{- end }}
 traffic_direction: INBOUND
+{{- if ne .Vars.ServerInternalAddress "" }}
+internal_listener: {}
+{{- else }}
 address:
   socket_address:
     address: 127.0.0.1
     port_value: {{ .Ports.ServerPort }}
+{{- end }}
 filter_chains:
 - filters:
+{{ .Vars.ServerNetworkFilters | fill | indent 2 }}
   - name: http
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
@@ -536,6 +596,84 @@ func listenerTcp_serverYamlTmpl() (*asset, error) {
 	return a, nil
 }
 
+var _listenerTerminate_connectYamlTmpl = []byte(`name: terminate_connect
+address:
+  socket_address:
+    address: 127.0.0.1
+    port_value: {{ .Ports.ServerTunnelPort }}
+filter_chains:
+- filters:
+  # Capture SSL info for the internal listener passthrough
+  - name: capture_tls
+    typed_config:
+      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: istio.tls_passthrough.v1.CaptureTLS
+  - name: envoy.filters.network.http_connection_manager
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+      stat_prefix: terminate_connect
+      route_config:
+        name: local_route
+        virtual_hosts:
+        - name: local_service
+          domains:
+          - "*"
+          routes:
+          - match:
+              connect_matcher:
+                {}
+            route:
+              cluster: internal_inbound
+              upgrade_configs:
+              - upgrade_type: CONNECT
+                connect_config:
+                  {}
+      http_filters:
+      - name: envoy.filters.http.router
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+      http2_protocol_options:
+        allow_connect: true
+      upgrade_configs:
+      - upgrade_type: CONNECT
+  transport_socket:
+    name: tls
+    typed_config:
+      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+      value:
+        common_tls_context:
+          tls_certificate_sds_secret_configs:
+            name: server
+            sds_config:
+              api_config_source:
+                api_type: GRPC
+                grpc_services:
+                - envoy_grpc:
+                    cluster_name: xds_cluster
+                set_node_on_first_message_only: true
+                transport_api_version: V3
+              resource_api_version: V3
+          validation_context:
+            trusted_ca: { filename: "testdata/certs/root.cert" }
+        require_client_certificate: true
+`)
+
+func listenerTerminate_connectYamlTmplBytes() ([]byte, error) {
+	return _listenerTerminate_connectYamlTmpl, nil
+}
+
+func listenerTerminate_connectYamlTmpl() (*asset, error) {
+	bytes, err := listenerTerminate_connectYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "listener/terminate_connect.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -588,13 +726,15 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"bootstrap/client.yaml.tmpl":    bootstrapClientYamlTmpl,
-	"bootstrap/server.yaml.tmpl":    bootstrapServerYamlTmpl,
-	"bootstrap/stats.yaml.tmpl":     bootstrapStatsYamlTmpl,
-	"listener/client.yaml.tmpl":     listenerClientYamlTmpl,
-	"listener/server.yaml.tmpl":     listenerServerYamlTmpl,
-	"listener/tcp_client.yaml.tmpl": listenerTcp_clientYamlTmpl,
-	"listener/tcp_server.yaml.tmpl": listenerTcp_serverYamlTmpl,
+	"bootstrap/client.yaml.tmpl":           bootstrapClientYamlTmpl,
+	"bootstrap/server.yaml.tmpl":           bootstrapServerYamlTmpl,
+	"bootstrap/stats.yaml.tmpl":            bootstrapStatsYamlTmpl,
+	"listener/client.yaml.tmpl":            listenerClientYamlTmpl,
+	"listener/internal_outbound.yaml.tmpl": listenerInternal_outboundYamlTmpl,
+	"listener/server.yaml.tmpl":            listenerServerYamlTmpl,
+	"listener/tcp_client.yaml.tmpl":        listenerTcp_clientYamlTmpl,
+	"listener/tcp_server.yaml.tmpl":        listenerTcp_serverYamlTmpl,
+	"listener/terminate_connect.yaml.tmpl": listenerTerminate_connectYamlTmpl,
 }
 
 // AssetDir returns the file names below a certain
@@ -644,10 +784,12 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"stats.yaml.tmpl":  &bintree{bootstrapStatsYamlTmpl, map[string]*bintree{}},
 	}},
 	"listener": &bintree{nil, map[string]*bintree{
-		"client.yaml.tmpl":     &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
-		"server.yaml.tmpl":     &bintree{listenerServerYamlTmpl, map[string]*bintree{}},
-		"tcp_client.yaml.tmpl": &bintree{listenerTcp_clientYamlTmpl, map[string]*bintree{}},
-		"tcp_server.yaml.tmpl": &bintree{listenerTcp_serverYamlTmpl, map[string]*bintree{}},
+		"client.yaml.tmpl":            &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
+		"internal_outbound.yaml.tmpl": &bintree{listenerInternal_outboundYamlTmpl, map[string]*bintree{}},
+		"server.yaml.tmpl":            &bintree{listenerServerYamlTmpl, map[string]*bintree{}},
+		"tcp_client.yaml.tmpl":        &bintree{listenerTcp_clientYamlTmpl, map[string]*bintree{}},
+		"tcp_server.yaml.tmpl":        &bintree{listenerTcp_serverYamlTmpl, map[string]*bintree{}},
+		"terminate_connect.yaml.tmpl": &bintree{listenerTerminate_connectYamlTmpl, map[string]*bintree{}},
 	}},
 }}
 

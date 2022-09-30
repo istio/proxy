@@ -18,11 +18,12 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -46,7 +47,7 @@ func HTTPGet(url string) (code int, respBody string, err error) {
 		return 0, "", err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err)
 		return 0, "", err
@@ -59,7 +60,7 @@ func HTTPGet(url string) (code int, respBody string, err error) {
 // HTTPGet send GET
 func HTTPTlsGet(url, rootdir string, port uint16) (code int, respBody string, err error) {
 	certPool := x509.NewCertPool()
-	bs, err := ioutil.ReadFile(filepath.Join(rootdir, "testdata/certs/cert-chain.pem"))
+	bs, err := os.ReadFile(filepath.Join(rootdir, "testdata/certs/cert-chain.pem"))
 	if err != nil {
 		return 0, "", fmt.Errorf("failed to read client ca cert: %s", err)
 	}
@@ -90,7 +91,7 @@ func HTTPTlsGet(url, rootdir string, port uint16) (code int, respBody string, er
 		return 0, "", err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err)
 		return 0, "", err
@@ -110,7 +111,7 @@ func HTTPPost(url string, contentType string, reqBody string) (code int, respBod
 		return 0, "", err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err)
 		return 0, "", err
@@ -133,7 +134,7 @@ func ShortLiveHTTPPost(url string, contentType string, reqBody string) (code int
 		return 0, "", err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err)
 		return 0, "", err
@@ -167,7 +168,7 @@ func HTTPGetWithHeaders(l string, headers map[string]string) (code int, respBody
 		return 0, "", err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err)
 		return 0, "", err

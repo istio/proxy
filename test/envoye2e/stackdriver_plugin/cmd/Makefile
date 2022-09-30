@@ -17,13 +17,13 @@
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 SD_PATH := $(dir $(MKFILE_PATH))
-IMG := gcr.io/istio-testing/fake-stackdriver
-TAG := 7.0
+IMG ?= gcr.io/istio-testing/fake-stackdriver
+TAG ?= 8.0
 
 all: build_and_push clean
 
 build_and_push:
-	cd $(SD_PATH) && GOOS=linux GOARCH=amd64 go build main.go
-	docker build $(SD_PATH) -t $(IMG):$(TAG)
-	docker push $(IMG):$(TAG)
-	rm $(SD_PATH)/main
+	cd $(SD_PATH) && GOOS=linux GOARCH=amd64 go build -o main-amd64 --ldflags '-extldflags -static -s -w' main.go
+	cd $(SD_PATH) && GOOS=linux GOARCH=arm64 go build -o main-arm64 --ldflags '-extldflags -static -s -w' main.go
+	docker buildx build --platform=linux/arm64,linux/amd64 $(SD_PATH) -t $(IMG):$(TAG) --push
+	rm $(SD_PATH)/main-*
