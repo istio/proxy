@@ -89,7 +89,7 @@ Network::FilterStatus Filter::onAccept(Network::ListenerFilterCallbacks& cb) {
       cb.filterState().setData(
           WorkloadMetadataObject::kDestinationMetadataObjectKey, dest_metadata,
           StreamInfo::FilterState::StateType::ReadOnly,
-          StreamInfo::FilterState::LifeSpan::Request,
+          StreamInfo::FilterState::LifeSpan::Connection,
           StreamInfo::FilterState::StreamSharing::None);
     }
   }
