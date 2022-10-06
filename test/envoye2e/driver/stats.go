@@ -56,7 +56,7 @@ func (s *Stats) Run(p *Params) error {
 			if !found {
 				continue
 			}
-			if err := matcher.Matches(p, metric); err == nil {
+			if err = matcher.Matches(p, metric); err == nil {
 				log.Printf("matched metric %q", metric.GetName())
 				count++
 				continue

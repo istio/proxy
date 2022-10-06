@@ -17,11 +17,13 @@
 #include "envoy/registry/registry.h"
 #include "envoy/server/factory_context.h"
 #include "envoy/singleton/manager.h"
+#include "extensions/common/metadata_object.h"
 #include "source/common/grpc/common.h"
+#include "source/common/http/header_map_impl.h"
 #include "source/common/http/header_utility.h"
 #include "source/common/stream_info/utility.h"
+#include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
-#include "src/envoy/common/metadata_object.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -61,6 +63,7 @@ struct Context : public Singleton::Instance {
             pool_.add("istio_request_duration_milliseconds")),
         request_bytes_(pool_.add("istio_request_bytes")),
         response_bytes_(pool_.add("istio_response_bytes")),
+        empty_(pool_.add("")),
         unknown_(pool_.add("unknown")),
         source_(pool_.add("source")),
         destination_(pool_.add("destination")),
@@ -105,7 +108,11 @@ struct Context : public Singleton::Instance {
             node.metadata(), "LABELS", "service.istio.io/canonical-name"))),
         canonical_revision_(pool_.add(extractMapString(
             node.metadata(), "LABELS", "service.istio.io/canonical-revision"))),
-        cluster_name_(pool_.add(extractString(node.metadata(), "CLUSTER_ID"))) {
+        cluster_name_(pool_.add(extractString(node.metadata(), "CLUSTER_ID"))),
+        app_name_(
+            pool_.add(extractMapString(node.metadata(), "LABELS", "app"))),
+        app_version_(
+            pool_.add(extractMapString(node.metadata(), "LABELS", "version"))) {
   }
 
   Stats::StatNamePool pool_;
@@ -118,6 +125,7 @@ struct Context : public Singleton::Instance {
   const Stats::StatName response_bytes_;
 
   // Constant names.
+  const Stats::StatName empty_;
   const Stats::StatName unknown_;
   const Stats::StatName source_;
   const Stats::StatName destination_;
@@ -163,6 +171,8 @@ struct Context : public Singleton::Instance {
   const Stats::StatName canonical_name_;
   const Stats::StatName canonical_revision_;
   const Stats::StatName cluster_name_;
+  const Stats::StatName app_name_;
+  const Stats::StatName app_version_;
 };
 using ContextSharedPtr = std::shared_ptr<Context>;
 
@@ -233,122 +243,55 @@ class IstioStatsFilter : public Http::PassThroughFilter {
     }
   }
 
-  Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap& headers,
-                                          bool) override {
-    if (Grpc::Common::isGrpcRequestHeaders(headers)) {
+  void onStreamComplete() override {
+    populatePeerInfo();
+    const auto& info = decoder_callbacks_->streamInfo();
+    const auto* headers = info.getRequestHeaders();
+    const bool is_grpc =
+        headers && Grpc::Common::isGrpcRequestHeaders(*headers);
+    if (is_grpc) {
       tags_.push_back({context_.request_protocol_, context_.grpc_});
     } else {
       tags_.push_back({context_.request_protocol_, context_.http_});
     }
-    std::shared_ptr<Envoy::Common::WorkloadMetadataObject> peer;
-    auto baggage_result = Http::HeaderUtility::getAllOfHeaderAsString(
-                              headers, Http::LowerCaseString("baggage"))
-                              .result();
-    if (baggage_result) {
-      peer = Envoy::Common::WorkloadMetadataObject::fromBaggage(
-          baggage_result.value());
+
+    // TODO: copy Http::CodeStatsImpl version for status codes and flags.
+    tags_.push_back(
+        {context_.response_code_,
+         config_->resolve(absl::StrCat(info.responseCode().value_or(0)))});
+    if (is_grpc) {
+      auto response_headers = decoder_callbacks_->responseHeaders();
+      auto response_trailers = decoder_callbacks_->responseTrailers();
+      auto const& optional_status = Grpc::Common::getGrpcStatus(
+          response_trailers
+              ? response_trailers.ref()
+              : *Http::StaticEmptyHeaders::get().response_trailers,
+          response_headers ? response_headers.ref()
+                           : *Http::StaticEmptyHeaders::get().response_headers,
+          info);
+      tags_.push_back({context_.grpc_response_status_,
+                       optional_status ? config_->resolve(absl::StrCat(
+                                             optional_status.value()))
+                                       : context_.empty_});
+    } else {
+      tags_.push_back({context_.grpc_response_status_, context_.empty_});
     }
+    tags_.push_back(
+        {context_.response_flags_,
+         config_->resolve(StreamInfo::ResponseFlagUtils::toShortString(info))});
+
     switch (config_->reporter()) {
       case Reporter::ServerSidecar: {
-        tags_.push_back({context_.source_workload_namespace_,
-                         peer ? config_->resolve(peer->namespaceName())
-                              : context_.unknown_});
-        tags_.push_back({context_.source_workload_,
-                         peer ? config_->resolve(peer->workloadName())
-                              : context_.unknown_});
-        tags_.push_back({context_.source_canonical_service_,
-                         peer ? config_->resolve(peer->canonicalName())
-                              : context_.unknown_});
-        tags_.push_back({context_.source_canonical_revision_,
-                         peer ? config_->resolve(peer->canonicalRevision())
-                              : context_.unknown_});
-        tags_.push_back(
-            {context_.source_cluster_,
-             peer ? config_->resolve(peer->clusterName()) : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_workload_namespace_, context_.namespace_});
-        tags_.push_back(
-            {context_.destination_workload_, context_.workload_name_});
-        tags_.push_back({context_.destination_canonical_service_,
-                         context_.canonical_name_});
-        tags_.push_back({context_.destination_canonical_revision_,
-                         context_.canonical_revision_});
-
-        const auto& info = decoder_callbacks_->streamInfo();
         const auto ssl_info = info.downstreamAddressProvider().sslConnection();
-        tags_.push_back(
-            {context_.source_principal_,
-             ssl_info ? config_->resolve(absl::StrJoin(ssl_info->uriSanPeerCertificate(), ","))
-                      : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_principal_,
-             ssl_info ? config_->resolve(absl::StrJoin(ssl_info->uriSanLocalCertificate(), ","))
-                      : context_.unknown_});
-
-        // Specific to reporter:
         const auto mtls =
             ssl_info != nullptr && ssl_info->peerCertificatePresented();
         tags_.push_back({context_.connection_security_policy_,
                          mtls ? context_.mtls_ : context_.none_});
         break;
       }
-      case Reporter::ClientSidecar:
-        tags_.push_back(
-            {context_.source_workload_namespace_, context_.namespace_});
-        tags_.push_back({context_.source_workload_, context_.workload_name_});
-        tags_.push_back(
-            {context_.source_canonical_service_, context_.canonical_name_});
-        tags_.push_back({context_.source_canonical_revision_,
-                         context_.canonical_revision_});
-        tags_.push_back({context_.destination_workload_namespace_,
-                         peer ? config_->resolve(peer->namespaceName())
-                              : context_.unknown_});
-        tags_.push_back({context_.destination_workload_,
-                         peer ? config_->resolve(peer->workloadName())
-                              : context_.unknown_});
-        tags_.push_back({context_.destination_canonical_service_,
-                         peer ? config_->resolve(peer->canonicalName())
-                              : context_.unknown_});
-        tags_.push_back({context_.destination_canonical_revision_,
-                         peer ? config_->resolve(peer->canonicalRevision())
-                              : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_cluster_,
-             peer ? config_->resolve(peer->clusterName()) : context_.unknown_});
-        break;
-    }
-    // app, version
-    return Http::FilterHeadersStatus::Continue;
-  }
-
-  void onStreamComplete() override {
-    const auto& info = decoder_callbacks_->streamInfo();
-
-    // TODO: copy Http::CodeStatsImpl version for status codes and flags.
-    tags_.push_back(
-        {context_.response_code_,
-         config_->resolve(absl::StrCat(info.responseCode().value_or(0)))});
-    tags_.push_back(
-        {context_.response_flags_,
-         config_->resolve(StreamInfo::ResponseFlagUtils::toShortString(info))});
-
-    // Complete info from upstream connection if missing.
-    switch (config_->reporter()) {
-      case Reporter::ClientSidecar: {
-        const auto upstream_info = info.upstreamInfo();
-        const Ssl::ConnectionInfoConstSharedPtr ssl_info =
-            upstream_info ? upstream_info->upstreamSslConnection() : nullptr;
-        tags_.push_back(
-            {context_.source_principal_,
-             ssl_info ? config_->resolve(absl::StrJoin(ssl_info->uriSanLocalCertificate(), ","))
-                      : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_principal_,
-             ssl_info ? config_->resolve(absl::StrJoin(ssl_info->uriSanPeerCertificate(), ","))
-                      : context_.unknown_});
-        break;
-      }
       default:
+        tags_.push_back(
+            {context_.connection_security_policy_, context_.unknown_});
         break;
     }
 
@@ -379,6 +322,174 @@ class IstioStatsFilter : public Http::PassThroughFilter {
   }
 
  private:
+  // Peer metadata is populated after encode/decodeHeaders by MX filter.
+  void populatePeerInfo() {
+    const auto& info = decoder_callbacks_->streamInfo();
+    const auto& filter_state_key =
+        config_->reporter() == Reporter::ServerSidecar ? "wasm.downstream_peer"
+                                                       : "wasm.upstream_peer";
+    const auto* filter_state =
+        info.filterState()
+            .getDataReadOnly<
+                Envoy::Extensions::Filters::Common::Expr::CelState>(
+                filter_state_key);
+    absl::optional<Istio::Common::WorkloadMetadataObject> peer;
+    if (filter_state) {
+      const auto& node = *flatbuffers::GetRoot<Wasm::Common::FlatNode>(
+          filter_state->value().data());
+      peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(node));
+    }
+    // Compute destination service with fallbacks.
+    absl::string_view service_host;
+    absl::string_view service_host_name;
+    const auto cluster_info = info.upstreamClusterInfo();
+    if (cluster_info && cluster_info.value()) {
+      const auto& filter_metadata =
+          cluster_info.value()->metadata().filter_metadata();
+      const auto& it = filter_metadata.find("istio");
+      if (it != filter_metadata.end()) {
+        const auto& services_it = it->second.fields().find("services");
+        if (services_it != it->second.fields().end()) {
+          const auto& services = services_it->second.list_value();
+          if (services.values_size() > 0) {
+            const auto& service = services.values(0).struct_value().fields();
+            const auto& host_it = service.find("host");
+            if (host_it != service.end()) {
+              service_host = host_it->second.string_value();
+              service_host_name =
+                  service_host.substr(0, service_host.find_first_of('.'));
+            }
+          }
+        }
+      }
+    }
+    if (service_host.empty()) {
+      const auto* headers = info.getRequestHeaders();
+      if (headers && headers->Host()) {
+        service_host = headers->Host()->value().getStringView();
+        service_host_name = service_host;
+      }
+    }
+    switch (config_->reporter()) {
+      case Reporter::ServerSidecar: {
+        tags_.push_back({context_.source_workload_,
+                         peer ? config_->resolve(peer->workload_name_)
+                              : context_.unknown_});
+        tags_.push_back({context_.source_canonical_service_,
+                         peer ? config_->resolve(peer->canonical_name_)
+                              : context_.unknown_});
+        tags_.push_back({context_.source_canonical_revision_,
+                         peer ? config_->resolve(peer->canonical_revision_)
+                              : context_.unknown_});
+        tags_.push_back({context_.source_workload_namespace_,
+                         peer ? config_->resolve(peer->namespace_name_)
+                              : context_.unknown_});
+        const auto ssl_info = info.downstreamAddressProvider().sslConnection();
+        tags_.push_back({context_.source_principal_,
+                         ssl_info ? config_->resolve(absl::StrJoin(
+                                        ssl_info->uriSanPeerCertificate(), ","))
+                                  : context_.unknown_});
+        tags_.push_back(
+            {context_.source_app_,
+             peer ? config_->resolve(peer->app_name_) : context_.unknown_});
+        tags_.push_back(
+            {context_.source_version_,
+             peer ? config_->resolve(peer->app_version_) : context_.unknown_});
+        tags_.push_back(
+            {context_.source_cluster_,
+             peer ? config_->resolve(peer->cluster_name_) : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_workload_, context_.workload_name_});
+        tags_.push_back(
+            {context_.destination_workload_namespace_, context_.namespace_});
+        tags_.push_back({context_.destination_principal_,
+                         ssl_info
+                             ? config_->resolve(absl::StrJoin(
+                                   ssl_info->uriSanLocalCertificate(), ","))
+                             : context_.unknown_});
+        tags_.push_back({context_.destination_app_, context_.app_name_});
+        tags_.push_back({context_.destination_version_, context_.app_version_});
+        tags_.push_back({context_.destination_service_,
+                         service_host.empty()
+                             ? context_.canonical_name_
+                             : config_->resolve(service_host)});
+        tags_.push_back({context_.destination_canonical_service_,
+                         context_.canonical_name_});
+        tags_.push_back({context_.destination_canonical_revision_,
+                         context_.canonical_revision_});
+        tags_.push_back({context_.destination_service_name_,
+                         service_host_name.empty()
+                             ? context_.canonical_name_
+                             : config_->resolve(service_host_name)});
+        tags_.push_back(
+            {context_.destination_service_namespace_, context_.namespace_});
+        tags_.push_back(
+            {context_.destination_cluster_, context_.cluster_name_});
+
+        break;
+      }
+      case Reporter::ClientSidecar: {
+        tags_.push_back({context_.source_workload_, context_.workload_name_});
+        tags_.push_back(
+            {context_.source_canonical_service_, context_.canonical_name_});
+        tags_.push_back({context_.source_canonical_revision_,
+                         context_.canonical_revision_});
+        tags_.push_back(
+            {context_.source_workload_namespace_, context_.namespace_});
+        const auto upstream_info = info.upstreamInfo();
+        const Ssl::ConnectionInfoConstSharedPtr ssl_info =
+            upstream_info ? upstream_info->upstreamSslConnection() : nullptr;
+        tags_.push_back({context_.source_principal_,
+                         ssl_info
+                             ? config_->resolve(absl::StrJoin(
+                                   ssl_info->uriSanLocalCertificate(), ","))
+                             : context_.unknown_});
+        tags_.push_back({context_.source_app_, context_.app_name_});
+        tags_.push_back({context_.source_version_, context_.app_version_});
+        tags_.push_back({context_.source_cluster_, context_.cluster_name_});
+        tags_.push_back({context_.destination_workload_,
+                         peer ? config_->resolve(peer->workload_name_)
+                              : context_.unknown_});
+        tags_.push_back({context_.destination_workload_namespace_,
+                         peer ? config_->resolve(peer->namespace_name_)
+                              : context_.unknown_});
+        tags_.push_back({context_.destination_principal_,
+                         ssl_info ? config_->resolve(absl::StrJoin(
+                                        ssl_info->uriSanPeerCertificate(), ","))
+                                  : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_app_,
+             peer ? config_->resolve(peer->app_name_) : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_version_,
+             peer ? config_->resolve(peer->app_version_) : context_.unknown_});
+        tags_.push_back({context_.destination_service_,
+                         service_host.empty()
+                             ? context_.unknown_
+                             : config_->resolve(service_host)});
+        tags_.push_back({context_.destination_canonical_service_,
+                         peer ? config_->resolve(peer->canonical_name_)
+                              : context_.unknown_});
+        tags_.push_back({context_.destination_canonical_revision_,
+                         peer ? config_->resolve(peer->canonical_revision_)
+                              : context_.unknown_});
+        tags_.push_back({context_.destination_service_name_,
+                         service_host_name.empty()
+                             ? context_.unknown_
+                             : config_->resolve(service_host_name)});
+        tags_.push_back({context_.destination_service_namespace_,
+                         peer ? config_->resolve(peer->namespace_name_)
+                              : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_cluster_,
+             peer ? config_->resolve(peer->cluster_name_) : context_.unknown_});
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
   ConfigSharedPtr config_;
   Context& context_;
   Stats::StatNameTagVector tags_;
