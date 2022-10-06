@@ -139,6 +139,7 @@ envoy_extension_cc_benchmark_binary(
     ],
     repository = "@envoy",
     deps = [
+        ":metadata_object_lib",
         ":node_info_fb_cc",
         ":proto_util",
         "@envoy//source/common/stream_info:filter_state_lib",
@@ -180,4 +181,27 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
+)
+
+envoy_cc_library(
+    name = "metadata_object_lib",
+    srcs = ["metadata_object.cc"],
+    hdrs = ["metadata_object.h"],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":node_info_fb_cc",
+        "@envoy//envoy/network:filter_interface",
+        "@envoy//source/exe:envoy_common_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "metadata_object_test",
+    srcs = ["metadata_object_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":metadata_object_lib",
+        "@envoy//test/mocks/ssl:ssl_mocks",
+    ],
 )

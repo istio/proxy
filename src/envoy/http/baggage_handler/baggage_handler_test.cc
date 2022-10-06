@@ -14,11 +14,11 @@
 
 #include "baggage_handler.h"
 
+#include "extensions/common/metadata_object.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "source/common/http/header_map_impl.h"
 #include "source/common/protobuf/protobuf.h"
-#include "src/envoy/common/metadata_object.h"
 #include "src/envoy/http/baggage_handler/config/baggage_handler.pb.h"
 #include "test/mocks/http/mocks.h"
 #include "test/mocks/network/mocks.h"
@@ -79,13 +79,13 @@ TEST_F(BaggageHandlerFilterTest, BasicBaggageTest) {
   EXPECT_EQ(Http::FilterHeadersStatus::Continue,
             filter_->decodeHeaders(incoming_headers, false));
 
-  EXPECT_TRUE(filter_state_->hasDataWithName(
-      Common::WorkloadMetadataObject::kSourceMetadataObjectKey));
+  EXPECT_TRUE(
+      filter_state_->hasDataWithName(Istio::Common::kSourceMetadataObjectKey));
   auto found =
-      filter_state_->getDataReadOnly<Envoy::Common::WorkloadMetadataObject>(
-          Common::WorkloadMetadataObject::kSourceMetadataObjectKey);
+      filter_state_->getDataReadOnly<Istio::Common::WorkloadMetadataObject>(
+          Istio::Common::kSourceMetadataObjectKey);
 
-  EXPECT_EQ(found->canonicalName(), "foo-service");
+  EXPECT_EQ(found->canonical_name_, "foo-service");
 
   filter_->onDestroy();
 }

@@ -18,7 +18,6 @@
 #include "absl/strings/str_cat.h"
 #include "source/common/http/header_utility.h"
 #include "source/common/router/string_accessor_impl.h"
-#include "src/envoy/common/metadata_object.h"
 #include "src/envoy/http/baggage_handler/config/baggage_handler.pb.h"
 
 namespace Envoy {
@@ -32,28 +31,27 @@ Http::FilterHeadersStatus BaggageHandlerFilter::decodeHeaders(
                                 .result();
 
   if (header_value.has_value()) {
-    auto source_meta = Common::WorkloadMetadataObject::fromBaggage(
-        header_value.value(), decoder_callbacks_->connection()->ssl());
+    auto source_meta = std::make_shared<Istio::Common::WorkloadMetadataObject>(
+        Istio::Common::WorkloadMetadataObject::fromBaggage(
+            header_value.value()));
 
     auto filter_state = decoder_callbacks_->streamInfo().filterState();
 
     filter_state->setData(
-        Common::WorkloadMetadataObject::kSourceMetadataObjectKey, source_meta,
+        Istio::Common::kSourceMetadataObjectKey, source_meta,
         StreamInfo::FilterState::StateType::ReadOnly,
         StreamInfo::FilterState::LifeSpan::Request,
         StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
 
-    ENVOY_LOG(
-        trace,
-        absl::StrCat("baggage header found. filter state set: ",
-                     Common::WorkloadMetadataObject::kSourceMetadataObjectKey));
+    ENVOY_LOG(trace, absl::StrCat("baggage header found. filter state set: ",
+                                  Istio::Common::kSourceMetadataObjectKey));
 
     // Setting a StringAccessor filter state which can be assigned to custom
     // header with PER_REQUEST_STATE
     auto accessor = std::make_shared<Envoy::Router::StringAccessorImpl>(
         header_value.value());
     filter_state->setData(
-        Common::WorkloadMetadataObject::kSourceMetadataBaggageKey, accessor,
+        Istio::Common::kSourceMetadataBaggageKey, accessor,
         StreamInfo::FilterState::StateType::ReadOnly,
         StreamInfo::FilterState::LifeSpan::Request,
         StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);

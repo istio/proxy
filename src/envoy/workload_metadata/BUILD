@@ -33,7 +33,7 @@ envoy_cc_library(
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
-        "//src/envoy/common:metadata_object_lib",
+        "//extensions/common:metadata_object_lib",
         "//src/envoy/workload_metadata/config:workload_metadata_cc_proto",
         "@envoy//envoy/network:filter_interface",
         "@envoy//envoy/network:listen_socket_interface",

@@ -15,17 +15,17 @@
 #include "metadata_to_peer_node.h"
 
 #include "absl/strings/str_cat.h"
+#include "extensions/common/metadata_object.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "source/common/protobuf/protobuf.h"
-#include "src/envoy/common/metadata_object.h"
 #include "src/envoy/metadata_to_peer_node/config/metadata_to_peer_node.pb.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/stream_info/mocks.h"
 #include "test/test_common/utility.h"
 
-using Envoy::Common::WorkloadMetadataObject;
 using Envoy::Extensions::Filters::Common::Expr::CelState;
+using Istio::Common::WorkloadMetadataObject;
 using testing::_;
 using testing::NiceMock;
 using testing::Return;
@@ -66,9 +66,10 @@ TEST_F(MetadataToPeerNodeFilterTest, SetPeerInfoTest) {
       absl::StrCat("k8s.cluster.name=foo-cluster,k8s.namespace.name=default,",
                    "k8s.deployment.name=foo-deploy,service.name=foo-service,",
                    "service.version=v1alpha3");
-  auto obj = WorkloadMetadataObject::fromBaggage(baggage);
+  auto obj = std::make_shared<WorkloadMetadataObject>(
+      WorkloadMetadataObject::fromBaggage(baggage));
 
-  filter_state_->setData(WorkloadMetadataObject::kSourceMetadataObjectKey, obj,
+  filter_state_->setData(Istio::Common::kSourceMetadataObjectKey, obj,
                          StreamInfo::FilterState::StateType::ReadOnly,
                          StreamInfo::FilterState::LifeSpan::Request);
 
@@ -109,9 +110,10 @@ TEST_F(MetadataToPeerNodeFilterTest, SetPeerInfoNoClusterTest) {
   auto baggage =
       absl::StrCat("k8s.namespace.name=default,k8s.deployment.name=foo-deploy,",
                    "service.name=foo-service,service.version=v1alpha3");
-  auto obj = WorkloadMetadataObject::fromBaggage(baggage);
+  auto obj = std::make_shared<WorkloadMetadataObject>(
+      WorkloadMetadataObject::fromBaggage(baggage));
 
-  filter_state_->setData(WorkloadMetadataObject::kSourceMetadataObjectKey, obj,
+  filter_state_->setData(Istio::Common::kSourceMetadataObjectKey, obj,
                          StreamInfo::FilterState::StateType::ReadOnly,
                          StreamInfo::FilterState::LifeSpan::Request);
 
