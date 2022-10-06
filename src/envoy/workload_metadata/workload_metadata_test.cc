@@ -74,13 +74,14 @@ TEST_F(FilterTest, OnAccept) {
           Invoke([&]() -> StreamInfo::FilterState& { return *filter_state; }));
 
   EXPECT_EQ(filter->onAccept(callbacks_), Network::FilterStatus::Continue);
-  EXPECT_TRUE(filter_state->hasDataWithName(
-      WorkloadMetadataObject::kSourceMetadataBaggageKey));
+  EXPECT_TRUE(
+      filter_state->hasDataWithName(Istio::Common::kSourceMetadataBaggageKey));
   auto found = filter_state->getDataReadOnly<Envoy::Router::StringAccessor>(
-      WorkloadMetadataObject::kSourceMetadataBaggageKey);
+      Istio::Common::kSourceMetadataBaggageKey);
   EXPECT_EQ(found->asString(),
             "k8s.cluster.name=my-cluster,k8s.namespace.name=default,k8s."
-            "deployment.name=foo,service.name=foo-svc,service.version=v2beta1");
+            "deployment.name=foo,service.name=foo-svc,service.version=v2beta1,"
+            "app.name=,app.version=");
 
   setAddressToReturn("tcp://192.168.1.1:5555");
   filter_state = std::make_shared<StreamInfo::FilterStateImpl>(
@@ -89,14 +90,15 @@ TEST_F(FilterTest, OnAccept) {
       .WillOnce(
           Invoke([&]() -> StreamInfo::FilterState& { return *filter_state; }));
   EXPECT_EQ(filter->onAccept(callbacks_), Network::FilterStatus::Continue);
-  EXPECT_TRUE(filter_state->hasDataWithName(
-      WorkloadMetadataObject::kSourceMetadataBaggageKey));
+  EXPECT_TRUE(
+      filter_state->hasDataWithName(Istio::Common::kSourceMetadataBaggageKey));
 
   found = filter_state->getDataReadOnly<Envoy::Router::StringAccessor>(
-      WorkloadMetadataObject::kSourceMetadataBaggageKey);
+      Istio::Common::kSourceMetadataBaggageKey);
   EXPECT_EQ(found->asString(),
             "k8s.cluster.name=my-cluster,k8s.namespace.name=default,k8s."
-            "deployment.name=foo,service.name=foo-svc,service.version=v2beta1");
+            "deployment.name=foo,service.name=foo-svc,service.version=v2beta1,"
+            "app.name=,app.version=");
 
   setAddressToReturn("tcp://4.22.1.1:4343");
   EXPECT_CALL(callbacks_, filterState()).Times(0);

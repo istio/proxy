@@ -17,7 +17,7 @@ package stackdriverplugin
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -67,7 +67,7 @@ func (sts *SecureTokenService) ServeHTTP(resp http.ResponseWriter, req *http.Req
 		resp.WriteHeader(http.StatusOK)
 	case path == "/token" && req.Method == http.MethodPost:
 		resp.WriteHeader(http.StatusOK)
-		body, _ := ioutil.ReadAll(req.Body)
+		body, _ := io.ReadAll(req.Body)
 		if string(body) == ExpectedTokenRequest {
 			_, _ = resp.Write([]byte(ExpectedTokenResponse))
 		} else {

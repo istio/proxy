@@ -16,7 +16,7 @@ package driver
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -93,7 +93,7 @@ func (g *HTTPCall) Run(_ *Params) error {
 		return fmt.Errorf("error code for :%d: %d", g.Port, code)
 	}
 
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
 		return err

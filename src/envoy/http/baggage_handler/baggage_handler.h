@@ -17,6 +17,7 @@
 
 #include "envoy/server/filter_config.h"
 #include "extensions/common/context.h"
+#include "extensions/common/metadata_object.h"
 #include "src/envoy/http/baggage_handler/config/baggage_handler.pb.h"
 
 namespace Envoy {

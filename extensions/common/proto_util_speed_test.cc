@@ -14,10 +14,12 @@
  */
 
 #include "benchmark/benchmark.h"
+#include "extensions/common/metadata_object.h"
 #include "extensions/common/node_info_generated.h"
 #include "extensions/common/proto_util.h"
 #include "extensions/common/util.h"
 #include "google/protobuf/util/json_util.h"
+#include "source/common/common/base64.h"
 #include "source/common/stream_info/filter_state_impl.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
 
@@ -156,6 +158,69 @@ static void BM_WriteFlatBufferWithCache(benchmark::State& state) {
   }
 }
 BENCHMARK(BM_WriteFlatBufferWithCache);
+
+constexpr std::string_view node_flatbuffer_json = R"###(
+{
+   "NAME":"test_pod",
+   "NAMESPACE":"default",
+   "CLUSTER_ID": "client-cluster",
+   "LABELS": {
+      "app": "productpage",
+      "version": "v1",
+      "service.istio.io/canonical-name": "productpage-v1",
+      "service.istio.io/canonical-revision": "version-1"
+   },
+   "OWNER": "kubernetes://apis/apps/v1/namespaces/default/deployments/productpage-v1",
+   "WORKLOAD_NAME":"productpage-v1"
+}
+)###";
+
+// Measure decoding performance of x-envoy-peer-metadata.
+static void BM_DecodeFlatBuffer(benchmark::State& state) {
+  // Construct a header from sample value.
+  google::protobuf::Struct metadata_struct;
+  JsonParseOptions json_parse_options;
+  JsonStringToMessage(std::string(node_flatbuffer_json), &metadata_struct,
+                      json_parse_options);
+  std::string metadata_bytes;
+  ::Wasm::Common::serializeToStringDeterministic(metadata_struct,
+                                                 &metadata_bytes);
+  const std::string header_value =
+      Envoy::Base64::encode(metadata_bytes.data(), metadata_bytes.size());
+
+  size_t size = 0;
+  for (auto _ : state) {
+    auto bytes = Envoy::Base64::decodeWithoutPadding(header_value);
+    google::protobuf::Struct metadata;
+    metadata.ParseFromString(bytes);
+    auto fb = ::Wasm::Common::extractNodeFlatBufferFromStruct(metadata);
+    size += fb.size();
+    benchmark::DoNotOptimize(size);
+  }
+}
+BENCHMARK(BM_DecodeFlatBuffer);
+
+// Measure decoding performance of baggage.
+static void BM_DecodeBaggage(benchmark::State& state) {
+  // Construct a header from sample value.
+  google::protobuf::Struct metadata_struct;
+  JsonParseOptions json_parse_options;
+  JsonStringToMessage(std::string(node_flatbuffer_json), &metadata_struct,
+                      json_parse_options);
+  auto fb = ::Wasm::Common::extractNodeFlatBufferFromStruct(metadata_struct);
+  const auto& node = *flatbuffers::GetRoot<Wasm::Common::FlatNode>(fb.data());
+  const std::string baggage =
+      Istio::Common::convertFlatNodeToWorkloadMetadata(node).baggage();
+
+  size_t size = 0;
+  for (auto _ : state) {
+    auto obj = Istio::Common::WorkloadMetadataObject::fromBaggage(baggage);
+    size += obj.namespace_name_.size();
+    benchmark::DoNotOptimize(size);
+  }
+}
+
+BENCHMARK(BM_DecodeBaggage);
 
 }  // namespace Common
 
