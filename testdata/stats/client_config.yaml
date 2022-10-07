@@ -1,5 +1,1 @@
 field_separator: ";.;"
-metrics:
-- dimensions:
-    configurable_metric_a: "(request.host.startsWith('127.0.0.1') ? 'localhost:' : request.host) + string(upstream_peer_id)"
-    configurable_metric_b: request.protocol

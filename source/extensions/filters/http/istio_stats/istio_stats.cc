@@ -63,6 +63,12 @@ struct Context : public Singleton::Instance {
             pool_.add("istio_request_duration_milliseconds")),
         request_bytes_(pool_.add("istio_request_bytes")),
         response_bytes_(pool_.add("istio_response_bytes")),
+        tcp_connections_opened_total_(
+            pool_.add("istio_tcp_connections_opened_total")),
+        tcp_connections_closed_total_(
+            pool_.add("istio_tcp_connections_closed_total")),
+        tcp_sent_bytes_total_(pool_.add("istio_tcp_sent_bytes_total")),
+        tcp_received_bytes_total_(pool_.add("istio_tcp_received_bytes_total")),
         empty_(pool_.add("")),
         unknown_(pool_.add("unknown")),
         source_(pool_.add("source")),
@@ -70,7 +76,8 @@ struct Context : public Singleton::Instance {
         latest_(pool_.add("latest")),
         http_(pool_.add("http")),
         grpc_(pool_.add("grpc")),
-        mtls_(pool_.add("mtls")),
+        tcp_(pool_.add("tcp")),
+        mutual_tls_(pool_.add("mutual_tls")),
         none_(pool_.add("none")),
         reporter_(pool_.add("reporter")),
         source_workload_(pool_.add("source_workload")),
@@ -123,6 +130,10 @@ struct Context : public Singleton::Instance {
   const Stats::StatName request_duration_milliseconds_;
   const Stats::StatName request_bytes_;
   const Stats::StatName response_bytes_;
+  const Stats::StatName tcp_connections_opened_total_;
+  const Stats::StatName tcp_connections_closed_total_;
+  const Stats::StatName tcp_sent_bytes_total_;
+  const Stats::StatName tcp_received_bytes_total_;
 
   // Constant names.
   const Stats::StatName empty_;
@@ -132,7 +143,8 @@ struct Context : public Singleton::Instance {
   const Stats::StatName latest_;
   const Stats::StatName http_;
   const Stats::StatName grpc_;
-  const Stats::StatName mtls_;
+  const Stats::StatName tcp_;
+  const Stats::StatName mutual_tls_;
   const Stats::StatName none_;
 
   // Dimension names.
@@ -184,7 +196,7 @@ enum class Reporter {
 };
 
 struct Config {
-  Config(const stats::PluginConfig&,
+  Config(const stats::PluginConfig& proto_config,
          Server::Configuration::FactoryContext& factory_context)
       : context_(factory_context.singletonManager().getTyped<Context>(
             SINGLETON_MANAGER_REGISTERED_NAME(Context),
@@ -194,7 +206,11 @@ struct Config {
                   factory_context.localInfo().node());
             })),
         scope_(factory_context.scope()),
-        pool_(scope_.symbolTable()) {
+        pool_(scope_.symbolTable()),
+        disable_host_header_fallback_(
+            proto_config.disable_host_header_fallback()),
+        report_duration_(PROTOBUF_GET_MS_OR_DEFAULT(
+            proto_config, tcp_reporting_duration, /* 15s */ 15000)) {
     switch (factory_context.direction()) {
       case envoy::config::core::v3::TrafficDirection::INBOUND:
         reporter_ = Reporter::ServerSidecar;
@@ -225,11 +241,16 @@ struct Config {
   // Backing storage for request strings (lock-free).
   Stats::StatNameDynamicPool pool_;
   absl::flat_hash_map<std::string, Stats::StatName> request_names_;
+
+  const bool disable_host_header_fallback_;
+  const std::chrono::milliseconds report_duration_;
 };
 
 using ConfigSharedPtr = std::shared_ptr<Config>;
 
-class IstioStatsFilter : public Http::PassThroughFilter {
+class IstioStatsFilter : public Http::PassThroughFilter,
+                         public Network::ReadFilter,
+                         public Network::ConnectionCallbacks {
  public:
   IstioStatsFilter(ConfigSharedPtr config)
       : config_(config), context_(*config->context_) {
@@ -242,10 +263,12 @@ class IstioStatsFilter : public Http::PassThroughFilter {
         break;
     }
   }
+  ~IstioStatsFilter() { ASSERT(report_timer_ == nullptr); }
 
+  // Http::StreamFilter
   void onStreamComplete() override {
-    populatePeerInfo();
     const auto& info = decoder_callbacks_->streamInfo();
+    populatePeerInfo(info, info.filterState());
     const auto* headers = info.getRequestHeaders();
     const bool is_grpc =
         headers && Grpc::Common::isGrpcRequestHeaders(*headers);
@@ -276,24 +299,7 @@ class IstioStatsFilter : public Http::PassThroughFilter {
     } else {
       tags_.push_back({context_.grpc_response_status_, context_.empty_});
     }
-    tags_.push_back(
-        {context_.response_flags_,
-         config_->resolve(StreamInfo::ResponseFlagUtils::toShortString(info))});
-
-    switch (config_->reporter()) {
-      case Reporter::ServerSidecar: {
-        const auto ssl_info = info.downstreamAddressProvider().sslConnection();
-        const auto mtls =
-            ssl_info != nullptr && ssl_info->peerCertificatePresented();
-        tags_.push_back({context_.connection_security_policy_,
-                         mtls ? context_.mtls_ : context_.none_});
-        break;
-      }
-      default:
-        tags_.push_back(
-            {context_.connection_security_policy_, context_.unknown_});
-        break;
-    }
+    populateFlagsAndConnectionSecurity(info);
 
     Stats::Utility::counterFromElements(
         config_->scope_, {context_.stat_namespace_, context_.requests_total_},
@@ -321,22 +327,143 @@ class IstioStatsFilter : public Http::PassThroughFilter {
     }
   }
 
+  // Network::ReadFilter
+  Network::FilterStatus onData(Buffer::Instance&, bool) override {
+    return Network::FilterStatus::Continue;
+  }
+  Network::FilterStatus onNewConnection() override {
+    if (config_->report_duration_ > std::chrono::milliseconds(0)) {
+      report_timer_ =
+          network_read_callbacks_->connection().dispatcher().createTimer(
+              [this] { onReportTimer(); });
+      report_timer_->enableTimer(config_->report_duration_);
+    }
+    return Network::FilterStatus::Continue;
+  }
+  void initializeReadFilterCallbacks(
+      Network::ReadFilterCallbacks& callbacks) override {
+    network_read_callbacks_ = &callbacks;
+    network_read_callbacks_->connection().addConnectionCallbacks(*this);
+  }
+  // Network::ConnectionCallbacks
+  void onEvent(Network::ConnectionEvent event) override {
+    switch (event) {
+      case Network::ConnectionEvent::LocalClose:
+      case Network::ConnectionEvent::RemoteClose:
+        reportHelper(true);
+        if (report_timer_) {
+          report_timer_->disableTimer();
+          report_timer_.reset();
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  void onAboveWriteBufferHighWatermark() override {}
+  void onBelowWriteBufferLowWatermark() override {}
+
  private:
-  // Peer metadata is populated after encode/decodeHeaders by MX filter.
-  void populatePeerInfo() {
-    const auto& info = decoder_callbacks_->streamInfo();
+  // Invoked periodically for TCP streams.
+  void reportHelper(bool end_stream) {
+    const auto& info = network_read_callbacks_->connection().streamInfo();
+    // TCP MX writes to upstream stream info instead.
+    OptRef<const StreamInfo::UpstreamInfo> upstream_info;
+    if (config_->reporter() == Reporter::ClientSidecar) {
+      upstream_info = info.upstreamInfo();
+    }
+    const StreamInfo::FilterState& filter_state =
+        upstream_info && upstream_info->upstreamFilterState()
+            ? *upstream_info->upstreamFilterState()
+            : info.filterState();
+
+    if (!network_peer_read_) {
+      network_peer_read_ = peerInfoRead(filter_state);
+      // Report connection open once peer info is read or connection is closed.
+      if (network_peer_read_ || end_stream) {
+        populatePeerInfo(info, filter_state);
+        tags_.push_back({context_.request_protocol_, context_.tcp_});
+        populateFlagsAndConnectionSecurity(info);
+        Stats::Utility::counterFromElements(
+            config_->scope_,
+            {context_.stat_namespace_, context_.tcp_connections_opened_total_},
+            tags_)
+            .inc();
+      }
+    }
+    if (network_peer_read_ || end_stream) {
+      auto meter = info.getDownstreamBytesMeter();
+      if (meter) {
+        Stats::Utility::counterFromElements(
+            config_->scope_,
+            {context_.stat_namespace_, context_.tcp_sent_bytes_total_}, tags_)
+            .add(meter->wireBytesSent() - bytes_sent_);
+        bytes_sent_ = meter->wireBytesSent();
+        Stats::Utility::counterFromElements(
+            config_->scope_,
+            {context_.stat_namespace_, context_.tcp_received_bytes_total_},
+            tags_)
+            .add(meter->wireBytesReceived() - bytes_received_);
+        bytes_received_ = meter->wireBytesReceived();
+      }
+    }
+    if (end_stream) {
+      Stats::Utility::counterFromElements(
+          config_->scope_,
+          {context_.stat_namespace_, context_.tcp_connections_closed_total_},
+          tags_)
+          .inc();
+    }
+  }
+  void onReportTimer() {
+    reportHelper(false);
+    report_timer_->enableTimer(config_->report_duration_);
+  }
+
+  // Detect if peer info is read by TCP metadata exchange.
+  bool peerInfoRead(const StreamInfo::FilterState& filter_state) {
+    const auto& filter_state_key =
+        config_->reporter() == Reporter::ServerSidecar
+            ? "wasm.downstream_peer_id"
+            : "wasm.upstream_peer_id";
+    const auto* object = filter_state.getDataReadOnly<
+        Envoy::Extensions::Filters::Common::Expr::CelState>(filter_state_key);
+    return object != nullptr;
+  }
+
+  void populateFlagsAndConnectionSecurity(const StreamInfo::StreamInfo& info) {
+    tags_.push_back(
+        {context_.response_flags_,
+         config_->resolve(StreamInfo::ResponseFlagUtils::toShortString(info))});
+    switch (config_->reporter()) {
+      case Reporter::ServerSidecar: {
+        const auto ssl_info = info.downstreamAddressProvider().sslConnection();
+        const auto mtls =
+            ssl_info != nullptr && ssl_info->peerCertificatePresented();
+        tags_.push_back({context_.connection_security_policy_,
+                         mtls ? context_.mutual_tls_ : context_.none_});
+        break;
+      }
+      default:
+        tags_.push_back(
+            {context_.connection_security_policy_, context_.unknown_});
+        break;
+    }
+  }
+
+  // Peer metadata is populated after encode/decodeHeaders by MX HTTP filter,
+  // and after initial bytes read/written by MX TCP filter.
+  void populatePeerInfo(const StreamInfo::StreamInfo& info,
+                        const StreamInfo::FilterState& filter_state) {
     const auto& filter_state_key =
         config_->reporter() == Reporter::ServerSidecar ? "wasm.downstream_peer"
                                                        : "wasm.upstream_peer";
-    const auto* filter_state =
-        info.filterState()
-            .getDataReadOnly<
-                Envoy::Extensions::Filters::Common::Expr::CelState>(
-                filter_state_key);
+    const auto* object = filter_state.getDataReadOnly<
+        Envoy::Extensions::Filters::Common::Expr::CelState>(filter_state_key);
     absl::optional<Istio::Common::WorkloadMetadataObject> peer;
-    if (filter_state) {
-      const auto& node = *flatbuffers::GetRoot<Wasm::Common::FlatNode>(
-          filter_state->value().data());
+    if (object) {
+      const auto& node =
+          *flatbuffers::GetRoot<Wasm::Common::FlatNode>(object->value().data());
       peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(node));
     }
     // Compute destination service with fallbacks.
@@ -363,7 +490,7 @@ class IstioStatsFilter : public Http::PassThroughFilter {
         }
       }
     }
-    if (service_host.empty()) {
+    if (service_host.empty() && !config_->disable_host_header_fallback_) {
       const auto* headers = info.getRequestHeaders();
       if (headers && headers->Host()) {
         service_host = headers->Host()->value().getStringView();
@@ -380,15 +507,16 @@ class IstioStatsFilter : public Http::PassThroughFilter {
                               : context_.unknown_});
         tags_.push_back({context_.source_canonical_revision_,
                          peer ? config_->resolve(peer->canonical_revision_)
-                              : context_.unknown_});
+                              : context_.latest_});
         tags_.push_back({context_.source_workload_namespace_,
                          peer ? config_->resolve(peer->namespace_name_)
                               : context_.unknown_});
         const auto ssl_info = info.downstreamAddressProvider().sslConnection();
-        tags_.push_back({context_.source_principal_,
-                         ssl_info ? config_->resolve(absl::StrJoin(
-                                        ssl_info->uriSanPeerCertificate(), ","))
-                                  : context_.unknown_});
+        tags_.push_back(
+            {context_.source_principal_,
+             ssl_info && !ssl_info->uriSanPeerCertificate().empty()
+                 ? config_->resolve(ssl_info->uriSanPeerCertificate()[0])
+                 : context_.unknown_});
         tags_.push_back(
             {context_.source_app_,
              peer ? config_->resolve(peer->app_name_) : context_.unknown_});
@@ -402,11 +530,11 @@ class IstioStatsFilter : public Http::PassThroughFilter {
             {context_.destination_workload_, context_.workload_name_});
         tags_.push_back(
             {context_.destination_workload_namespace_, context_.namespace_});
-        tags_.push_back({context_.destination_principal_,
-                         ssl_info
-                             ? config_->resolve(absl::StrJoin(
-                                   ssl_info->uriSanLocalCertificate(), ","))
-                             : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_principal_,
+             ssl_info && !ssl_info->uriSanLocalCertificate().empty()
+                 ? config_->resolve(ssl_info->uriSanLocalCertificate()[0])
+                 : context_.unknown_});
         tags_.push_back({context_.destination_app_, context_.app_name_});
         tags_.push_back({context_.destination_version_, context_.app_version_});
         tags_.push_back({context_.destination_service_,
@@ -439,11 +567,11 @@ class IstioStatsFilter : public Http::PassThroughFilter {
         const auto upstream_info = info.upstreamInfo();
         const Ssl::ConnectionInfoConstSharedPtr ssl_info =
             upstream_info ? upstream_info->upstreamSslConnection() : nullptr;
-        tags_.push_back({context_.source_principal_,
-                         ssl_info
-                             ? config_->resolve(absl::StrJoin(
-                                   ssl_info->uriSanLocalCertificate(), ","))
-                             : context_.unknown_});
+        tags_.push_back(
+            {context_.source_principal_,
+             ssl_info && !ssl_info->uriSanLocalCertificate().empty()
+                 ? config_->resolve(ssl_info->uriSanLocalCertificate()[0])
+                 : context_.unknown_});
         tags_.push_back({context_.source_app_, context_.app_name_});
         tags_.push_back({context_.source_version_, context_.app_version_});
         tags_.push_back({context_.source_cluster_, context_.cluster_name_});
@@ -453,10 +581,11 @@ class IstioStatsFilter : public Http::PassThroughFilter {
         tags_.push_back({context_.destination_workload_namespace_,
                          peer ? config_->resolve(peer->namespace_name_)
                               : context_.unknown_});
-        tags_.push_back({context_.destination_principal_,
-                         ssl_info ? config_->resolve(absl::StrJoin(
-                                        ssl_info->uriSanPeerCertificate(), ","))
-                                  : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_principal_,
+             ssl_info && !ssl_info->uriSanPeerCertificate().empty()
+                 ? config_->resolve(ssl_info->uriSanPeerCertificate()[0])
+                 : context_.unknown_});
         tags_.push_back(
             {context_.destination_app_,
              peer ? config_->resolve(peer->app_name_) : context_.unknown_});
@@ -472,7 +601,7 @@ class IstioStatsFilter : public Http::PassThroughFilter {
                               : context_.unknown_});
         tags_.push_back({context_.destination_canonical_revision_,
                          peer ? config_->resolve(peer->canonical_revision_)
-                              : context_.unknown_});
+                              : context_.latest_});
         tags_.push_back({context_.destination_service_name_,
                          service_host_name.empty()
                              ? context_.unknown_
@@ -493,6 +622,11 @@ class IstioStatsFilter : public Http::PassThroughFilter {
   ConfigSharedPtr config_;
   Context& context_;
   Stats::StatNameTagVector tags_;
+  Event::TimerPtr report_timer_{nullptr};
+  Network::ReadFilterCallbacks* network_read_callbacks_;
+  bool network_peer_read_{false};
+  uint64_t bytes_sent_{0};
+  uint64_t bytes_received_{0};
 };
 
 }  // namespace
@@ -512,6 +646,22 @@ IstioStatsFilterConfigFactory::createFilterFactoryFromProtoTyped(
 
 REGISTER_FACTORY(IstioStatsFilterConfigFactory,
                  Server::Configuration::NamedHttpFilterConfigFactory);
+
+Network::FilterFactoryCb
+IstioStatsNetworkFilterConfigFactory::createFilterFactoryFromProtoTyped(
+    const stats::PluginConfig& proto_config,
+    Server::Configuration::FactoryContext& factory_context) {
+  factory_context.api().customStatNamespaces().registerStatNamespace(
+      CustomStatNamespace);
+  ConfigSharedPtr config =
+      std::make_shared<Config>(proto_config, factory_context);
+  return [config](Network::FilterManager& filter_manager) {
+    filter_manager.addReadFilter(std::make_shared<IstioStatsFilter>(config));
+  };
+}
+
+REGISTER_FACTORY(IstioStatsNetworkFilterConfigFactory,
+                 Server::Configuration::NamedNetworkFilterConfigFactory);
 
 }  // namespace IstioStats
 }  // namespace HttpFilters

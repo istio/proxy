@@ -19,6 +19,7 @@
 #include "extensions/stats/config.pb.h"
 #include "extensions/stats/config.pb.validate.h"
 #include "source/extensions/filters/http/common/factory_base.h"
+#include "source/extensions/filters/network/common/factory_base.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -35,6 +36,18 @@ class IstioStatsFilterConfigFactory
   Http::FilterFactoryCb createFilterFactoryFromProtoTyped(
       const stats::PluginConfig& proto_config, const std::string&,
       Server::Configuration::FactoryContext&) override;
+};
+
+class IstioStatsNetworkFilterConfigFactory
+    : public NetworkFilters::Common::FactoryBase<stats::PluginConfig> {
+ public:
+  IstioStatsNetworkFilterConfigFactory()
+      : FactoryBase("envoy.filters.network.istio_stats") {}
+
+ private:
+  Network::FilterFactoryCb createFilterFactoryFromProtoTyped(
+      const stats::PluginConfig& proto_config,
+      Server::Configuration::FactoryContext& factory_context) override;
 };
 
 }  // namespace IstioStats
