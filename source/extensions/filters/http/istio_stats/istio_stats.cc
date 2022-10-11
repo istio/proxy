@@ -254,6 +254,7 @@ class IstioStatsFilter : public Http::PassThroughFilter,
  public:
   IstioStatsFilter(ConfigSharedPtr config)
       : config_(config), context_(*config->context_) {
+    tags_.reserve(25);
     switch (config_->reporter()) {
       case Reporter::ServerSidecar:
         tags_.push_back({context_.reporter_, context_.destination_});
