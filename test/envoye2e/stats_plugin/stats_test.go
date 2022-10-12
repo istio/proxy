@@ -155,13 +155,14 @@ func enableStats(t *testing.T, vars map[string]string) {
 }
 
 func TestStatsPayload(t *testing.T) {
-	// env.SkipTSanASan(t)
 	for _, testCase := range TestCases {
 		for _, runtime := range Runtimes {
 			t.Run(testCase.Name+"/"+runtime.WasmRuntime, func(t *testing.T) {
 				env.SkipWasm(t, runtime.WasmRuntime)
+				clientStats := testCase.ClientStats
 				if testCase.Name == "Customized" && runtime.WasmRuntime == "" {
-					t.Skip("expressions not implemented for native stats extension")
+					// TODO: complete dimensions support in native stats filter
+					clientStats = map[string]driver.StatMatcher{}
 				}
 				params := driver.NewTestParams(t, map[string]string{
 					"RequestCount":               "10",
@@ -197,7 +198,7 @@ func TestStatsPayload(t *testing.T) {
 								Body: "hello, world!",
 							},
 						},
-						&driver.Stats{AdminPort: params.Ports.ClientAdmin, Matchers: testCase.ClientStats},
+						&driver.Stats{AdminPort: params.Ports.ClientAdmin, Matchers: clientStats},
 						&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: testCase.ServerStats},
 					},
 				}).Run(params); err != nil {

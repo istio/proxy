@@ -121,14 +121,14 @@ struct Context : public Singleton::Instance {
         app_version_(
             pool_.add(extractMapString(node.metadata(), "LABELS", "version"))) {
     all_metrics_ = {
-        requests_total_,
-        request_duration_milliseconds_,
-        request_bytes_,
-        response_bytes_,
-        tcp_connections_opened_total_,
-        tcp_connections_closed_total_,
-        tcp_sent_bytes_total_,
-        tcp_received_bytes_total_,
+        {"requests_total", requests_total_},
+        {"request_duration_milliseconds", request_duration_milliseconds_},
+        {"request_bytes", request_bytes_},
+        {"response_bytes", response_bytes_},
+        {"tcp_connections_opened_total", tcp_connections_opened_total_},
+        {"tcp_connections_closed_total", tcp_connections_closed_total_},
+        {"tcp_sent_bytes_total", tcp_sent_bytes_total_},
+        {"tcp_received_bytes_total", tcp_received_bytes_total_},
     };
   }
 
@@ -144,7 +144,7 @@ struct Context : public Singleton::Instance {
   const Stats::StatName tcp_connections_closed_total_;
   const Stats::StatName tcp_sent_bytes_total_;
   const Stats::StatName tcp_received_bytes_total_;
-  std::vector<Stats::StatName> all_metrics_;
+  absl::flat_hash_map<std::string, Stats::StatName> all_metrics_;
 
   // Constant names.
   const Stats::StatName empty_;
@@ -216,14 +216,14 @@ struct MetricOverrides {
   absl::flat_hash_map<Stats::StatName, TagOverrides> tag_overrides_;
 
   Stats::StatNameTagVector overrideTags(const TagOverrides& tag_overrides,
-                                        Stats::StatNameTagVector& tags) {
+                                        const Stats::StatNameTagVector& tags) {
     Stats::StatNameTagVector out;
     out.reserve(tags.size());
     for (const auto& [key, val] : tags) {
       const auto it = tag_overrides.find(key);
       if (it != tag_overrides.end()) {
         if (it->second.has_value()) {
-          // TODO
+          // TODO: populate expressions
         } else {
           // Skip dropped tags.
         }
@@ -235,7 +235,7 @@ struct MetricOverrides {
   }
 };
 
-struct Config : public Logger::Loggable<Logger::Id::filter>{
+struct Config : public Logger::Loggable<Logger::Id::filter> {
   Config(const stats::PluginConfig& proto_config,
          Server::Configuration::FactoryContext& factory_context)
       : context_(factory_context.singletonManager().getTyped<Context>(
@@ -265,16 +265,21 @@ struct Config : public Logger::Loggable<Logger::Id::filter>{
         proto_config.definitions_size() > 0) {
       metric_overrides_ = absl::make_optional<MetricOverrides>();
       for (const auto& metric : proto_config.metrics()) {
-        Stats::StatName name = resolve(absl::StrCat("istio_", metric.name()));
         if (metric.drop()) {
-          metric_overrides_->drop_.insert(name);
+          const auto it = context_->all_metrics_.find(metric.name());
+          if (it != context_->all_metrics_.end()) {
+            metric_overrides_->drop_.insert(it->second);
+          }
           continue;
         }
         for (const auto& tag : metric.tags_to_remove()) {
           if (!metric.name().empty()) {
-            metric_overrides_->tag_overrides_[name][resolve(tag)] = {};
+            const auto it = context_->all_metrics_.find(metric.name());
+            if (it != context_->all_metrics_.end()) {
+              metric_overrides_->tag_overrides_[it->second][resolve(tag)] = {};
+            }
           } else
-            for (const auto& metric : context_->all_metrics_) {
+            for (const auto& [_, metric] : context_->all_metrics_) {
               metric_overrides_->tag_overrides_[metric][resolve(tag)] = {};
             }
         }
@@ -292,7 +297,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter>{
     return name;
   }
 
-  void addCounter(Stats::StatName metric, Stats::StatNameTagVector& tags,
+  void addCounter(Stats::StatName metric, const Stats::StatNameTagVector& tags,
                   uint64_t amount = 1) {
     if (metric_overrides_) {
       if (metric_overrides_->drop_.contains(metric)) {
@@ -313,7 +318,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter>{
   }
 
   void recordHistogram(Stats::StatName metric, Stats::Histogram::Unit unit,
-                       Stats::StatNameTagVector& tags, uint64_t value) {
+                       const Stats::StatNameTagVector& tags, uint64_t value) {
     if (metric_overrides_) {
       if (metric_overrides_->drop_.contains(metric)) {
         return;
