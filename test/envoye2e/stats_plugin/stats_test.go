@@ -160,6 +160,9 @@ func TestStatsPayload(t *testing.T) {
 		for _, runtime := range Runtimes {
 			t.Run(testCase.Name+"/"+runtime.WasmRuntime, func(t *testing.T) {
 				env.SkipWasm(t, runtime.WasmRuntime)
+				if testCase.Name == "Customized" && runtime.WasmRuntime == "" {
+					t.Skip("expressions not implemented for native stats extension")
+				}
 				params := driver.NewTestParams(t, map[string]string{
 					"RequestCount":               "10",
 					"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
