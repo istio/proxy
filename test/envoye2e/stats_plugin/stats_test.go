@@ -50,6 +50,9 @@ var Runtimes = []struct {
 	WasmRuntime                string
 }{
 	{
+		// native filter
+	},
+	{
 		MetadataExchangeFilterCode: "inline_string: \"envoy.wasm.metadata_exchange\"",
 		StatsFilterCode:            "inline_string: \"envoy.wasm.stats\"",
 		WasmRuntime:                "envoy.wasm.runtime.null",
@@ -63,9 +66,6 @@ var Runtimes = []struct {
 		MetadataExchangeFilterCode: "filename: " + filepath.Join(env.GetBazelBinOrDie(), "extensions/metadata_exchange.compiled.wasm"),
 		StatsFilterCode:            "filename: " + filepath.Join(env.GetBazelBinOrDie(), "extensions/stats.compiled.wasm"),
 		WasmRuntime:                "envoy.wasm.runtime.v8",
-	},
-	{
-		// native filter
 	},
 }
 
@@ -155,14 +155,11 @@ func enableStats(t *testing.T, vars map[string]string) {
 }
 
 func TestStatsPayload(t *testing.T) {
-	env.SkipTSanASan(t)
+	// env.SkipTSanASan(t)
 	for _, testCase := range TestCases {
 		for _, runtime := range Runtimes {
 			t.Run(testCase.Name+"/"+runtime.WasmRuntime, func(t *testing.T) {
 				env.SkipWasm(t, runtime.WasmRuntime)
-				if testCase.Name == "Customized" && runtime.WasmRuntime == "" {
-					t.Skip("expressions not implemented for native stats extension")
-				}
 				params := driver.NewTestParams(t, map[string]string{
 					"RequestCount":               "10",
 					"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,

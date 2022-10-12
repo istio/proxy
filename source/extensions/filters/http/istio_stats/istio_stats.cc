@@ -120,6 +120,16 @@ struct Context : public Singleton::Instance {
             pool_.add(extractMapString(node.metadata(), "LABELS", "app"))),
         app_version_(
             pool_.add(extractMapString(node.metadata(), "LABELS", "version"))) {
+    all_metrics_ = {
+        requests_total_,
+        request_duration_milliseconds_,
+        request_bytes_,
+        response_bytes_,
+        tcp_connections_opened_total_,
+        tcp_connections_closed_total_,
+        tcp_sent_bytes_total_,
+        tcp_received_bytes_total_,
+    };
   }
 
   Stats::StatNamePool pool_;
@@ -134,6 +144,7 @@ struct Context : public Singleton::Instance {
   const Stats::StatName tcp_connections_closed_total_;
   const Stats::StatName tcp_sent_bytes_total_;
   const Stats::StatName tcp_received_bytes_total_;
+  std::vector<Stats::StatName> all_metrics_;
 
   // Constant names.
   const Stats::StatName empty_;
@@ -195,7 +206,36 @@ enum class Reporter {
   ServerSidecar,
 };
 
-struct Config {
+// Instructions on dropping, creating, and overriding labels.
+struct MetricOverrides {
+  // Initial transformation: metrics dropped.
+  absl::flat_hash_set<Stats::StatName> drop_;
+  // Second transformation: dimensions changed.
+  using TagOverrides =
+      absl::flat_hash_map<Stats::StatName, absl::optional<uint32_t>>;
+  absl::flat_hash_map<Stats::StatName, TagOverrides> tag_overrides_;
+
+  Stats::StatNameTagVector overrideTags(const TagOverrides& tag_overrides,
+                                        Stats::StatNameTagVector& tags) {
+    Stats::StatNameTagVector out;
+    out.reserve(tags.size());
+    for (const auto& [key, val] : tags) {
+      const auto it = tag_overrides.find(key);
+      if (it != tag_overrides.end()) {
+        if (it->second.has_value()) {
+          // TODO
+        } else {
+          // Skip dropped tags.
+        }
+      } else {
+        out.push_back({key, val});
+      }
+    }
+    return out;
+  }
+};
+
+struct Config : public Logger::Loggable<Logger::Id::filter>{
   Config(const stats::PluginConfig& proto_config,
          Server::Configuration::FactoryContext& factory_context)
       : context_(factory_context.singletonManager().getTyped<Context>(
@@ -221,6 +261,25 @@ struct Config {
       default:
         reporter_ = Reporter::ClientSidecar;
     }
+    if (proto_config.metrics_size() > 0 ||
+        proto_config.definitions_size() > 0) {
+      metric_overrides_ = absl::make_optional<MetricOverrides>();
+      for (const auto& metric : proto_config.metrics()) {
+        Stats::StatName name = resolve(absl::StrCat("istio_", metric.name()));
+        if (metric.drop()) {
+          metric_overrides_->drop_.insert(name);
+          continue;
+        }
+        for (const auto& tag : metric.tags_to_remove()) {
+          if (!metric.name().empty()) {
+            metric_overrides_->tag_overrides_[name][resolve(tag)] = {};
+          } else
+            for (const auto& metric : context_->all_metrics_) {
+              metric_overrides_->tag_overrides_[metric][resolve(tag)] = {};
+            }
+        }
+      }
+    }
   }
 
   Stats::StatName resolve(absl::string_view symbol) {
@@ -231,6 +290,46 @@ struct Config {
     Stats::StatName name = pool_.add(symbol);
     request_names_.emplace(symbol, name);
     return name;
+  }
+
+  void addCounter(Stats::StatName metric, Stats::StatNameTagVector& tags,
+                  uint64_t amount = 1) {
+    if (metric_overrides_) {
+      if (metric_overrides_->drop_.contains(metric)) {
+        return;
+      }
+      const auto it = metric_overrides_->tag_overrides_.find(metric);
+      if (it != metric_overrides_->tag_overrides_.end()) {
+        auto new_tags = metric_overrides_->overrideTags(it->second, tags);
+        Stats::Utility::counterFromStatNames(
+            scope_, {context_->stat_namespace_, metric}, new_tags)
+            .add(amount);
+        return;
+      }
+    }
+    Stats::Utility::counterFromStatNames(
+        scope_, {context_->stat_namespace_, metric}, tags)
+        .add(amount);
+  }
+
+  void recordHistogram(Stats::StatName metric, Stats::Histogram::Unit unit,
+                       Stats::StatNameTagVector& tags, uint64_t value) {
+    if (metric_overrides_) {
+      if (metric_overrides_->drop_.contains(metric)) {
+        return;
+      }
+      const auto it = metric_overrides_->tag_overrides_.find(metric);
+      if (it != metric_overrides_->tag_overrides_.end()) {
+        auto new_tags = metric_overrides_->overrideTags(it->second, tags);
+        Stats::Utility::histogramFromStatNames(
+            scope_, {context_->stat_namespace_, metric}, unit, new_tags)
+            .recordValue(value);
+        return;
+      }
+    }
+    Stats::Utility::histogramFromStatNames(
+        scope_, {context_->stat_namespace_, metric}, unit, tags)
+        .recordValue(value);
   }
 
   Reporter reporter() const { return reporter_; }
@@ -244,6 +343,7 @@ struct Config {
 
   const bool disable_host_header_fallback_;
   const std::chrono::milliseconds report_duration_;
+  absl::optional<MetricOverrides> metric_overrides_;
 };
 
 using ConfigSharedPtr = std::shared_ptr<Config>;
@@ -302,29 +402,22 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     }
     populateFlagsAndConnectionSecurity(info);
 
-    Stats::Utility::counterFromStatNames(
-        config_->scope_, {context_.stat_namespace_, context_.requests_total_},
-        tags_)
-        .inc();
+    config_->addCounter(context_.requests_total_, tags_);
     auto duration = info.requestComplete();
     if (duration.has_value()) {
-      Stats::Utility::histogramFromStatNames(
-          config_->scope_,
-          {context_.stat_namespace_, context_.request_duration_milliseconds_},
-          Stats::Histogram::Unit::Milliseconds, tags_)
-          .recordValue(absl::FromChrono(duration.value()) /
-                       absl::Milliseconds(1));
+      config_->recordHistogram(
+          context_.request_duration_milliseconds_,
+          Stats::Histogram::Unit::Milliseconds, tags_,
+          absl::FromChrono(duration.value()) / absl::Milliseconds(1));
     }
     auto meter = info.getDownstreamBytesMeter();
     if (meter) {
-      Stats::Utility::histogramFromStatNames(
-          config_->scope_, {context_.stat_namespace_, context_.request_bytes_},
-          Stats::Histogram::Unit::Bytes, tags_)
-          .recordValue(meter->wireBytesReceived());
-      Stats::Utility::histogramFromStatNames(
-          config_->scope_, {context_.stat_namespace_, context_.response_bytes_},
-          Stats::Histogram::Unit::Bytes, tags_)
-          .recordValue(meter->wireBytesSent());
+      config_->recordHistogram(context_.request_bytes_,
+                               Stats::Histogram::Unit::Bytes, tags_,
+                               meter->wireBytesReceived());
+      config_->recordHistogram(context_.response_bytes_,
+                               Stats::Histogram::Unit::Bytes, tags_,
+                               meter->wireBytesSent());
     }
   }
 
@@ -385,35 +478,22 @@ class IstioStatsFilter : public Http::PassThroughFilter,
         populatePeerInfo(info, filter_state);
         tags_.push_back({context_.request_protocol_, context_.tcp_});
         populateFlagsAndConnectionSecurity(info);
-        Stats::Utility::counterFromStatNames(
-            config_->scope_,
-            {context_.stat_namespace_, context_.tcp_connections_opened_total_},
-            tags_)
-            .inc();
+        config_->addCounter(context_.tcp_connections_opened_total_, tags_);
       }
     }
     if (network_peer_read_ || end_stream) {
       auto meter = info.getDownstreamBytesMeter();
       if (meter) {
-        Stats::Utility::counterFromStatNames(
-            config_->scope_,
-            {context_.stat_namespace_, context_.tcp_sent_bytes_total_}, tags_)
-            .add(meter->wireBytesSent() - bytes_sent_);
+        config_->addCounter(context_.tcp_sent_bytes_total_, tags_,
+                            meter->wireBytesSent() - bytes_sent_);
         bytes_sent_ = meter->wireBytesSent();
-        Stats::Utility::counterFromStatNames(
-            config_->scope_,
-            {context_.stat_namespace_, context_.tcp_received_bytes_total_},
-            tags_)
-            .add(meter->wireBytesReceived() - bytes_received_);
+        config_->addCounter(context_.tcp_received_bytes_total_, tags_,
+                            meter->wireBytesReceived() - bytes_received_);
         bytes_received_ = meter->wireBytesReceived();
       }
     }
     if (end_stream) {
-      Stats::Utility::counterFromStatNames(
-          config_->scope_,
-          {context_.stat_namespace_, context_.tcp_connections_closed_total_},
-          tags_)
-          .inc();
+      config_->addCounter(context_.tcp_connections_closed_total_, tags_);
     }
   }
   void onReportTimer() {
