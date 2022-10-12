@@ -302,13 +302,13 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     }
     populateFlagsAndConnectionSecurity(info);
 
-    Stats::Utility::counterFromElements(
+    Stats::Utility::counterFromStatNames(
         config_->scope_, {context_.stat_namespace_, context_.requests_total_},
         tags_)
         .inc();
     auto duration = info.requestComplete();
     if (duration.has_value()) {
-      Stats::Utility::histogramFromElements(
+      Stats::Utility::histogramFromStatNames(
           config_->scope_,
           {context_.stat_namespace_, context_.request_duration_milliseconds_},
           Stats::Histogram::Unit::Milliseconds, tags_)
@@ -317,11 +317,11 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     }
     auto meter = info.getDownstreamBytesMeter();
     if (meter) {
-      Stats::Utility::histogramFromElements(
+      Stats::Utility::histogramFromStatNames(
           config_->scope_, {context_.stat_namespace_, context_.request_bytes_},
           Stats::Histogram::Unit::Bytes, tags_)
           .recordValue(meter->wireBytesReceived());
-      Stats::Utility::histogramFromElements(
+      Stats::Utility::histogramFromStatNames(
           config_->scope_, {context_.stat_namespace_, context_.response_bytes_},
           Stats::Histogram::Unit::Bytes, tags_)
           .recordValue(meter->wireBytesSent());
@@ -385,7 +385,7 @@ class IstioStatsFilter : public Http::PassThroughFilter,
         populatePeerInfo(info, filter_state);
         tags_.push_back({context_.request_protocol_, context_.tcp_});
         populateFlagsAndConnectionSecurity(info);
-        Stats::Utility::counterFromElements(
+        Stats::Utility::counterFromStatNames(
             config_->scope_,
             {context_.stat_namespace_, context_.tcp_connections_opened_total_},
             tags_)
@@ -395,12 +395,12 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     if (network_peer_read_ || end_stream) {
       auto meter = info.getDownstreamBytesMeter();
       if (meter) {
-        Stats::Utility::counterFromElements(
+        Stats::Utility::counterFromStatNames(
             config_->scope_,
             {context_.stat_namespace_, context_.tcp_sent_bytes_total_}, tags_)
             .add(meter->wireBytesSent() - bytes_sent_);
         bytes_sent_ = meter->wireBytesSent();
-        Stats::Utility::counterFromElements(
+        Stats::Utility::counterFromStatNames(
             config_->scope_,
             {context_.stat_namespace_, context_.tcp_received_bytes_total_},
             tags_)
@@ -409,7 +409,7 @@ class IstioStatsFilter : public Http::PassThroughFilter,
       }
     }
     if (end_stream) {
-      Stats::Utility::counterFromElements(
+      Stats::Utility::counterFromStatNames(
           config_->scope_,
           {context_.stat_namespace_, context_.tcp_connections_closed_total_},
           tags_)
