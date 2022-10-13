@@ -32,6 +32,7 @@ envoy_cc_extension(
     deps = [
         "//extensions/common:metadata_object_lib",
         "//extensions/stats:config_cc_proto",
+        "@com_google_cel_cpp//parser",
         "@envoy//envoy/registry",
         "@envoy//envoy/server:filter_config_interface",
         "@envoy//envoy/stream_info:filter_state_interface",
@@ -39,6 +40,8 @@ envoy_cc_extension(
         "@envoy//source/common/http:header_map_lib",
         "@envoy//source/common/stream_info:utility_lib",
         "@envoy//source/extensions/filters/common/expr:cel_state_lib",
+        "@envoy//source/extensions/filters/common/expr:context_lib",
+        "@envoy//source/extensions/filters/common/expr:evaluator_lib",
         "@envoy//source/extensions/filters/http/common:factory_base_lib",
         "@envoy//source/extensions/filters/http/common:pass_through_filter_lib",
     ],

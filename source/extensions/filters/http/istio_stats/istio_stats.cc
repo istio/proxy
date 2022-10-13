@@ -18,11 +18,14 @@
 #include "envoy/server/factory_context.h"
 #include "envoy/singleton/manager.h"
 #include "extensions/common/metadata_object.h"
+#include "parser/parser.h"
 #include "source/common/grpc/common.h"
 #include "source/common/http/header_map_impl.h"
 #include "source/common/http/header_utility.h"
 #include "source/common/stream_info/utility.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
+#include "source/extensions/filters/common/expr/context.h"
+#include "source/extensions/filters/common/expr/evaluator.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
 
 namespace Envoy {
@@ -52,11 +55,44 @@ absl::string_view extractMapString(const ProtobufWkt::Struct& metadata,
   return extractString(it->second.struct_value(), key);
 }
 
+enum class Reporter {
+  ClientSidecar,
+  ServerSidecar,
+};
+
+// Detect if peer info read is completed by TCP metadata exchange.
+bool peerInfoRead(Reporter reporter,
+                  const StreamInfo::FilterState& filter_state) {
+  const auto& filter_state_key = reporter == Reporter::ServerSidecar
+                                     ? "wasm.downstream_peer_id"
+                                     : "wasm.upstream_peer_id";
+  const auto* object =
+      filter_state
+          .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
+              filter_state_key);
+  return object != nullptr;
+}
+
+const Wasm::Common::FlatNode* peerInfo(
+    Reporter reporter, const StreamInfo::FilterState& filter_state) {
+  const auto& filter_state_key = reporter == Reporter::ServerSidecar
+                                     ? "wasm.downstream_peer"
+                                     : "wasm.upstream_peer";
+  const auto* object =
+      filter_state
+          .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
+              filter_state_key);
+  return object ? flatbuffers::GetRoot<Wasm::Common::FlatNode>(
+                      object->value().data())
+                : nullptr;
+}
+
 // Process-wide context shared with all filter instances.
 struct Context : public Singleton::Instance {
   explicit Context(Stats::SymbolTable& symbol_table,
                    const envoy::config::core::v3::Node& node)
       : pool_(symbol_table),
+        node_(node),
         stat_namespace_(pool_.add(CustomStatNamespace)),
         requests_total_(pool_.add("istio_requests_total")),
         request_duration_milliseconds_(
@@ -130,9 +166,39 @@ struct Context : public Singleton::Instance {
         {"tcp_sent_bytes_total", tcp_sent_bytes_total_},
         {"tcp_received_bytes_total", tcp_received_bytes_total_},
     };
+    all_dimensions_ = {
+        {"reporter", reporter_},
+        {"source_workload", source_workload_},
+        {"source_workload_namespace", source_workload_namespace_},
+        {"source_principal", source_principal_},
+        {"source_app", source_app_},
+        {"source_version", source_version_},
+        {"source_canonical_service", source_canonical_service_},
+        {"source_canonical_revision", source_canonical_revision_},
+        {"source_cluster", source_cluster_},
+        {"destination_workload", destination_workload_},
+        {"destination_workload_namespace", destination_workload_namespace_},
+        {"destination_principal", destination_principal_},
+        {"destination_app", destination_app_},
+        {"destination_version", destination_version_},
+        {"destination_service", destination_service_},
+        {"destination_service_name", destination_service_name_},
+        {"destination_service_namespace", destination_service_namespace_},
+        {"destination_canonical_service", destination_canonical_service_},
+        {"destination_canonical_revision", destination_canonical_revision_},
+        {"destination_cluster", destination_cluster_},
+        {"request_protocol", request_protocol_},
+        {"response_flags", response_flags_},
+        {"connection_security_policy", connection_security_policy_},
+        {"response_code", response_code_},
+        {"grpc_response_status", grpc_response_status_},
+    };
   }
 
   Stats::StatNamePool pool_;
+  const envoy::config::core::v3::Node& node_;
+  absl::flat_hash_map<std::string, Stats::StatName> all_metrics_;
+  absl::flat_hash_map<std::string, Stats::StatName> all_dimensions_;
 
   // Metric names.
   const Stats::StatName stat_namespace_;
@@ -144,7 +210,6 @@ struct Context : public Singleton::Instance {
   const Stats::StatName tcp_connections_closed_total_;
   const Stats::StatName tcp_sent_bytes_total_;
   const Stats::StatName tcp_received_bytes_total_;
-  absl::flat_hash_map<std::string, Stats::StatName> all_metrics_;
 
   // Constant names.
   const Stats::StatName empty_;
@@ -196,18 +261,32 @@ struct Context : public Singleton::Instance {
   const Stats::StatName cluster_name_;
   const Stats::StatName app_name_;
   const Stats::StatName app_version_;
-};
+};  // namespace
+
 using ContextSharedPtr = std::shared_ptr<Context>;
 
 SINGLETON_MANAGER_REGISTRATION(Context)
 
-enum class Reporter {
-  ClientSidecar,
-  ServerSidecar,
-};
-
 // Instructions on dropping, creating, and overriding labels.
-struct MetricOverrides {
+// This is not the "hot path" of the metrics system and thus, fairly
+// unoptimized.
+struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
+  MetricOverrides(ContextSharedPtr& context, Stats::SymbolTable& symbol_table)
+      : context_(context), pool_(symbol_table) {}
+  ContextSharedPtr context_;
+  Stats::StatNameDynamicPool pool_;
+  absl::flat_hash_map<std::string, Stats::StatName> expression_names_;
+
+  Stats::StatName resolve(absl::string_view symbol) {
+    const auto& it = expression_names_.find(symbol);
+    if (it != expression_names_.end()) {
+      return it->second;
+    }
+    Stats::StatName name = pool_.add(symbol);
+    expression_names_.emplace(symbol, name);
+    return name;
+  }
+
   // Initial transformation: metrics dropped.
   absl::flat_hash_set<Stats::StatName> drop_;
   // Second transformation: dimensions changed.
@@ -216,14 +295,52 @@ struct MetricOverrides {
   absl::flat_hash_map<Stats::StatName, TagOverrides> tag_overrides_;
 
   Stats::StatNameTagVector overrideTags(const TagOverrides& tag_overrides,
-                                        const Stats::StatNameTagVector& tags) {
+                                        const Stats::StatNameTagVector& tags,
+                                        const StreamInfo::StreamInfo& info) {
     Stats::StatNameTagVector out;
     out.reserve(tags.size());
     for (const auto& [key, val] : tags) {
       const auto it = tag_overrides.find(key);
       if (it != tag_overrides.end()) {
         if (it->second.has_value()) {
-          // TODO: populate expressions
+          Protobuf::Arena arena;
+          Filters::Common::Expr::Activation activation;
+          activation.InsertValueProducer(
+              Filters::Common::Expr::Request,
+              std::make_unique<Filters::Common::Expr::RequestWrapper>(
+                  arena, nullptr, info));
+          activation.InsertValueProducer(
+              Filters::Common::Expr::Connection,
+              std::make_unique<Filters::Common::Expr::ConnectionWrapper>(info));
+          activation.InsertValueProducer(
+              Filters::Common::Expr::Upstream,
+              std::make_unique<Filters::Common::Expr::UpstreamWrapper>(info));
+          activation.InsertValueProducer(
+              Filters::Common::Expr::Source,
+              std::make_unique<Filters::Common::Expr::PeerWrapper>(info,
+                                                                   false));
+          activation.InsertValueProducer(
+              Filters::Common::Expr::Destination,
+              std::make_unique<Filters::Common::Expr::PeerWrapper>(info, true));
+          activation.InsertValueProducer(
+              Filters::Common::Expr::Metadata,
+              std::make_unique<Filters::Common::Expr::MetadataProducer>(
+                  info.dynamicMetadata()));
+          activation.InsertValueProducer(
+              Filters::Common::Expr::FilterState,
+              std::make_unique<Filters::Common::Expr::FilterStateWrapper>(
+                  info.filterState()));
+          activation.InsertValue(
+              "node", Filters::Common::Expr::CelProtoWrapper::CreateMessage(
+                          &context_->node_, &arena));
+          auto eval_status =
+              compiled_exprs_[it->second.value()]->Evaluate(activation, &arena);
+          if (!eval_status.ok()) {
+            out.push_back({key, context_->unknown_});
+          } else {
+            out.push_back({key, resolve(Filters::Common::Expr::print(
+                                    eval_status.value()))});
+          }
         } else {
           // Skip dropped tags.
         }
@@ -233,6 +350,30 @@ struct MetricOverrides {
     }
     return out;
   }
+  absl::optional<uint32_t> getOrCreateExpression(const std::string& expr) {
+    const auto& it = expression_ids_.find(expr);
+    if (it != expression_ids_.end()) {
+      return {it->second};
+    }
+    auto parse_status = google::api::expr::parser::Parse(expr);
+    if (!parse_status.ok()) {
+      return {};
+    }
+    if (expr_builder_ == nullptr) {
+      expr_builder_ = Filters::Common::Expr::createBuilder(nullptr);
+    }
+    parsed_exprs_.push_back(parse_status.value().expr());
+    compiled_exprs_.push_back(
+        Extensions::Filters::Common::Expr::createExpression(
+            *expr_builder_, parsed_exprs_.back()));
+    uint32_t id = compiled_exprs_.size() - 1;
+    expression_ids_.emplace(expr, id);
+    return {id};
+  }
+  Filters::Common::Expr::BuilderPtr expr_builder_;
+  std::vector<google::api::expr::v1alpha1::Expr> parsed_exprs_;
+  std::vector<Filters::Common::Expr::ExpressionPtr> compiled_exprs_;
+  absl::flat_hash_map<std::string, uint32_t> expression_ids_;
 };
 
 struct Config : public Logger::Loggable<Logger::Id::filter> {
@@ -263,7 +404,8 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
     }
     if (proto_config.metrics_size() > 0 ||
         proto_config.definitions_size() > 0) {
-      metric_overrides_ = absl::make_optional<MetricOverrides>();
+      metric_overrides_ =
+          std::make_unique<MetricOverrides>(context_, scope_.symbolTable());
       for (const auto& metric : proto_config.metrics()) {
         if (metric.drop()) {
           const auto it = context_->all_metrics_.find(metric.name());
@@ -276,15 +418,44 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
           if (!metric.name().empty()) {
             const auto it = context_->all_metrics_.find(metric.name());
             if (it != context_->all_metrics_.end()) {
-              metric_overrides_->tag_overrides_[it->second][resolve(tag)] = {};
+              metric_overrides_
+                  ->tag_overrides_[it->second][resolveWithKnown(tag)] = {};
             }
           } else
             for (const auto& [_, metric] : context_->all_metrics_) {
-              metric_overrides_->tag_overrides_[metric][resolve(tag)] = {};
+              metric_overrides_
+                  ->tag_overrides_[metric][resolveWithKnown(tag)] = {};
+            }
+        }
+        for (const auto& [tag, expr] : metric.dimensions()) {
+          auto id = metric_overrides_->getOrCreateExpression(expr);
+          if (!id.has_value()) {
+            ENVOY_LOG(info, "Failed to parse expression: {}", expr);
+            continue;
+          }
+          if (!metric.name().empty()) {
+            const auto it = context_->all_metrics_.find(metric.name());
+            if (it != context_->all_metrics_.end()) {
+              metric_overrides_
+                  ->tag_overrides_[it->second][resolveWithKnown(tag)] = {
+                  id.value()};
+            }
+          } else
+            for (const auto& [_, metric] : context_->all_metrics_) {
+              metric_overrides_->tag_overrides_[metric][resolveWithKnown(tag)] =
+                  {id.value()};
             }
         }
       }
     }
+  }
+
+  Stats::StatName resolveWithKnown(absl::string_view symbol) {
+    const auto& it = context_->all_dimensions_.find(symbol);
+    if (it != context_->all_dimensions_.end()) {
+      return it->second;
+    }
+    return resolve(symbol);
   }
 
   Stats::StatName resolve(absl::string_view symbol) {
@@ -298,14 +469,14 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
   }
 
   void addCounter(Stats::StatName metric, const Stats::StatNameTagVector& tags,
-                  uint64_t amount = 1) {
+                  const StreamInfo::StreamInfo& info, uint64_t amount = 1) {
     if (metric_overrides_) {
       if (metric_overrides_->drop_.contains(metric)) {
         return;
       }
       const auto it = metric_overrides_->tag_overrides_.find(metric);
       if (it != metric_overrides_->tag_overrides_.end()) {
-        auto new_tags = metric_overrides_->overrideTags(it->second, tags);
+        auto new_tags = metric_overrides_->overrideTags(it->second, tags, info);
         Stats::Utility::counterFromStatNames(
             scope_, {context_->stat_namespace_, metric}, new_tags)
             .add(amount);
@@ -318,14 +489,15 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
   }
 
   void recordHistogram(Stats::StatName metric, Stats::Histogram::Unit unit,
-                       const Stats::StatNameTagVector& tags, uint64_t value) {
+                       const Stats::StatNameTagVector& tags,
+                       const StreamInfo::StreamInfo& info, uint64_t value) {
     if (metric_overrides_) {
       if (metric_overrides_->drop_.contains(metric)) {
         return;
       }
       const auto it = metric_overrides_->tag_overrides_.find(metric);
       if (it != metric_overrides_->tag_overrides_.end()) {
-        auto new_tags = metric_overrides_->overrideTags(it->second, tags);
+        auto new_tags = metric_overrides_->overrideTags(it->second, tags, info);
         Stats::Utility::histogramFromStatNames(
             scope_, {context_->stat_namespace_, metric}, unit, new_tags)
             .recordValue(value);
@@ -348,7 +520,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
 
   const bool disable_host_header_fallback_;
   const std::chrono::milliseconds report_duration_;
-  absl::optional<MetricOverrides> metric_overrides_;
+  std::unique_ptr<MetricOverrides> metric_overrides_;
 };
 
 using ConfigSharedPtr = std::shared_ptr<Config>;
@@ -407,21 +579,21 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     }
     populateFlagsAndConnectionSecurity(info);
 
-    config_->addCounter(context_.requests_total_, tags_);
+    config_->addCounter(context_.requests_total_, tags_, info);
     auto duration = info.requestComplete();
     if (duration.has_value()) {
       config_->recordHistogram(
           context_.request_duration_milliseconds_,
-          Stats::Histogram::Unit::Milliseconds, tags_,
+          Stats::Histogram::Unit::Milliseconds, tags_, info,
           absl::FromChrono(duration.value()) / absl::Milliseconds(1));
     }
     auto meter = info.getDownstreamBytesMeter();
     if (meter) {
       config_->recordHistogram(context_.request_bytes_,
-                               Stats::Histogram::Unit::Bytes, tags_,
+                               Stats::Histogram::Unit::Bytes, tags_, info,
                                meter->wireBytesReceived());
       config_->recordHistogram(context_.response_bytes_,
-                               Stats::Histogram::Unit::Bytes, tags_,
+                               Stats::Histogram::Unit::Bytes, tags_, info,
                                meter->wireBytesSent());
     }
   }
@@ -477,44 +649,34 @@ class IstioStatsFilter : public Http::PassThroughFilter,
             : info.filterState();
 
     if (!network_peer_read_) {
-      network_peer_read_ = peerInfoRead(filter_state);
+      network_peer_read_ = peerInfoRead(config_->reporter(), filter_state);
       // Report connection open once peer info is read or connection is closed.
       if (network_peer_read_ || end_stream) {
         populatePeerInfo(info, filter_state);
         tags_.push_back({context_.request_protocol_, context_.tcp_});
         populateFlagsAndConnectionSecurity(info);
-        config_->addCounter(context_.tcp_connections_opened_total_, tags_);
+        config_->addCounter(context_.tcp_connections_opened_total_, tags_,
+                            info);
       }
     }
     if (network_peer_read_ || end_stream) {
       auto meter = info.getDownstreamBytesMeter();
       if (meter) {
-        config_->addCounter(context_.tcp_sent_bytes_total_, tags_,
+        config_->addCounter(context_.tcp_sent_bytes_total_, tags_, info,
                             meter->wireBytesSent() - bytes_sent_);
         bytes_sent_ = meter->wireBytesSent();
-        config_->addCounter(context_.tcp_received_bytes_total_, tags_,
+        config_->addCounter(context_.tcp_received_bytes_total_, tags_, info,
                             meter->wireBytesReceived() - bytes_received_);
         bytes_received_ = meter->wireBytesReceived();
       }
     }
     if (end_stream) {
-      config_->addCounter(context_.tcp_connections_closed_total_, tags_);
+      config_->addCounter(context_.tcp_connections_closed_total_, tags_, info);
     }
   }
   void onReportTimer() {
     reportHelper(false);
     report_timer_->enableTimer(config_->report_duration_);
-  }
-
-  // Detect if peer info is read by TCP metadata exchange.
-  bool peerInfoRead(const StreamInfo::FilterState& filter_state) {
-    const auto& filter_state_key =
-        config_->reporter() == Reporter::ServerSidecar
-            ? "wasm.downstream_peer_id"
-            : "wasm.upstream_peer_id";
-    const auto* object = filter_state.getDataReadOnly<
-        Envoy::Extensions::Filters::Common::Expr::CelState>(filter_state_key);
-    return object != nullptr;
   }
 
   void populateFlagsAndConnectionSecurity(const StreamInfo::StreamInfo& info) {
@@ -541,16 +703,10 @@ class IstioStatsFilter : public Http::PassThroughFilter,
   // and after initial bytes read/written by MX TCP filter.
   void populatePeerInfo(const StreamInfo::StreamInfo& info,
                         const StreamInfo::FilterState& filter_state) {
-    const auto& filter_state_key =
-        config_->reporter() == Reporter::ServerSidecar ? "wasm.downstream_peer"
-                                                       : "wasm.upstream_peer";
-    const auto* object = filter_state.getDataReadOnly<
-        Envoy::Extensions::Filters::Common::Expr::CelState>(filter_state_key);
     absl::optional<Istio::Common::WorkloadMetadataObject> peer;
+    const auto* object = peerInfo(config_->reporter(), filter_state);
     if (object) {
-      const auto& node =
-          *flatbuffers::GetRoot<Wasm::Common::FlatNode>(object->value().data());
-      peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(node));
+      peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*object));
     }
     // Compute destination service with fallbacks.
     absl::string_view service_host;
