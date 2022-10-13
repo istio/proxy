@@ -124,7 +124,7 @@ esac
 # See: https://github.com/istio/istio/issues/15714 for details.
 # k8-opt is the output directory for x86_64 optimized builds (-c opt, so --config=release-symbol and --config=release).
 # k8-dbg is the output directory for -c dbg builds.
-for config in release release-symbol debug
+for config in release release-symbol asan debug
 do
   case $config in
     "release" )
