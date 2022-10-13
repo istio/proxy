@@ -158,17 +158,20 @@ do
 
   echo "Building ${config} proxy"
   BINARY_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}${ARCH_SUFFIX}.tar.gz"
+  DWP_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}${ARCH_SUFFIX}.dwp"
   SHA256_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}${ARCH_SUFFIX}.sha256"
   # shellcheck disable=SC2086
-  bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //src/envoy:envoy_tar
+  bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //src/envoy:envoy_tar //src/envoy:envoy.dwp
   BAZEL_TARGET="${BAZEL_OUT}/src/envoy/envoy_tar.tar.gz"
+  DWP_TARGET="${BAZEL_OUT}/src/envoy/envoy.dwp"
   cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
+  cp -f "${DWP_TARGET}" "${DWP_NAME}"
   sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
 
   if [ -n "${DST}" ]; then
     # Copy it to the bucket.
     echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
-    gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DST}/"
+    gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DWP_NAME}" "${DST}/"
   fi
 done
 
