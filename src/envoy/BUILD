@@ -32,6 +32,7 @@ envoy_cc_binary(
         "//extensions/stats:stats_plugin",
         "//source/extensions/filters/http/alpn:config_lib",
         "//source/extensions/filters/http/authn:filter_lib",
+        "//source/extensions/filters/http/istio_stats",
         "//source/extensions/filters/network/forward_downstream_sni:config_lib",
         "//source/extensions/filters/network/metadata_exchange:config_lib",
         "//source/extensions/filters/network/sni_verifier:config_lib",

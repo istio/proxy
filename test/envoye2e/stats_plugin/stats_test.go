@@ -50,6 +50,9 @@ var Runtimes = []struct {
 	WasmRuntime                string
 }{
 	{
+		// native filter
+	},
+	{
 		MetadataExchangeFilterCode: "inline_string: \"envoy.wasm.metadata_exchange\"",
 		StatsFilterCode:            "inline_string: \"envoy.wasm.stats\"",
 		WasmRuntime:                "envoy.wasm.runtime.null",
@@ -85,7 +88,7 @@ var TestCases = []struct {
 		},
 		ServerStats: map[string]driver.StatMatcher{
 			"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total.yaml.tmpl"},
-			"istio_build":          &driver.ExactStat{Metric: "testdata/metric/istio_build.yaml"},
+			//"istio_build":          &driver.ExactStat{Metric: "testdata/metric/istio_build.yaml"},
 		},
 		TestParallel: true,
 	},
@@ -100,7 +103,7 @@ var TestCases = []struct {
 		},
 		ServerStats: map[string]driver.StatMatcher{
 			"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total.yaml.tmpl"},
-			"istio_build":          &driver.ExactStat{Metric: "testdata/metric/istio_build.yaml"},
+			//"istio_build":          &driver.ExactStat{Metric: "testdata/metric/istio_build.yaml"},
 		},
 		TestParallel: true,
 	},
@@ -152,11 +155,15 @@ func enableStats(t *testing.T, vars map[string]string) {
 }
 
 func TestStatsPayload(t *testing.T) {
-	env.SkipTSanASan(t)
 	for _, testCase := range TestCases {
 		for _, runtime := range Runtimes {
 			t.Run(testCase.Name+"/"+runtime.WasmRuntime, func(t *testing.T) {
 				env.SkipWasm(t, runtime.WasmRuntime)
+				clientStats := testCase.ClientStats
+				if testCase.Name == "Customized" && runtime.WasmRuntime == "" {
+					// TODO: complete dimensions support in native stats filter
+					clientStats = map[string]driver.StatMatcher{}
+				}
 				params := driver.NewTestParams(t, map[string]string{
 					"RequestCount":               "10",
 					"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
@@ -191,7 +198,7 @@ func TestStatsPayload(t *testing.T) {
 								Body: "hello, world!",
 							},
 						},
-						&driver.Stats{AdminPort: params.Ports.ClientAdmin, Matchers: testCase.ClientStats},
+						&driver.Stats{AdminPort: params.Ports.ClientAdmin, Matchers: clientStats},
 						&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: testCase.ServerStats},
 					},
 				}).Run(params); err != nil {
@@ -281,50 +288,55 @@ func TestStatsParallel(t *testing.T) {
 }
 
 func TestStatsGrpc(t *testing.T) {
-	params := driver.NewTestParams(t, map[string]string{
-		"RequestCount":               "10",
-		"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
-		"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
-		"WasmRuntime":                "envoy.wasm.runtime.null",
-		"DisableDirectResponse":      "true",
-		"UsingGrpcBackend":           "true",
-		"GrpcResponseStatus":         "7",
-		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-		"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
-		"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
-	}, envoye2e.ProxyE2ETests)
-	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
-	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	enableStats(t, params.Vars)
+	for _, runtime := range Runtimes {
+		t.Run(runtime.WasmRuntime, func(t *testing.T) {
+			env.SkipWasm(t, runtime.WasmRuntime)
+			params := driver.NewTestParams(t, map[string]string{
+				"RequestCount":               "10",
+				"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
+				"StatsFilterCode":            runtime.StatsFilterCode,
+				"WasmRuntime":                runtime.WasmRuntime,
+				"DisableDirectResponse":      "true",
+				"UsingGrpcBackend":           "true",
+				"GrpcResponseStatus":         "7",
+				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
+				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+			}, envoye2e.ProxyE2ETests)
+			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+			enableStats(t, params.Vars)
 
-	if err := (&driver.Scenario{
-		Steps: []driver.Step{
-			&driver.XDS{},
-			&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
-			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Sleep{Duration: 1 * time.Second},
-			&driver.GrpcServer{},
-			&driver.GrpcCall{
-				ReqCount:   10,
-				WantStatus: status.New(codes.PermissionDenied, "denied"),
-			},
-			&driver.Stats{
-				AdminPort: params.Ports.ServerAdmin,
-				Matchers: map[string]driver.StatMatcher{
-					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total.yaml.tmpl"},
+			if err := (&driver.Scenario{
+				Steps: []driver.Step{
+					&driver.XDS{},
+					&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+					&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+					&driver.Sleep{Duration: 1 * time.Second},
+					&driver.GrpcServer{},
+					&driver.GrpcCall{
+						ReqCount:   10,
+						WantStatus: status.New(codes.PermissionDenied, "denied"),
+					},
+					&driver.Stats{
+						AdminPort: params.Ports.ServerAdmin,
+						Matchers: map[string]driver.StatMatcher{
+							"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total.yaml.tmpl"},
+						},
+					},
+					&driver.Stats{
+						AdminPort: params.Ports.ClientAdmin,
+						Matchers: map[string]driver.StatMatcher{
+							"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/client_request_total.yaml.tmpl"},
+						},
+					},
 				},
-			},
-			&driver.Stats{
-				AdminPort: params.Ports.ClientAdmin,
-				Matchers: map[string]driver.StatMatcher{
-					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/client_request_total.yaml.tmpl"},
-				},
-			},
-		},
-	}).Run(params); err != nil {
-		t.Fatal(err)
+			}).Run(params); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 

@@ -22,6 +22,7 @@ load(
     "envoy_cc_library",
     "envoy_cc_test",
     "envoy_package",
+    "envoy_proto_library",
 )
 load(
     "@envoy//test/extensions:extensions_build_system.bzl",
@@ -48,12 +49,9 @@ envoy_cc_library(
     ],
 )
 
-proto_library(
-    name = "config_proto",
+envoy_proto_library(
+    name = "config",
     srcs = ["config.proto"],
-    deps = [
-        "@com_google_protobuf//:duration_proto",
-    ],
 )
 
 envoy_extension_cc_test(
