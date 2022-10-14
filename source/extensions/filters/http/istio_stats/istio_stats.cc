@@ -166,7 +166,7 @@ struct Context : public Singleton::Instance {
         {"tcp_sent_bytes_total", tcp_sent_bytes_total_},
         {"tcp_received_bytes_total", tcp_received_bytes_total_},
     };
-    all_dimensions_ = {
+    all_tags_ = {
         {"reporter", reporter_},
         {"source_workload", source_workload_},
         {"source_workload_namespace", source_workload_namespace_},
@@ -198,7 +198,7 @@ struct Context : public Singleton::Instance {
   Stats::StatNamePool pool_;
   const envoy::config::core::v3::Node& node_;
   absl::flat_hash_map<std::string, Stats::StatName> all_metrics_;
-  absl::flat_hash_map<std::string, Stats::StatName> all_dimensions_;
+  absl::flat_hash_map<std::string, Stats::StatName> all_tags_;
 
   // Metric names.
   const Stats::StatName stat_namespace_;
@@ -223,7 +223,7 @@ struct Context : public Singleton::Instance {
   const Stats::StatName mutual_tls_;
   const Stats::StatName none_;
 
-  // Dimension names.
+  // Tag names.
   const Stats::StatName reporter_;
 
   const Stats::StatName source_workload_;
@@ -277,7 +277,7 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
   Stats::StatNameDynamicPool pool_;
   absl::flat_hash_map<std::string, Stats::StatName> expression_names_;
 
-  Stats::StatName resolve(absl::string_view symbol) {
+  Stats::StatName resolveExpr(absl::string_view symbol) {
     const auto& it = expression_names_.find(symbol);
     if (it != expression_names_.end()) {
       return it->second;
@@ -289,63 +289,79 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
 
   // Initial transformation: metrics dropped.
   absl::flat_hash_set<Stats::StatName> drop_;
-  // Second transformation: dimensions changed.
+  // Second transformation: tags changed.
   using TagOverrides =
       absl::flat_hash_map<Stats::StatName, absl::optional<uint32_t>>;
   absl::flat_hash_map<Stats::StatName, TagOverrides> tag_overrides_;
+  // Third transformation: tags added.
+  using TagAdditions = std::vector<std::pair<Stats::StatName, uint32_t>>;
+  absl::flat_hash_map<Stats::StatName, TagAdditions> tag_additions_;
 
-  Stats::StatNameTagVector overrideTags(const TagOverrides& tag_overrides,
+  Stats::StatName evaluate(const StreamInfo::StreamInfo& info, uint32_t id) {
+    Protobuf::Arena arena;
+    Filters::Common::Expr::Activation activation;
+    activation.InsertValueProducer(
+        Filters::Common::Expr::Request,
+        std::make_unique<Filters::Common::Expr::RequestWrapper>(arena, nullptr,
+                                                                info));
+    activation.InsertValueProducer(
+        Filters::Common::Expr::Connection,
+        std::make_unique<Filters::Common::Expr::ConnectionWrapper>(info));
+    activation.InsertValueProducer(
+        Filters::Common::Expr::Upstream,
+        std::make_unique<Filters::Common::Expr::UpstreamWrapper>(info));
+    activation.InsertValueProducer(
+        Filters::Common::Expr::Source,
+        std::make_unique<Filters::Common::Expr::PeerWrapper>(info, false));
+    activation.InsertValueProducer(
+        Filters::Common::Expr::Destination,
+        std::make_unique<Filters::Common::Expr::PeerWrapper>(info, true));
+    activation.InsertValueProducer(
+        Filters::Common::Expr::Metadata,
+        std::make_unique<Filters::Common::Expr::MetadataProducer>(
+            info.dynamicMetadata()));
+    activation.InsertValueProducer(
+        Filters::Common::Expr::FilterState,
+        std::make_unique<Filters::Common::Expr::FilterStateWrapper>(
+            info.filterState()));
+    activation.InsertValue(
+        "node", Filters::Common::Expr::CelProtoWrapper::CreateMessage(
+                    &context_->node_, &arena));
+    activation.InsertValue(
+        "route_name",
+        Filters::Common::Expr::CelValue::CreateString(&info.getRouteName()));
+    auto eval_status = compiled_exprs_[id]->Evaluate(activation, &arena);
+    if (!eval_status.ok()) {
+      return context_->unknown_;
+    }
+    return resolveExpr(Filters::Common::Expr::print(eval_status.value()));
+  }
+
+  Stats::StatNameTagVector overrideTags(Stats::StatName metric,
                                         const Stats::StatNameTagVector& tags,
                                         const StreamInfo::StreamInfo& info) {
     Stats::StatNameTagVector out;
     out.reserve(tags.size());
-    for (const auto& [key, val] : tags) {
-      const auto it = tag_overrides.find(key);
-      if (it != tag_overrides.end()) {
-        if (it->second.has_value()) {
-          Protobuf::Arena arena;
-          Filters::Common::Expr::Activation activation;
-          activation.InsertValueProducer(
-              Filters::Common::Expr::Request,
-              std::make_unique<Filters::Common::Expr::RequestWrapper>(
-                  arena, nullptr, info));
-          activation.InsertValueProducer(
-              Filters::Common::Expr::Connection,
-              std::make_unique<Filters::Common::Expr::ConnectionWrapper>(info));
-          activation.InsertValueProducer(
-              Filters::Common::Expr::Upstream,
-              std::make_unique<Filters::Common::Expr::UpstreamWrapper>(info));
-          activation.InsertValueProducer(
-              Filters::Common::Expr::Source,
-              std::make_unique<Filters::Common::Expr::PeerWrapper>(info,
-                                                                   false));
-          activation.InsertValueProducer(
-              Filters::Common::Expr::Destination,
-              std::make_unique<Filters::Common::Expr::PeerWrapper>(info, true));
-          activation.InsertValueProducer(
-              Filters::Common::Expr::Metadata,
-              std::make_unique<Filters::Common::Expr::MetadataProducer>(
-                  info.dynamicMetadata()));
-          activation.InsertValueProducer(
-              Filters::Common::Expr::FilterState,
-              std::make_unique<Filters::Common::Expr::FilterStateWrapper>(
-                  info.filterState()));
-          activation.InsertValue(
-              "node", Filters::Common::Expr::CelProtoWrapper::CreateMessage(
-                          &context_->node_, &arena));
-          auto eval_status =
-              compiled_exprs_[it->second.value()]->Evaluate(activation, &arena);
-          if (!eval_status.ok()) {
-            out.push_back({key, context_->unknown_});
+    const auto& tag_overrides_it = tag_overrides_.find(metric);
+    if (tag_overrides_it == tag_overrides_.end()) {
+      out = tags;
+    } else
+      for (const auto& [key, val] : tags) {
+        const auto& it = tag_overrides_it->second.find(key);
+        if (it != tag_overrides_it->second.end()) {
+          if (it->second.has_value()) {
+            out.push_back({key, evaluate(info, it->second.value())});
           } else {
-            out.push_back({key, resolve(Filters::Common::Expr::print(
-                                    eval_status.value()))});
+            // Skip dropped tags.
           }
         } else {
-          // Skip dropped tags.
+          out.push_back({key, val});
         }
-      } else {
-        out.push_back({key, val});
+      }
+    const auto& tag_additions_it = tag_additions_.find(metric);
+    if (tag_additions_it != tag_additions_.end()) {
+      for (const auto& [tag, id] : tag_additions_it->second) {
+        out.push_back({tag, evaluate(info, id)});
       }
     }
     return out;
@@ -408,23 +424,27 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
           std::make_unique<MetricOverrides>(context_, scope_.symbolTable());
       for (const auto& metric : proto_config.metrics()) {
         if (metric.drop()) {
-          const auto it = context_->all_metrics_.find(metric.name());
+          const auto& it = context_->all_metrics_.find(metric.name());
           if (it != context_->all_metrics_.end()) {
             metric_overrides_->drop_.insert(it->second);
           }
           continue;
         }
         for (const auto& tag : metric.tags_to_remove()) {
+          const auto& tag_it = context_->all_tags_.find(tag);
+          if (tag_it == context_->all_tags_.end()) {
+            ENVOY_LOG(info, "Tag is not standard: {}", tag);
+            continue;
+          }
           if (!metric.name().empty()) {
-            const auto it = context_->all_metrics_.find(metric.name());
+            const auto& it = context_->all_metrics_.find(metric.name());
             if (it != context_->all_metrics_.end()) {
               metric_overrides_
-                  ->tag_overrides_[it->second][resolveWithKnown(tag)] = {};
+                  ->tag_overrides_[it->second][tag_it->second] = {};
             }
           } else
             for (const auto& [_, metric] : context_->all_metrics_) {
-              metric_overrides_
-                  ->tag_overrides_[metric][resolveWithKnown(tag)] = {};
+              metric_overrides_->tag_overrides_[metric][tag_it->second] = {};
             }
         }
         for (const auto& [tag, expr] : metric.dimensions()) {
@@ -433,29 +453,37 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
             ENVOY_LOG(info, "Failed to parse expression: {}", expr);
             continue;
           }
-          if (!metric.name().empty()) {
-            const auto it = context_->all_metrics_.find(metric.name());
-            if (it != context_->all_metrics_.end()) {
-              metric_overrides_
-                  ->tag_overrides_[it->second][resolveWithKnown(tag)] = {
-                  id.value()};
+          const auto& tag_it = context_->all_tags_.find(tag);
+          if (tag_it == context_->all_tags_.end()) {
+            if (!id.has_value()) {
+              continue;
             }
-          } else
-            for (const auto& [_, metric] : context_->all_metrics_) {
-              metric_overrides_->tag_overrides_[metric][resolveWithKnown(tag)] =
-                  {id.value()};
-            }
+            if (!metric.name().empty()) {
+              const auto& it = context_->all_metrics_.find(metric.name());
+              if (it != context_->all_metrics_.end()) {
+                metric_overrides_->tag_additions_[it->second].push_back(
+                    {metric_overrides_->resolveExpr(tag), id.value()});
+              }
+            } else
+              for (const auto& [_, metric] : context_->all_metrics_) {
+                metric_overrides_->tag_additions_[metric].push_back(
+                    {metric_overrides_->resolveExpr(tag), id.value()});
+              }
+          } else {
+            if (!metric.name().empty()) {
+              const auto& it = context_->all_metrics_.find(metric.name());
+              if (it != context_->all_metrics_.end()) {
+                metric_overrides_->tag_overrides_[it->second][tag_it->second] =
+                    id;
+              }
+            } else
+              for (const auto& [_, metric] : context_->all_metrics_) {
+                metric_overrides_->tag_overrides_[metric][tag_it->second] = id;
+              }
+          }
         }
       }
     }
-  }
-
-  Stats::StatName resolveWithKnown(absl::string_view symbol) {
-    const auto& it = context_->all_dimensions_.find(symbol);
-    if (it != context_->all_dimensions_.end()) {
-      return it->second;
-    }
-    return resolve(symbol);
   }
 
   Stats::StatName resolve(absl::string_view symbol) {
@@ -474,14 +502,11 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
       if (metric_overrides_->drop_.contains(metric)) {
         return;
       }
-      const auto it = metric_overrides_->tag_overrides_.find(metric);
-      if (it != metric_overrides_->tag_overrides_.end()) {
-        auto new_tags = metric_overrides_->overrideTags(it->second, tags, info);
-        Stats::Utility::counterFromStatNames(
-            scope_, {context_->stat_namespace_, metric}, new_tags)
-            .add(amount);
-        return;
-      }
+      auto new_tags = metric_overrides_->overrideTags(metric, tags, info);
+      Stats::Utility::counterFromStatNames(
+          scope_, {context_->stat_namespace_, metric}, new_tags)
+          .add(amount);
+      return;
     }
     Stats::Utility::counterFromStatNames(
         scope_, {context_->stat_namespace_, metric}, tags)
@@ -495,14 +520,11 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
       if (metric_overrides_->drop_.contains(metric)) {
         return;
       }
-      const auto it = metric_overrides_->tag_overrides_.find(metric);
-      if (it != metric_overrides_->tag_overrides_.end()) {
-        auto new_tags = metric_overrides_->overrideTags(it->second, tags, info);
-        Stats::Utility::histogramFromStatNames(
-            scope_, {context_->stat_namespace_, metric}, unit, new_tags)
-            .recordValue(value);
-        return;
-      }
+      auto new_tags = metric_overrides_->overrideTags(metric, tags, info);
+      Stats::Utility::histogramFromStatNames(
+          scope_, {context_->stat_namespace_, metric}, unit, new_tags)
+          .recordValue(value);
+      return;
     }
     Stats::Utility::histogramFromStatNames(
         scope_, {context_->stat_namespace_, metric}, unit, tags)
