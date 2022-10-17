@@ -17,9 +17,9 @@
 
 #include "source/common/common/base64.h"
 #include "source/extensions/common/filter_names.h"
+#include "source/extensions/common/utils.h"
 #include "src/istio/authn/context.pb.h"
 #include "src/istio/utils/attribute_names.h"
-#include "src/istio/utils/utils.h"
 
 using istio::authn::Result;
 
@@ -49,10 +49,10 @@ void Authentication::SaveAuthAttributesToStruct(
                 result.peer_user());
     setKeyValue(data, istio::utils::AttributeName::kSourcePrincipal,
                 result.peer_user());
-    std::string source_ns("");
-    if (istio::utils::GetSourceNamespace(result.peer_user(), &source_ns)) {
+    auto source_ns = GetNamespace(result.peer_user());
+    if (source_ns) {
       setKeyValue(data, istio::utils::AttributeName::kSourceNamespace,
-                  source_ns);
+                  std::string(source_ns.value()));
     }
   }
   if (result.has_origin()) {

@@ -23,6 +23,7 @@
 #include "source/common/http/header_map_impl.h"
 #include "source/common/http/header_utility.h"
 #include "source/common/stream_info/utility.h"
+#include "source/extensions/common/utils.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/common/expr/context.h"
 #include "source/extensions/filters/common/expr/evaluator.h"
@@ -761,6 +762,34 @@ class IstioStatsFilter : public Http::PassThroughFilter,
         service_host_name = service_host;
       }
     }
+
+    // Implements fallback from using the namespace from SAN if available to
+    // using peer metadata, otherwise.
+    absl::string_view peer_san;
+    const Ssl::ConnectionInfoConstSharedPtr ssl_info =
+        config_->reporter() == Reporter::ServerSidecar
+            ? info.downstreamAddressProvider().sslConnection()
+            : (info.upstreamInfo()
+                   ? info.upstreamInfo()->upstreamSslConnection()
+                   : nullptr);
+    if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
+      peer_san = ssl_info->uriSanPeerCertificate()[0];
+    }
+    absl::string_view peer_namespace;
+    if (!peer_san.empty()) {
+      const auto san_namespace = Utils::GetNamespace(peer_san);
+      if (san_namespace) {
+        peer_namespace = san_namespace.value();
+      }
+    }
+    if (peer_namespace.empty() && peer) {
+      peer_namespace = peer->namespace_name_;
+    }
+    absl::string_view local_san;
+    if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
+      local_san = ssl_info->uriSanLocalCertificate()[0];
+    }
+
     switch (config_->reporter()) {
       case Reporter::ServerSidecar: {
         tags_.push_back({context_.source_workload_,
@@ -773,14 +802,12 @@ class IstioStatsFilter : public Http::PassThroughFilter,
                          peer ? config_->resolve(peer->canonical_revision_)
                               : context_.latest_});
         tags_.push_back({context_.source_workload_namespace_,
-                         peer ? config_->resolve(peer->namespace_name_)
-                              : context_.unknown_});
-        const auto ssl_info = info.downstreamAddressProvider().sslConnection();
-        tags_.push_back(
-            {context_.source_principal_,
-             ssl_info && !ssl_info->uriSanPeerCertificate().empty()
-                 ? config_->resolve(ssl_info->uriSanPeerCertificate()[0])
-                 : context_.unknown_});
+                         !peer_namespace.empty()
+                             ? config_->resolve(peer_namespace)
+                             : context_.unknown_});
+        tags_.push_back({context_.source_principal_,
+                         !peer_san.empty() ? config_->resolve(peer_san)
+                                           : context_.unknown_});
         tags_.push_back(
             {context_.source_app_,
              peer ? config_->resolve(peer->app_name_) : context_.unknown_});
@@ -794,11 +821,9 @@ class IstioStatsFilter : public Http::PassThroughFilter,
             {context_.destination_workload_, context_.workload_name_});
         tags_.push_back(
             {context_.destination_workload_namespace_, context_.namespace_});
-        tags_.push_back(
-            {context_.destination_principal_,
-             ssl_info && !ssl_info->uriSanLocalCertificate().empty()
-                 ? config_->resolve(ssl_info->uriSanLocalCertificate()[0])
-                 : context_.unknown_});
+        tags_.push_back({context_.destination_principal_,
+                         !local_san.empty() ? config_->resolve(local_san)
+                                            : context_.unknown_});
         tags_.push_back({context_.destination_app_, context_.app_name_});
         tags_.push_back({context_.destination_version_, context_.app_version_});
         tags_.push_back({context_.destination_service_,
@@ -828,14 +853,9 @@ class IstioStatsFilter : public Http::PassThroughFilter,
                          context_.canonical_revision_});
         tags_.push_back(
             {context_.source_workload_namespace_, context_.namespace_});
-        const auto upstream_info = info.upstreamInfo();
-        const Ssl::ConnectionInfoConstSharedPtr ssl_info =
-            upstream_info ? upstream_info->upstreamSslConnection() : nullptr;
-        tags_.push_back(
-            {context_.source_principal_,
-             ssl_info && !ssl_info->uriSanLocalCertificate().empty()
-                 ? config_->resolve(ssl_info->uriSanLocalCertificate()[0])
-                 : context_.unknown_});
+        tags_.push_back({context_.source_principal_,
+                         !local_san.empty() ? config_->resolve(local_san)
+                                            : context_.unknown_});
         tags_.push_back({context_.source_app_, context_.app_name_});
         tags_.push_back({context_.source_version_, context_.app_version_});
         tags_.push_back({context_.source_cluster_, context_.cluster_name_});
@@ -843,13 +863,12 @@ class IstioStatsFilter : public Http::PassThroughFilter,
                          peer ? config_->resolve(peer->workload_name_)
                               : context_.unknown_});
         tags_.push_back({context_.destination_workload_namespace_,
-                         peer ? config_->resolve(peer->namespace_name_)
-                              : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_principal_,
-             ssl_info && !ssl_info->uriSanPeerCertificate().empty()
-                 ? config_->resolve(ssl_info->uriSanPeerCertificate()[0])
-                 : context_.unknown_});
+                         !peer_namespace.empty()
+                             ? config_->resolve(peer_namespace)
+                             : context_.unknown_});
+        tags_.push_back({context_.destination_principal_,
+                         !peer_san.empty() ? config_->resolve(peer_san)
+                                           : context_.unknown_});
         tags_.push_back(
             {context_.destination_app_,
              peer ? config_->resolve(peer->app_name_) : context_.unknown_});
@@ -871,8 +890,9 @@ class IstioStatsFilter : public Http::PassThroughFilter,
                              ? context_.unknown_
                              : config_->resolve(service_host_name)});
         tags_.push_back({context_.destination_service_namespace_,
-                         peer ? config_->resolve(peer->namespace_name_)
-                              : context_.unknown_});
+                         !peer_namespace.empty()
+                             ? config_->resolve(peer_namespace)
+                             : context_.unknown_});
         tags_.push_back(
             {context_.destination_cluster_,
              peer ? config_->resolve(peer->cluster_name_) : context_.unknown_});

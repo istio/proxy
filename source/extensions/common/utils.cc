@@ -34,6 +34,9 @@ const std::string kPerHostMetadataKey("istio");
 // Attribute field for per-host data override
 const std::string kMetadataDestinationUID("uid");
 
+const std::string kNamespaceKey("/ns/");
+const char kDelimiter = '/';
+
 bool hasSPIFFEPrefix(const std::string& san) {
   return absl::StartsWith(san, kSPIFFEPrefix);
 }
@@ -194,6 +197,20 @@ Status ParseJsonMessage(const std::string& json, Message* output) {
   ::google::protobuf::util::JsonParseOptions options;
   options.ignore_unknown_fields = true;
   return ::google::protobuf::util::JsonStringToMessage(json, output, options);
+}
+
+absl::optional<absl::string_view> GetNamespace(absl::string_view principal) {
+  // The namespace is a substring in principal with format:
+  // "<DOMAIN>/ns/<NAMESPACE>/sa/<SERVICE-ACCOUNT>". '/' is not allowed to
+  // appear in actual content except as delimiter between tokens.
+  size_t begin = principal.find(kNamespaceKey);
+  if (begin == absl::string_view::npos) {
+    return {};
+  }
+  begin += kNamespaceKey.length();
+  size_t end = principal.find(kDelimiter, begin);
+  size_t len = (end == std::string::npos ? end : end - begin);
+  return {principal.substr(begin, len)};
 }
 
 }  // namespace Utils

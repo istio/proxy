@@ -62,5 +62,8 @@ bool GetRequestedServerName(const Network::Connection* connection,
 ::google::protobuf::util::Status ParseJsonMessage(
     const std::string& json, ::google::protobuf::Message* output);
 
+// Get the namespace part of Istio certificate URI.
+absl::optional<absl::string_view> GetNamespace(absl::string_view principal);
+
 }  // namespace Utils
 }  // namespace Envoy
