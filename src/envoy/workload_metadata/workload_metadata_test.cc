@@ -79,8 +79,9 @@ TEST_F(FilterTest, OnAccept) {
   auto found = filter_state->getDataReadOnly<Envoy::Router::StringAccessor>(
       Istio::Common::kSourceMetadataBaggageKey);
   EXPECT_EQ(found->asString(),
-            "k8s.cluster.name=my-cluster,k8s.namespace.name=default,k8s."
-            "deployment.name=foo,service.name=foo-svc,service.version=v2beta1,"
+            "k8s.deployment.name=foo,k8s.cluster.name=my-cluster,k8s.namespace."
+            "name=default,"
+            "service.name=foo-svc,service.version=v2beta1,"
             "app.name=,app.version=");
 
   setAddressToReturn("tcp://192.168.1.1:5555");
@@ -96,8 +97,9 @@ TEST_F(FilterTest, OnAccept) {
   found = filter_state->getDataReadOnly<Envoy::Router::StringAccessor>(
       Istio::Common::kSourceMetadataBaggageKey);
   EXPECT_EQ(found->asString(),
-            "k8s.cluster.name=my-cluster,k8s.namespace.name=default,k8s."
-            "deployment.name=foo,service.name=foo-svc,service.version=v2beta1,"
+            "k8s.deployment.name=foo,k8s.cluster.name=my-cluster,k8s.namespace."
+            "name=default,"
+            "service.name=foo-svc,service.version=v2beta1,"
             "app.name=,app.version=");
 
   setAddressToReturn("tcp://4.22.1.1:4343");
