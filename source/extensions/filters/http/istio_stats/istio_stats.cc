@@ -784,12 +784,11 @@ class IstioStatsFilter : public Http::PassThroughFilter,
             {context_.source_canonical_revision_,
              peer ? pool_.add(peer->canonical_revision_) : context_.latest_});
         tags_.push_back({context_.source_workload_namespace_,
-                         !peer_namespace.empty()
-                             ? pool_.add(peer_namespace)
-                             : context_.unknown_});
-        tags_.push_back({context_.source_principal_,
-                         !peer_san.empty() ? pool_.add(peer_san)
-                                           : context_.unknown_});
+                         !peer_namespace.empty() ? pool_.add(peer_namespace)
+                                                 : context_.unknown_});
+        tags_.push_back({context_.source_principal_, !peer_san.empty()
+                                                         ? pool_.add(peer_san)
+                                                         : context_.unknown_});
         tags_.push_back({context_.source_app_, peer ? pool_.add(peer->app_name_)
                                                     : context_.unknown_});
         tags_.push_back(
@@ -802,9 +801,9 @@ class IstioStatsFilter : public Http::PassThroughFilter,
             {context_.destination_workload_, context_.workload_name_});
         tags_.push_back(
             {context_.destination_workload_namespace_, context_.namespace_});
-        tags_.push_back({context_.destination_principal_,
-                         !local_san.empty() ? pool_.add(local_san)
-                                            : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_principal_,
+             !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
         tags_.push_back({context_.destination_app_, context_.app_name_});
         tags_.push_back({context_.destination_version_, context_.app_version_});
         tags_.push_back({context_.destination_service_,
@@ -833,22 +832,21 @@ class IstioStatsFilter : public Http::PassThroughFilter,
                          context_.canonical_revision_});
         tags_.push_back(
             {context_.source_workload_namespace_, context_.namespace_});
-        tags_.push_back({context_.source_principal_,
-                         !local_san.empty() ? pool_.add(local_san)
-                                            : context_.unknown_});
+        tags_.push_back({context_.source_principal_, !local_san.empty()
+                                                         ? pool_.add(local_san)
+                                                         : context_.unknown_});
         tags_.push_back({context_.source_app_, context_.app_name_});
         tags_.push_back({context_.source_version_, context_.app_version_});
         tags_.push_back({context_.source_cluster_, context_.cluster_name_});
-        tags_.push_back({context_.destination_workload_,
-                         peer ? pool_.add(peer->workload_name_)
-                              : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_workload_,
+             peer ? pool_.add(peer->workload_name_) : context_.unknown_});
         tags_.push_back({context_.destination_workload_namespace_,
-                         !peer_namespace.empty()
-                             ? pool_.add(peer_namespace)
-                             : context_.unknown_});
-        tags_.push_back({context_.destination_principal_,
-                         !peer_san.empty() ? pool_.add(peer_san)
-                                           : context_.unknown_});
+                         !peer_namespace.empty() ? pool_.add(peer_namespace)
+                                                 : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_principal_,
+             !peer_san.empty() ? pool_.add(peer_san) : context_.unknown_});
         tags_.push_back(
             {context_.destination_app_,
              peer ? pool_.add(peer->app_name_) : context_.unknown_});
@@ -869,9 +867,8 @@ class IstioStatsFilter : public Http::PassThroughFilter,
                              ? context_.unknown_
                              : pool_.add(service_host_name)});
         tags_.push_back({context_.destination_service_namespace_,
-                         !peer_namespace.empty()
-                             ? pool_.add(peer_namespace)
-                             : context_.unknown_});
+                         !peer_namespace.empty() ? pool_.add(peer_namespace)
+                                                 : context_.unknown_});
         tags_.push_back(
             {context_.destination_cluster_,
              peer ? pool_.add(peer->cluster_name_) : context_.unknown_});
