@@ -131,4 +131,46 @@ INSTANTIATE_TEST_SUITE_P(
       return info.param ? "peer" : "local";
     });
 
+class NamespaceTest : public ::testing::Test {
+ protected:
+  void checkFalse(const std::string& principal) {
+    auto out = Envoy::Utils::GetNamespace(principal);
+    EXPECT_FALSE(out.has_value());
+  }
+
+  void checkTrue(const std::string& principal, absl::string_view ns) {
+    auto out = Envoy::Utils::GetNamespace(principal);
+    ASSERT_TRUE(out.has_value());
+    EXPECT_EQ(ns, out.value());
+  }
+};
+
+TEST_F(NamespaceTest, TestGetNamespace) {
+  checkFalse("");
+  checkFalse("cluster.local");
+  checkFalse("cluster.local/");
+  checkFalse("cluster.local/ns");
+  checkFalse("cluster.local/sa/user");
+  checkFalse("cluster.local/sa/user/ns");
+  checkFalse("cluster.local/sa/user_ns/");
+  checkFalse("cluster.local/sa/user_ns/abc/xyz");
+  checkFalse("cluster.local/NS/abc");
+
+  checkTrue("cluster.local/ns/", "");
+  checkTrue("cluster.local/ns//", "");
+  checkTrue("cluster.local/sa/user/ns/", "");
+  checkTrue("cluster.local/ns//sa/user", "");
+  checkTrue("cluster.local/ns//ns/ns", "");
+
+  checkTrue("cluster.local/ns/ns/ns/ns", "ns");
+  checkTrue("cluster.local/ns/abc_ns", "abc_ns");
+  checkTrue("cluster.local/ns/abc_ns/", "abc_ns");
+  checkTrue("cluster.local/ns/abc_ns/sa/user_ns", "abc_ns");
+  checkTrue("cluster.local/ns/abc_ns/sa/user_ns/other/xyz", "abc_ns");
+  checkTrue("cluster.local/sa/user_ns/ns/abc", "abc");
+  checkTrue("cluster.local/sa/user_ns/ns/abc/", "abc");
+  checkTrue("cluster.local/sa/user_ns/ns/abc_ns", "abc_ns");
+  checkTrue("cluster.local/sa/user_ns/ns/abc_ns/", "abc_ns");
+}
+
 }  // namespace

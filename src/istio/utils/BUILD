@@ -23,32 +23,6 @@ load(
 )
 
 envoy_cc_library(
-    name = "utils_lib",
-    srcs = [
-        "utils.cc",
-    ],
-    hdrs = [
-        "utils.h",
-    ],
-    repository = "@envoy",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":attribute_names_lib",
-        "//external:protobuf",
-    ],
-)
-
-envoy_cc_test(
-    name = "utils_test",
-    size = "small",
-    srcs = ["utils_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":utils_lib",
-    ],
-)
-
-envoy_cc_library(
     name = "attribute_names_lib",
     srcs = [
         "attribute_names.cc",

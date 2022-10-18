@@ -13,7 +13,11 @@ metric:
   - name: source_canonical_revision
     value: latest
   - name: source_workload_namespace
+{{ if ne .Vars.WasmRuntime "" }}
     value: unknown
+{{ else }}
+    value: default
+{{ end }}
   - name: source_principal
     value: spiffe://cluster.local/ns/default/sa/client
   - name: source_app
