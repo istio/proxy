@@ -177,5 +177,18 @@ TEST(WorkloadMetadataObjectTest, ConvertFromFlatNode) {
   EXPECT_EQ(obj.baggage(), "k8s.pod.name=");
 }
 
+TEST(WorkloadMetadataObjectTest, ConvertFromEndpointMetadata) {
+  EXPECT_EQ(absl::nullopt, convertEndpointMetadata(""));
+  EXPECT_EQ(absl::nullopt, convertEndpointMetadata("a;b"));
+  EXPECT_EQ(absl::nullopt, convertEndpointMetadata("a;;;b"));
+  EXPECT_EQ(absl::nullopt, convertEndpointMetadata("a;b;c;d"));
+  auto obj =
+      convertEndpointMetadata("foo-pod;default;foo-service;v1;my-cluster");
+  ASSERT_TRUE(obj.has_value());
+  EXPECT_EQ(obj->baggage(),
+            "k8s.pod.name=foo-pod,k8s.cluster.name=my-cluster,k8s.namespace."
+            "name=default,service.name=foo-service,service.version=v1");
+}
+
 }  // namespace Common
 }  // namespace Istio

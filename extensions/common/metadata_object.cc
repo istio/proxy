@@ -189,7 +189,7 @@ std::string_view toStdStringView(absl::string_view view) {
 }  // namespace
 
 flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
-    const Istio::Common::WorkloadMetadataObject& obj) {
+    const WorkloadMetadataObject& obj) {
   flatbuffers::FlatBufferBuilder fbb;
 
   flatbuffers::Offset<flatbuffers::String> name, cluster, namespace_,
@@ -202,22 +202,22 @@ flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
   workload_name = fbb.CreateString(toStdStringView(obj.workload_name_));
 
   switch (obj.workload_type_) {
-    case Istio::Common::WorkloadType::Deployment:
+    case WorkloadType::Deployment:
       owner = fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_,
                                             "/", DeploymentSuffix, "s/",
                                             obj.workload_name_));
       break;
-    case Istio::Common::WorkloadType::Job:
+    case WorkloadType::Job:
       owner =
           fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_, "/",
                                         JobSuffix, "s/", obj.workload_name_));
       break;
-    case Istio::Common::WorkloadType::CronJob:
+    case WorkloadType::CronJob:
       owner = fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_,
                                             "/", CronJobSuffix, "s/",
                                             obj.workload_name_));
       break;
-    case Istio::Common::WorkloadType::Pod:
+    case WorkloadType::Pod:
       owner =
           fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_, "/",
                                         PodSuffix, "s/", obj.workload_name_));
@@ -250,7 +250,7 @@ flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
   return fbb.Release();
 }
 
-Istio::Common::WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
+WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
     const Wasm::Common::FlatNode& node) {
   const absl::string_view instance = toAbslStringView(node.name());
   const absl::string_view cluster = toAbslStringView(node.cluster_id());
@@ -282,7 +282,7 @@ Istio::Common::WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
     app_version = toAbslStringView(version);
   }
 
-  Istio::Common::WorkloadType workload_type = Istio::Common::WorkloadType::Pod;
+  WorkloadType workload_type = WorkloadType::Pod;
   // Strip "s/workload_name" and check for workload type.
   absl::string_view owner = toAbslStringView(node.owner());
   if (owner.size() > workload.size() + 2) {
@@ -293,16 +293,16 @@ Istio::Common::WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
       if (it != ALL_WORKLOAD_TOKENS.end()) {
         switch (it->second) {
           case WorkloadType::Deployment:
-            workload_type = Istio::Common::WorkloadType::Deployment;
+            workload_type = WorkloadType::Deployment;
             break;
           case WorkloadType::CronJob:
-            workload_type = Istio::Common::WorkloadType::CronJob;
+            workload_type = WorkloadType::CronJob;
             break;
           case WorkloadType::Job:
-            workload_type = Istio::Common::WorkloadType::Job;
+            workload_type = WorkloadType::Job;
             break;
           case WorkloadType::Pod:
-            workload_type = Istio::Common::WorkloadType::Pod;
+            workload_type = WorkloadType::Pod;
             break;
           default:
             break;
@@ -311,9 +311,21 @@ Istio::Common::WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
     }
   }
 
-  return Istio::Common::WorkloadMetadataObject(
-      instance, cluster, namespace_name, workload, canonical_name,
-      canonical_revision, app_name, app_version, workload_type);
+  return WorkloadMetadataObject(instance, cluster, namespace_name, workload,
+                                canonical_name, canonical_revision, app_name,
+                                app_version, workload_type);
+}
+
+absl::optional<WorkloadMetadataObject> convertEndpointMetadata(
+    const std::string& endpoint_encoding) {
+  std::vector<absl::string_view> parts = absl::StrSplit(endpoint_encoding, ';');
+  if (parts.size() < 5) {
+    return {};
+  }
+  // TODO: we cannot determine workload type from the encoding.
+  return absl::make_optional<WorkloadMetadataObject>(
+      "", parts[4], parts[1], parts[0], parts[2], parts[3], "", "",
+      WorkloadType::Pod);
 }
 
 }  // namespace Common
