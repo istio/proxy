@@ -270,10 +270,13 @@ using ContextSharedPtr = std::shared_ptr<Context>;
 
 SINGLETON_MANAGER_REGISTRATION(Context)
 
+using google::api::expr::runtime::CelValue;
+
 // Instructions on dropping, creating, and overriding labels.
 // This is not the "hot path" of the metrics system and thus, fairly
 // unoptimized.
-struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
+struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
+                         public google::api::expr::runtime::BaseActivation {
   MetricOverrides(ContextSharedPtr& context, Stats::SymbolTable& symbol_table)
       : context_(context), pool_(symbol_table) {}
   ContextSharedPtr context_;
@@ -289,59 +292,82 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
   using TagAdditions = std::vector<std::pair<Stats::StatName, uint32_t>>;
   absl::flat_hash_map<Stats::StatName, TagAdditions> tag_additions_;
 
+  const StreamInfo::StreamInfo* info_;
+  absl::optional<CelValue> FindValue(absl::string_view name,
+                                     Protobuf::Arena* arena) const override {
+    if (name == Filters::Common::Expr::Request) {
+      if (info_) {
+        return CelValue::CreateMap(
+            Protobuf::Arena::Create<Filters::Common::Expr::RequestWrapper>(
+                arena, *arena, nullptr, *info_));
+      }
+    } else if (name == Filters::Common::Expr::Connection) {
+      if (info_) {
+        return CelValue::CreateMap(
+            Protobuf::Arena::Create<Filters::Common::Expr::ConnectionWrapper>(
+                arena, *info_));
+      }
+    } else if (name == Filters::Common::Expr::Source) {
+      if (info_) {
+        return CelValue::CreateMap(
+            Protobuf::Arena::Create<Filters::Common::Expr::PeerWrapper>(
+                arena, *info_, false));
+      }
+    } else if (name == Filters::Common::Expr::Destination) {
+      if (info_) {
+        return CelValue::CreateMap(
+            Protobuf::Arena::Create<Filters::Common::Expr::PeerWrapper>(
+                arena, *info_, true));
+      }
+    } else if (name == Filters::Common::Expr::Upstream) {
+      if (info_) {
+        return CelValue::CreateMap(
+            Protobuf::Arena::Create<Filters::Common::Expr::UpstreamWrapper>(
+                arena, *info_));
+      }
+    } else if (name == Filters::Common::Expr::Metadata) {
+      if (info_) {
+        return Filters::Common::Expr::CelProtoWrapper::CreateMessage(
+            &info_->dynamicMetadata(), arena);
+      }
+    } else if (name == Filters::Common::Expr::FilterState) {
+      if (info_) {
+        return Protobuf::Arena::Create<
+                   Filters::Common::Expr::FilterStateWrapper>(
+                   arena, info_->filterState())
+            ->Produce(arena);
+      }
+    } else if (name == "node") {
+      return Filters::Common::Expr::CelProtoWrapper::CreateMessage(
+          &context_->node_, arena);
+    } else if (name == "route_name") {
+      if (info_) {
+        return Filters::Common::Expr::CelValue::CreateString(
+            &info_->getRouteName());
+      }
+    }
+    if (info_) {
+      const auto* obj =
+          info_->filterState()
+              .getDataReadOnly<
+                  Envoy::Extensions::Filters::Common::Expr::CelState>(
+                  absl::StrCat("wasm.", name));
+      if (obj) {
+        return obj->exprValue(arena, false);
+      }
+    }
+    return {};
+  }
+  std::vector<const google::api::expr::runtime::CelFunction*>
+  FindFunctionOverloads(absl::string_view) const override {
+    return {};
+  }
   Stats::StatName evaluate(const StreamInfo::StreamInfo& info, uint32_t id,
                            Stats::StatNameDynamicPool& pool) {
     Protobuf::Arena arena;
-    Filters::Common::Expr::Activation activation;
-    activation.InsertValueProducer(
-        Filters::Common::Expr::Request,
-        std::make_unique<Filters::Common::Expr::RequestWrapper>(arena, nullptr,
-                                                                info));
-    activation.InsertValueProducer(
-        Filters::Common::Expr::Connection,
-        std::make_unique<Filters::Common::Expr::ConnectionWrapper>(info));
-    activation.InsertValueProducer(
-        Filters::Common::Expr::Upstream,
-        std::make_unique<Filters::Common::Expr::UpstreamWrapper>(info));
-    activation.InsertValueProducer(
-        Filters::Common::Expr::Source,
-        std::make_unique<Filters::Common::Expr::PeerWrapper>(info, false));
-    activation.InsertValueProducer(
-        Filters::Common::Expr::Destination,
-        std::make_unique<Filters::Common::Expr::PeerWrapper>(info, true));
-    activation.InsertValueProducer(
-        Filters::Common::Expr::Metadata,
-        std::make_unique<Filters::Common::Expr::MetadataProducer>(
-            info.dynamicMetadata()));
-    activation.InsertValueProducer(
-        Filters::Common::Expr::FilterState,
-        std::make_unique<Filters::Common::Expr::FilterStateWrapper>(
-            info.filterState()));
-    activation.InsertValue(
-        "node", Filters::Common::Expr::CelProtoWrapper::CreateMessage(
-                    &context_->node_, &arena));
-    activation.InsertValue(
-        "route_name",
-        Filters::Common::Expr::CelValue::CreateString(&info.getRouteName()));
-    const auto* downstream_peer =
-        info.filterState()
-            .getDataReadOnly<
-                Envoy::Extensions::Filters::Common::Expr::CelState>(
-                "wasm.downstream_peer");
-    if (downstream_peer) {
-      activation.InsertValue("downstream_peer",
-                             downstream_peer->exprValue(&arena, false));
-    }
-    const auto* upstream_peer =
-        info.filterState()
-            .getDataReadOnly<
-                Envoy::Extensions::Filters::Common::Expr::CelState>(
-                "wasm.upstream_peer");
-    if (upstream_peer) {
-      activation.InsertValue("upstream_peer",
-                             upstream_peer->exprValue(&arena, false));
-    }
-    auto eval_status = compiled_exprs_[id]->Evaluate(activation, &arena);
+    info_ = &info;
+    auto eval_status = compiled_exprs_[id]->Evaluate(*this, &arena);
+    info_ = nullptr;
     if (!eval_status.ok() || eval_status.value().IsError()) {
       return context_->unknown_;
     }
