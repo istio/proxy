@@ -14,6 +14,7 @@
 
 #include "extensions/common/metadata_object.h"
 
+#include "absl/strings/str_join.h"
 #include "flatbuffers/flatbuffers.h"
 #include "source/common/common/hash.h"
 
@@ -126,12 +127,48 @@ std::string WorkloadMetadataObject::baggage() const {
     default:
       break;
   }
-  return absl::StrCat("k8s.cluster.name=", cluster_name_,
-                      ",k8s.namespace.name=", namespace_name_, ",k8s.",
-                      workload_type, ".name=", workload_name_,
-                      ",service.name=", canonical_name_,
-                      ",service.version=", canonical_revision_,
-                      ",app.name=", app_name_, ",app.version=", app_version_);
+  std::vector<absl::string_view> parts;
+  parts.push_back("k8s.");
+  parts.push_back(workload_type);
+  parts.push_back(".name=");
+  parts.push_back(workload_name_);
+  if (!cluster_name_.empty()) {
+    parts.push_back(",");
+    parts.push_back(ClusterNameToken);
+    parts.push_back("=");
+    parts.push_back(cluster_name_);
+  }
+  if (!namespace_name_.empty()) {
+    parts.push_back(",");
+    parts.push_back(NamespaceNameToken);
+    parts.push_back("=");
+    parts.push_back(namespace_name_);
+  }
+  if (!canonical_name_.empty()) {
+    parts.push_back(",");
+    parts.push_back(ServiceNameToken);
+    parts.push_back("=");
+    parts.push_back(canonical_name_);
+  }
+  if (!canonical_revision_.empty()) {
+    parts.push_back(",");
+    parts.push_back(ServiceVersionToken);
+    parts.push_back("=");
+    parts.push_back(canonical_revision_);
+  }
+  if (!app_name_.empty()) {
+    parts.push_back(",");
+    parts.push_back(AppNameToken);
+    parts.push_back("=");
+    parts.push_back(app_name_);
+  }
+  if (!app_version_.empty()) {
+    parts.push_back(",");
+    parts.push_back(AppVersionToken);
+    parts.push_back("=");
+    parts.push_back(app_version_);
+  }
+  return absl::StrJoin(parts, "");
 }
 
 absl::optional<uint64_t> WorkloadMetadataObject::hash() const {
@@ -152,7 +189,7 @@ std::string_view toStdStringView(absl::string_view view) {
 }  // namespace
 
 flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
-    const Istio::Common::WorkloadMetadataObject& obj) {
+    const WorkloadMetadataObject& obj) {
   flatbuffers::FlatBufferBuilder fbb;
 
   flatbuffers::Offset<flatbuffers::String> name, cluster, namespace_,
@@ -165,22 +202,22 @@ flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
   workload_name = fbb.CreateString(toStdStringView(obj.workload_name_));
 
   switch (obj.workload_type_) {
-    case Istio::Common::WorkloadType::Deployment:
+    case WorkloadType::Deployment:
       owner = fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_,
                                             "/", DeploymentSuffix, "s/",
                                             obj.workload_name_));
       break;
-    case Istio::Common::WorkloadType::Job:
+    case WorkloadType::Job:
       owner =
           fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_, "/",
                                         JobSuffix, "s/", obj.workload_name_));
       break;
-    case Istio::Common::WorkloadType::CronJob:
+    case WorkloadType::CronJob:
       owner = fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_,
                                             "/", CronJobSuffix, "s/",
                                             obj.workload_name_));
       break;
-    case Istio::Common::WorkloadType::Pod:
+    case WorkloadType::Pod:
       owner =
           fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_, "/",
                                         PodSuffix, "s/", obj.workload_name_));
@@ -213,7 +250,7 @@ flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
   return fbb.Release();
 }
 
-Istio::Common::WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
+WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
     const Wasm::Common::FlatNode& node) {
   const absl::string_view instance = toAbslStringView(node.name());
   const absl::string_view cluster = toAbslStringView(node.cluster_id());
@@ -221,54 +258,74 @@ Istio::Common::WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
   const absl::string_view namespace_name = toAbslStringView(node.namespace_());
   const auto* labels = node.labels();
 
-  const auto* name_iter =
-      labels->LookupByKey("service.istio.io/canonical-name");
-  const auto* name = name_iter ? name_iter->value() : nullptr;
-  const absl::string_view canonical_name = toAbslStringView(name);
+  absl::string_view canonical_name;
+  absl::string_view canonical_revision;
+  absl::string_view app_name;
+  absl::string_view app_version;
+  if (labels) {
+    const auto* name_iter =
+        labels->LookupByKey("service.istio.io/canonical-name");
+    const auto* name = name_iter ? name_iter->value() : nullptr;
+    canonical_name = toAbslStringView(name);
 
-  const auto* revision_iter =
-      labels->LookupByKey("service.istio.io/canonical-revision");
-  const auto* revision = revision_iter ? revision_iter->value() : nullptr;
-  const absl::string_view canonical_revision = toAbslStringView(revision);
+    const auto* revision_iter =
+        labels->LookupByKey("service.istio.io/canonical-revision");
+    const auto* revision = revision_iter ? revision_iter->value() : nullptr;
+    canonical_revision = toAbslStringView(revision);
 
-  const auto* app_iter = labels->LookupByKey("app");
-  const auto* app = app_iter ? app_iter->value() : nullptr;
-  const absl::string_view app_name = toAbslStringView(app);
+    const auto* app_iter = labels->LookupByKey("app");
+    const auto* app = app_iter ? app_iter->value() : nullptr;
+    app_name = toAbslStringView(app);
 
-  const auto* version_iter = labels->LookupByKey("version");
-  const auto* version = version_iter ? version_iter->value() : nullptr;
-  const absl::string_view app_version = toAbslStringView(version);
+    const auto* version_iter = labels->LookupByKey("version");
+    const auto* version = version_iter ? version_iter->value() : nullptr;
+    app_version = toAbslStringView(version);
+  }
 
-  Istio::Common::WorkloadType workload_type = Istio::Common::WorkloadType::Pod;
+  WorkloadType workload_type = WorkloadType::Pod;
   // Strip "s/workload_name" and check for workload type.
   absl::string_view owner = toAbslStringView(node.owner());
-  owner.remove_suffix(workload.size() + 2);
-  size_t last = owner.rfind('/');
-  if (last != absl::string_view::npos) {
-    const auto it = ALL_WORKLOAD_TOKENS.find(owner.substr(last + 1));
-    if (it != ALL_WORKLOAD_TOKENS.end()) {
-      switch (it->second) {
-        case WorkloadType::Deployment:
-          workload_type = Istio::Common::WorkloadType::Deployment;
-          break;
-        case WorkloadType::CronJob:
-          workload_type = Istio::Common::WorkloadType::CronJob;
-          break;
-        case WorkloadType::Job:
-          workload_type = Istio::Common::WorkloadType::Job;
-          break;
-        case WorkloadType::Pod:
-          workload_type = Istio::Common::WorkloadType::Pod;
-          break;
-        default:
-          break;
+  if (owner.size() > workload.size() + 2) {
+    owner.remove_suffix(workload.size() + 2);
+    size_t last = owner.rfind('/');
+    if (last != absl::string_view::npos) {
+      const auto it = ALL_WORKLOAD_TOKENS.find(owner.substr(last + 1));
+      if (it != ALL_WORKLOAD_TOKENS.end()) {
+        switch (it->second) {
+          case WorkloadType::Deployment:
+            workload_type = WorkloadType::Deployment;
+            break;
+          case WorkloadType::CronJob:
+            workload_type = WorkloadType::CronJob;
+            break;
+          case WorkloadType::Job:
+            workload_type = WorkloadType::Job;
+            break;
+          case WorkloadType::Pod:
+            workload_type = WorkloadType::Pod;
+            break;
+          default:
+            break;
+        }
       }
     }
   }
 
-  return Istio::Common::WorkloadMetadataObject(
-      instance, cluster, namespace_name, workload, canonical_name,
-      canonical_revision, app_name, app_version, workload_type);
+  return WorkloadMetadataObject(instance, cluster, namespace_name, workload,
+                                canonical_name, canonical_revision, app_name,
+                                app_version, workload_type);
+}
+
+absl::optional<WorkloadMetadataObject> convertEndpointMetadata(
+    const std::string& endpoint_encoding) {
+  std::vector<absl::string_view> parts = absl::StrSplit(endpoint_encoding, ';');
+  if (parts.size() < 5) {
+    return {};
+  }
+  // TODO: we cannot determine workload type from the encoding.
+  return absl::make_optional<WorkloadMetadataObject>(
+      "", parts[4], parts[1], parts[0], parts[2], parts[3], "", "",
+      WorkloadType::Pod);
 }
 
 }  // namespace Common

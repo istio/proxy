@@ -313,7 +313,7 @@ bool extractPeerMetadataFromUpstreamMetadata(
   std::vector<absl::string_view> parts = absl::StrSplit(endpoint_labels, ';');
   // workload label should semicolon separated four parts string:
   // workload_name;namespace;canonical_service;canonical_revision;cluster_id.
-  if (parts.size() < 4) {
+  if (parts.size() < 5) {
     return false;
   }
 

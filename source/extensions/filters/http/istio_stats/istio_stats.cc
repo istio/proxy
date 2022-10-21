@@ -17,12 +17,15 @@
 #include "envoy/registry/registry.h"
 #include "envoy/server/factory_context.h"
 #include "envoy/singleton/manager.h"
+#include "eval/public/builtin_func_registrar.h"
+#include "eval/public/cel_expr_builder_factory.h"
 #include "extensions/common/metadata_object.h"
 #include "parser/parser.h"
 #include "source/common/grpc/common.h"
 #include "source/common/http/header_map_impl.h"
 #include "source/common/http/header_utility.h"
 #include "source/common/stream_info/utility.h"
+#include "source/extensions/common/utils.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/common/expr/context.h"
 #include "source/extensions/filters/common/expr/evaluator.h"
@@ -267,10 +270,13 @@ using ContextSharedPtr = std::shared_ptr<Context>;
 
 SINGLETON_MANAGER_REGISTRATION(Context)
 
+using google::api::expr::runtime::CelValue;
+
 // Instructions on dropping, creating, and overriding labels.
 // This is not the "hot path" of the metrics system and thus, fairly
 // unoptimized.
-struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
+struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
+                         public google::api::expr::runtime::BaseActivation {
   MetricOverrides(ContextSharedPtr& context, Stats::SymbolTable& symbol_table)
       : context_(context), pool_(symbol_table) {}
   ContextSharedPtr context_;
@@ -286,42 +292,83 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
   using TagAdditions = std::vector<std::pair<Stats::StatName, uint32_t>>;
   absl::flat_hash_map<Stats::StatName, TagAdditions> tag_additions_;
 
+  const StreamInfo::StreamInfo* info_;
+  absl::optional<CelValue> FindValue(absl::string_view name,
+                                     Protobuf::Arena* arena) const override {
+    if (name == Filters::Common::Expr::Request) {
+      if (info_) {
+        return CelValue::CreateMap(
+            Protobuf::Arena::Create<Filters::Common::Expr::RequestWrapper>(
+                arena, *arena, nullptr, *info_));
+      }
+    } else if (name == Filters::Common::Expr::Connection) {
+      if (info_) {
+        return CelValue::CreateMap(
+            Protobuf::Arena::Create<Filters::Common::Expr::ConnectionWrapper>(
+                arena, *info_));
+      }
+    } else if (name == Filters::Common::Expr::Source) {
+      if (info_) {
+        return CelValue::CreateMap(
+            Protobuf::Arena::Create<Filters::Common::Expr::PeerWrapper>(
+                arena, *info_, false));
+      }
+    } else if (name == Filters::Common::Expr::Destination) {
+      if (info_) {
+        return CelValue::CreateMap(
+            Protobuf::Arena::Create<Filters::Common::Expr::PeerWrapper>(
+                arena, *info_, true));
+      }
+    } else if (name == Filters::Common::Expr::Upstream) {
+      if (info_) {
+        return CelValue::CreateMap(
+            Protobuf::Arena::Create<Filters::Common::Expr::UpstreamWrapper>(
+                arena, *info_));
+      }
+    } else if (name == Filters::Common::Expr::Metadata) {
+      if (info_) {
+        return Filters::Common::Expr::CelProtoWrapper::CreateMessage(
+            &info_->dynamicMetadata(), arena);
+      }
+    } else if (name == Filters::Common::Expr::FilterState) {
+      if (info_) {
+        return Protobuf::Arena::Create<
+                   Filters::Common::Expr::FilterStateWrapper>(
+                   arena, info_->filterState())
+            ->Produce(arena);
+      }
+    } else if (name == "node") {
+      return Filters::Common::Expr::CelProtoWrapper::CreateMessage(
+          &context_->node_, arena);
+    } else if (name == "route_name") {
+      if (info_) {
+        return Filters::Common::Expr::CelValue::CreateString(
+            &info_->getRouteName());
+      }
+    }
+    if (info_) {
+      const auto* obj =
+          info_->filterState()
+              .getDataReadOnly<
+                  Envoy::Extensions::Filters::Common::Expr::CelState>(
+                  absl::StrCat("wasm.", name));
+      if (obj) {
+        return obj->exprValue(arena, false);
+      }
+    }
+    return {};
+  }
+  std::vector<const google::api::expr::runtime::CelFunction*>
+  FindFunctionOverloads(absl::string_view) const override {
+    return {};
+  }
   Stats::StatName evaluate(const StreamInfo::StreamInfo& info, uint32_t id,
                            Stats::StatNameDynamicPool& pool) {
     Protobuf::Arena arena;
-    Filters::Common::Expr::Activation activation;
-    activation.InsertValueProducer(
-        Filters::Common::Expr::Request,
-        std::make_unique<Filters::Common::Expr::RequestWrapper>(arena, nullptr,
-                                                                info));
-    activation.InsertValueProducer(
-        Filters::Common::Expr::Connection,
-        std::make_unique<Filters::Common::Expr::ConnectionWrapper>(info));
-    activation.InsertValueProducer(
-        Filters::Common::Expr::Upstream,
-        std::make_unique<Filters::Common::Expr::UpstreamWrapper>(info));
-    activation.InsertValueProducer(
-        Filters::Common::Expr::Source,
-        std::make_unique<Filters::Common::Expr::PeerWrapper>(info, false));
-    activation.InsertValueProducer(
-        Filters::Common::Expr::Destination,
-        std::make_unique<Filters::Common::Expr::PeerWrapper>(info, true));
-    activation.InsertValueProducer(
-        Filters::Common::Expr::Metadata,
-        std::make_unique<Filters::Common::Expr::MetadataProducer>(
-            info.dynamicMetadata()));
-    activation.InsertValueProducer(
-        Filters::Common::Expr::FilterState,
-        std::make_unique<Filters::Common::Expr::FilterStateWrapper>(
-            info.filterState()));
-    activation.InsertValue(
-        "node", Filters::Common::Expr::CelProtoWrapper::CreateMessage(
-                    &context_->node_, &arena));
-    activation.InsertValue(
-        "route_name",
-        Filters::Common::Expr::CelValue::CreateString(&info.getRouteName()));
-    auto eval_status = compiled_exprs_[id]->Evaluate(activation, &arena);
-    if (!eval_status.ok()) {
+    info_ = &info;
+    auto eval_status = compiled_exprs_[id]->Evaluate(*this, &arena);
+    info_ = nullptr;
+    if (!eval_status.ok() || eval_status.value().IsError()) {
       return context_->unknown_;
     }
     return pool.add(Filters::Common::Expr::print(eval_status.value()));
@@ -367,7 +414,17 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
       return {};
     }
     if (expr_builder_ == nullptr) {
-      expr_builder_ = Filters::Common::Expr::createBuilder(nullptr);
+      google::api::expr::runtime::InterpreterOptions options;
+      expr_builder_ =
+          google::api::expr::runtime::CreateCelExpressionBuilder(options);
+      auto register_status =
+          google::api::expr::runtime::RegisterBuiltinFunctions(
+              expr_builder_->GetRegistry(), options);
+      if (!register_status.ok()) {
+        throw Extensions::Filters::Common::Expr::CelException(
+            absl::StrCat("failed to register built-in functions: ",
+                         register_status.message()));
+      }
     }
     parsed_exprs_.push_back(parse_status.value().expr());
     compiled_exprs_.push_back(
@@ -437,11 +494,18 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
               metric_overrides_->tag_overrides_[metric][tag_it->second] = {};
             }
         }
-        for (const auto& [tag, expr] : metric.dimensions()) {
+        // Make order of tags deterministic.
+        std::vector<std::string> tags;
+        tags.reserve(metric.dimensions().size());
+        for (const auto& [tag, _] : metric.dimensions()) {
+          tags.push_back(tag);
+        }
+        std::sort(tags.begin(), tags.end());
+        for (const auto& tag : tags) {
+          const std::string& expr = metric.dimensions().at(tag);
           auto id = metric_overrides_->getOrCreateExpression(expr);
           if (!id.has_value()) {
             ENVOY_LOG(info, "Failed to parse expression: {}", expr);
-            continue;
           }
           const auto& tag_it = context_->all_tags_.find(tag);
           if (tag_it == context_->all_tags_.end()) {
@@ -707,77 +771,137 @@ class IstioStatsFilter : public Http::PassThroughFilter,
   // and after initial bytes read/written by MX TCP filter.
   void populatePeerInfo(const StreamInfo::StreamInfo& info,
                         const StreamInfo::FilterState& filter_state) {
+    // Compute peer info with client-side fallbacks.
     absl::optional<Istio::Common::WorkloadMetadataObject> peer;
     const auto* object = peerInfo(config_->reporter(), filter_state);
     if (object) {
       peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*object));
-    }
-    // Compute destination service with fallbacks.
-    absl::string_view service_host;
-    absl::string_view service_host_name;
-    const auto cluster_info = info.upstreamClusterInfo();
-    if (cluster_info && cluster_info.value()) {
-      const auto& filter_metadata =
-          cluster_info.value()->metadata().filter_metadata();
-      const auto& it = filter_metadata.find("istio");
-      if (it != filter_metadata.end()) {
-        const auto& services_it = it->second.fields().find("services");
-        if (services_it != it->second.fields().end()) {
-          const auto& services = services_it->second.list_value();
-          if (services.values_size() > 0) {
-            const auto& service = services.values(0).struct_value().fields();
-            const auto& host_it = service.find("host");
-            if (host_it != service.end()) {
-              service_host = host_it->second.string_value();
-              service_host_name =
-                  service_host.substr(0, service_host.find_first_of('.'));
+    } else if (config_->reporter() == Reporter::ClientSidecar) {
+      auto upstream_info = info.upstreamInfo();
+      auto upstream_host =
+          upstream_info ? upstream_info->upstreamHost() : nullptr;
+      if (upstream_host && upstream_host->metadata()) {
+        const auto& filter_metadata =
+            upstream_host->metadata()->filter_metadata();
+        const auto& it = filter_metadata.find("istio");
+        if (it != filter_metadata.end()) {
+          const auto& workload_it = it->second.fields().find("workload");
+          if (workload_it != it->second.fields().end()) {
+            auto label_obj = Istio::Common::convertEndpointMetadata(
+                workload_it->second.string_value());
+            if (label_obj) {
+              peer.emplace(label_obj.value());
             }
           }
         }
       }
     }
-    if (service_host.empty() && !config_->disable_host_header_fallback_) {
+
+    // Compute destination service with client-side fallbacks.
+    absl::string_view service_host;
+    absl::string_view service_host_name;
+    if (!config_->disable_host_header_fallback_) {
       const auto* headers = info.getRequestHeaders();
       if (headers && headers->Host()) {
         service_host = headers->Host()->value().getStringView();
         service_host_name = service_host;
       }
     }
+    const auto cluster_info = info.upstreamClusterInfo();
+    if (cluster_info && cluster_info.value()) {
+      const auto& cluster_name = cluster_info.value()->name();
+      if (cluster_name == "BlackholeCluster" ||
+          cluster_name == "PassthroughCluster" ||
+          cluster_name == "InboundPassthroughClusterIpv4" ||
+          cluster_name == "InboundPassthroughClusterIpv6") {
+        service_host_name = cluster_name;
+      } else {
+        const auto& filter_metadata =
+            cluster_info.value()->metadata().filter_metadata();
+        const auto& it = filter_metadata.find("istio");
+        if (it != filter_metadata.end()) {
+          const auto& services_it = it->second.fields().find("services");
+          if (services_it != it->second.fields().end()) {
+            const auto& services = services_it->second.list_value();
+            if (services.values_size() > 0) {
+              const auto& service = services.values(0).struct_value().fields();
+              const auto& host_it = service.find("host");
+              if (host_it != service.end()) {
+                service_host = host_it->second.string_value();
+                service_host_name =
+                    service_host.substr(0, service_host.find_first_of('.'));
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Implements fallback from using the namespace from SAN if available to
+    // using peer metadata, otherwise.
+    absl::string_view peer_san;
+    const Ssl::ConnectionInfoConstSharedPtr ssl_info =
+        config_->reporter() == Reporter::ServerSidecar
+            ? info.downstreamAddressProvider().sslConnection()
+            : (info.upstreamInfo()
+                   ? info.upstreamInfo()->upstreamSslConnection()
+                   : nullptr);
+    if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
+      peer_san = ssl_info->uriSanPeerCertificate()[0];
+    }
+    absl::string_view peer_namespace;
+    if (!peer_san.empty()) {
+      const auto san_namespace = Utils::GetNamespace(peer_san);
+      if (san_namespace) {
+        peer_namespace = san_namespace.value();
+      }
+    }
+    if (peer_namespace.empty() && peer) {
+      peer_namespace = peer->namespace_name_;
+    }
+    absl::string_view local_san;
+    if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
+      local_san = ssl_info->uriSanLocalCertificate()[0];
+    }
+
     switch (config_->reporter()) {
       case Reporter::ServerSidecar: {
         tags_.push_back(
-            {context_.source_workload_,
-             peer ? pool_.add(peer->workload_name_) : context_.unknown_});
-        tags_.push_back(
-            {context_.source_canonical_service_,
-             peer ? pool_.add(peer->canonical_name_) : context_.unknown_});
-        tags_.push_back(
-            {context_.source_canonical_revision_,
-             peer ? pool_.add(peer->canonical_revision_) : context_.latest_});
-        tags_.push_back(
-            {context_.source_workload_namespace_,
-             peer ? pool_.add(peer->namespace_name_) : context_.unknown_});
-        const auto ssl_info = info.downstreamAddressProvider().sslConnection();
-        tags_.push_back({context_.source_principal_,
-                         ssl_info && !ssl_info->uriSanPeerCertificate().empty()
-                             ? pool_.add(ssl_info->uriSanPeerCertificate()[0])
+            {context_.source_workload_, peer && !peer->workload_name_.empty()
+                                            ? pool_.add(peer->workload_name_)
+                                            : context_.unknown_});
+        tags_.push_back({context_.source_canonical_service_,
+                         peer && !peer->canonical_name_.empty()
+                             ? pool_.add(peer->canonical_name_)
                              : context_.unknown_});
-        tags_.push_back({context_.source_app_, peer ? pool_.add(peer->app_name_)
-                                                    : context_.unknown_});
+        tags_.push_back({context_.source_canonical_revision_,
+                         peer && !peer->canonical_revision_.empty()
+                             ? pool_.add(peer->canonical_revision_)
+                             : context_.latest_});
+        tags_.push_back({context_.source_workload_namespace_,
+                         !peer_namespace.empty() ? pool_.add(peer_namespace)
+                                                 : context_.unknown_});
+        tags_.push_back({context_.source_principal_, !peer_san.empty()
+                                                         ? pool_.add(peer_san)
+                                                         : context_.unknown_});
+        tags_.push_back({context_.source_app_, peer && !peer->app_name_.empty()
+                                                   ? pool_.add(peer->app_name_)
+                                                   : context_.unknown_});
         tags_.push_back(
-            {context_.source_version_,
-             peer ? pool_.add(peer->app_version_) : context_.unknown_});
+            {context_.source_version_, peer && !peer->app_version_.empty()
+                                           ? pool_.add(peer->app_version_)
+                                           : context_.unknown_});
         tags_.push_back(
-            {context_.source_cluster_,
-             peer ? pool_.add(peer->cluster_name_) : context_.unknown_});
+            {context_.source_cluster_, peer && !peer->cluster_name_.empty()
+                                           ? pool_.add(peer->cluster_name_)
+                                           : context_.unknown_});
         tags_.push_back(
             {context_.destination_workload_, context_.workload_name_});
         tags_.push_back(
             {context_.destination_workload_namespace_, context_.namespace_});
-        tags_.push_back({context_.destination_principal_,
-                         ssl_info && !ssl_info->uriSanLocalCertificate().empty()
-                             ? pool_.add(ssl_info->uriSanLocalCertificate()[0])
-                             : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_principal_,
+             !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
         tags_.push_back({context_.destination_app_, context_.app_name_});
         tags_.push_back({context_.destination_version_, context_.app_version_});
         tags_.push_back({context_.destination_service_,
@@ -806,51 +930,52 @@ class IstioStatsFilter : public Http::PassThroughFilter,
                          context_.canonical_revision_});
         tags_.push_back(
             {context_.source_workload_namespace_, context_.namespace_});
-        const auto upstream_info = info.upstreamInfo();
-        const Ssl::ConnectionInfoConstSharedPtr ssl_info =
-            upstream_info ? upstream_info->upstreamSslConnection() : nullptr;
-        tags_.push_back({context_.source_principal_,
-                         ssl_info && !ssl_info->uriSanLocalCertificate().empty()
-                             ? pool_.add(ssl_info->uriSanLocalCertificate()[0])
-                             : context_.unknown_});
+        tags_.push_back({context_.source_principal_, !local_san.empty()
+                                                         ? pool_.add(local_san)
+                                                         : context_.unknown_});
         tags_.push_back({context_.source_app_, context_.app_name_});
         tags_.push_back({context_.source_version_, context_.app_version_});
         tags_.push_back({context_.source_cluster_, context_.cluster_name_});
-        tags_.push_back(
-            {context_.destination_workload_,
-             peer ? pool_.add(peer->workload_name_) : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_workload_namespace_,
-             peer ? pool_.add(peer->namespace_name_) : context_.unknown_});
-        tags_.push_back({context_.destination_principal_,
-                         ssl_info && !ssl_info->uriSanPeerCertificate().empty()
-                             ? pool_.add(ssl_info->uriSanPeerCertificate()[0])
+        tags_.push_back({context_.destination_workload_,
+                         peer && !peer->workload_name_.empty()
+                             ? pool_.add(peer->workload_name_)
                              : context_.unknown_});
+        tags_.push_back({context_.destination_workload_namespace_,
+                         !peer_namespace.empty() ? pool_.add(peer_namespace)
+                                                 : context_.unknown_});
         tags_.push_back(
-            {context_.destination_app_,
-             peer ? pool_.add(peer->app_name_) : context_.unknown_});
+            {context_.destination_principal_,
+             !peer_san.empty() ? pool_.add(peer_san) : context_.unknown_});
         tags_.push_back(
-            {context_.destination_version_,
-             peer ? pool_.add(peer->app_version_) : context_.unknown_});
+            {context_.destination_app_, peer && !peer->app_name_.empty()
+                                            ? pool_.add(peer->app_name_)
+                                            : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_version_, peer && !peer->app_version_.empty()
+                                                ? pool_.add(peer->app_version_)
+                                                : context_.unknown_});
         tags_.push_back({context_.destination_service_,
                          service_host.empty() ? context_.unknown_
                                               : pool_.add(service_host)});
-        tags_.push_back(
-            {context_.destination_canonical_service_,
-             peer ? pool_.add(peer->canonical_name_) : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_canonical_revision_,
-             peer ? pool_.add(peer->canonical_revision_) : context_.latest_});
+        tags_.push_back({context_.destination_canonical_service_,
+                         peer && !peer->canonical_name_.empty()
+                             ? pool_.add(peer->canonical_name_)
+                             : context_.unknown_});
+        tags_.push_back({context_.destination_canonical_revision_,
+                         peer && !peer->canonical_revision_.empty()
+                             ? pool_.add(peer->canonical_revision_)
+                             : context_.latest_});
         tags_.push_back({context_.destination_service_name_,
                          service_host_name.empty()
                              ? context_.unknown_
                              : pool_.add(service_host_name)});
+        tags_.push_back({context_.destination_service_namespace_,
+                         !peer_namespace.empty() ? pool_.add(peer_namespace)
+                                                 : context_.unknown_});
         tags_.push_back(
-            {context_.destination_service_namespace_,
-             peer ? pool_.add(peer->namespace_name_) : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_cluster_,
-             peer ? pool_.add(peer->cluster_name_) : context_.unknown_});
+            {context_.destination_cluster_, peer && !peer->cluster_name_.empty()
+                                                ? pool_.add(peer->cluster_name_)
+                                                : context_.unknown_});
         break;
       }
       default:

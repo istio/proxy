@@ -51,26 +51,26 @@ TEST(WorkloadMetadataObjectTest, Baggage) {
                              WorkloadType::Job);
 
   EXPECT_EQ(deploy.baggage(),
-            absl::StrCat("k8s.cluster.name=my-cluster,",
-                         "k8s.namespace.name=default,k8s.deployment.name=foo,",
+            absl::StrCat("k8s.deployment.name=foo,k8s.cluster.name=my-cluster,",
+                         "k8s.namespace.name=default,",
                          "service.name=foo-service,service.version=v1alpha3,",
                          "app.name=foo-app,app.version=v1"));
 
   EXPECT_EQ(pod.baggage(),
-            absl::StrCat("k8s.cluster.name=my-cluster,",
-                         "k8s.namespace.name=default,k8s.pod.name=foo,",
+            absl::StrCat("k8s.pod.name=foo,k8s.cluster.name=my-cluster,",
+                         "k8s.namespace.name=default,",
                          "service.name=foo-service,service.version=v1alpha3,",
                          "app.name=foo-app,app.version=v1"));
 
   EXPECT_EQ(cronjob.baggage(),
-            absl::StrCat("k8s.cluster.name=my-cluster,",
-                         "k8s.namespace.name=default,k8s.cronjob.name=foo,"
+            absl::StrCat("k8s.cronjob.name=foo,k8s.cluster.name=my-cluster,",
+                         "k8s.namespace.name=default,"
                          "service.name=foo-service,service.version=v1alpha3,",
                          "app.name=foo-app,app.version=v1"));
 
   EXPECT_EQ(job.baggage(),
-            absl::StrCat("k8s.cluster.name=my-cluster,",
-                         "k8s.namespace.name=default,k8s.job.name=foo,",
+            absl::StrCat("k8s.job.name=foo,k8s.cluster.name=my-cluster,",
+                         "k8s.namespace.name=default,",
                          "service.name=foo-service,service.version=v1alpha3,",
                          "app.name=foo-app,app.version=v1"));
 }
@@ -86,9 +86,9 @@ void checkFlatNodeConversion(const WorkloadMetadataObject& obj) {
 TEST(WorkloadMetadataObjectTest, FromBaggage) {
   {
     auto obj = WorkloadMetadataObject::fromBaggage(
-        absl::StrCat("k8s.cluster.name=my-cluster,k8s.namespace.name=default,",
-                     "k8s.deployment.name=foo,service.name=foo-service,",
-                     "service.version=v1alpha3"));
+        absl::StrCat("k8s.deployment.name=foo,k8s.cluster.name=my-cluster,k8s."
+                     "namespace.name=default,",
+                     "service.name=foo-service,", "service.version=v1alpha3"));
     EXPECT_EQ(obj.canonical_name_, "foo-service");
     EXPECT_EQ(obj.canonical_revision_, "v1alpha3");
     EXPECT_EQ(obj.workload_type_, WorkloadType::Deployment);
@@ -100,9 +100,9 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
 
   {
     auto obj = WorkloadMetadataObject::fromBaggage(
-        absl::StrCat("k8s.cluster.name=my-cluster,k8s.namespace.name=test,k8s."
-                     "pod.name=foo-pod-435,service.name=",
-                     "foo-service,service.version=v1beta2"));
+        absl::StrCat("k8s.pod.name=foo-pod-435,k8s.cluster.name=my-cluster,k8s."
+                     "namespace.name=test,"
+                     "service.name=foo-service,service.version=v1beta2"));
 
     EXPECT_EQ(obj.canonical_name_, "foo-service");
     EXPECT_EQ(obj.canonical_revision_, "v1beta2");
@@ -116,9 +116,9 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
 
   {
     auto obj = WorkloadMetadataObject::fromBaggage(
-        absl::StrCat("k8s.cluster.name=my-cluster,k8s.namespace.name=test,",
-                     "k8s.job.name=foo-job-435,service.name=foo-service,",
-                     "service.version=v1beta4"));
+        absl::StrCat("k8s.job.name=foo-job-435,k8s.cluster.name=my-cluster,k8s."
+                     "namespace.name=test,",
+                     "service.name=foo-service,", "service.version=v1beta4"));
 
     EXPECT_EQ(obj.canonical_name_, "foo-service");
     EXPECT_EQ(obj.canonical_revision_, "v1beta4");
@@ -132,9 +132,9 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
 
   {
     auto obj = WorkloadMetadataObject::fromBaggage(
-        absl::StrCat("k8s.cluster.name=my-cluster,k8s.namespace.name=test,",
-                     "k8s.cronjob.name=foo-cronjob,service.name=foo-service,",
-                     "service.version=v1beta4"));
+        absl::StrCat("k8s.cronjob.name=foo-cronjob,k8s.cluster.name=my-cluster,"
+                     "k8s.namespace.name=test,",
+                     "service.name=foo-service,", "service.version=v1beta4"));
 
     EXPECT_EQ(obj.canonical_name_, "foo-service");
     EXPECT_EQ(obj.canonical_revision_, "v1beta4");
@@ -149,8 +149,8 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
 
   {
     auto obj = WorkloadMetadataObject::fromBaggage(absl::StrCat(
-        "k8s.namespace.name=default,",
-        "k8s.deployment.name=foo,service.name=foo-service,",
+        "k8s.deployment.name=foo,k8s.namespace.name=default,",
+        "service.name=foo-service,",
         "service.version=v1alpha3,app.name=foo-app,app.version=v1"));
 
     EXPECT_EQ(obj.canonical_name_, "foo-service");
@@ -163,6 +163,31 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
     EXPECT_EQ(obj.app_version_, "v1");
     checkFlatNodeConversion(obj);
   }
+}
+
+TEST(WorkloadMetadataObjectTest, ConvertFromFlatNode) {
+  flatbuffers::FlatBufferBuilder fbb;
+  Wasm::Common::FlatNodeBuilder builder(fbb);
+  auto data = builder.Finish();
+  fbb.Finish(data);
+  auto buffer = fbb.Release();
+  const auto& node =
+      *flatbuffers::GetRoot<Wasm::Common::FlatNode>(buffer.data());
+  auto obj = convertFlatNodeToWorkloadMetadata(node);
+  EXPECT_EQ(obj.baggage(), "k8s.pod.name=");
+}
+
+TEST(WorkloadMetadataObjectTest, ConvertFromEndpointMetadata) {
+  EXPECT_EQ(absl::nullopt, convertEndpointMetadata(""));
+  EXPECT_EQ(absl::nullopt, convertEndpointMetadata("a;b"));
+  EXPECT_EQ(absl::nullopt, convertEndpointMetadata("a;;;b"));
+  EXPECT_EQ(absl::nullopt, convertEndpointMetadata("a;b;c;d"));
+  auto obj =
+      convertEndpointMetadata("foo-pod;default;foo-service;v1;my-cluster");
+  ASSERT_TRUE(obj.has_value());
+  EXPECT_EQ(obj->baggage(),
+            "k8s.pod.name=foo-pod,k8s.cluster.name=my-cluster,k8s.namespace."
+            "name=default,service.name=foo-service,service.version=v1");
 }
 
 }  // namespace Common

@@ -111,11 +111,19 @@ struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
 
 // Convert metadata object to flatbuffer.
 flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
-    const Istio::Common::WorkloadMetadataObject& obj);
+    const WorkloadMetadataObject& obj);
 
 // Convert flatbuffer to metadata object.
-Istio::Common::WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
+WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
     const Wasm::Common::FlatNode& node);
+
+// Convert endpoint metadata string to a metadata object.
+// Telemetry metadata is compressed into a semicolon separated string:
+// workload-name;namespace;canonical-service-name;canonical-service-revision;cluster-id.
+// Telemetry metadata is stored as a string under "istio", "workload" field
+// path.
+absl::optional<WorkloadMetadataObject> convertEndpointMetadata(
+    const std::string& endpoint_encoding);
 
 }  // namespace Common
 }  // namespace Istio
