@@ -207,7 +207,7 @@ if [ -n "${DST}" ]; then
     cp "${BAZEL_COMPILED_TARGET}" "${WASM_COMPILED_PATH}"
     sha256sum "${WASM_PATH}" > "${SHA256_PATH}"
     sha256sum "${WASM_COMPILED_PATH}" > "${SHA256_COMPILED_PATH}"
-    
+
     # push wasm files and sha to the given bucket
     gsutil stat "${DST}/${WASM_NAME}" \
       && { echo "WASM file ${WASM_NAME} already exist"; continue; } \
