@@ -81,7 +81,8 @@ func (e *Envoy) Run(p *Params) error {
 	}
 	log.Printf("envoy bootstrap:\n%s\n", bootstrap)
 
-	e.adminPort, err = getAdminPort(bootstrap)
+	var node string
+	e.adminPort, node, err = getAdminPortAndNode(bootstrap)
 	if err != nil {
 		return err
 	}
@@ -105,6 +106,7 @@ func (e *Envoy) Run(p *Params) error {
 		concurrency = fmt.Sprint(e.Concurrency)
 	}
 	args := []string{
+		"--log-format", "[" + node + ` %T.%e][%t][%l][%n] [%g:%#] %v`,
 		"-c", e.tmpFile,
 		"-l", debugLevel,
 		"--concurrency", concurrency,
@@ -171,23 +173,28 @@ func (e *Envoy) Cleanup() {
 	}
 }
 
-func getAdminPort(bootstrap string) (uint32, error) {
+func getAdminPortAndNode(bootstrap string) (port uint32, node string, err error) {
 	pb := &bootstrap_v3.Bootstrap{}
-	if err := ReadYAML(bootstrap, pb); err != nil {
-		return 0, err
+	if err = ReadYAML(bootstrap, pb); err != nil {
+		return
 	}
 	if pb.Admin == nil || pb.Admin.Address == nil {
-		return 0, fmt.Errorf("missing admin section in bootstrap: %v", bootstrap)
+		err = fmt.Errorf("missing admin section in bootstrap: %v", bootstrap)
+		return
 	}
 	socket, ok := pb.Admin.Address.Address.(*core.Address_SocketAddress)
 	if !ok {
-		return 0, fmt.Errorf("missing socket in bootstrap: %v", bootstrap)
+		err = fmt.Errorf("missing socket in bootstrap: %v", bootstrap)
+		return
 	}
-	port, ok := socket.SocketAddress.PortSpecifier.(*core.SocketAddress_PortValue)
+	portValue, ok := socket.SocketAddress.PortSpecifier.(*core.SocketAddress_PortValue)
 	if !ok {
-		return 0, fmt.Errorf("missing port in bootstrap: %v", bootstrap)
+		err = fmt.Errorf("missing port in bootstrap: %v", bootstrap)
+		return
 	}
-	return port.PortValue, nil
+	node = pb.Node.Id
+	port = portValue.PortValue
+	return
 }
 
 // downloads env based on the given branch name. Return location of downloaded envoy.

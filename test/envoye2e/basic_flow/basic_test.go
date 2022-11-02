@@ -15,12 +15,27 @@
 package client_test
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
 	"istio.io/proxy/test/envoye2e"
 	"istio.io/proxy/test/envoye2e/driver"
 )
+
+var ProtocolOptions = []struct {
+	Name string
+	Quic bool
+}{
+	{
+		Name: "h2",
+		Quic: false,
+	},
+	{
+		Name: "quic",
+		Quic: true,
+	},
+}
 
 func TestBasicTCPFlow(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
@@ -128,59 +143,64 @@ func TestBasicHTTPGateway(t *testing.T) {
 }
 
 func TestBasicCONNECT(t *testing.T) {
-	params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
-	params.Vars["ServerClusterName"] = "internal_outbound"
-	params.Vars["ServerInternalAddress"] = "internal_inbound"
-	params.Vars["ServerNetworkFilters"] = driver.LoadTestData("testdata/filters/restore_tls.yaml.tmpl")
+	for _, options := range ProtocolOptions {
+		t.Run(options.Name, func(t *testing.T) {
+			params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
+			params.Vars["ServerClusterName"] = "internal_outbound"
+			params.Vars["ServerInternalAddress"] = "internal_inbound"
+			params.Vars["ServerNetworkFilters"] = driver.LoadTestData("testdata/filters/restore_tls.yaml.tmpl")
+			params.Vars["quic"] = strconv.FormatBool(options.Quic)
 
-	updateClient := &driver.Update{Node: "client", Version: "{{ .N }}",
-		Clusters: []string{
-			driver.LoadTestData("testdata/cluster/internal_outbound.yaml.tmpl"),
-			driver.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
-		},
-		Listeners: []string{
-			driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
-			driver.LoadTestData("testdata/listener/internal_outbound.yaml.tmpl"),
-		},
-		Secrets: []string{
-			driver.LoadTestData("testdata/secret/client.yaml.tmpl"),
-		},
-	}
+			updateClient := &driver.Update{Node: "client", Version: "{{ .N }}",
+				Clusters: []string{
+					driver.LoadTestData("testdata/cluster/internal_outbound.yaml.tmpl"),
+					driver.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
+				},
+				Listeners: []string{
+					driver.LoadTestData("testdata/listener/client.yaml.tmpl"),
+					driver.LoadTestData("testdata/listener/internal_outbound.yaml.tmpl"),
+				},
+				Secrets: []string{
+					driver.LoadTestData("testdata/secret/client.yaml.tmpl"),
+				},
+			}
 
-	updateServer := &driver.Update{Node: "server", Version: "{{ .N }}",
-		Clusters: []string{
-			driver.LoadTestData("testdata/cluster/internal_inbound.yaml.tmpl"),
-		},
-		Listeners: []string{
-			driver.LoadTestData("testdata/listener/terminate_connect.yaml.tmpl"),
-			driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
-		},
-		Secrets: []string{
-			driver.LoadTestData("testdata/secret/server.yaml.tmpl"),
-		},
-	}
+			updateServer := &driver.Update{Node: "server", Version: "{{ .N }}",
+				Clusters: []string{
+					driver.LoadTestData("testdata/cluster/internal_inbound.yaml.tmpl"),
+				},
+				Listeners: []string{
+					driver.LoadTestData("testdata/listener/terminate_connect.yaml.tmpl"),
+					driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
+				},
+				Secrets: []string{
+					driver.LoadTestData("testdata/secret/server.yaml.tmpl"),
+				},
+			}
 
-	if err := (&driver.Scenario{
-		Steps: []driver.Step{
-			&driver.XDS{},
-			updateClient, updateServer,
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
-			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
-			&driver.Sleep{Duration: 1 * time.Second},
-			driver.Get(params.Ports.ClientPort, "hello, world!"),
-			// xDS load generator:
-			// &driver.Repeat{
-			// 	Duration: time.Second * 20,
-			// 	Step: &driver.Scenario{
-			// 		[]driver.Step{
-			// 			&driver.Sleep{10000 * time.Millisecond},
-			// 			updateClient, updateServer,
-			// 			// may need short delay so we don't eat all the CPU
-			// 		},
-			// 	},
-			// },
-		},
-	}).Run(params); err != nil {
-		t.Fatal(err)
+			if err := (&driver.Scenario{
+				Steps: []driver.Step{
+					&driver.XDS{},
+					updateClient, updateServer,
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+					&driver.Sleep{Duration: 1 * time.Second},
+					driver.Get(params.Ports.ClientPort, "hello, world!"),
+					// xDS load generator:
+					// &driver.Repeat{
+					// 	Duration: time.Second * 20,
+					// 	Step: &driver.Scenario{
+					// 		[]driver.Step{
+					// 			&driver.Sleep{10000 * time.Millisecond},
+					// 			updateClient, updateServer,
+					// 			// may need short delay so we don't eat all the CPU
+					// 		},
+					// 	},
+					// },
+				},
+			}).Run(params); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }

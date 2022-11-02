@@ -17,7 +17,15 @@
 openssl genrsa -out root.key 2048
 openssl req -x509 -new -nodes -key root.key -sha256 -days 1825 -out root.cert
 
-# generate mTLS cert for client as follows:
-go run security/tools/generate_cert/main.go -host="spiffe://cluster.local/ns/default/sa/client" -signer-priv=mixer/test/client/pilotplugin_mtls/testdata/root.key -signer-cert=mixer/test/client/pilotplugin_mtls/testdata/root.cert --mode=signer
+# Server certificate:
+openssl genrsa -out server-key.cert 2048
+openssl req -new -key server-key.cert -out server.csr
+openssl x509 -req -in server.csr  -CA root.cert -CAkey root.key -out server.cert -days 1650 -sha256 -extfile server_ext.cnf
+
+# Client certificate:
+openssl genrsa -out client-key.cert 2048
+openssl req -new -key client-key.cert -out client.csr
+openssl x509 -req -in client.csr  -CA root.cert -CAkey root.key -out client.cert -days 1650 -sha256 -extfile client_ext.cnf
+
 
 # Stackdriver certs need localhost as the common name
