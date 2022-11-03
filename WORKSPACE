@@ -21,11 +21,8 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load(
     "//bazel:repositories.bzl",
     "docker_dependencies",
-    "googletest_repositories",
     "istioapi_dependencies",
 )
-
-googletest_repositories()
 
 istioapi_dependencies()
 
@@ -38,10 +35,10 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Note: this is needed by release builder to resolve envoy dep sha to tag.
-# Commit date: 2022-10-31
-ENVOY_SHA = "c854b59e2851f88f813b0b0188253f9671ae8c2b"
+# Commit date: 2022-11-02
+ENVOY_SHA = "158a28b87cb3dda336392e5ca51941d532cfb8dd"
 
-ENVOY_SHA256 = "c6d3ba6ff7271aa086c27a08a5f2e0811328d12d454c4305f6e33ebd25ead402"
+ENVOY_SHA256 = "47278128ed7501d3d95c163f0115134eef129f14ae6b67df1414bbf69e87bdad"
 
 ENVOY_ORG = "envoyproxy"
 

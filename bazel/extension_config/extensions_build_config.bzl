@@ -20,6 +20,7 @@ ENVOY_EXTENSIONS = {
     "envoy.clusters.aggregate":                         "//source/extensions/clusters/aggregate:cluster",
     "envoy.clusters.dynamic_forward_proxy":             "//source/extensions/clusters/dynamic_forward_proxy:cluster",
     "envoy.clusters.redis":                             "//source/extensions/clusters/redis:redis_cluster",
+    "envoy.clusters.original_dst":                      "//source/extensions/clusters/original_dst:original_dst_cluster_lib",
 
     #
     # Compression
@@ -387,3 +388,5 @@ EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_D
 EXTENSION_CONFIG_VISIBILITY = ["//visibility:public"]
 EXTENSION_PACKAGE_VISIBILITY = ["//visibility:public"]
 CONTRIB_EXTENSION_PACKAGE_VISIBILITY = ["//visibility:public"]
+
+LEGACY_ALWAYSLINK = True
