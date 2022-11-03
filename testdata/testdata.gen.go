@@ -599,19 +599,35 @@ func listenerTcp_serverYamlTmpl() (*asset, error) {
 var _listenerTerminate_connectYamlTmpl = []byte(`name: terminate_connect
 address:
   socket_address:
+{{ if eq .Vars.quic "true" }}
+    protocol: UDP
+{{ end }}
     address: 127.0.0.1
     port_value: {{ .Ports.ServerTunnelPort }}
+{{ if eq .Vars.quic "true" }}
+udp_listener_config:
+  quic_options: {}
+  downstream_socket_config:
+    prefer_gro: true
+{{ end }}
 filter_chains:
 - filters:
   # Capture SSL info for the internal listener passthrough
+{{ if eq .Vars.quic "true" }}
+# TODO: accessing uriSanPeerCertificates() triggers a crash in quiche version.
+{{ else }}
   - name: capture_tls
     typed_config:
       "@type": type.googleapis.com/udpa.type.v1.TypedStruct
       type_url: istio.tls_passthrough.v1.CaptureTLS
+{{ end }}
   - name: envoy.filters.network.http_connection_manager
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       stat_prefix: terminate_connect
+{{ if eq .Vars.quic "true" }}
+      codec_type: HTTP3
+{{ end }}
       route_config:
         name: local_route
         virtual_hosts:
@@ -637,6 +653,29 @@ filter_chains:
       upgrade_configs:
       - upgrade_type: CONNECT
   transport_socket:
+{{ if eq .Vars.quic "true" }}
+    name: quic
+    typed_config:
+      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: type.googleapis.com/envoy.extensions.transport_sockets.quic.v3.QuicDownstreamTransport
+      value:
+        downstream_tls_context:
+          common_tls_context:
+            tls_certificate_sds_secret_configs:
+              name: server
+              sds_config:
+                api_config_source:
+                  api_type: GRPC
+                  grpc_services:
+                  - envoy_grpc:
+                      cluster_name: xds_cluster
+                  set_node_on_first_message_only: true
+                  transport_api_version: V3
+                resource_api_version: V3
+            validation_context:
+              trusted_ca: { filename: "testdata/certs/root.cert" }
+          require_client_certificate: true # XXX: This setting is ignored ATM per @danzh.
+{{ else }}
     name: tls
     typed_config:
       "@type": type.googleapis.com/udpa.type.v1.TypedStruct
@@ -657,6 +696,7 @@ filter_chains:
           validation_context:
             trusted_ca: { filename: "testdata/certs/root.cert" }
         require_client_certificate: true
+{{ end }}
 `)
 
 func listenerTerminate_connectYamlTmplBytes() ([]byte, error) {
