@@ -26,14 +26,16 @@ namespace IstioAuthn {
 constexpr absl::string_view SpiffePrefix("spiffe://");
 constexpr absl::string_view PeerPrincipalKey = "io.istio.peer_principal";
 
-class PeerPrincipal : public StreamInfo::FilterState::Object,
-                      public Hashable {
-public:
+class PeerPrincipal : public StreamInfo::FilterState::Object, public Hashable {
+ public:
   PeerPrincipal(const std::string& principal) : principal_(principal) {}
-  absl::optional<std::string> serializeAsString() const override { return principal_; }
+  absl::optional<std::string> serializeAsString() const override {
+    return principal_;
+  }
   // Envoy::Hashable
   absl::optional<uint64_t> hash() const override;
-private:
+
+ private:
   const std::string principal_;
 };
 
