@@ -30,6 +30,7 @@ namespace NetworkFilters {
 namespace IstioAuthn {
 
 absl::optional<uint64_t> PeerPrincipal::hash() const {
+  // XXX: This should really be a cryptographic hash to avoid SAN collision.
   return Envoy::HashUtil::xxHash64(principal_);
 }
 
