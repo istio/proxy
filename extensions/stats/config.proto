@@ -68,28 +68,31 @@ message MetricDefinition {
   MetricType type = 3;
 }
 
+// Specifies the proxy deployment type.
+enum Reporter {
+  // Default value is inferred from the listener direction, as either client or
+  // server sidecar.
+  UNSPECIFIED = 0;
+
+  // Shared server gateway, e.g. "waypoint".
+  SERVER_GATEWAY = 1;
+}
+
 message PluginConfig {
-  // The following settings should be rarely used.
-  // Enable debug for this filter.
-  // DEPRECATED.
-  bool debug = 1;
+  reserved 1;
+  reserved "debug";
 
-  // maximum size of the peer metadata cache.
-  // A long lived proxy that connects with many transient peers can build up a
-  // large cache. To turn off the cache, set this field to a negative value.
-  // DEPRECATED.
-  int32 max_peer_cache_size = 2;
+  reserved 2;
+  reserved "max_peer_cache_size";
 
-  // prefix to add to stats emitted by the plugin.
-  // DEPRECATED.
-  string stat_prefix = 3;  // default: "istio_"
+  reserved 3;
+  reserved "stat_prefix";
 
-  // Stats api squashes dimensions in a single string.
-  // The squashed string is parsed at prometheus scrape time to recover
-  // dimensions. The following 2 fields set the field and value separators {key:
-  // value} -->  key{value_separator}value{field_separator}
-  string field_separator = 4;  // default: ";;"
-  string value_separator = 5;  // default: "=="
+  reserved 4;
+  reserved "field_separator";
+
+  reserved 5;
+  reserved "value_separator";
 
   // Optional: Disable using host header as a fallback if destination service is
   // not available from the controlplane. Disable the fallback if the host
@@ -106,28 +109,6 @@ message PluginConfig {
   // Metric definitions.
   repeated MetricDefinition definitions = 9;
 
-  enum MetadataMode {
-    // Instructs the stats filter to pull node information
-    // from the Envoy local node metadata alone. This will be combined with peer
-    // metadata from Envoy filter state to build Istio service metrics.
-    LOCAL_NODE_METADATA_MODE = 0;
-
-    // Instructs the stats filter to pull node information from host
-    // metadata provided by the control plane. This will be combined with peer
-    // metadata from Envoy filter state to build Istio service metrics.
-    UPSTREAM_HOST_METADATA_MODE = 1;
-
-    // Instructs the stats filter to pull node information from cluster metadata
-    // provided by the control plane. This will be combined with peer metadata
-    // from Envoy filter state to build Istio service metrics.
-    CLUSTER_METADATA_MODE = 2;
-
-    // next id: 3
-  }
-
-  // This will control how the stats filter discovers metadata for the workloads
-  // involved in a request / connection.
-  MetadataMode metadata_mode = 10;
-
-  // next id: 11
+  // Proxy deployment type.
+  Reporter reporter = 10;
 }

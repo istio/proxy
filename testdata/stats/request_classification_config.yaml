@@ -1,4 +1,3 @@
-field_separator: ";.;"
 metrics:
   - name: requests_total
     dimensions:

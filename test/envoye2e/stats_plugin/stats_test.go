@@ -663,10 +663,7 @@ func TestStatsServerWaypointProxy(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"RequestCount":               "10",
 		"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
-		"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
-		"WasmRuntime":                "envoy.wasm.runtime.null",
 		"EnableEndpointMetadata":     "true",
-		"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 		"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_waypoint_proxy_config.yaml"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
