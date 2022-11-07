@@ -33,6 +33,9 @@ if [[ "$(uname)" != "Darwin" && "${BAZEL_BUILD_ARGS}" != *"--config=libc++"* ]];
   BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --config=libc++"
 fi
 
+# Expliticly stamp.
+BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --stamp"
+
 if [[ "$(uname)" == "Darwin" ]]; then
   BAZEL_CONFIG_ASAN="--config=macos-asan"
 else
