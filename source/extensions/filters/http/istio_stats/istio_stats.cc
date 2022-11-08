@@ -77,8 +77,12 @@ absl::optional<Istio::Common::WorkloadMetadataObject> extractEndpointMetadata(
 }
 
 enum class Reporter {
+  // Regular outbound listener on a sidecar.
   ClientSidecar,
+  // Regular inbound listener on a sidecar.
   ServerSidecar,
+  // Inbound listener on a shared proxy. The destination properties are derived
+  // from the endpoint metadata instead of the proxy bootstrap.
   ServerGateway,
 };
 
