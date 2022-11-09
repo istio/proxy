@@ -1,2 +1,1 @@
-field_separator: ";.;"
-metadata_mode: UPSTREAM_HOST_METADATA_MODE
+reporter: SERVER_GATEWAY

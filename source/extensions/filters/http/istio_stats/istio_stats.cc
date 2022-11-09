@@ -58,17 +58,41 @@ absl::string_view extractMapString(const ProtobufWkt::Struct& metadata,
   return extractString(it->second.struct_value(), key);
 }
 
+absl::optional<Istio::Common::WorkloadMetadataObject> extractEndpointMetadata(
+    const StreamInfo::StreamInfo& info) {
+  auto upstream_info = info.upstreamInfo();
+  auto upstream_host = upstream_info ? upstream_info->upstreamHost() : nullptr;
+  if (upstream_host && upstream_host->metadata()) {
+    const auto& filter_metadata = upstream_host->metadata()->filter_metadata();
+    const auto& it = filter_metadata.find("istio");
+    if (it != filter_metadata.end()) {
+      const auto& workload_it = it->second.fields().find("workload");
+      if (workload_it != it->second.fields().end()) {
+        return Istio::Common::convertEndpointMetadata(
+            workload_it->second.string_value());
+      }
+    }
+  }
+  return {};
+}
+
 enum class Reporter {
+  // Regular outbound listener on a sidecar.
   ClientSidecar,
+  // Regular inbound listener on a sidecar.
   ServerSidecar,
+  // Inbound listener on a shared proxy. The destination properties are derived
+  // from the endpoint metadata instead of the proxy bootstrap.
+  ServerGateway,
 };
 
 // Detect if peer info read is completed by TCP metadata exchange.
 bool peerInfoRead(Reporter reporter,
                   const StreamInfo::FilterState& filter_state) {
-  const auto& filter_state_key = reporter == Reporter::ServerSidecar
-                                     ? "wasm.downstream_peer_id"
-                                     : "wasm.upstream_peer_id";
+  const auto& filter_state_key =
+      reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
+          ? "wasm.downstream_peer_id"
+          : "wasm.upstream_peer_id";
   const auto* object =
       filter_state
           .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
@@ -78,9 +102,10 @@ bool peerInfoRead(Reporter reporter,
 
 const Wasm::Common::FlatNode* peerInfo(
     Reporter reporter, const StreamInfo::FilterState& filter_state) {
-  const auto& filter_state_key = reporter == Reporter::ServerSidecar
-                                     ? "wasm.downstream_peer"
-                                     : "wasm.upstream_peer";
+  const auto& filter_state_key =
+      reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
+          ? "wasm.downstream_peer"
+          : "wasm.upstream_peer";
   const auto* object =
       filter_state
           .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
@@ -455,15 +480,25 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
             proto_config.disable_host_header_fallback()),
         report_duration_(PROTOBUF_GET_MS_OR_DEFAULT(
             proto_config, tcp_reporting_duration, /* 15s */ 15000)) {
-    switch (factory_context.direction()) {
-      case envoy::config::core::v3::TrafficDirection::INBOUND:
-        reporter_ = Reporter::ServerSidecar;
+    reporter_ = Reporter::ClientSidecar;
+    switch (proto_config.reporter()) {
+      case stats::Reporter::UNSPECIFIED:
+        switch (factory_context.direction()) {
+          case envoy::config::core::v3::TrafficDirection::INBOUND:
+            reporter_ = Reporter::ServerSidecar;
+            break;
+          case envoy::config::core::v3::TrafficDirection::OUTBOUND:
+            reporter_ = Reporter::ClientSidecar;
+            break;
+          default:
+            break;
+        }
         break;
-      case envoy::config::core::v3::TrafficDirection::OUTBOUND:
-        reporter_ = Reporter::ClientSidecar;
+      case stats::Reporter::SERVER_GATEWAY:
+        reporter_ = Reporter::ServerGateway;
         break;
       default:
-        reporter_ = Reporter::ClientSidecar;
+        break;
     }
     if (proto_config.metrics_size() > 0 ||
         proto_config.definitions_size() > 0) {
@@ -601,6 +636,7 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     tags_.reserve(25);
     switch (config_->reporter()) {
       case Reporter::ServerSidecar:
+      case Reporter::ServerGateway:
         tags_.push_back({context_.reporter_, context_.destination_});
         break;
       case Reporter::ClientSidecar:
@@ -752,7 +788,8 @@ class IstioStatsFilter : public Http::PassThroughFilter,
         {context_.response_flags_,
          pool_.add(StreamInfo::ResponseFlagUtils::toShortString(info))});
     switch (config_->reporter()) {
-      case Reporter::ServerSidecar: {
+      case Reporter::ServerSidecar:
+      case Reporter::ServerGateway: {
         const auto ssl_info = info.downstreamAddressProvider().sslConnection();
         const auto mtls =
             ssl_info != nullptr && ssl_info->peerCertificatePresented();
@@ -777,23 +814,8 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     if (object) {
       peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*object));
     } else if (config_->reporter() == Reporter::ClientSidecar) {
-      auto upstream_info = info.upstreamInfo();
-      auto upstream_host =
-          upstream_info ? upstream_info->upstreamHost() : nullptr;
-      if (upstream_host && upstream_host->metadata()) {
-        const auto& filter_metadata =
-            upstream_host->metadata()->filter_metadata();
-        const auto& it = filter_metadata.find("istio");
-        if (it != filter_metadata.end()) {
-          const auto& workload_it = it->second.fields().find("workload");
-          if (workload_it != it->second.fields().end()) {
-            auto label_obj = Istio::Common::convertEndpointMetadata(
-                workload_it->second.string_value());
-            if (label_obj) {
-              peer.emplace(label_obj.value());
-            }
-          }
-        }
+      if (auto label_obj = extractEndpointMetadata(info); label_obj) {
+        peer.emplace(label_obj.value());
       }
     }
 
@@ -841,7 +863,8 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     // using peer metadata, otherwise.
     absl::string_view peer_san;
     const Ssl::ConnectionInfoConstSharedPtr ssl_info =
-        config_->reporter() == Reporter::ServerSidecar
+        config_->reporter() == Reporter::ServerSidecar ||
+                config_->reporter() == Reporter::ServerGateway
             ? info.downstreamAddressProvider().sslConnection()
             : (info.upstreamInfo()
                    ? info.upstreamInfo()->upstreamSslConnection()
@@ -865,7 +888,8 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     }
 
     switch (config_->reporter()) {
-      case Reporter::ServerSidecar: {
+      case Reporter::ServerSidecar:
+      case Reporter::ServerGateway: {
         tags_.push_back(
             {context_.source_workload_, peer && !peer->workload_name_.empty()
                                             ? pool_.add(peer->workload_name_)
@@ -895,26 +919,63 @@ class IstioStatsFilter : public Http::PassThroughFilter,
             {context_.source_cluster_, peer && !peer->cluster_name_.empty()
                                            ? pool_.add(peer->cluster_name_)
                                            : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_workload_, context_.workload_name_});
-        tags_.push_back(
-            {context_.destination_workload_namespace_, context_.namespace_});
-        tags_.push_back(
-            {context_.destination_principal_,
-             !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
-        tags_.push_back({context_.destination_app_, context_.app_name_});
-        tags_.push_back({context_.destination_version_, context_.app_version_});
-        tags_.push_back({context_.destination_service_,
-                         service_host.empty() ? context_.canonical_name_
-                                              : pool_.add(service_host)});
-        tags_.push_back({context_.destination_canonical_service_,
-                         context_.canonical_name_});
-        tags_.push_back({context_.destination_canonical_revision_,
-                         context_.canonical_revision_});
-        tags_.push_back({context_.destination_service_name_,
-                         service_host_name.empty()
-                             ? context_.canonical_name_
-                             : pool_.add(service_host_name)});
+        switch (config_->reporter()) {
+          case Reporter::ServerGateway: {
+            auto endpoint_peer = extractEndpointMetadata(info);
+            tags_.push_back({context_.destination_workload_,
+                             endpoint_peer
+                                 ? pool_.add(endpoint_peer->workload_name_)
+                                 : context_.unknown_});
+            tags_.push_back({context_.destination_workload_namespace_,
+                             context_.namespace_});
+            tags_.push_back({context_.destination_principal_,
+                             !local_san.empty() ? pool_.add(local_san)
+                                                : context_.unknown_});
+            // Endpoint encoding does not have app and version.
+            tags_.push_back({context_.destination_app_, context_.unknown_});
+            tags_.push_back({context_.destination_version_, context_.unknown_});
+            auto canonical_name =
+                endpoint_peer ? pool_.add(endpoint_peer->canonical_name_)
+                              : context_.unknown_;
+            tags_.push_back({context_.destination_service_,
+                             service_host.empty() ? canonical_name
+                                                  : pool_.add(service_host)});
+            tags_.push_back(
+                {context_.destination_canonical_service_, canonical_name});
+            tags_.push_back({context_.destination_canonical_revision_,
+                             endpoint_peer
+                                 ? pool_.add(endpoint_peer->canonical_revision_)
+                                 : context_.unknown_});
+            tags_.push_back({context_.destination_service_name_,
+                             service_host_name.empty()
+                                 ? canonical_name
+                                 : pool_.add(service_host_name)});
+            break;
+          }
+          default:
+            tags_.push_back(
+                {context_.destination_workload_, context_.workload_name_});
+            tags_.push_back({context_.destination_workload_namespace_,
+                             context_.namespace_});
+            tags_.push_back({context_.destination_principal_,
+                             !local_san.empty() ? pool_.add(local_san)
+                                                : context_.unknown_});
+            tags_.push_back({context_.destination_app_, context_.app_name_});
+            tags_.push_back(
+                {context_.destination_version_, context_.app_version_});
+            tags_.push_back({context_.destination_service_,
+                             service_host.empty() ? context_.canonical_name_
+                                                  : pool_.add(service_host)});
+            tags_.push_back({context_.destination_canonical_service_,
+                             context_.canonical_name_});
+            tags_.push_back({context_.destination_canonical_revision_,
+                             context_.canonical_revision_});
+            tags_.push_back({context_.destination_service_name_,
+                             service_host_name.empty()
+                                 ? context_.canonical_name_
+                                 : pool_.add(service_host_name)});
+            break;
+        }
         tags_.push_back(
             {context_.destination_service_namespace_, context_.namespace_});
         tags_.push_back(
