@@ -30,7 +30,7 @@ import (
 // so there is no clean-up necessary.
 
 func BazelWorkspace() string {
-	workspace, err := exec.Command("bazel", "info", "workspace").Output()
+	workspace, err := exec.Command("bazelisk", "info", "workspace").Output()
 	if err != nil {
 		panic(err)
 	}

@@ -15,9 +15,7 @@
 
 #include "source/extensions/filters/network/istio_authn/config.h"
 
-#include "envoy/network/filter.h"
 #include "envoy/registry/registry.h"
-#include "envoy/server/filter_config.h"
 #include "source/common/common/hash.h"
 #include "source/extensions/filters/network/common/factory_base.h"
 #include "source/extensions/filters/network/istio_authn/config.pb.h"
@@ -28,39 +26,63 @@ namespace Extensions {
 namespace NetworkFilters {
 namespace IstioAuthn {
 
-absl::optional<uint64_t> PeerPrincipal::hash() const {
+absl::optional<uint64_t> Principal::hash() const {
   // XXX: This should really be a cryptographic hash to avoid SAN collision.
   return Envoy::HashUtil::xxHash64(principal_);
 }
 
-class IstioAuthnFilter : public Network::ReadFilter {
- public:
-  // Network::ReadFilter
-  Network::FilterStatus onData(Buffer::Instance&, bool) override {
-    return Network::FilterStatus::Continue;
+PrincipalInfo getPrincipals(const StreamInfo::FilterState& filter_state) {
+  const auto* peer = filter_state.getDataReadOnly<Principal>(PeerPrincipalKey);
+  const auto* local =
+      filter_state.getDataReadOnly<Principal>(LocalPrincipalKey);
+  return {peer ? peer->principal() : absl::string_view(),
+          local ? local->principal() : absl::string_view()};
+}
+
+void IstioAuthnFilter::onEvent(Network::ConnectionEvent event) {
+  switch (event) {
+    case Network::ConnectionEvent::Connected:
+      // TLS handshake success triggers this event.
+      populate();
+      break;
+    default:
+      break;
   }
-  Network::FilterStatus onNewConnection() override {
-    return Network::FilterStatus::Continue;
-  }
-  void initializeReadFilterCallbacks(
-      Network::ReadFilterCallbacks& callbacks) override {
-    Network::Connection& conn = callbacks.connection();
-    const auto ssl = conn.ssl();
-    if (ssl && ssl->peerCertificatePresented()) {
-      for (const std::string& san : ssl->uriSanPeerCertificate()) {
-        if (absl::StartsWith(san, SpiffePrefix)) {
-          conn.streamInfo().filterState()->setData(
-              PeerPrincipalKey, std::make_shared<PeerPrincipal>(san),
-              StreamInfo::FilterState::StateType::ReadOnly,
-              StreamInfo::FilterState::LifeSpan::Connection,
-              StreamInfo::FilterState::StreamSharing::
-                  SharedWithUpstreamConnection);
-          break;
-        }
+}
+void IstioAuthnFilter::initializeReadFilterCallbacks(
+    Network::ReadFilterCallbacks& callbacks) {
+  read_callbacks_ = &callbacks;
+  read_callbacks_->connection().addConnectionCallbacks(*this);
+}
+
+void IstioAuthnFilter::populate() const {
+  Network::Connection& conn = read_callbacks_->connection();
+  const auto ssl = conn.ssl();
+  if (ssl && ssl->peerCertificatePresented()) {
+    for (const std::string& san : ssl->uriSanPeerCertificate()) {
+      if (absl::StartsWith(san, SpiffePrefix)) {
+        conn.streamInfo().filterState()->setData(
+            PeerPrincipalKey, std::make_shared<Principal>(san),
+            StreamInfo::FilterState::StateType::ReadOnly,
+            StreamInfo::FilterState::LifeSpan::Connection,
+            StreamInfo::FilterState::StreamSharing::
+                SharedWithUpstreamConnection);
+        break;
+      }
+    }
+    for (const std::string& san : ssl->uriSanLocalCertificate()) {
+      if (absl::StartsWith(san, SpiffePrefix)) {
+        conn.streamInfo().filterState()->setData(
+            LocalPrincipalKey, std::make_shared<Principal>(san),
+            StreamInfo::FilterState::StateType::ReadOnly,
+            StreamInfo::FilterState::LifeSpan::Connection,
+            StreamInfo::FilterState::StreamSharing::
+                SharedWithUpstreamConnection);
+        break;
       }
     }
   }
-};
+}
 
 class IstioAuthnConfigFactory
     : public Common::FactoryBase<io::istio::network::authn::Config> {

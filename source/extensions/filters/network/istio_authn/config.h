@@ -16,6 +16,8 @@
 #pragma once
 
 #include "envoy/common/hashable.h"
+#include "envoy/network/filter.h"
+#include "envoy/server/filter_config.h"
 #include "envoy/stream_info/filter_state.h"
 
 namespace Envoy {
@@ -25,18 +27,60 @@ namespace IstioAuthn {
 
 constexpr absl::string_view SpiffePrefix("spiffe://");
 constexpr absl::string_view PeerPrincipalKey = "io.istio.peer_principal";
+constexpr absl::string_view LocalPrincipalKey = "io.istio.local_principal";
 
-class PeerPrincipal : public StreamInfo::FilterState::Object, public Hashable {
+class Principal : public StreamInfo::FilterState::Object, public Hashable {
  public:
-  PeerPrincipal(const std::string& principal) : principal_(principal) {}
+  Principal(const std::string& principal) : principal_(principal) {
+    ASSERT(principal.size() > 0);
+  }
   absl::optional<std::string> serializeAsString() const override {
     return principal_;
   }
+  absl::string_view principal() const { return principal_; }
   // Envoy::Hashable
   absl::optional<uint64_t> hash() const override;
 
  private:
   const std::string principal_;
+};
+
+struct PrincipalInfo {
+  absl::string_view peer;
+  absl::string_view local;
+};
+
+// Obtains the peer and the local principals using the filter state.
+PrincipalInfo getPrincipals(const StreamInfo::FilterState& filter_state);
+
+// WARNING: The filter state is populated in on Connected event due to
+// https://github.com/envoyproxy/envoy/issues/9023. Request-based protocols
+// such as HTTP are not affected, since the upstream is determined after
+// onData(). RBAC and ext_authz both follow the same pattern in checking in
+// onData(), but any filter using onNewConnection() will not have access to the
+// principals. For example, tcp_proxy cannot use the principals as a transport
+// socket option at the moment.
+class IstioAuthnFilter : public Network::ReadFilter,
+                         public Network::ConnectionCallbacks {
+ public:
+  // Network::ConnectionCallbacks
+  void onEvent(Network::ConnectionEvent event) override;
+  void onAboveWriteBufferHighWatermark() override {}
+  void onBelowWriteBufferLowWatermark() override {}
+
+  // Network::ReadFilter
+  Network::FilterStatus onData(Buffer::Instance&, bool) override {
+    return Network::FilterStatus::Continue;
+  }
+  Network::FilterStatus onNewConnection() override {
+    return Network::FilterStatus::Continue;
+  }
+  void initializeReadFilterCallbacks(
+      Network::ReadFilterCallbacks& callbacks) override;
+
+ private:
+  void populate() const;
+  Network::ReadFilterCallbacks* read_callbacks_{nullptr};
 };
 
 }  // namespace IstioAuthn

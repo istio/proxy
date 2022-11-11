@@ -33,6 +33,7 @@ envoy_cc_extension(
         "//extensions/common:metadata_object_lib",
         "//extensions/stats:config_cc_proto",
         "//source/extensions/common:utils_lib",
+        "//source/extensions/filters/network/istio_authn:config_lib",
         "@com_google_cel_cpp//eval/public:builtin_func_registrar",
         "@com_google_cel_cpp//eval/public:cel_expr_builder_factory",
         "@com_google_cel_cpp//parser",

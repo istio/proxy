@@ -17,7 +17,9 @@ syntax = "proto3";
 
 package io.istio.network.authn;
 
-// Computes and stores the peer principal as a filter state object
-// `io.istio.peer_principal`. The principal is the first element in the peer
-// certificate URI SAN list with "spiffe://" prefix.
+// Computes and stores the peer and the local principals as the filter state
+// objects `io.istio.peer_principal` and `io.istio.local_principal`,
+// respectively. The principal is the first element in the certificate URI SAN
+// list with the "spiffe://" prefix. The principals are populated downstream
+// only if the peer certificate is presented.
 message Config {}

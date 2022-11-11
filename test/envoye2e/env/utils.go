@@ -32,7 +32,7 @@ func GetBazelBin() (string, error) {
 	if buildArgs != "" {
 		args = append(args, strings.Split(buildArgs, " ")...)
 	}
-	workspace, err := exec.Command("bazel", args...).Output()
+	workspace, err := exec.Command("bazelisk", args...).Output()
 	if err != nil {
 		return "", err
 	}
