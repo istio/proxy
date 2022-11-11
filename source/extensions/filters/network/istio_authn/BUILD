@@ -53,10 +53,9 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":config_lib",
-        "@envoy//source/common/stream_info:filter_state_lib",
         "@envoy//source/common/buffer:buffer_lib",
+        "@envoy//source/common/stream_info:filter_state_lib",
         "@envoy//test/mocks:common_lib",
         "@envoy//test/mocks/network:network_mocks",
     ],
 )
-
