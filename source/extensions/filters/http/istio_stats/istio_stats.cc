@@ -30,6 +30,7 @@
 #include "source/extensions/filters/common/expr/context.h"
 #include "source/extensions/filters/common/expr/evaluator.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
+#include "source/extensions/filters/network/istio_authn/config.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -787,21 +788,11 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     tags_.push_back(
         {context_.response_flags_,
          pool_.add(StreamInfo::ResponseFlagUtils::toShortString(info))});
-    switch (config_->reporter()) {
-      case Reporter::ServerSidecar:
-      case Reporter::ServerGateway: {
-        const auto ssl_info = info.downstreamAddressProvider().sslConnection();
-        const auto mtls =
-            ssl_info != nullptr && ssl_info->peerCertificatePresented();
-        tags_.push_back({context_.connection_security_policy_,
-                         mtls ? context_.mutual_tls_ : context_.none_});
-        break;
-      }
-      default:
-        tags_.push_back(
-            {context_.connection_security_policy_, context_.unknown_});
-        break;
-    }
+    tags_.push_back(
+        {context_.connection_security_policy_,
+         mutual_tls_.has_value()
+             ? (*mutual_tls_ ? context_.mutual_tls_ : context_.none_)
+             : context_.unknown_});
   }
 
   // Peer metadata is populated after encode/decodeHeaders by MX HTTP filter,
@@ -859,19 +850,47 @@ class IstioStatsFilter : public Http::PassThroughFilter,
       }
     }
 
+    absl::string_view peer_san;
+    absl::string_view local_san;
+    switch (config_->reporter()) {
+      case Reporter::ServerSidecar:
+      case Reporter::ServerGateway: {
+        auto principals =
+            NetworkFilters::IstioAuthn::getPrincipals(info.filterState());
+        peer_san = principals.peer;
+        local_san = principals.local;
+
+        // This fallback should be deleted once istio_authn is globally enabled.
+        if (peer_san.empty() && local_san.empty()) {
+          const Ssl::ConnectionInfoConstSharedPtr ssl_info =
+              info.downstreamAddressProvider().sslConnection();
+          if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
+            peer_san = ssl_info->uriSanPeerCertificate()[0];
+          }
+          if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
+            local_san = ssl_info->uriSanLocalCertificate()[0];
+          }
+        }
+
+        // Save the connection security policy for a tag added later.
+        mutual_tls_ = !peer_san.empty() && !local_san.empty();
+        break;
+      }
+      case Reporter::ClientSidecar: {
+        const Ssl::ConnectionInfoConstSharedPtr ssl_info =
+            info.upstreamInfo() ? info.upstreamInfo()->upstreamSslConnection()
+                                : nullptr;
+        if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
+          peer_san = ssl_info->uriSanPeerCertificate()[0];
+        }
+        if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
+          local_san = ssl_info->uriSanLocalCertificate()[0];
+        }
+        break;
+      }
+    }
     // Implements fallback from using the namespace from SAN if available to
     // using peer metadata, otherwise.
-    absl::string_view peer_san;
-    const Ssl::ConnectionInfoConstSharedPtr ssl_info =
-        config_->reporter() == Reporter::ServerSidecar ||
-                config_->reporter() == Reporter::ServerGateway
-            ? info.downstreamAddressProvider().sslConnection()
-            : (info.upstreamInfo()
-                   ? info.upstreamInfo()->upstreamSslConnection()
-                   : nullptr);
-    if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
-      peer_san = ssl_info->uriSanPeerCertificate()[0];
-    }
     absl::string_view peer_namespace;
     if (!peer_san.empty()) {
       const auto san_namespace = Utils::GetNamespace(peer_san);
@@ -882,11 +901,6 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     if (peer_namespace.empty() && peer) {
       peer_namespace = peer->namespace_name_;
     }
-    absl::string_view local_san;
-    if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
-      local_san = ssl_info->uriSanLocalCertificate()[0];
-    }
-
     switch (config_->reporter()) {
       case Reporter::ServerSidecar:
       case Reporter::ServerGateway: {
@@ -1053,6 +1067,7 @@ class IstioStatsFilter : public Http::PassThroughFilter,
   bool network_peer_read_{false};
   uint64_t bytes_sent_{0};
   uint64_t bytes_received_{0};
+  absl::optional<bool> mutual_tls_;
 };
 
 }  // namespace

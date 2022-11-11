@@ -18,6 +18,7 @@
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_extension",
+    "envoy_cc_test",
     "envoy_extension_package",
     "envoy_proto_library",
 )
@@ -44,4 +45,17 @@ envoy_cc_extension(
 envoy_proto_library(
     name = "config",
     srcs = ["config.proto"],
+)
+
+envoy_cc_test(
+    name = "config_test",
+    srcs = ["config_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":config_lib",
+        "@envoy//source/common/buffer:buffer_lib",
+        "@envoy//source/common/stream_info:filter_state_lib",
+        "@envoy//test/mocks:common_lib",
+        "@envoy//test/mocks/network:network_mocks",
+    ],
 )

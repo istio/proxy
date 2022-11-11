@@ -41,7 +41,6 @@ envoy_cc_binary(
         "//src/envoy/http/baggage_handler:config_lib",  # Experimental: Ambient
         "//src/envoy/metadata_to_peer_node:config_lib",  # Experimental: Ambient
         "//src/envoy/set_internal_dst_address:filter_lib",  # Experimental: Ambient
-        "//src/envoy/tls_passthrough:filter_lib",  # Experimental: Ambient
         "//src/envoy/workload_metadata:config_lib",  # Experimental: Ambient
         "@envoy//source/exe:envoy_main_entry_lib",
     ],

@@ -148,7 +148,6 @@ func TestBasicCONNECT(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
 			params.Vars["ServerClusterName"] = "internal_outbound"
 			params.Vars["ServerInternalAddress"] = "internal_inbound"
-			params.Vars["ServerNetworkFilters"] = driver.LoadTestData("testdata/filters/restore_tls.yaml.tmpl")
 			params.Vars["quic"] = strconv.FormatBool(options.Quic)
 
 			updateClient := &driver.Update{Node: "client", Version: "{{ .N }}",
