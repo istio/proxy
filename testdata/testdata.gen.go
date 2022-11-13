@@ -616,10 +616,10 @@ filter_chains:
 {{ if eq .Vars.quic "true" }}
 # TODO: accessing uriSanPeerCertificates() triggers a crash in quiche version.
 {{ else }}
-  - name: capture_tls
+  - name: authn
     typed_config:
       "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-      type_url: istio.tls_passthrough.v1.CaptureTLS
+      type_url: type.googleapis.com/io.istio.network.authn.Config
 {{ end }}
   - name: envoy.filters.network.http_connection_manager
     typed_config:
