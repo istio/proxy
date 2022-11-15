@@ -74,6 +74,7 @@ func HTTPTlsGet(url, rootdir string, port uint16) (code int, respBody string, er
 	if err != nil {
 		return 0, "", fmt.Errorf("failed to get certificate")
 	}
+	// nolint: gosec
 	tlsConf := &tls.Config{Certificates: []tls.Certificate{certificate}, ServerName: "localhost", RootCAs: certPool}
 	tr := &http.Transport{
 		TLSClientConfig: tlsConf,
