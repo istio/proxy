@@ -361,6 +361,7 @@ ENVOY_CONTRIB_EXTENSIONS = {
     #
 
     "envoy.tls.key_providers.cryptomb":                         "//contrib/cryptomb/private_key_providers/source:config",
+    "envoy.tls.key_providers.qat":                              "//contrib/qat/private_key_providers/source:config",
 
     #
     # Socket interface extensions
@@ -380,6 +381,7 @@ ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.filters.network.sip_proxy",
     "envoy.filters.sip.router",
     "envoy.tls.key_providers.cryptomb",
+    "envoy.tls.key_providers.qat",
 ]
 
 EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_DISABLED_EXTENSIONS] +
