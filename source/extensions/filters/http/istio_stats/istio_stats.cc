@@ -480,7 +480,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         disable_host_header_fallback_(
             proto_config.disable_host_header_fallback()),
         report_duration_(PROTOBUF_GET_MS_OR_DEFAULT(
-            proto_config, tcp_reporting_duration, /* 15s */ 15000)) {
+            proto_config, tcp_reporting_duration, /* 5s */ 5000)) {
     reporter_ = Reporter::ClientSidecar;
     switch (proto_config.reporter()) {
       case stats::Reporter::UNSPECIFIED:
