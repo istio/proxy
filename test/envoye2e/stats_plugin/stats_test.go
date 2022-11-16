@@ -427,11 +427,8 @@ func TestAttributeGen(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
 				"RequestCount":               "10",
 				"MetadataExchangeFilterCode": "inline_string: \"envoy.wasm.metadata_exchange\"",
-				"StatsFilterCode":            "inline_string: \"envoy.wasm.stats\"",
 				"AttributeGenFilterConfig":   runtime.AttributeGenFilterCode,
 				"AttributeGenWasmRuntime":    runtime.WasmRuntime,
-				"WasmRuntime":                "envoy.wasm.runtime.null",
-				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
 				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/request_classification_config.yaml"),
 				"ResponseCodeClass":          "2xx",
