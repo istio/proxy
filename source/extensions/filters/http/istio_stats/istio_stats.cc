@@ -627,6 +627,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
 using ConfigSharedPtr = std::shared_ptr<Config>;
 
 class IstioStatsFilter : public Http::PassThroughFilter,
+                         public AccessLog::Instance,
                          public Network::ReadFilter,
                          public Network::ConnectionCallbacks {
  public:
@@ -647,9 +648,11 @@ class IstioStatsFilter : public Http::PassThroughFilter,
   }
   ~IstioStatsFilter() { ASSERT(report_timer_ == nullptr); }
 
-  // Http::StreamFilter
-  void onStreamComplete() override {
-    const auto& info = decoder_callbacks_->streamInfo();
+  // AccessLog::Instance
+  void log(const Http::RequestHeaderMap*,
+           const Http::ResponseHeaderMap* response_headers,
+           const Http::ResponseTrailerMap* response_trailers,
+           const StreamInfo::StreamInfo& info) override {
     populatePeerInfo(info, info.filterState());
     const auto* headers = info.getRequestHeaders();
     const bool is_grpc =
@@ -664,13 +667,11 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     tags_.push_back({context_.response_code_,
                      pool_.add(absl::StrCat(info.responseCode().value_or(0)))});
     if (is_grpc) {
-      auto response_headers = decoder_callbacks_->responseHeaders();
-      auto response_trailers = decoder_callbacks_->responseTrailers();
       auto const& optional_status = Grpc::Common::getGrpcStatus(
           response_trailers
-              ? response_trailers.ref()
+              ? *response_trailers
               : *Http::StaticEmptyHeaders::get().response_trailers,
-          response_headers ? response_headers.ref()
+          response_headers ? *response_headers
                            : *Http::StaticEmptyHeaders::get().response_headers,
           info);
       tags_.push_back({context_.grpc_response_status_,
@@ -823,7 +824,7 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     const auto cluster_info = info.upstreamClusterInfo();
     if (cluster_info && cluster_info.value()) {
       const auto& cluster_name = cluster_info.value()->name();
-      if (cluster_name == "BlackholeCluster" ||
+      if (cluster_name == "BlackHoleCluster" ||
           cluster_name == "PassthroughCluster" ||
           cluster_name == "InboundPassthroughClusterIpv4" ||
           cluster_name == "InboundPassthroughClusterIpv6") {
@@ -1081,7 +1082,11 @@ IstioStatsFilterConfigFactory::createFilterFactoryFromProtoTyped(
   ConfigSharedPtr config =
       std::make_shared<Config>(proto_config, factory_context);
   return [config](Http::FilterChainFactoryCallbacks& callbacks) {
-    callbacks.addStreamFilter(std::make_shared<IstioStatsFilter>(config));
+    auto filter = std::make_shared<IstioStatsFilter>(config);
+    callbacks.addStreamFilter(filter);
+    // Wasm filters inject filter state in access log handlers, which are called
+    // after onStreamComplete.
+    callbacks.addAccessLogHandler(filter);
   };
 }
 
