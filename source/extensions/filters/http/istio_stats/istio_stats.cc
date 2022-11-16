@@ -821,29 +821,36 @@ class IstioStatsFilter : public Http::PassThroughFilter,
         service_host_name = service_host;
       }
     }
-    const auto cluster_info = info.upstreamClusterInfo();
-    if (cluster_info && cluster_info.value()) {
-      const auto& cluster_name = cluster_info.value()->name();
-      if (cluster_name == "BlackHoleCluster" ||
-          cluster_name == "PassthroughCluster" ||
-          cluster_name == "InboundPassthroughClusterIpv4" ||
-          cluster_name == "InboundPassthroughClusterIpv6") {
-        service_host_name = cluster_name;
-      } else {
-        const auto& filter_metadata =
-            cluster_info.value()->metadata().filter_metadata();
-        const auto& it = filter_metadata.find("istio");
-        if (it != filter_metadata.end()) {
-          const auto& services_it = it->second.fields().find("services");
-          if (services_it != it->second.fields().end()) {
-            const auto& services = services_it->second.list_value();
-            if (services.values_size() > 0) {
-              const auto& service = services.values(0).struct_value().fields();
-              const auto& host_it = service.find("host");
-              if (host_it != service.end()) {
-                service_host = host_it->second.string_value();
-                service_host_name =
-                    service_host.substr(0, service_host.find_first_of('.'));
+    if (info.getRouteName() == "block_all") {
+      service_host_name = "BlackHoleCluster";
+    } else if (info.getRouteName() == "allow_any") {
+      service_host_name = "PassthroughCluster";
+    } else {
+      const auto cluster_info = info.upstreamClusterInfo();
+      if (cluster_info && cluster_info.value()) {
+        const auto& cluster_name = cluster_info.value()->name();
+        if (cluster_name == "BlackHoleCluster" ||
+            cluster_name == "PassthroughCluster" ||
+            cluster_name == "InboundPassthroughClusterIpv4" ||
+            cluster_name == "InboundPassthroughClusterIpv6") {
+          service_host_name = cluster_name;
+        } else {
+          const auto& filter_metadata =
+              cluster_info.value()->metadata().filter_metadata();
+          const auto& it = filter_metadata.find("istio");
+          if (it != filter_metadata.end()) {
+            const auto& services_it = it->second.fields().find("services");
+            if (services_it != it->second.fields().end()) {
+              const auto& services = services_it->second.list_value();
+              if (services.values_size() > 0) {
+                const auto& service =
+                    services.values(0).struct_value().fields();
+                const auto& host_it = service.find("host");
+                if (host_it != service.end()) {
+                  service_host = host_it->second.string_value();
+                  service_host_name =
+                      service_host.substr(0, service_host.find_first_of('.'));
+                }
               }
             }
           }
