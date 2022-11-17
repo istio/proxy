@@ -274,11 +274,12 @@ struct Context : public Singleton::Instance {
   // istio_build metric:
   // Publishes Istio version for the proxy as a gauge, sample data:
   // testdata/metric/istio_build.yaml
+  // Sample value for istio_version: "1.17.0"
   const Stats::StatName istio_build_;
   const Stats::StatName component_;
   const Stats::StatName proxy_;
   const Stats::StatName tag_;
-  const Stats::StatName istio_version_; // Sample value: "1.17.0"
+  const Stats::StatName istio_version_;
 };  // namespace
 
 using ContextSharedPtr = std::shared_ptr<Context>;
