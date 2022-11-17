@@ -304,7 +304,7 @@ struct Context : public Singleton::Instance {
   const Stats::StatName component_;
   const Stats::StatName proxy_;
   const Stats::StatName tag_;
-  const Stats::StatName istio_version_;
+  const Stats::StatName istio_version_; // Sample value: "1.17.0"
 };  // namespace
 
 using ContextSharedPtr = std::shared_ptr<Context>;
