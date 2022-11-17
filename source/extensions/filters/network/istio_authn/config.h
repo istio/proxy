@@ -61,7 +61,9 @@ PrincipalInfo getPrincipals(const StreamInfo::FilterState& filter_state);
 // principals. For example, tcp_proxy cannot use the principals as a transport
 // socket option at the moment.
 class IstioAuthnFilter : public Network::ReadFilter,
-                         public Network::ConnectionCallbacks {
+                         public Network::ConnectionCallbacks,
+                         public Logger::Loggable<Logger::Id::filter>
+                    {
  public:
   // Network::ConnectionCallbacks
   void onEvent(Network::ConnectionEvent event) override;
@@ -70,6 +72,7 @@ class IstioAuthnFilter : public Network::ReadFilter,
 
   // Network::ReadFilter
   Network::FilterStatus onData(Buffer::Instance&, bool) override {
+    populate();
     return Network::FilterStatus::Continue;
   }
   Network::FilterStatus onNewConnection() override {
@@ -79,8 +82,10 @@ class IstioAuthnFilter : public Network::ReadFilter,
       Network::ReadFilterCallbacks& callbacks) override;
 
  private:
-  void populate() const;
+  void populate();
+
   Network::ReadFilterCallbacks* read_callbacks_{nullptr};
+  bool populated_{false};
 };
 
 }  // namespace IstioAuthn

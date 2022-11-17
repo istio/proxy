@@ -43,7 +43,7 @@ void IstioAuthnFilter::onEvent(Network::ConnectionEvent event) {
   switch (event) {
     case Network::ConnectionEvent::Connected:
       // TLS handshake success triggers this event.
-      populate();
+      //populate();
       break;
     default:
       break;
@@ -55,7 +55,11 @@ void IstioAuthnFilter::initializeReadFilterCallbacks(
   read_callbacks_->connection().addConnectionCallbacks(*this);
 }
 
-void IstioAuthnFilter::populate() const {
+void IstioAuthnFilter::populate() {
+  if (populated_) {
+    return;
+  }
+  populated_ = true;
   Network::Connection& conn = read_callbacks_->connection();
   const auto ssl = conn.ssl();
   if (ssl && ssl->peerCertificatePresented()) {
@@ -81,6 +85,16 @@ void IstioAuthnFilter::populate() const {
         break;
       }
     }
+  }
+  ENVOY_LOG(info, "Metadata: {}", conn.streamInfo().dynamicMetadata().DebugString());
+  auto it = conn.streamInfo().dynamicMetadata().filter_metadata().find("envoy.filters.listener.proxy_protocol");
+  if (it != conn.streamInfo().dynamicMetadata().filter_metadata().end()) {
+    conn.streamInfo().filterState()->setData(
+        PeerPrincipalKey, std::make_shared<Principal>(it->second.fields().at("principal").string_value()),
+        StreamInfo::FilterState::StateType::ReadOnly,
+        StreamInfo::FilterState::LifeSpan::Connection,
+        StreamInfo::FilterState::StreamSharing::
+            SharedWithUpstreamConnection);
   }
 }
 
