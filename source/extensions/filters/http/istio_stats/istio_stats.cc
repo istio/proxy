@@ -297,7 +297,9 @@ struct Context : public Singleton::Instance {
   const Stats::StatName app_name_;
   const Stats::StatName app_version_;
 
-  // istio_build metric.
+  // istio_build metric:
+  // Publishes Istio version for the proxy as a gauge, sample data:
+  // testdata/metric/istio_build.yaml
   const Stats::StatName istio_build_;
   const Stats::StatName component_;
   const Stats::StatName proxy_;
