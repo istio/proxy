@@ -184,7 +184,13 @@ struct Context : public Singleton::Instance {
         app_name_(
             pool_.add(extractMapString(node.metadata(), "LABELS", "app"))),
         app_version_(
-            pool_.add(extractMapString(node.metadata(), "LABELS", "version"))) {
+            pool_.add(extractMapString(node.metadata(), "LABELS", "version"))),
+        istio_build_(pool_.add("istio_build")),
+        component_(pool_.add("component")),
+        proxy_(pool_.add("proxy")),
+        tag_(pool_.add("tag")),
+        istio_version_(
+            pool_.add(extractString(node.metadata(), "ISTIO_VERSION"))) {
     all_metrics_ = {
         {"requests_total", requests_total_},
         {"request_duration_milliseconds", request_duration_milliseconds_},
@@ -290,6 +296,16 @@ struct Context : public Singleton::Instance {
   const Stats::StatName cluster_name_;
   const Stats::StatName app_name_;
   const Stats::StatName app_version_;
+
+  // istio_build metric:
+  // Publishes Istio version for the proxy as a gauge, sample data:
+  // testdata/metric/istio_build.yaml
+  // Sample value for istio_version: "1.17.0"
+  const Stats::StatName istio_build_;
+  const Stats::StatName component_;
+  const Stats::StatName proxy_;
+  const Stats::StatName tag_;
+  const Stats::StatName istio_version_;
 };  // namespace
 
 using ContextSharedPtr = std::shared_ptr<Context>;
@@ -371,6 +387,24 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
         return Filters::Common::Expr::CelValue::CreateString(
             &info_->getRouteName());
       }
+    } else if (name == "cluster_name") {
+      if (info_) {
+        const auto cluster_info = info_->upstreamClusterInfo();
+        if (cluster_info && cluster_info.value()) {
+          return Filters::Common::Expr::CelValue::CreateString(
+              &cluster_info.value()->name());
+        }
+      }
+      return {};
+    } else if (name == "cluster_metadata") {
+      if (info_) {
+        const auto cluster_info = info_->upstreamClusterInfo();
+        if (cluster_info && cluster_info.value()) {
+          return Filters::Common::Expr::CelProtoWrapper::CreateMessage(
+              &cluster_info.value()->metadata(), arena);
+        }
+      }
+      return {};
     }
     if (info_) {
       const auto* obj =
@@ -611,6 +645,19 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
     Stats::Utility::histogramFromStatNames(
         scope_, {context_->stat_namespace_, metric}, unit, tags)
         .recordValue(value);
+  }
+
+  void recordVersion() {
+    Stats::StatNameTagVector tags;
+    tags.push_back({context_->component_, context_->proxy_});
+    tags.push_back({context_->tag_, context_->istio_version_.empty()
+                                        ? context_->unknown_
+                                        : context_->istio_version_});
+
+    Stats::Utility::gaugeFromStatNames(
+        scope_, {context_->stat_namespace_, context_->istio_build_},
+        Stats::Gauge::ImportMode::Accumulate, tags)
+        .set(1);
   }
 
   Reporter reporter() const { return reporter_; }
@@ -1088,6 +1135,7 @@ IstioStatsFilterConfigFactory::createFilterFactoryFromProtoTyped(
       CustomStatNamespace);
   ConfigSharedPtr config =
       std::make_shared<Config>(proto_config, factory_context);
+  config->recordVersion();
   return [config](Http::FilterChainFactoryCallbacks& callbacks) {
     auto filter = std::make_shared<IstioStatsFilter>(config);
     callbacks.addStreamFilter(filter);
@@ -1108,6 +1156,7 @@ IstioStatsNetworkFilterConfigFactory::createFilterFactoryFromProtoTyped(
       CustomStatNamespace);
   ConfigSharedPtr config =
       std::make_shared<Config>(proto_config, factory_context);
+  config->recordVersion();
   return [config](Network::FilterManager& filter_manager) {
     filter_manager.addReadFilter(std::make_shared<IstioStatsFilter>(config));
   };
