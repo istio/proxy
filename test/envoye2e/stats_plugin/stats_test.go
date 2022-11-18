@@ -88,7 +88,7 @@ var TestCases = []struct {
 		},
 		ServerStats: map[string]driver.StatMatcher{
 			"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total.yaml.tmpl"},
-			//"istio_build":          &driver.ExactStat{Metric: "testdata/metric/istio_build.yaml"},
+			"istio_build":          &driver.ExactStat{Metric: "testdata/metric/istio_build.yaml"},
 		},
 		TestParallel: true,
 	},
@@ -103,7 +103,7 @@ var TestCases = []struct {
 		},
 		ServerStats: map[string]driver.StatMatcher{
 			"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total.yaml.tmpl"},
-			//"istio_build":          &driver.ExactStat{Metric: "testdata/metric/istio_build.yaml"},
+			"istio_build":          &driver.ExactStat{Metric: "testdata/metric/istio_build.yaml"},
 		},
 		TestParallel: true,
 	},
