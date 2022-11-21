@@ -65,8 +65,8 @@ endif
 BAZEL_CONFIG_CURRENT ?= $(BAZEL_CONFIG_DEV)
 
 BAZEL_BIN_PATH ?= $(shell bazel info $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) bazel-bin)
-TEST_ENVOY_PATH ?= $(BAZEL_BIN_PATH)/src/envoy/envoy
-TEST_ENVOY_TARGET ?= //src/envoy:envoy
+TEST_ENVOY_PATH ?= $(BAZEL_BIN_PATH)/envoy
+TEST_ENVOY_TARGET ?= //:envoy
 TEST_ENVOY_DEBUG ?= trace
 
 CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE_GLIBCXX_USE_CXX11_ABI_ERROR=1
@@ -83,15 +83,15 @@ build:
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) $(BAZEL_TARGETS)
 
 build_envoy: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_REL)
-build_envoy: BAZEL_TARGETS = //src/envoy:envoy
+build_envoy: BAZEL_TARGETS = //:envoy
 build_envoy: build
 
 build_envoy_tsan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_TSAN)
-build_envoy_tsan: BAZEL_TARGETS = //src/envoy:envoy
+build_envoy_tsan: BAZEL_TARGETS = //:envoy
 build_envoy_tsan: build
 
 build_envoy_asan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
-build_envoy_asan: BAZEL_TARGETS = //src/envoy:envoy
+build_envoy_asan: BAZEL_TARGETS = //:envoy
 build_envoy_asan: build
 
 build_wasm:
@@ -215,7 +215,7 @@ push_release_centos:
 # Used by build container to export the build output from the docker volume cache
 exportcache:
 	@mkdir -p /work/out/$(TARGET_OS)_$(TARGET_ARCH)
-	@cp -a /work/bazel-bin/src/envoy/envoy /work/out/$(TARGET_OS)_$(TARGET_ARCH)
+	@cp -a /work/bazel-bin/envoy /work/out/$(TARGET_OS)_$(TARGET_ARCH)
 	@chmod +w /work/out/$(TARGET_OS)_$(TARGET_ARCH)/envoy
 	@cp -a /work/bazel-bin/**/*wasm /work/out/$(TARGET_OS)_$(TARGET_ARCH) &> /dev/null || true
 
