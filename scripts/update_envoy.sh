@@ -56,3 +56,6 @@ sed -i 's/ENVOY_SHA256 = .*/ENVOY_SHA256 = "'"$SHA256"'"/' "${WORKSPACE}"
 # Update .bazelversion and envoy.bazelrc
 curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelversion" > .bazelversion
 curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelrc" > envoy.bazelrc
+
+# Update bazel/extension_config/extensions_build_config.bzl
+ENVOY_ORG=${ENVOY_ORG} ENVOY_REPO=${ENVOY_REPO} ENVOY_LATEST_SHA=${LATEST_SHA} go run tools/gen-extension-bzl/main.go
