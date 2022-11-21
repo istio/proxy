@@ -47,6 +47,6 @@ func readOut(commitid string) string {
 }
 
 func readBzl(commitid string) string {
-	b, _ := os.ReadFile(path.Join("testdata", fmt.Sprintf("%s.bzl", commitid)))
+	b, _ := os.ReadFile(path.Join("testdata", fmt.Sprintf("%s.bzl.out", commitid)))
 	return string(b)
 }
