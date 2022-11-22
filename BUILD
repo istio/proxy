@@ -38,6 +38,7 @@ envoy_cc_binary(
         "//extensions/access_log_policy:access_log_policy_lib",
         "//extensions/metadata_exchange:metadata_exchange_lib",
         "//extensions/stackdriver:stackdriver_plugin",
+        "//source/extensions/common/workload_discovery:api_lib",  # Experimental: WIP
         "//source/extensions/filters/http/alpn:config_lib",
         "//source/extensions/filters/http/authn:filter_lib",
         "//source/extensions/filters/http/connect_authority",  # Experimental: ambient
