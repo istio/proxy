@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/envoy/set_internal_dst_address/filter.h"
+#include "source/extensions/filters/listener/set_internal_dst_address/filter.h"
 
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
 #include "source/common/network/filter_state_dst_address.h"
 #include "source/common/network/utility.h"
-#include "src/envoy/set_internal_dst_address/config.pb.h"
+#include "source/extensions/filters/listener/set_internal_dst_address/config.pb.h"
 
 namespace Istio {
 namespace SetInternalDstAddress {
