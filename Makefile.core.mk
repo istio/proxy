@@ -111,6 +111,9 @@ check_wasm: build_wasm build_envoy
 clean:
 	@bazel clean
 
+gen-extensions-doc:
+	buf generate --path extensions/
+
 gen:
 	@scripts/gen-testdata.sh
 
