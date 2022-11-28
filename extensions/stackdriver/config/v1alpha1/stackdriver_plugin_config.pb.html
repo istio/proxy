@@ -5,12 +5,12 @@ location: https://istio.io/docs/reference/config/proxy_extensions/stackdriver.ht
 layout: protoc-gen-docs
 generator: protoc-gen-docs
 weight: 20
-number_of_entries: 3
+number_of_entries: 4
 ---
 <h2 id="CustomConfig">CustomConfig</h2>
 <section>
 <p>Custom instance configuration overrides.
-Provides a way to customize metrics/logs.</p>
+Provides a way to customize logs.</p>
 
 <table class="message-fields">
 <thead>
@@ -40,7 +40,7 @@ No
 </section>
 <h2 id="PluginConfig">PluginConfig</h2>
 <section>
-<p>next id: 15</p>
+<p>next id: 17</p>
 
 <table class="message-fields">
 <thead>
@@ -53,7 +53,7 @@ No
 </thead>
 <tbody>
 <tr id="PluginConfig-max_log_batch_size_in_bytes">
-<td><code>max_log_batch_size_in_bytes</code></td>
+<td><code>maxLogBatchSizeInBytes</code></td>
 <td><code>int32</code></td>
 <td>
 <p>Optional. Allows configuration of the size of the LogWrite request. The
@@ -66,7 +66,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-log_report_duration">
-<td><code>log_report_duration</code></td>
+<td><code>logReportDuration</code></td>
 <td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
 <td>
 <p>Optional. Allows configuration of the time between calls out to the
@@ -80,7 +80,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-enable_audit_log">
-<td><code>enable_audit_log</code></td>
+<td><code>enableAuditLog</code></td>
 <td><code>bool</code></td>
 <td>
 <p>Optional. Controls whether to export audit log.</p>
@@ -91,7 +91,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-destination_service_name">
-<td><code>destination_service_name</code></td>
+<td><code>destinationServiceName</code></td>
 <td><code>string</code></td>
 <td>
 <p>Optional. FQDN of destination service that the request routed to, e.g.
@@ -103,37 +103,8 @@ will be used instead</p>
 No
 </td>
 </tr>
-<tr id="PluginConfig-enable_mesh_edges_reporting">
-<td><code>enable_mesh_edges_reporting</code></td>
-<td><code>bool</code></td>
-<td>
-<p>Optional. Controls whether or not to export mesh edges to a mesh edges
-service. This is disabled by default.</p>
-
-</td>
-<td>
-No
-</td>
-</tr>
-<tr id="PluginConfig-mesh_edges_reporting_duration">
-<td><code>mesh_edges_reporting_duration</code></td>
-<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
-<td>
-<p>Optional. Allows configuration of the time between calls out to the mesh
-edges service to report <em>NEW</em> edges. The minimum configurable duration is
-<code>10s</code>. NOTE: This option ONLY configures the intermediate reporting of
-novel edges. Once every <code>10m</code>, all edges observed in that 10m window are
-reported and the local cache is cleared.
-The default duration is <code>1m</code>. Any value greater than <code>10m</code> will result in
-reporting every <code>10m</code>.</p>
-
-</td>
-<td>
-No
-</td>
-</tr>
 <tr id="PluginConfig-max_peer_cache_size">
-<td><code>max_peer_cache_size</code></td>
+<td><code>maxPeerCacheSize</code></td>
 <td><code>int32</code></td>
 <td>
 <p>maximum size of the peer metadata cache.
@@ -146,7 +117,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-disable_host_header_fallback">
-<td><code>disable_host_header_fallback</code></td>
+<td><code>disableHostHeaderFallback</code></td>
 <td><code>bool</code></td>
 <td>
 <p>Optional: Disable using host header as a fallback if destination service is
@@ -159,7 +130,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-max_edges_batch_size">
-<td><code>max_edges_batch_size</code></td>
+<td><code>maxEdgesBatchSize</code></td>
 <td><code>int32</code></td>
 <td>
 <p>Optional. Allows configuration of the number of traffic assertions to batch
@@ -170,21 +141,8 @@ into a single request. Default is 100. Max is 1000.</p>
 No
 </td>
 </tr>
-<tr id="PluginConfig-disable_http_size_metrics">
-<td><code>disable_http_size_metrics</code></td>
-<td><code>bool</code></td>
-<td>
-<p>Optional. Allows disabling of reporting of the request and response size
-metrics for HTTP traffic. Defaults to false (request and response size
-metrics are enabled).</p>
-
-</td>
-<td>
-No
-</td>
-</tr>
 <tr id="PluginConfig-enable_log_compression">
-<td><code>enable_log_compression</code></td>
+<td><code>enableLogCompression</code></td>
 <td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#boolvalue">BoolValue</a></code></td>
 <td>
 <p>Optional. Allows enabling log compression for stackdriver access logs.</p>
@@ -195,10 +153,24 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-access_logging">
-<td><code>access_logging</code></td>
+<td><code>accessLogging</code></td>
 <td><code><a href="#PluginConfig-AccessLogging">AccessLogging</a></code></td>
 <td>
-<p>Optional. Controls what type of logs to export..</p>
+<p>Optional. Controls what type of logs to export.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="PluginConfig-access_logging_filter_expression">
+<td><code>accessLoggingFilterExpression</code></td>
+<td><code>string</code></td>
+<td>
+<p>CEL expression for filtering access logging. If the expression evaluates
+to true, an access log entry will be generated. Otherwise, no access log
+entry will be generated.
+NOTE: Audit logs ignore configured filters.</p>
 
 </td>
 <td>
@@ -206,13 +178,14 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-custom_log_config">
-<td><code>custom_log_config</code></td>
+<td><code>customLogConfig</code></td>
 <td><code><a href="#CustomConfig">CustomConfig</a></code></td>
 <td>
 <p>(Optional) Collection of tag names and tag expressions to include in the
 logs. Conflicts are resolved by the tag name by overriding previously
 supplied values. Does not apply to audit logs.
-See https://istio.io/latest/docs/tasks/observability/metrics/customize-metrics/#use-expressions-for-values
+See
+<a href="https://istio.io/latest/docs/tasks/observability/metrics/customize-metrics/#use-expressions-for-values">https://istio.io/latest/docs/tasks/observability/metrics/customize-metrics/#use-expressions-for-values</a>
 for more details about the expression language.</p>
 
 </td>
@@ -221,7 +194,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-metric_expiry_duration">
-<td><code>metric_expiry_duration</code></td>
+<td><code>metricExpiryDuration</code></td>
 <td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
 <td>
 <p>Optional. Controls the metric expiry duration. If a metric time series is
@@ -235,12 +208,115 @@ metric label explodes proxy memory.</p>
 No
 </td>
 </tr>
+<tr id="PluginConfig-metrics_overrides">
+<td><code>metricsOverrides</code></td>
+<td><code>map&lt;string,&nbsp;<a href="#MetricsOverride">MetricsOverride</a>&gt;</code></td>
+<td>
+<p>Optional. Allows altering metrics behavior.
+Metric names for specifying overloads drop the <code>istio.io/service</code> prefix.
+Examples: <code>server/request_count</code>, <code>client/roundtrip_latencies</code></p>
+
+</td>
+<td>
+No
+</td>
+</tr>
 <tr id="PluginConfig-disable_server_access_logging" class="deprecated ">
-<td><code>disable_server_access_logging</code></td>
+<td><code>disableServerAccessLogging</code></td>
 <td><code>bool</code></td>
 <td>
 <p>Optional. Controls whether to export server access log.
 This is deprecated in favor of AccessLogging enum.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="PluginConfig-enable_mesh_edges_reporting" class="deprecated ">
+<td><code>enableMeshEdgesReporting</code></td>
+<td><code>bool</code></td>
+<td>
+<p>Optional. Controls whether or not to export mesh edges to a mesh edges
+service. This is disabled by default.
+Deprecated &ndash; Mesh edge reporting is no longer supported and this setting
+is no-op.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="PluginConfig-mesh_edges_reporting_duration" class="deprecated ">
+<td><code>meshEdgesReportingDuration</code></td>
+<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td>
+<p>Optional. Allows configuration of the time between calls out to the mesh
+edges service to report <em>NEW</em> edges. The minimum configurable duration is
+<code>10s</code>. NOTE: This option ONLY configures the intermediate reporting of
+novel edges. Once every <code>10m</code>, all edges observed in that 10m window are
+reported and the local cache is cleared.
+The default duration is <code>1m</code>. Any value greater than <code>10m</code> will result in
+reporting every <code>10m</code>.
+Deprecated &ndash; Mesh edge reporting is no longer supported and this setting
+is no-op.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="PluginConfig-disable_http_size_metrics" class="deprecated ">
+<td><code>disableHttpSizeMetrics</code></td>
+<td><code>bool</code></td>
+<td>
+<p>Optional. Allows disabling of reporting of the request and response size
+metrics for HTTP traffic. Defaults to false (request and response size
+metrics are enabled).
+Deprecated &ndash; use <code>metrics_overrides</code> instead.
+if <code>metrics_overrides</code> is used, this value will be ignored.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="MetricsOverride">MetricsOverride</h2>
+<section>
+<p>Provides behavior modifications for Cloud Monitoring metrics.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="MetricsOverride-drop">
+<td><code>drop</code></td>
+<td><code>bool</code></td>
+<td>
+<p>Optional. If true, no data for the associated metric will be collected or
+exported.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="MetricsOverride-tag_overrides">
+<td><code>tagOverrides</code></td>
+<td><code>map&lt;string,&nbsp;string&gt;</code></td>
+<td>
+<p>Optional. Maps tag names to value expressions that will be used at
+reporting time. If the tag name does not match a well-known tag for the
+istio Cloud Monitoring metrics, the configuration will have no effect.</p>
 
 </td>
 <td>
@@ -280,8 +356,7 @@ No
 <td><code>ERRORS_ONLY</code></td>
 <td>
 <p>All error logs. This is currently only available for outbound/client side
-logs. A request is classified as error when <code>status&gt;=400 or
-response_flag != &quot;-&quot;</code></p>
+logs. A request is classified as error when <code>status&gt;=400 or response_flag != &quot;-&quot;</code></p>
 
 </td>
 </tr>
