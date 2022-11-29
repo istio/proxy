@@ -23,8 +23,8 @@ syntax = "proto3";
 // $weight: 20
 // clang-format on
 
-// AttributeGen plugin uses [builtin attributes]
-// (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes)
+// AttributeGen plugin uses [builtin
+// attributes](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes)
 // as inputs and produces new attributes that can be used by downstream plugins.
 //
 // The following is an example of a configuration that produces one attribute
@@ -170,8 +170,8 @@ message AttributeGeneration {
 message Match {
   // The condition is a [CEL
   // expression](https://github.com/google/cel-spec/blob/master/doc/langdef.md)
-  // that may use [builtin attributes]
-  // (https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes#attributes).
+  // that may use [builtin
+  // attributes](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/attributes#attributes).
   //
   // Example:
   //

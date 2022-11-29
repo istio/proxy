@@ -5,7 +5,7 @@ location: https://istio.io/docs/reference/config/proxy_extensions/stats.html
 layout: protoc-gen-docs
 generator: protoc-gen-docs
 weight: 20
-number_of_entries: 4
+number_of_entries: 5
 ---
 <h2 id="MetricConfig">MetricConfig</h2>
 <section>
@@ -52,7 +52,7 @@ No
 </td>
 </tr>
 <tr id="MetricConfig-tags_to_remove">
-<td><code>tags_to_remove</code></td>
+<td><code>tagsToRemove</code></td>
 <td><code>string[]</code></td>
 <td>
 <p>(Optional) A list of tags to remove.</p>
@@ -67,6 +67,18 @@ No
 <td><code>string</code></td>
 <td>
 <p>NOT IMPLEMENTED. (Optional) Conditional enabling the override.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="MetricConfig-drop">
+<td><code>drop</code></td>
+<td><code>bool</code></td>
+<td>
+<p>(Optional) If this is set to true, the metric(s) selected by this
+configuration will not be generated or reported.</p>
 
 </td>
 <td>
@@ -136,73 +148,8 @@ No
 </tr>
 </thead>
 <tbody>
-<tr id="PluginConfig-debug">
-<td><code>debug</code></td>
-<td><code>bool</code></td>
-<td>
-<p>next id: 7
-The following settings should be rarely used.
-Enable debug for this filter.
-DEPRECATED.</p>
-
-</td>
-<td>
-No
-</td>
-</tr>
-<tr id="PluginConfig-max_peer_cache_size">
-<td><code>max_peer_cache_size</code></td>
-<td><code>int32</code></td>
-<td>
-<p>maximum size of the peer metadata cache.
-A long lived proxy that connects with many transient peers can build up a
-large cache. To turn off the cache, set this field to a negative value.
-DEPRECATED.</p>
-
-</td>
-<td>
-No
-</td>
-</tr>
-<tr id="PluginConfig-stat_prefix">
-<td><code>stat_prefix</code></td>
-<td><code>string</code></td>
-<td>
-<p>prefix to add to stats emitted by the plugin.
-DEPRECATED.</p>
-
-</td>
-<td>
-No
-</td>
-</tr>
-<tr id="PluginConfig-field_separator">
-<td><code>field_separator</code></td>
-<td><code>string</code></td>
-<td>
-<p>Stats api squashes dimensions in a single string.
-The squashed string is parsed at prometheus scrape time to recover
-dimensions. The following 2 fields set the field and value separators {key:
-value} &ndash;&gt;  key{value<em>separator}value{field</em>separator}</p>
-
-</td>
-<td>
-No
-</td>
-</tr>
-<tr id="PluginConfig-value_separator">
-<td><code>value_separator</code></td>
-<td><code>string</code></td>
-<td>
-<p>default: &ldquo;==&rdquo;</p>
-
-</td>
-<td>
-No
-</td>
-</tr>
 <tr id="PluginConfig-disable_host_header_fallback">
-<td><code>disable_host_header_fallback</code></td>
+<td><code>disableHostHeaderFallback</code></td>
 <td><code>bool</code></td>
 <td>
 <p>Optional: Disable using host header as a fallback if destination service is
@@ -215,7 +162,7 @@ No
 </td>
 </tr>
 <tr id="PluginConfig-tcp_reporting_duration">
-<td><code>tcp_reporting_duration</code></td>
+<td><code>tcpReportingDuration</code></td>
 <td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
 <td>
 <p>Optional. Allows configuration of the time between calls out to for TCP
@@ -248,6 +195,17 @@ No
 No
 </td>
 </tr>
+<tr id="PluginConfig-reporter">
+<td><code>reporter</code></td>
+<td><code><a href="#Reporter">Reporter</a></code></td>
+<td>
+<p>Proxy deployment type.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -274,6 +232,36 @@ No
 <tr id="MetricType-HISTOGRAM">
 <td><code>HISTOGRAM</code></td>
 <td>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="Reporter">Reporter</h2>
+<section>
+<p>Specifies the proxy deployment type.</p>
+
+<table class="enum-values">
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="Reporter-UNSPECIFIED">
+<td><code>UNSPECIFIED</code></td>
+<td>
+<p>Default value is inferred from the listener direction, as either client or
+server sidecar.</p>
+
+</td>
+</tr>
+<tr id="Reporter-SERVER_GATEWAY">
+<td><code>SERVER_GATEWAY</code></td>
+<td>
+<p>Shared server gateway, e.g. &ldquo;waypoint&rdquo;.</p>
+
 </td>
 </tr>
 </tbody>
