@@ -5,4 +5,4 @@ version: v1
 plugins:
 - name: docs
   out: .
-  opt: warnings=false,per_file=true,mode=html_fragment_with_front_matter
+  opt: camel_case_fields=false,warnings=false,per_file=true,mode=html_fragment_with_front_matter
