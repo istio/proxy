@@ -15,7 +15,7 @@
 package envoye2e
 
 import (
-	env "istio.io/proxy/test/envoye2e/env"
+	"istio.io/proxy/test/envoye2e/env"
 )
 
 var ProxyE2ETests *env.TestInventory
