@@ -26,14 +26,14 @@ import (
 	"sync"
 	"time"
 
-	jsonpb "github.com/golang/protobuf/jsonpb"
-	empty "github.com/golang/protobuf/ptypes/empty"
+	"cloud.google.com/go/logging/apiv2/loggingpb"
+	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
+	cloudtracev1 "cloud.google.com/go/trace/apiv1/tracepb"
+	cloudtracev2 "cloud.google.com/go/trace/apiv2/tracepb"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
-	cloudtracev1 "google.golang.org/genproto/googleapis/devtools/cloudtrace/v1"
-	cloudtracev2 "google.golang.org/genproto/googleapis/devtools/cloudtrace/v2"
-	logging "google.golang.org/genproto/googleapis/logging/v2"
-	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
@@ -43,7 +43,7 @@ import (
 	"istio.io/proxy/test/envoye2e/driver"
 )
 
-// MetricServer is a fake stackdriver server which implements all of monitoring v3 service method.
+// MetricServer is a fake stackdriver server which implements all monitoring v3 service methods.
 type MetricServer struct {
 	delay        time.Duration
 	listTSResp   monitoringpb.ListTimeSeriesResponse
@@ -51,15 +51,15 @@ type MetricServer struct {
 	mux          sync.Mutex
 }
 
-// LoggingServer is a fake stackdriver server which implements all of logging v2 service method.
+// LoggingServer is a fake stackdriver server which implements all logging v2 service methods.
 type LoggingServer struct {
 	delay            time.Duration
-	listLogEntryResp logging.ListLogEntriesResponse
-	RcvLoggingReq    chan *logging.WriteLogEntriesRequest
+	listLogEntryResp loggingpb.ListLogEntriesResponse
+	RcvLoggingReq    chan *loggingpb.WriteLogEntriesRequest
 	mux              sync.Mutex
 }
 
-// TracesServer is a fake stackdriver server which implements all of cloudtrace v1 service method.
+// TracesServer is a fake stackdriver server which implements all cloudtrace v1 service methods.
 type TracesServer struct {
 	delay          time.Duration
 	listTracesResp cloudtracev1.ListTracesResponse
@@ -133,18 +133,18 @@ func (s *MetricServer) CreateServiceTimeSeries(ctx context.Context, request *mon
 }
 
 // DeleteLog implements DeleteLog method.
-func (s *LoggingServer) DeleteLog(context.Context, *logging.DeleteLogRequest) (*empty.Empty, error) {
+func (s *LoggingServer) DeleteLog(context.Context, *loggingpb.DeleteLogRequest) (*empty.Empty, error) {
 	return &empty.Empty{}, nil
 }
 
 // WriteLogEntries implements WriteLogEntries method.
-func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteLogEntriesRequest) (*logging.WriteLogEntriesResponse, error) {
+func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *loggingpb.WriteLogEntriesRequest) (*loggingpb.WriteLogEntriesResponse, error) {
 	log.Printf("receive WriteLogEntriesRequest %v", req.String())
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	for _, entry := range req.Entries {
 		// Add the general labels to every log entry in list logentries response.
-		tmpEntry := proto.Clone(entry).(*logging.LogEntry)
+		tmpEntry := proto.Clone(entry).(*loggingpb.LogEntry)
 		for k, v := range req.Labels {
 			tmpEntry.Labels[k] = v
 		}
@@ -154,30 +154,30 @@ func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *logging.WriteL
 	}
 	s.RcvLoggingReq <- req
 	time.Sleep(s.delay)
-	return &logging.WriteLogEntriesResponse{}, nil
+	return &loggingpb.WriteLogEntriesResponse{}, nil
 }
 
 // ListLogEntries implements ListLogEntries method.
-func (s *LoggingServer) ListLogEntries(context.Context, *logging.ListLogEntriesRequest) (*logging.ListLogEntriesResponse, error) {
+func (s *LoggingServer) ListLogEntries(context.Context, *loggingpb.ListLogEntriesRequest) (*loggingpb.ListLogEntriesResponse, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	return &s.listLogEntryResp, nil
 }
 
 // ListLogs implements ListLogs method.
-func (s *LoggingServer) ListLogs(context.Context, *logging.ListLogsRequest) (*logging.ListLogsResponse, error) {
-	return &logging.ListLogsResponse{}, nil
+func (s *LoggingServer) ListLogs(context.Context, *loggingpb.ListLogsRequest) (*loggingpb.ListLogsResponse, error) {
+	return &loggingpb.ListLogsResponse{}, nil
 }
 
 // ListMonitoredResourceDescriptors immplements ListMonitoredResourceDescriptors method.
 func (s *LoggingServer) ListMonitoredResourceDescriptors(
-	context.Context, *logging.ListMonitoredResourceDescriptorsRequest) (
-	*logging.ListMonitoredResourceDescriptorsResponse, error,
+	context.Context, *loggingpb.ListMonitoredResourceDescriptorsRequest) (
+	*loggingpb.ListMonitoredResourceDescriptorsResponse, error,
 ) {
-	return &logging.ListMonitoredResourceDescriptorsResponse{}, nil
+	return &loggingpb.ListMonitoredResourceDescriptorsResponse{}, nil
 }
 
-func (s *LoggingServer) TailLogEntries(server logging.LoggingServiceV2_TailLogEntriesServer) error {
+func (s *LoggingServer) TailLogEntries(server loggingpb.LoggingServiceV2_TailLogEntriesServer) error {
 	panic("TailLogEntries: implement me")
 }
 
@@ -391,7 +391,7 @@ func NewFakeStackdriver(port uint16, delay time.Duration,
 	}
 	fsdls := &LoggingServer{
 		delay:         delay,
-		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 2),
+		RcvLoggingReq: make(chan *loggingpb.WriteLogEntriesRequest, 2),
 	}
 	traceSvc := &TracesServer{
 		delay:        delay,
@@ -399,7 +399,7 @@ func NewFakeStackdriver(port uint16, delay time.Duration,
 		traceMap:     make(map[string]*cloudtracev1.Trace),
 	}
 	monitoringpb.RegisterMetricServiceServer(grpcServer, fsdms)
-	logging.RegisterLoggingServiceV2Server(grpcServer, fsdls)
+	loggingpb.RegisterLoggingServiceV2Server(grpcServer, fsdls)
 	cloudtracev1.RegisterTraceServiceServer(grpcServer, traceSvc)
 	cloudtracev2.RegisterTraceServiceServer(grpcServer, traceSvc)
 
@@ -422,7 +422,7 @@ func RunFakeStackdriver(port uint16) error {
 		RcvMetricReq: make(chan *monitoringpb.CreateTimeSeriesRequest, 100),
 	}
 	fsdls := &LoggingServer{
-		RcvLoggingReq: make(chan *logging.WriteLogEntriesRequest, 100),
+		RcvLoggingReq: make(chan *loggingpb.WriteLogEntriesRequest, 100),
 	}
 	traceSvc := &TracesServer{
 		RcvTracesReq: make(chan *cloudtracev2.BatchWriteSpansRequest, 100),
@@ -445,7 +445,7 @@ func RunFakeStackdriver(port uint16) error {
 	}()
 
 	monitoringpb.RegisterMetricServiceServer(grpcServer, fsdms)
-	logging.RegisterLoggingServiceV2Server(grpcServer, fsdls)
+	loggingpb.RegisterLoggingServiceV2Server(grpcServer, fsdls)
 	cloudtracev1.RegisterTraceServiceServer(grpcServer, traceSvc)
 	cloudtracev2.RegisterTraceServiceServer(grpcServer, traceSvc)
 

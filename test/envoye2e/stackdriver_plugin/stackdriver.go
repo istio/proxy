@@ -22,9 +22,9 @@ import (
 	"sync"
 	"time"
 
+	"cloud.google.com/go/logging/apiv2/loggingpb"
+	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"github.com/google/go-cmp/cmp"
-	logging "google.golang.org/genproto/googleapis/logging/v2"
-	monitoring "google.golang.org/genproto/googleapis/monitoring/v3"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/testing/protocmp"
 
@@ -41,7 +41,7 @@ type Stackdriver struct {
 	Delay time.Duration
 
 	done  chan error
-	tsReq []*monitoring.CreateTimeSeriesRequest
+	tsReq []*monitoringpb.CreateTimeSeriesRequest
 	ts    map[string]int64
 	ls    map[string]struct{}
 }
@@ -58,7 +58,7 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 	sd.done = make(chan error, 1)
 	sd.ls = make(map[string]struct{})
 	sd.ts = make(map[string]int64)
-	sd.tsReq = make([]*monitoring.CreateTimeSeriesRequest, 0, 20)
+	sd.tsReq = make([]*monitoringpb.CreateTimeSeriesRequest, 0, 20)
 	metrics, logging, _, _ := NewFakeStackdriver(sd.Port, sd.Delay, true, ExpectedBearer)
 
 	go func() {
@@ -74,7 +74,7 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 						strings.HasSuffix(ts.Metric.Type, "request_bytes") ||
 						strings.HasSuffix(ts.Metric.Type, "received_bytes_count") {
 						// clear the timestamps for comparison
-						var key = prototext.Format(&monitoring.TimeSeries{
+						var key = prototext.Format(&monitoringpb.TimeSeries{
 							Metric:     ts.Metric,
 							Resource:   ts.Resource,
 							Metadata:   ts.Metadata,
@@ -130,7 +130,7 @@ func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLog
 	// check as sets of strings by marshaling to proto
 	twant := make(map[string]int64)
 	for _, t := range tsFiles {
-		pb := &monitoring.TimeSeries{}
+		pb := &monitoringpb.TimeSeries{}
 		p.LoadTestProto(t, pb)
 		if len(pb.Points) != 1 || pb.Points[0].Value.GetInt64Value() == 0 {
 			log.Fatal("malformed metric golden")
@@ -141,11 +141,11 @@ func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLog
 	}
 	lwant := make(map[string]struct{})
 	for _, l := range lsFiles {
-		pb := &logging.WriteLogEntriesRequest{}
+		pb := &loggingpb.WriteLogEntriesRequest{}
 		p.LoadTestProto(l.LogBaseFile, pb)
 		for i := 0; i < l.LogEntryCount; i++ {
 			for _, logEntryFile := range l.LogEntryFile {
-				e := &logging.LogEntry{}
+				e := &loggingpb.LogEntry{}
 				p.LoadTestProto(logEntryFile, e)
 				pb.Entries = append(pb.Entries, e)
 			}
@@ -173,7 +173,7 @@ func (r *resetStackdriver) Run(p *driver.Params) error {
 	defer r.sd.Unlock()
 	r.sd.ls = make(map[string]struct{})
 	r.sd.ts = make(map[string]int64)
-	r.sd.tsReq = make([]*monitoring.CreateTimeSeriesRequest, 0, 20)
+	r.sd.tsReq = make([]*monitoringpb.CreateTimeSeriesRequest, 0, 20)
 	return nil
 }
 
@@ -258,7 +258,7 @@ func (s *checkStackdriver) Run(p *driver.Params) error {
 func (s *checkStackdriver) Cleanup() {}
 
 // Check that response latency is within a reasonable range (less than 256 milliseconds).
-func verifyResponseLatency(got *monitoring.CreateTimeSeriesRequest) (bool, error) {
+func verifyResponseLatency(got *monitoringpb.CreateTimeSeriesRequest) (bool, error) {
 	for _, t := range got.TimeSeries {
 		if t.Metric.Type != ResponseLatencyMetricName {
 			continue

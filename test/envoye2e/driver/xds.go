@@ -20,9 +20,9 @@ import (
 	"log"
 	"net"
 
-	cluster_v3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	listener_v3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	listenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	tls "github.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3"
 	discovery "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
 	extensionservice "github.com/envoyproxy/go-control-plane/envoy/service/extension/v3"
@@ -109,7 +109,7 @@ func (u *Update) Run(p *Params) error {
 
 	clusters := make([]types.Resource, 0, len(u.Clusters))
 	for _, cluster := range u.Clusters {
-		out := &cluster_v3.Cluster{}
+		out := &clusterv3.Cluster{}
 		if err := p.FillYAML(cluster, out); err != nil {
 			return err
 		}
@@ -118,7 +118,7 @@ func (u *Update) Run(p *Params) error {
 
 	listeners := make([]types.Resource, 0, len(u.Listeners))
 	for _, listener := range u.Listeners {
-		out := &listener_v3.Listener{}
+		out := &listenerv3.Listener{}
 		if err := p.FillYAML(listener, out); err != nil {
 			return err
 		}
