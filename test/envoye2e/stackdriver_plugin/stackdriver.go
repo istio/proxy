@@ -22,9 +22,9 @@ import (
 	"sync"
 	"time"
 
+	"cloud.google.com/go/logging/apiv2/loggingpb"
 	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/genproto/googleapis/logging/v2"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/testing/protocmp"
 
@@ -141,11 +141,11 @@ func (sd *Stackdriver) Check(p *driver.Params, tsFiles []string, lsFiles []SDLog
 	}
 	lwant := make(map[string]struct{})
 	for _, l := range lsFiles {
-		pb := &logging.WriteLogEntriesRequest{}
+		pb := &loggingpb.WriteLogEntriesRequest{}
 		p.LoadTestProto(l.LogBaseFile, pb)
 		for i := 0; i < l.LogEntryCount; i++ {
 			for _, logEntryFile := range l.LogEntryFile {
-				e := &logging.LogEntry{}
+				e := &loggingpb.LogEntry{}
 				p.LoadTestProto(logEntryFile, e)
 				pb.Entries = append(pb.Entries, e)
 			}

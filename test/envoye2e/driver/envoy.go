@@ -28,7 +28,7 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/cncf/udpa/go/udpa/type/v1" // Preload proto definitions
+	_ "github.com/cncf/xds/go/udpa/type/v1" // Preload proto definitions
 	bootstrap_v3 "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	_ "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/router/v3" // Preload proto definitions
