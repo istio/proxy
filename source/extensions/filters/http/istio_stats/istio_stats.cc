@@ -697,7 +697,8 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     }
     populateFlagsAndConnectionSecurity(info);
 
-    Config::StreamOverrides stream(*config_, info);
+    Config::StreamOverrides stream(*config_, info, request_headers,
+                                   response_headers, response_trailers);
     stream.addCounter(context_.requests_total_, tags_, pool_);
     auto duration = info.requestComplete();
     if (duration.has_value()) {
