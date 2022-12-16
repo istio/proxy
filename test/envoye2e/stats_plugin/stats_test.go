@@ -163,10 +163,6 @@ func TestStatsPayload(t *testing.T) {
 				for metric, values := range testCase.ClientStats {
 					clientStats[metric] = values
 				}
-				if testCase.Name == "Customized" && runtime.WasmRuntime == "" {
-					// TODO: complete adding custom dimensions to native stats
-					delete(clientStats, "istio_custom")
-				}
 				params := driver.NewTestParams(t, map[string]string{
 					"RequestCount":               "10",
 					"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
