@@ -64,7 +64,7 @@ message MetricDefinition {
   // Metric value expression.
   string value = 2;
 
-  // NOT IMPLEMENTED (Optional) Metric type.
+  // Metric type.
   MetricType type = 3;
 }
 
