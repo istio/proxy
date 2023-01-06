@@ -47,6 +47,10 @@ filter_chains:
                 connect_config:
                   {}
       http_filters:
+      - name: connect_baggage
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: type.googleapis.com/io.istio.http.connect_baggage.Config
       - name: envoy.filters.http.router
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
