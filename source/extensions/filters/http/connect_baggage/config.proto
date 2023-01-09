@@ -17,5 +17,10 @@ syntax = "proto3";
 
 package io.istio.http.connect_baggage;
 
-// Computes and stores the downstream peer metadata from the "baggage" header.
-message Config {}
+// Computes or propagates the downstream peer metadata using the "baggage"
+// header.
+message Config {
+  // Write "baggage" header from downstream peer metadata, instead of reading
+  // it.
+  bool propagate = 1;
+}
