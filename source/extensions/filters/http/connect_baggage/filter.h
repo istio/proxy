@@ -26,8 +26,12 @@ namespace ConnectBaggage {
 
 class Filter : public Http::PassThroughFilter {
  public:
+  Filter(bool propagate) : propagate_(propagate) {}
   Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap&,
                                           bool) override;
+
+ private:
+  bool propagate_;
 };
 
 class FilterConfigFactory
