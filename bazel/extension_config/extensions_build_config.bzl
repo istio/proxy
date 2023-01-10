@@ -411,6 +411,7 @@ ISTIO_DISABLED_EXTENSIONS = [
 
 ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.filters.network.mysql_proxy",
+    "envoy.filters.network.postgres_proxy",
     "envoy.filters.network.sip_proxy",
     "envoy.filters.sip.router",
     "envoy.tls.key_providers.cryptomb",
