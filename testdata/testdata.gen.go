@@ -436,6 +436,10 @@ filter_chains:
       cluster: original_dst
       tunneling_config:
         hostname: host.com:443
+        headers_to_add:
+        - header:
+            key: baggage
+            value: k8s.deployment.name=productpage-v1
       stat_prefix: outbound
 `)
 
@@ -645,6 +649,10 @@ filter_chains:
                 connect_config:
                   {}
       http_filters:
+      - name: connect_baggage
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: type.googleapis.com/io.istio.http.connect_baggage.Config
       - name: envoy.filters.http.router
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
