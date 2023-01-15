@@ -30,7 +30,7 @@ import (
 	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	cloudtracev1 "cloud.google.com/go/trace/apiv1/tracepb"
 	cloudtracev2 "cloud.google.com/go/trace/apiv2/tracepb"
-	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/jsonpb" // nolint: depguard
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
