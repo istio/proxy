@@ -706,7 +706,8 @@ func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
 			&driver.XDS{},
-			&driver.Update{Node: "client", Version: "0",
+			&driver.Update{
+				Node: "client", Version: "0",
 				Clusters: []string{
 					driver.LoadTestData("testdata/cluster/internal_outbound.yaml.tmpl"),
 					driver.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
@@ -719,7 +720,8 @@ func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 					driver.LoadTestData("testdata/secret/client.yaml.tmpl"),
 				},
 			},
-			&driver.Update{Node: "server", Version: "0",
+			&driver.Update{
+				Node: "server", Version: "0",
 				Clusters: []string{
 					driver.LoadTestData("testdata/cluster/internal_inbound.yaml.tmpl"),
 				},

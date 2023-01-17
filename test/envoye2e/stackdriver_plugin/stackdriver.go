@@ -74,7 +74,7 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 						strings.HasSuffix(ts.Metric.Type, "request_bytes") ||
 						strings.HasSuffix(ts.Metric.Type, "received_bytes_count") {
 						// clear the timestamps for comparison
-						var key = prototext.Format(&monitoringpb.TimeSeries{
+						key := prototext.Format(&monitoringpb.TimeSeries{
 							Metric:     ts.Metric,
 							Resource:   ts.Resource,
 							Metadata:   ts.Metadata,

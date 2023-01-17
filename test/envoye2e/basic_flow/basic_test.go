@@ -150,7 +150,8 @@ func TestBasicCONNECT(t *testing.T) {
 			params.Vars["ServerInternalAddress"] = "internal_inbound"
 			params.Vars["quic"] = strconv.FormatBool(options.Quic)
 
-			updateClient := &driver.Update{Node: "client", Version: "{{ .N }}",
+			updateClient := &driver.Update{
+				Node: "client", Version: "{{ .N }}",
 				Clusters: []string{
 					driver.LoadTestData("testdata/cluster/internal_outbound.yaml.tmpl"),
 					driver.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
@@ -164,7 +165,8 @@ func TestBasicCONNECT(t *testing.T) {
 				},
 			}
 
-			updateServer := &driver.Update{Node: "server", Version: "{{ .N }}",
+			updateServer := &driver.Update{
+				Node: "server", Version: "{{ .N }}",
 				Clusters: []string{
 					driver.LoadTestData("testdata/cluster/internal_inbound.yaml.tmpl"),
 				},
