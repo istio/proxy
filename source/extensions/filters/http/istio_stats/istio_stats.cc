@@ -347,21 +347,22 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
   using TagAdditions = std::vector<std::pair<Stats::StatName, uint32_t>>;
   absl::flat_hash_map<Stats::StatName, TagAdditions> tag_additions_;
 
-  void initialize(Stats::StatNameDynamicPool& pool,
-                  const StreamInfo::StreamInfo& info,
-                  const Http::RequestHeaderMap* request_headers,
-                  const Http::ResponseHeaderMap* response_headers,
-                  const Http::ResponseTrailerMap* response_trailers) {
+  void evaluate(
+      Stats::StatNameDynamicPool& pool, const StreamInfo::StreamInfo& info,
+      const Http::RequestHeaderMap* request_headers,
+      const Http::ResponseHeaderMap* response_headers,
+      const Http::ResponseTrailerMap* response_trailers,
+      std::vector<std::pair<Stats::StatName, uint64_t>>& expr_values) {
     activation_info_ = &info;
     activation_request_headers_ = request_headers;
     activation_response_headers_ = response_headers;
     activation_response_trailers_ = response_trailers;
-    expr_values_.reserve(compiled_exprs_.size());
+    expr_values.reserve(compiled_exprs_.size());
     for (size_t id = 0; id < compiled_exprs_.size(); id++) {
       Protobuf::Arena arena;
       auto eval_status = compiled_exprs_[id].first->Evaluate(*this, &arena);
       if (!eval_status.ok() || eval_status.value().IsError()) {
-        expr_values_.push_back(std::make_pair(context_->unknown_, 0));
+        expr_values.push_back(std::make_pair(context_->unknown_, 0));
       } else {
         const auto string_value =
             Filters::Common::Expr::print(eval_status.value());
@@ -370,16 +371,14 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
           if (!absl::SimpleAtoi(string_value, &amount)) {
             ENVOY_LOG(trace, "Failed to get metric value: {}", string_value);
           }
-          expr_values_.push_back(std::make_pair(Stats::StatName(), amount));
+          expr_values.push_back(std::make_pair(Stats::StatName(), amount));
         } else {
-          expr_values_.push_back(std::make_pair(pool.add(string_value), 0));
+          expr_values.push_back(std::make_pair(pool.add(string_value), 0));
         }
       }
     }
     resetActivation();
   }
-
-  void reset() { expr_values_.clear(); }
 
   absl::optional<CelValue> FindValue(absl::string_view name,
                                      Protobuf::Arena* arena) const override {
@@ -404,8 +403,9 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
     return {};
   }
 
-  Stats::StatNameTagVector overrideTags(Stats::StatName metric,
-                                        const Stats::StatNameTagVector& tags) {
+  Stats::StatNameTagVector overrideTags(
+      Stats::StatName metric, const Stats::StatNameTagVector& tags,
+      const std::vector<std::pair<Stats::StatName, uint64_t>>& expr_values) {
     Stats::StatNameTagVector out;
     out.reserve(tags.size());
     const auto& tag_overrides_it = tag_overrides_.find(metric);
@@ -416,7 +416,7 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
         const auto& it = tag_overrides_it->second.find(key);
         if (it != tag_overrides_it->second.end()) {
           if (it->second.has_value()) {
-            out.push_back({key, expr_values_[it->second.value()].first});
+            out.push_back({key, expr_values[it->second.value()].first});
           } else {
             // Skip dropped tags.
           }
@@ -427,7 +427,7 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
     const auto& tag_additions_it = tag_additions_.find(metric);
     if (tag_additions_it != tag_additions_.end()) {
       for (const auto& [tag, id] : tag_additions_it->second) {
-        out.push_back({tag, expr_values_[id].first});
+        out.push_back({tag, expr_values[id].first});
       }
     }
     return out;
@@ -468,7 +468,6 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
   std::vector<google::api::expr::v1alpha1::Expr> parsed_exprs_;
   std::vector<std::pair<Filters::Common::Expr::ExpressionPtr, bool>>
       compiled_exprs_;
-  std::vector<std::pair<Stats::StatName, uint64_t>> expr_values_;
   absl::flat_hash_map<std::string, uint32_t> expression_ids_;
 };
 
@@ -647,14 +646,9 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
                     const Http::ResponseTrailerMap* response_trailers = nullptr)
         : parent_(parent) {
       if (parent_.metric_overrides_) {
-        parent_.metric_overrides_->initialize(
-            pool, info, request_headers, response_headers, response_trailers);
-      }
-    }
-
-    ~StreamOverrides() {
-      if (parent_.metric_overrides_) {
-        parent_.metric_overrides_->reset();
+        parent_.metric_overrides_->evaluate(pool, info, request_headers,
+                                            response_headers, response_trailers,
+                                            expr_values_);
       }
     }
 
@@ -664,7 +658,8 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         if (parent_.metric_overrides_->drop_.contains(metric)) {
           return;
         }
-        auto new_tags = parent_.metric_overrides_->overrideTags(metric, tags);
+        auto new_tags =
+            parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
         Stats::Utility::counterFromStatNames(
             parent_.scope_, {parent_.context_->stat_namespace_, metric},
             new_tags)
@@ -682,7 +677,8 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         if (parent_.metric_overrides_->drop_.contains(metric)) {
           return;
         }
-        auto new_tags = parent_.metric_overrides_->overrideTags(metric, tags);
+        auto new_tags =
+            parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
         Stats::Utility::histogramFromStatNames(
             parent_.scope_, {parent_.context_->stat_namespace_, metric}, unit,
             new_tags)
@@ -699,10 +695,9 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
       if (parent_.metric_overrides_) {
         for (const auto& [_, metric] :
              parent_.metric_overrides_->custom_metrics_) {
-          const auto tags =
-              parent_.metric_overrides_->overrideTags(metric.name_, {});
-          uint64_t amount =
-              parent_.metric_overrides_->expr_values_[metric.expr_].second;
+          const auto tags = parent_.metric_overrides_->overrideTags(
+              metric.name_, {}, expr_values_);
+          uint64_t amount = expr_values_[metric.expr_].second;
           switch (metric.type_) {
             case MetricOverrides::MetricType::Counter:
               Stats::Utility::counterFromStatNames(
@@ -732,6 +727,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
     }
 
     Config& parent_;
+    std::vector<std::pair<Stats::StatName, uint64_t>> expr_values_;
   };
 
   void recordVersion() {
