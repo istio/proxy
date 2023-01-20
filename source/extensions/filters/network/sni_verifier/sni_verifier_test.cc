@@ -116,7 +116,7 @@ class SniVerifierFilterTest : public testing::Test {
 
  private:
   std::unique_ptr<Filter> filter_;
-  std::unique_ptr<Stats::Scope> store_;
+  std::unique_ptr<Stats::IsolatedStoreImpl> store_;
 };
 
 constexpr size_t SniVerifierFilterTest::TLS_MAX_CLIENT_HELLO;  // definition
