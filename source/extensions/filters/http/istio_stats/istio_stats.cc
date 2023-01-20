@@ -568,445 +568,453 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
             new_tags)
             .recordValue(value);
       }
-    Config& parent_;
+      Config& parent_;
+    };
+
+    void recordVersion() {
+      Stats::StatNameTagVector tags;
+      tags.push_back({context_->component_, context_->proxy_});
+      tags.push_back({context_->tag_, context_->istio_version_.empty()
+                                          ? context_->unknown_
+                                          : context_->istio_version_});
+
+      Stats::Utility::gaugeFromStatNames(
+          scope_, {context_->stat_namespace_, context_->istio_build_},
+          Stats::Gauge::ImportMode::Accumulate, tags)
+          .set(1);
+    }
+
+    Reporter reporter() const { return reporter_; }
+
+    ContextSharedPtr context_;
+    Stats::Scope& scope_;
+    Reporter reporter_;
+
+    const bool disable_host_header_fallback_;
+    const std::chrono::milliseconds report_duration_;
+    std::unique_ptr<MetricOverrides> metric_overrides_;
   };
 
-  void recordVersion() {
-    Stats::StatNameTagVector tags;
-    tags.push_back({context_->component_, context_->proxy_});
-    tags.push_back({context_->tag_, context_->istio_version_.empty()
-                                        ? context_->unknown_
-                                        : context_->istio_version_});
+  using ConfigSharedPtr = std::shared_ptr<Config>;
 
-    Stats::Utility::gaugeFromStatNames(
-        scope_, {context_->stat_namespace_, context_->istio_build_},
-        Stats::Gauge::ImportMode::Accumulate, tags)
-        .set(1);
-  }
-
-  Reporter reporter() const { return reporter_; }
-
-  ContextSharedPtr context_;
-  Stats::Scope& scope_;
-  Reporter reporter_;
-
-  const bool disable_host_header_fallback_;
-  const std::chrono::milliseconds report_duration_;
-  std::unique_ptr<MetricOverrides> metric_overrides_;
-};
-
-using ConfigSharedPtr = std::shared_ptr<Config>;
-
-class IstioStatsFilter : public Http::PassThroughFilter,
-                         public AccessLog::Instance,
-                         public Network::ReadFilter,
-                         public Network::ConnectionCallbacks {
- public:
-  IstioStatsFilter(ConfigSharedPtr config)
-      : config_(config),
-        context_(*config->context_),
-        pool_(config->scope_.symbolTable()) {
-    tags_.reserve(25);
-    switch (config_->reporter()) {
-      case Reporter::ServerSidecar:
-        tags_.push_back({context_.reporter_, context_.destination_});
-        break;
-      case Reporter::ClientSidecar:
-        tags_.push_back({context_.reporter_, context_.source_});
-        break;
-    }
-  }
-  ~IstioStatsFilter() { ASSERT(report_timer_ == nullptr); }
-
-  // AccessLog::Instance
-  void log(const Http::RequestHeaderMap* request_headers,
-           const Http::ResponseHeaderMap* response_headers,
-           const Http::ResponseTrailerMap* response_trailers,
-           const StreamInfo::StreamInfo& info) override {
-    populatePeerInfo(info, info.filterState());
-    const bool is_grpc =
-        request_headers && Grpc::Common::isGrpcRequestHeaders(*request_headers);
-    if (is_grpc) {
-      tags_.push_back({context_.request_protocol_, context_.grpc_});
-    } else {
-      tags_.push_back({context_.request_protocol_, context_.http_});
-    }
-
-    // TODO: copy Http::CodeStatsImpl version for status codes and flags.
-    tags_.push_back({context_.response_code_,
-                     pool_.add(absl::StrCat(info.responseCode().value_or(0)))});
-    if (is_grpc) {
-      auto const& optional_status = Grpc::Common::getGrpcStatus(
-          response_trailers
-              ? *response_trailers
-              : *Http::StaticEmptyHeaders::get().response_trailers,
-          response_headers ? *response_headers
-                           : *Http::StaticEmptyHeaders::get().response_headers,
-          info);
-      tags_.push_back({context_.grpc_response_status_,
-                       optional_status
-                           ? pool_.add(absl::StrCat(optional_status.value()))
-                           : context_.empty_});
-    } else {
-      tags_.push_back({context_.grpc_response_status_, context_.empty_});
-    }
-    populateFlagsAndConnectionSecurity(info);
-
-    Config::StreamOverrides stream(*config_, info, request_headers,
-                                   response_headers, response_trailers);
-    stream.addCounter(context_.requests_total_, tags_, pool_);
-    auto duration = info.requestComplete();
-    if (duration.has_value()) {
-      config_->recordHistogram(
-          context_.request_duration_milliseconds_,
-          Stats::Histogram::Unit::Milliseconds, tags_, info, pool_,
-          absl::FromChrono(duration.value()) / absl::Milliseconds(1));
-    }
-    auto meter = info.getDownstreamBytesMeter();
-    if (meter) {
-      stream.recordHistogram(context_.request_bytes_,
-                             Stats::Histogram::Unit::Bytes, tags_, pool_,
-                             meter->wireBytesReceived());
-      stream.recordHistogram(context_.response_bytes_,
-                             Stats::Histogram::Unit::Bytes, tags_, pool_,
-                             meter->wireBytesSent());
-    }
-  }
-
-  // Network::ReadFilter
-  Network::FilterStatus onData(Buffer::Instance&, bool) override {
-    return Network::FilterStatus::Continue;
-  }
-  Network::FilterStatus onNewConnection() override {
-    if (config_->report_duration_ > std::chrono::milliseconds(0)) {
-      report_timer_ =
-          network_read_callbacks_->connection().dispatcher().createTimer(
-              [this] { onReportTimer(); });
-      report_timer_->enableTimer(config_->report_duration_);
-    }
-    return Network::FilterStatus::Continue;
-  }
-  void initializeReadFilterCallbacks(
-      Network::ReadFilterCallbacks& callbacks) override {
-    network_read_callbacks_ = &callbacks;
-    network_read_callbacks_->connection().addConnectionCallbacks(*this);
-  }
-  // Network::ConnectionCallbacks
-  void onEvent(Network::ConnectionEvent event) override {
-    switch (event) {
-      case Network::ConnectionEvent::LocalClose:
-      case Network::ConnectionEvent::RemoteClose:
-        reportHelper(true);
-        if (report_timer_) {
-          report_timer_->disableTimer();
-          report_timer_.reset();
-        }
-        break;
-      default:
-        break;
-    }
-  }
-  void onAboveWriteBufferHighWatermark() override {}
-  void onBelowWriteBufferLowWatermark() override {}
-
- private:
-  // Invoked periodically for TCP streams.
-  void reportHelper(bool end_stream) {
-    const auto& info = network_read_callbacks_->connection().streamInfo();
-    // TCP MX writes to upstream stream info instead.
-    OptRef<const StreamInfo::UpstreamInfo> upstream_info;
-    if (config_->reporter() == Reporter::ClientSidecar) {
-      upstream_info = info.upstreamInfo();
-    }
-    const StreamInfo::FilterState& filter_state =
-        upstream_info && upstream_info->upstreamFilterState()
-            ? *upstream_info->upstreamFilterState()
-            : info.filterState();
-
-    Config::StreamOverrides stream(*config_, info);
-    if (!network_peer_read_) {
-      network_peer_read_ = peerInfoRead(config_->reporter(), filter_state);
-      // Report connection open once peer info is read or connection is closed.
-      if (network_peer_read_ || end_stream) {
-        populatePeerInfo(info, filter_state);
-        tags_.push_back({context_.request_protocol_, context_.tcp_});
-        populateFlagsAndConnectionSecurity(info);
-        stream.addCounter(context_.tcp_connections_opened_total_, tags_, pool_);
+  class IstioStatsFilter : public Http::PassThroughFilter,
+                           public AccessLog::Instance,
+                           public Network::ReadFilter,
+                           public Network::ConnectionCallbacks {
+   public:
+    IstioStatsFilter(ConfigSharedPtr config)
+        : config_(config),
+          context_(*config->context_),
+          pool_(config->scope_.symbolTable()) {
+      tags_.reserve(25);
+      switch (config_->reporter()) {
+        case Reporter::ServerSidecar:
+          tags_.push_back({context_.reporter_, context_.destination_});
+          break;
+        case Reporter::ClientSidecar:
+          tags_.push_back({context_.reporter_, context_.source_});
+          break;
       }
     }
-    if (network_peer_read_ || end_stream) {
+    ~IstioStatsFilter() { ASSERT(report_timer_ == nullptr); }
+
+    // AccessLog::Instance
+    void log(const Http::RequestHeaderMap* request_headers,
+             const Http::ResponseHeaderMap* response_headers,
+             const Http::ResponseTrailerMap* response_trailers,
+             const StreamInfo::StreamInfo& info) override {
+      populatePeerInfo(info, info.filterState());
+      const bool is_grpc = request_headers &&
+                           Grpc::Common::isGrpcRequestHeaders(*request_headers);
+      if (is_grpc) {
+        tags_.push_back({context_.request_protocol_, context_.grpc_});
+      } else {
+        tags_.push_back({context_.request_protocol_, context_.http_});
+      }
+
+      // TODO: copy Http::CodeStatsImpl version for status codes and flags.
+      tags_.push_back(
+          {context_.response_code_,
+           pool_.add(absl::StrCat(info.responseCode().value_or(0)))});
+      if (is_grpc) {
+        auto const& optional_status = Grpc::Common::getGrpcStatus(
+            response_trailers
+                ? *response_trailers
+                : *Http::StaticEmptyHeaders::get().response_trailers,
+            response_headers
+                ? *response_headers
+                : *Http::StaticEmptyHeaders::get().response_headers,
+            info);
+        tags_.push_back({context_.grpc_response_status_,
+                         optional_status
+                             ? pool_.add(absl::StrCat(optional_status.value()))
+                             : context_.empty_});
+      } else {
+        tags_.push_back({context_.grpc_response_status_, context_.empty_});
+      }
+      populateFlagsAndConnectionSecurity(info);
+
+      Config::StreamOverrides stream(*config_, info, request_headers,
+                                     response_headers, response_trailers);
+      stream.addCounter(context_.requests_total_, tags_, pool_);
+      auto duration = info.requestComplete();
+      if (duration.has_value()) {
+        config_->recordHistogram(
+            context_.request_duration_milliseconds_,
+            Stats::Histogram::Unit::Milliseconds, tags_, info, pool_,
+            absl::FromChrono(duration.value()) / absl::Milliseconds(1));
+      }
       auto meter = info.getDownstreamBytesMeter();
       if (meter) {
-        stream.addCounter(context_.tcp_sent_bytes_total_, tags_, pool_,
-                           meter->wireBytesSent() - bytes_sent_);
-        bytes_sent_ = meter->wireBytesSent();
-        stream.addCounter(context_.tcp_received_bytes_total_, tags_, pool_,
-                          meter->wireBytesReceived() - bytes_received_);
-        bytes_received_ = meter->wireBytesReceived();
+        stream.recordHistogram(context_.request_bytes_,
+                               Stats::Histogram::Unit::Bytes, tags_, pool_,
+                               meter->wireBytesReceived());
+        stream.recordHistogram(context_.response_bytes_,
+                               Stats::Histogram::Unit::Bytes, tags_, pool_,
+                               meter->wireBytesSent());
       }
     }
-    if (end_stream) {
-      stream.addCounter(context_.tcp_connections_closed_total_, tags_, pool_);
-    }
-  }
-  void onReportTimer() {
-    reportHelper(false);
-    report_timer_->enableTimer(config_->report_duration_);
-  }
 
-  void populateFlagsAndConnectionSecurity(const StreamInfo::StreamInfo& info) {
-    tags_.push_back(
-        {context_.response_flags_,
-         pool_.add(StreamInfo::ResponseFlagUtils::toShortString(info))});
-    switch (config_->reporter()) {
-      case Reporter::ServerSidecar: {
-        const auto ssl_info = info.downstreamAddressProvider().sslConnection();
-        const auto mtls =
-            ssl_info != nullptr && ssl_info->peerCertificatePresented();
-        tags_.push_back({context_.connection_security_policy_,
-                         mtls ? context_.mutual_tls_ : context_.none_});
-        break;
+    // Network::ReadFilter
+    Network::FilterStatus onData(Buffer::Instance&, bool) override {
+      return Network::FilterStatus::Continue;
+    }
+    Network::FilterStatus onNewConnection() override {
+      if (config_->report_duration_ > std::chrono::milliseconds(0)) {
+        report_timer_ =
+            network_read_callbacks_->connection().dispatcher().createTimer(
+                [this] { onReportTimer(); });
+        report_timer_->enableTimer(config_->report_duration_);
       }
-      default:
-        tags_.push_back(
-            {context_.connection_security_policy_, context_.unknown_});
-        break;
+      return Network::FilterStatus::Continue;
     }
-  }
+    void initializeReadFilterCallbacks(
+        Network::ReadFilterCallbacks& callbacks) override {
+      network_read_callbacks_ = &callbacks;
+      network_read_callbacks_->connection().addConnectionCallbacks(*this);
+    }
+    // Network::ConnectionCallbacks
+    void onEvent(Network::ConnectionEvent event) override {
+      switch (event) {
+        case Network::ConnectionEvent::LocalClose:
+        case Network::ConnectionEvent::RemoteClose:
+          reportHelper(true);
+          if (report_timer_) {
+            report_timer_->disableTimer();
+            report_timer_.reset();
+          }
+          break;
+        default:
+          break;
+      }
+    }
+    void onAboveWriteBufferHighWatermark() override {}
+    void onBelowWriteBufferLowWatermark() override {}
 
-  // Peer metadata is populated after encode/decodeHeaders by MX HTTP filter,
-  // and after initial bytes read/written by MX TCP filter.
-  void populatePeerInfo(const StreamInfo::StreamInfo& info,
-                        const StreamInfo::FilterState& filter_state) {
-    // Compute peer info with client-side fallbacks.
-    absl::optional<Istio::Common::WorkloadMetadataObject> peer;
-    const auto* object = peerInfo(config_->reporter(), filter_state);
-    if (object) {
-      peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*object));
-    } else if (config_->reporter() == Reporter::ClientSidecar) {
-      auto upstream_info = info.upstreamInfo();
-      auto upstream_host =
-          upstream_info ? upstream_info->upstreamHost() : nullptr;
-      if (upstream_host && upstream_host->metadata()) {
-        const auto& filter_metadata =
-            upstream_host->metadata()->filter_metadata();
-        const auto& it = filter_metadata.find("istio");
-        if (it != filter_metadata.end()) {
-          const auto& workload_it = it->second.fields().find("workload");
-          if (workload_it != it->second.fields().end()) {
-            auto label_obj = Istio::Common::convertEndpointMetadata(
-                workload_it->second.string_value());
-            if (label_obj) {
-              peer.emplace(label_obj.value());
+   private:
+    // Invoked periodically for TCP streams.
+    void reportHelper(bool end_stream) {
+      const auto& info = network_read_callbacks_->connection().streamInfo();
+      // TCP MX writes to upstream stream info instead.
+      OptRef<const StreamInfo::UpstreamInfo> upstream_info;
+      if (config_->reporter() == Reporter::ClientSidecar) {
+        upstream_info = info.upstreamInfo();
+      }
+      const StreamInfo::FilterState& filter_state =
+          upstream_info && upstream_info->upstreamFilterState()
+              ? *upstream_info->upstreamFilterState()
+              : info.filterState();
+
+      Config::StreamOverrides stream(*config_, info);
+      if (!network_peer_read_) {
+        network_peer_read_ = peerInfoRead(config_->reporter(), filter_state);
+        // Report connection open once peer info is read or connection is
+        // closed.
+        if (network_peer_read_ || end_stream) {
+          populatePeerInfo(info, filter_state);
+          tags_.push_back({context_.request_protocol_, context_.tcp_});
+          populateFlagsAndConnectionSecurity(info);
+          stream.addCounter(context_.tcp_connections_opened_total_, tags_,
+                            pool_);
+        }
+      }
+      if (network_peer_read_ || end_stream) {
+        auto meter = info.getDownstreamBytesMeter();
+        if (meter) {
+          stream.addCounter(context_.tcp_sent_bytes_total_, tags_, pool_,
+                            meter->wireBytesSent() - bytes_sent_);
+          bytes_sent_ = meter->wireBytesSent();
+          stream.addCounter(context_.tcp_received_bytes_total_, tags_, pool_,
+                            meter->wireBytesReceived() - bytes_received_);
+          bytes_received_ = meter->wireBytesReceived();
+        }
+      }
+      if (end_stream) {
+        stream.addCounter(context_.tcp_connections_closed_total_, tags_, pool_);
+      }
+    }
+    void onReportTimer() {
+      reportHelper(false);
+      report_timer_->enableTimer(config_->report_duration_);
+    }
+
+    void populateFlagsAndConnectionSecurity(
+        const StreamInfo::StreamInfo& info) {
+      tags_.push_back(
+          {context_.response_flags_,
+           pool_.add(StreamInfo::ResponseFlagUtils::toShortString(info))});
+      switch (config_->reporter()) {
+        case Reporter::ServerSidecar: {
+          const auto ssl_info =
+              info.downstreamAddressProvider().sslConnection();
+          const auto mtls =
+              ssl_info != nullptr && ssl_info->peerCertificatePresented();
+          tags_.push_back({context_.connection_security_policy_,
+                           mtls ? context_.mutual_tls_ : context_.none_});
+          break;
+        }
+        default:
+          tags_.push_back(
+              {context_.connection_security_policy_, context_.unknown_});
+          break;
+      }
+    }
+
+    // Peer metadata is populated after encode/decodeHeaders by MX HTTP filter,
+    // and after initial bytes read/written by MX TCP filter.
+    void populatePeerInfo(const StreamInfo::StreamInfo& info,
+                          const StreamInfo::FilterState& filter_state) {
+      // Compute peer info with client-side fallbacks.
+      absl::optional<Istio::Common::WorkloadMetadataObject> peer;
+      const auto* object = peerInfo(config_->reporter(), filter_state);
+      if (object) {
+        peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*object));
+      } else if (config_->reporter() == Reporter::ClientSidecar) {
+        auto upstream_info = info.upstreamInfo();
+        auto upstream_host =
+            upstream_info ? upstream_info->upstreamHost() : nullptr;
+        if (upstream_host && upstream_host->metadata()) {
+          const auto& filter_metadata =
+              upstream_host->metadata()->filter_metadata();
+          const auto& it = filter_metadata.find("istio");
+          if (it != filter_metadata.end()) {
+            const auto& workload_it = it->second.fields().find("workload");
+            if (workload_it != it->second.fields().end()) {
+              auto label_obj = Istio::Common::convertEndpointMetadata(
+                  workload_it->second.string_value());
+              if (label_obj) {
+                peer.emplace(label_obj.value());
+              }
             }
           }
         }
       }
-    }
 
-    // Compute destination service with client-side fallbacks.
-    absl::string_view service_host;
-    absl::string_view service_host_name;
-    if (!config_->disable_host_header_fallback_) {
-      const auto* headers = info.getRequestHeaders();
-      if (headers && headers->Host()) {
-        service_host = headers->Host()->value().getStringView();
-        service_host_name = service_host;
+      // Compute destination service with client-side fallbacks.
+      absl::string_view service_host;
+      absl::string_view service_host_name;
+      if (!config_->disable_host_header_fallback_) {
+        const auto* headers = info.getRequestHeaders();
+        if (headers && headers->Host()) {
+          service_host = headers->Host()->value().getStringView();
+          service_host_name = service_host;
+        }
       }
-    }
-    if (info.getRouteName() == "block_all") {
-      service_host_name = "BlackHoleCluster";
-    } else if (info.getRouteName() == "allow_any") {
-      service_host_name = "PassthroughCluster";
-    } else {
-      const auto cluster_info = info.upstreamClusterInfo();
-      if (cluster_info && cluster_info.value()) {
-        const auto& cluster_name = cluster_info.value()->name();
-        if (cluster_name == "BlackHoleCluster" ||
-            cluster_name == "PassthroughCluster" ||
-            cluster_name == "InboundPassthroughClusterIpv4" ||
-            cluster_name == "InboundPassthroughClusterIpv6") {
-          service_host_name = cluster_name;
-        } else {
-          const auto& filter_metadata =
-              cluster_info.value()->metadata().filter_metadata();
-          const auto& it = filter_metadata.find("istio");
-          if (it != filter_metadata.end()) {
-            const auto& services_it = it->second.fields().find("services");
-            if (services_it != it->second.fields().end()) {
-              const auto& services = services_it->second.list_value();
-              if (services.values_size() > 0) {
-                const auto& service =
-                    services.values(0).struct_value().fields();
-                const auto& host_it = service.find("host");
-                if (host_it != service.end()) {
-                  service_host = host_it->second.string_value();
-                  service_host_name =
-                      service_host.substr(0, service_host.find_first_of('.'));
+      if (info.getRouteName() == "block_all") {
+        service_host_name = "BlackHoleCluster";
+      } else if (info.getRouteName() == "allow_any") {
+        service_host_name = "PassthroughCluster";
+      } else {
+        const auto cluster_info = info.upstreamClusterInfo();
+        if (cluster_info && cluster_info.value()) {
+          const auto& cluster_name = cluster_info.value()->name();
+          if (cluster_name == "BlackHoleCluster" ||
+              cluster_name == "PassthroughCluster" ||
+              cluster_name == "InboundPassthroughClusterIpv4" ||
+              cluster_name == "InboundPassthroughClusterIpv6") {
+            service_host_name = cluster_name;
+          } else {
+            const auto& filter_metadata =
+                cluster_info.value()->metadata().filter_metadata();
+            const auto& it = filter_metadata.find("istio");
+            if (it != filter_metadata.end()) {
+              const auto& services_it = it->second.fields().find("services");
+              if (services_it != it->second.fields().end()) {
+                const auto& services = services_it->second.list_value();
+                if (services.values_size() > 0) {
+                  const auto& service =
+                      services.values(0).struct_value().fields();
+                  const auto& host_it = service.find("host");
+                  if (host_it != service.end()) {
+                    service_host = host_it->second.string_value();
+                    service_host_name =
+                        service_host.substr(0, service_host.find_first_of('.'));
+                  }
                 }
               }
             }
           }
         }
       }
-    }
 
-    // Implements fallback from using the namespace from SAN if available to
-    // using peer metadata, otherwise.
-    absl::string_view peer_san;
-    const Ssl::ConnectionInfoConstSharedPtr ssl_info =
-        config_->reporter() == Reporter::ServerSidecar
-            ? info.downstreamAddressProvider().sslConnection()
-            : (info.upstreamInfo()
-                   ? info.upstreamInfo()->upstreamSslConnection()
-                   : nullptr);
-    if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
-      peer_san = ssl_info->uriSanPeerCertificate()[0];
-    }
-    absl::string_view peer_namespace;
-    if (!peer_san.empty()) {
-      const auto san_namespace = Utils::GetNamespace(peer_san);
-      if (san_namespace) {
-        peer_namespace = san_namespace.value();
+      // Implements fallback from using the namespace from SAN if available to
+      // using peer metadata, otherwise.
+      absl::string_view peer_san;
+      const Ssl::ConnectionInfoConstSharedPtr ssl_info =
+          config_->reporter() == Reporter::ServerSidecar
+              ? info.downstreamAddressProvider().sslConnection()
+              : (info.upstreamInfo()
+                     ? info.upstreamInfo()->upstreamSslConnection()
+                     : nullptr);
+      if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
+        peer_san = ssl_info->uriSanPeerCertificate()[0];
       }
-    }
-    if (peer_namespace.empty() && peer) {
-      peer_namespace = peer->namespace_name_;
-    }
-    absl::string_view local_san;
-    if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
-      local_san = ssl_info->uriSanLocalCertificate()[0];
-    }
+      absl::string_view peer_namespace;
+      if (!peer_san.empty()) {
+        const auto san_namespace = Utils::GetNamespace(peer_san);
+        if (san_namespace) {
+          peer_namespace = san_namespace.value();
+        }
+      }
+      if (peer_namespace.empty() && peer) {
+        peer_namespace = peer->namespace_name_;
+      }
+      absl::string_view local_san;
+      if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
+        local_san = ssl_info->uriSanLocalCertificate()[0];
+      }
 
-    switch (config_->reporter()) {
-      case Reporter::ServerSidecar: {
-        tags_.push_back(
-            {context_.source_workload_, peer && !peer->workload_name_.empty()
-                                            ? pool_.add(peer->workload_name_)
-                                            : context_.unknown_});
-        tags_.push_back({context_.source_canonical_service_,
-                         peer && !peer->canonical_name_.empty()
-                             ? pool_.add(peer->canonical_name_)
-                             : context_.unknown_});
-        tags_.push_back({context_.source_canonical_revision_,
-                         peer && !peer->canonical_revision_.empty()
-                             ? pool_.add(peer->canonical_revision_)
-                             : context_.latest_});
-        tags_.push_back({context_.source_workload_namespace_,
-                         !peer_namespace.empty() ? pool_.add(peer_namespace)
-                                                 : context_.unknown_});
-        tags_.push_back({context_.source_principal_, !peer_san.empty()
-                                                         ? pool_.add(peer_san)
-                                                         : context_.unknown_});
-        tags_.push_back({context_.source_app_, peer && !peer->app_name_.empty()
-                                                   ? pool_.add(peer->app_name_)
+      switch (config_->reporter()) {
+        case Reporter::ServerSidecar: {
+          tags_.push_back(
+              {context_.source_workload_, peer && !peer->workload_name_.empty()
+                                              ? pool_.add(peer->workload_name_)
+                                              : context_.unknown_});
+          tags_.push_back({context_.source_canonical_service_,
+                           peer && !peer->canonical_name_.empty()
+                               ? pool_.add(peer->canonical_name_)
+                               : context_.unknown_});
+          tags_.push_back({context_.source_canonical_revision_,
+                           peer && !peer->canonical_revision_.empty()
+                               ? pool_.add(peer->canonical_revision_)
+                               : context_.latest_});
+          tags_.push_back({context_.source_workload_namespace_,
+                           !peer_namespace.empty() ? pool_.add(peer_namespace)
                                                    : context_.unknown_});
-        tags_.push_back(
-            {context_.source_version_, peer && !peer->app_version_.empty()
-                                           ? pool_.add(peer->app_version_)
-                                           : context_.unknown_});
-        tags_.push_back(
-            {context_.source_cluster_, peer && !peer->cluster_name_.empty()
-                                           ? pool_.add(peer->cluster_name_)
-                                           : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_workload_, context_.workload_name_});
-        tags_.push_back(
-            {context_.destination_workload_namespace_, context_.namespace_});
-        tags_.push_back(
-            {context_.destination_principal_,
-             !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
-        tags_.push_back({context_.destination_app_, context_.app_name_});
-        tags_.push_back({context_.destination_version_, context_.app_version_});
-        tags_.push_back({context_.destination_service_,
-                         service_host.empty() ? context_.canonical_name_
-                                              : pool_.add(service_host)});
-        tags_.push_back({context_.destination_canonical_service_,
-                         context_.canonical_name_});
-        tags_.push_back({context_.destination_canonical_revision_,
-                         context_.canonical_revision_});
-        tags_.push_back({context_.destination_service_name_,
-                         service_host_name.empty()
-                             ? context_.canonical_name_
-                             : pool_.add(service_host_name)});
-        tags_.push_back(
-            {context_.destination_service_namespace_, context_.namespace_});
-        tags_.push_back(
-            {context_.destination_cluster_, context_.cluster_name_});
+          tags_.push_back(
+              {context_.source_principal_,
+               !peer_san.empty() ? pool_.add(peer_san) : context_.unknown_});
+          tags_.push_back(
+              {context_.source_app_, peer && !peer->app_name_.empty()
+                                         ? pool_.add(peer->app_name_)
+                                         : context_.unknown_});
+          tags_.push_back(
+              {context_.source_version_, peer && !peer->app_version_.empty()
+                                             ? pool_.add(peer->app_version_)
+                                             : context_.unknown_});
+          tags_.push_back(
+              {context_.source_cluster_, peer && !peer->cluster_name_.empty()
+                                             ? pool_.add(peer->cluster_name_)
+                                             : context_.unknown_});
+          tags_.push_back(
+              {context_.destination_workload_, context_.workload_name_});
+          tags_.push_back(
+              {context_.destination_workload_namespace_, context_.namespace_});
+          tags_.push_back(
+              {context_.destination_principal_,
+               !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
+          tags_.push_back({context_.destination_app_, context_.app_name_});
+          tags_.push_back(
+              {context_.destination_version_, context_.app_version_});
+          tags_.push_back({context_.destination_service_,
+                           service_host.empty() ? context_.canonical_name_
+                                                : pool_.add(service_host)});
+          tags_.push_back({context_.destination_canonical_service_,
+                           context_.canonical_name_});
+          tags_.push_back({context_.destination_canonical_revision_,
+                           context_.canonical_revision_});
+          tags_.push_back({context_.destination_service_name_,
+                           service_host_name.empty()
+                               ? context_.canonical_name_
+                               : pool_.add(service_host_name)});
+          tags_.push_back(
+              {context_.destination_service_namespace_, context_.namespace_});
+          tags_.push_back(
+              {context_.destination_cluster_, context_.cluster_name_});
 
-        break;
+          break;
+        }
+        case Reporter::ClientSidecar: {
+          tags_.push_back({context_.source_workload_, context_.workload_name_});
+          tags_.push_back(
+              {context_.source_canonical_service_, context_.canonical_name_});
+          tags_.push_back({context_.source_canonical_revision_,
+                           context_.canonical_revision_});
+          tags_.push_back(
+              {context_.source_workload_namespace_, context_.namespace_});
+          tags_.push_back(
+              {context_.source_principal_,
+               !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
+          tags_.push_back({context_.source_app_, context_.app_name_});
+          tags_.push_back({context_.source_version_, context_.app_version_});
+          tags_.push_back({context_.source_cluster_, context_.cluster_name_});
+          tags_.push_back({context_.destination_workload_,
+                           peer && !peer->workload_name_.empty()
+                               ? pool_.add(peer->workload_name_)
+                               : context_.unknown_});
+          tags_.push_back({context_.destination_workload_namespace_,
+                           !peer_namespace.empty() ? pool_.add(peer_namespace)
+                                                   : context_.unknown_});
+          tags_.push_back(
+              {context_.destination_principal_,
+               !peer_san.empty() ? pool_.add(peer_san) : context_.unknown_});
+          tags_.push_back(
+              {context_.destination_app_, peer && !peer->app_name_.empty()
+                                              ? pool_.add(peer->app_name_)
+                                              : context_.unknown_});
+          tags_.push_back({context_.destination_version_,
+                           peer && !peer->app_version_.empty()
+                               ? pool_.add(peer->app_version_)
+                               : context_.unknown_});
+          tags_.push_back({context_.destination_service_,
+                           service_host.empty() ? context_.unknown_
+                                                : pool_.add(service_host)});
+          tags_.push_back({context_.destination_canonical_service_,
+                           peer && !peer->canonical_name_.empty()
+                               ? pool_.add(peer->canonical_name_)
+                               : context_.unknown_});
+          tags_.push_back({context_.destination_canonical_revision_,
+                           peer && !peer->canonical_revision_.empty()
+                               ? pool_.add(peer->canonical_revision_)
+                               : context_.latest_});
+          tags_.push_back({context_.destination_service_name_,
+                           service_host_name.empty()
+                               ? context_.unknown_
+                               : pool_.add(service_host_name)});
+          tags_.push_back({context_.destination_service_namespace_,
+                           !peer_namespace.empty() ? pool_.add(peer_namespace)
+                                                   : context_.unknown_});
+          tags_.push_back({context_.destination_cluster_,
+                           peer && !peer->cluster_name_.empty()
+                               ? pool_.add(peer->cluster_name_)
+                               : context_.unknown_});
+          break;
+        }
+        default:
+          break;
       }
-      case Reporter::ClientSidecar: {
-        tags_.push_back({context_.source_workload_, context_.workload_name_});
-        tags_.push_back(
-            {context_.source_canonical_service_, context_.canonical_name_});
-        tags_.push_back({context_.source_canonical_revision_,
-                         context_.canonical_revision_});
-        tags_.push_back(
-            {context_.source_workload_namespace_, context_.namespace_});
-        tags_.push_back({context_.source_principal_, !local_san.empty()
-                                                         ? pool_.add(local_san)
-                                                         : context_.unknown_});
-        tags_.push_back({context_.source_app_, context_.app_name_});
-        tags_.push_back({context_.source_version_, context_.app_version_});
-        tags_.push_back({context_.source_cluster_, context_.cluster_name_});
-        tags_.push_back({context_.destination_workload_,
-                         peer && !peer->workload_name_.empty()
-                             ? pool_.add(peer->workload_name_)
-                             : context_.unknown_});
-        tags_.push_back({context_.destination_workload_namespace_,
-                         !peer_namespace.empty() ? pool_.add(peer_namespace)
-                                                 : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_principal_,
-             !peer_san.empty() ? pool_.add(peer_san) : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_app_, peer && !peer->app_name_.empty()
-                                            ? pool_.add(peer->app_name_)
-                                            : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_version_, peer && !peer->app_version_.empty()
-                                                ? pool_.add(peer->app_version_)
-                                                : context_.unknown_});
-        tags_.push_back({context_.destination_service_,
-                         service_host.empty() ? context_.unknown_
-                                              : pool_.add(service_host)});
-        tags_.push_back({context_.destination_canonical_service_,
-                         peer && !peer->canonical_name_.empty()
-                             ? pool_.add(peer->canonical_name_)
-                             : context_.unknown_});
-        tags_.push_back({context_.destination_canonical_revision_,
-                         peer && !peer->canonical_revision_.empty()
-                             ? pool_.add(peer->canonical_revision_)
-                             : context_.latest_});
-        tags_.push_back({context_.destination_service_name_,
-                         service_host_name.empty()
-                             ? context_.unknown_
-                             : pool_.add(service_host_name)});
-        tags_.push_back({context_.destination_service_namespace_,
-                         !peer_namespace.empty() ? pool_.add(peer_namespace)
-                                                 : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_cluster_, peer && !peer->cluster_name_.empty()
-                                                ? pool_.add(peer->cluster_name_)
-                                                : context_.unknown_});
-        break;
-      }
-      default:
-        break;
     }
-  }
 
-  ConfigSharedPtr config_;
-  Context& context_;
-  Stats::StatNameDynamicPool pool_;
-  Stats::StatNameTagVector tags_;
-  Event::TimerPtr report_timer_{nullptr};
-  Network::ReadFilterCallbacks* network_read_callbacks_;
-  bool network_peer_read_{false};
-  uint64_t bytes_sent_{0};
-  uint64_t bytes_received_{0};
-};
+    ConfigSharedPtr config_;
+    Context& context_;
+    Stats::StatNameDynamicPool pool_;
+    Stats::StatNameTagVector tags_;
+    Event::TimerPtr report_timer_{nullptr};
+    Network::ReadFilterCallbacks* network_read_callbacks_;
+    bool network_peer_read_{false};
+    uint64_t bytes_sent_{0};
+    uint64_t bytes_received_{0};
+  };
 
 }  // namespace
 
