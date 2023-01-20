@@ -309,13 +309,13 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
   absl::flat_hash_map<Stats::StatName, TagAdditions> tag_additions_;
 
   void initialize(const StreamInfo::StreamInfo& info,
-                   const Http::RequestHeaderMap* request_headers,
-                   const Http::ResponseHeaderMap* response_headers,
-                   const Http::ResponseTrailerMap* response_trailers) {
-     activation_info_ = &info;
-     activation_request_headers_ = request_headers;
-     activation_response_headers_ = response_headers;
-     activation_response_trailers_ = response_trailers;
+                  const Http::RequestHeaderMap* request_headers,
+                  const Http::ResponseHeaderMap* response_headers,
+                  const Http::ResponseTrailerMap* response_trailers) {
+    activation_info_ = &info;
+    activation_request_headers_ = request_headers;
+    activation_response_headers_ = response_headers;
+    activation_response_trailers_ = response_trailers;
   }
 
   void reset() { resetActivation(); }
@@ -327,7 +327,7 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
       return obj;
     }
     if (name == "node") {
-          return Filters::Common::Expr::CelProtoWrapper::CreateMessage(
+      return Filters::Common::Expr::CelProtoWrapper::CreateMessage(
           &context_->node_, arena);
     }
     if (activation_info_) {
