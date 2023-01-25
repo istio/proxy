@@ -29,53 +29,48 @@ namespace Metric {
 namespace {
 
 class GoogleUserProjHeaderInterceptor : public grpc::experimental::Interceptor {
- public:
-  GoogleUserProjHeaderInterceptor(const std::string& project_id)
-      : project_id_(project_id) {}
+public:
+  GoogleUserProjHeaderInterceptor(const std::string& project_id) : project_id_(project_id) {}
 
   virtual void Intercept(grpc::experimental::InterceptorBatchMethods* methods) {
     if (methods->QueryInterceptionHookPoint(
-            grpc::experimental::InterceptionHookPoints::
-                PRE_SEND_INITIAL_METADATA)) {
+            grpc::experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* metadata_map = methods->GetSendInitialMetadata();
       if (metadata_map != nullptr) {
-        metadata_map->insert(
-            std::make_pair("x-goog-user-project", project_id_));
+        metadata_map->insert(std::make_pair("x-goog-user-project", project_id_));
       }
     }
     methods->Proceed();
   }
 
- private:
+private:
   const std::string& project_id_;
 };
 
 class GoogleUserProjHeaderInterceptorFactory
     : public grpc::experimental::ClientInterceptorFactoryInterface {
- public:
-  GoogleUserProjHeaderInterceptorFactory(const std::string& project_id)
-      : project_id_(project_id) {}
+public:
+  GoogleUserProjHeaderInterceptorFactory(const std::string& project_id) : project_id_(project_id) {}
 
-  virtual grpc::experimental::Interceptor* CreateClientInterceptor(
-      grpc::experimental::ClientRpcInfo*) override {
+  virtual grpc::experimental::Interceptor*
+  CreateClientInterceptor(grpc::experimental::ClientRpcInfo*) override {
     return new GoogleUserProjHeaderInterceptor(project_id_);
   }
 
- private:
+private:
   std::string project_id_;
 };
 
-}  // namespace
+} // namespace
 
 using namespace Extensions::Stackdriver::Common;
 using namespace opencensus::exporters::stats;
 using namespace opencensus::stats;
 
 // Gets opencensus stackdriver exporter options.
-StackdriverOptions getStackdriverOptions(
-    const Wasm::Common::FlatNode& local_node_info,
-    const ::Extensions::Stackdriver::Common::StackdriverStubOption&
-        stub_option) {
+StackdriverOptions
+getStackdriverOptions(const Wasm::Common::FlatNode& local_node_info,
+                      const ::Extensions::Stackdriver::Common::StackdriverStubOption& stub_option) {
   StackdriverOptions options;
   auto platform_metadata = local_node_info.platform_metadata();
   if (platform_metadata) {
@@ -97,25 +92,20 @@ StackdriverOptions getStackdriverOptions(
   auto channel_creds = grpc::SslCredentials(ssl_creds_options);
 
   if (!stub_option.insecure_endpoint.empty()) {
-    auto channel = grpc::CreateChannel(stub_option.insecure_endpoint,
-                                       grpc::InsecureChannelCredentials());
-    options.metric_service_stub =
-        google::monitoring::v3::MetricService::NewStub(channel);
+    auto channel =
+        grpc::CreateChannel(stub_option.insecure_endpoint, grpc::InsecureChannelCredentials());
+    options.metric_service_stub = google::monitoring::v3::MetricService::NewStub(channel);
   } else if (!stub_option.sts_port.empty()) {
     ::grpc::experimental::StsCredentialsOptions sts_options;
-    std::string token_path = stub_option.test_token_path.empty()
-                                 ? kSTSSubjectTokenPath
-                                 : stub_option.test_token_path;
+    std::string token_path =
+        stub_option.test_token_path.empty() ? kSTSSubjectTokenPath : stub_option.test_token_path;
     ::Extensions::Stackdriver::Common::setSTSCallCredentialOptions(
         &sts_options, stub_option.sts_port, token_path);
     auto call_creds = grpc::experimental::StsCredentials(sts_options);
     grpc::ChannelArguments args;
-    std::vector<
-        std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
-        creators;
+    std::vector<std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>> creators;
     auto header_factory =
-        std::make_unique<GoogleUserProjHeaderInterceptorFactory>(
-            options.project_id);
+        std::make_unique<GoogleUserProjHeaderInterceptorFactory>(options.project_id);
     creators.push_back(std::move(header_factory));
     // When STS is turned on, first check if secure_endpoint is set or not,
     // which indicates whether this is for testing senario. If not set, check
@@ -128,21 +118,16 @@ StackdriverOptions getStackdriverOptions(
       monitoring_endpoint = stub_option.monitoring_endpoint;
     }
     auto channel = ::grpc::experimental::CreateCustomChannelWithInterceptors(
-        monitoring_endpoint,
-        grpc::CompositeChannelCredentials(channel_creds, call_creds), args,
+        monitoring_endpoint, grpc::CompositeChannelCredentials(channel_creds, call_creds), args,
         std::move(creators));
-    options.metric_service_stub =
-        google::monitoring::v3::MetricService::NewStub(channel);
+    options.metric_service_stub = google::monitoring::v3::MetricService::NewStub(channel);
   } else if (!stub_option.secure_endpoint.empty()) {
-    auto channel =
-        grpc::CreateChannel(stub_option.secure_endpoint, channel_creds);
-    options.metric_service_stub =
-        google::monitoring::v3::MetricService::NewStub(channel);
+    auto channel = grpc::CreateChannel(stub_option.secure_endpoint, channel_creds);
+    options.metric_service_stub = google::monitoring::v3::MetricService::NewStub(channel);
   } else if (!stub_option.monitoring_endpoint.empty()) {
-    auto channel = ::grpc::CreateChannel(stub_option.monitoring_endpoint,
-                                         ::grpc::GoogleDefaultCredentials());
-    options.metric_service_stub =
-        google::monitoring::v3::MetricService::NewStub(channel);
+    auto channel =
+        ::grpc::CreateChannel(stub_option.monitoring_endpoint, ::grpc::GoogleDefaultCredentials());
+    options.metric_service_stub = google::monitoring::v3::MetricService::NewStub(channel);
   }
 
   std::string server_type = kContainerMonitoredResource;
@@ -166,43 +151,29 @@ StackdriverOptions getStackdriverOptions(
 
   // Get server and client monitored resource.
   google::api::MonitoredResource server_monitored_resource;
-  Common::getMonitoredResource(server_type, local_node_info,
-                               &server_monitored_resource);
+  Common::getMonitoredResource(server_type, local_node_info, &server_monitored_resource);
   google::api::MonitoredResource client_monitored_resource;
-  Common::getMonitoredResource(client_type, local_node_info,
-                               &client_monitored_resource);
-  options.per_metric_monitored_resource[kServerRequestCountView] =
-      server_monitored_resource;
-  options.per_metric_monitored_resource[kServerRequestBytesView] =
-      server_monitored_resource;
-  options.per_metric_monitored_resource[kServerResponseBytesView] =
-      server_monitored_resource;
-  options.per_metric_monitored_resource[kServerResponseLatenciesView] =
-      server_monitored_resource;
+  Common::getMonitoredResource(client_type, local_node_info, &client_monitored_resource);
+  options.per_metric_monitored_resource[kServerRequestCountView] = server_monitored_resource;
+  options.per_metric_monitored_resource[kServerRequestBytesView] = server_monitored_resource;
+  options.per_metric_monitored_resource[kServerResponseBytesView] = server_monitored_resource;
+  options.per_metric_monitored_resource[kServerResponseLatenciesView] = server_monitored_resource;
   options.per_metric_monitored_resource[kServerConnectionsOpenCountView] =
       server_monitored_resource;
   options.per_metric_monitored_resource[kServerConnectionsCloseCountView] =
       server_monitored_resource;
-  options.per_metric_monitored_resource[kServerReceivedBytesCountView] =
-      server_monitored_resource;
-  options.per_metric_monitored_resource[kServerSentBytesCountView] =
-      server_monitored_resource;
-  options.per_metric_monitored_resource[kClientRequestCountView] =
-      client_monitored_resource;
-  options.per_metric_monitored_resource[kClientRequestBytesView] =
-      client_monitored_resource;
-  options.per_metric_monitored_resource[kClientResponseBytesView] =
-      client_monitored_resource;
-  options.per_metric_monitored_resource[kClientRoundtripLatenciesView] =
-      client_monitored_resource;
+  options.per_metric_monitored_resource[kServerReceivedBytesCountView] = server_monitored_resource;
+  options.per_metric_monitored_resource[kServerSentBytesCountView] = server_monitored_resource;
+  options.per_metric_monitored_resource[kClientRequestCountView] = client_monitored_resource;
+  options.per_metric_monitored_resource[kClientRequestBytesView] = client_monitored_resource;
+  options.per_metric_monitored_resource[kClientResponseBytesView] = client_monitored_resource;
+  options.per_metric_monitored_resource[kClientRoundtripLatenciesView] = client_monitored_resource;
   options.per_metric_monitored_resource[kClientConnectionsOpenCountView] =
       client_monitored_resource;
   options.per_metric_monitored_resource[kClientConnectionsCloseCountView] =
       client_monitored_resource;
-  options.per_metric_monitored_resource[kClientReceivedBytesCountView] =
-      client_monitored_resource;
-  options.per_metric_monitored_resource[kClientSentBytesCountView] =
-      client_monitored_resource;
+  options.per_metric_monitored_resource[kClientReceivedBytesCountView] = client_monitored_resource;
+  options.per_metric_monitored_resource[kClientSentBytesCountView] = client_monitored_resource;
 
   options.metric_name_prefix = kIstioMetricPrefix;
   return options;
@@ -211,126 +182,120 @@ StackdriverOptions getStackdriverOptions(
 /*
  *  view function macros
  */
-#define REGISTER_COUNT_VIEW(_v)                                           \
-  void register##_v##View(absl::Duration expiry_duration,                 \
-                          std::vector<std::string> dropped_metrics) {     \
-    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), \
-                          k##_v##View);                                   \
-    if (iter != dropped_metrics.end()) {                                  \
-      return;                                                             \
-    }                                                                     \
-    const ViewDescriptor view_descriptor =                                \
-        ViewDescriptor()                                                  \
-            .set_name(k##_v##View)                                        \
-            .set_measure(k##_v##Measure)                                  \
-            .set_expiry_duration(expiry_duration)                         \
-            .set_aggregation(Aggregation::Count()) ADD_TAGS;              \
-    View view(view_descriptor);                                           \
-    view_descriptor.RegisterForExport();                                  \
+#define REGISTER_COUNT_VIEW(_v)                                                                    \
+  void register##_v##View(absl::Duration expiry_duration,                                          \
+                          std::vector<std::string> dropped_metrics) {                              \
+    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), k##_v##View);            \
+    if (iter != dropped_metrics.end()) {                                                           \
+      return;                                                                                      \
+    }                                                                                              \
+    const ViewDescriptor view_descriptor = ViewDescriptor()                                        \
+                                               .set_name(k##_v##View)                              \
+                                               .set_measure(k##_v##Measure)                        \
+                                               .set_expiry_duration(expiry_duration)               \
+                                               .set_aggregation(Aggregation::Count()) ADD_TAGS;    \
+    View view(view_descriptor);                                                                    \
+    view_descriptor.RegisterForExport();                                                           \
   }
 
-#define REGISTER_TCP_COUNT_VIEW(_v)                                       \
-  void register##_v##View(absl::Duration expiry_duration,                 \
-                          std::vector<std::string> dropped_metrics) {     \
-    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), \
-                          k##_v##View);                                   \
-    if (iter != dropped_metrics.end()) {                                  \
-      return;                                                             \
-    }                                                                     \
-    const ViewDescriptor view_descriptor =                                \
-        ViewDescriptor()                                                  \
-            .set_name(k##_v##View)                                        \
-            .set_measure(k##_v##Measure)                                  \
-            .set_expiry_duration(expiry_duration)                         \
-            .set_aggregation(Aggregation::Count()) ADD_COMMON_TAGS;       \
-    View view(view_descriptor);                                           \
-    view_descriptor.RegisterForExport();                                  \
+#define REGISTER_TCP_COUNT_VIEW(_v)                                                                \
+  void register##_v##View(absl::Duration expiry_duration,                                          \
+                          std::vector<std::string> dropped_metrics) {                              \
+    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), k##_v##View);            \
+    if (iter != dropped_metrics.end()) {                                                           \
+      return;                                                                                      \
+    }                                                                                              \
+    const ViewDescriptor view_descriptor = ViewDescriptor()                                        \
+                                               .set_name(k##_v##View)                              \
+                                               .set_measure(k##_v##Measure)                        \
+                                               .set_expiry_duration(expiry_duration)               \
+                                               .set_aggregation(Aggregation::Count())              \
+                                                   ADD_COMMON_TAGS;                                \
+    View view(view_descriptor);                                                                    \
+    view_descriptor.RegisterForExport();                                                           \
   }
 
-#define REGISTER_TCP_SUM_VIEW(_v)                                         \
-  void register##_v##View(absl::Duration expiry_duration,                 \
-                          std::vector<std::string> dropped_metrics) {     \
-    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), \
-                          k##_v##View);                                   \
-    if (iter != dropped_metrics.end()) {                                  \
-      return;                                                             \
-    }                                                                     \
-    const ViewDescriptor view_descriptor =                                \
-        ViewDescriptor()                                                  \
-            .set_name(k##_v##View)                                        \
-            .set_measure(k##_v##Measure)                                  \
-            .set_expiry_duration(expiry_duration)                         \
-            .set_aggregation(Aggregation::Sum()) ADD_COMMON_TAGS;         \
-    View view(view_descriptor);                                           \
-    view_descriptor.RegisterForExport();                                  \
+#define REGISTER_TCP_SUM_VIEW(_v)                                                                  \
+  void register##_v##View(absl::Duration expiry_duration,                                          \
+                          std::vector<std::string> dropped_metrics) {                              \
+    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), k##_v##View);            \
+    if (iter != dropped_metrics.end()) {                                                           \
+      return;                                                                                      \
+    }                                                                                              \
+    const ViewDescriptor view_descriptor = ViewDescriptor()                                        \
+                                               .set_name(k##_v##View)                              \
+                                               .set_measure(k##_v##Measure)                        \
+                                               .set_expiry_duration(expiry_duration)               \
+                                               .set_aggregation(Aggregation::Sum())                \
+                                                   ADD_COMMON_TAGS;                                \
+    View view(view_descriptor);                                                                    \
+    view_descriptor.RegisterForExport();                                                           \
   }
 
-#define REGISTER_DISTRIBUTION_VIEW(_v)                                    \
-  void register##_v##View(absl::Duration expiry_duration,                 \
-                          std::vector<std::string> dropped_metrics) {     \
-    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), \
-                          k##_v##View);                                   \
-    if (iter != dropped_metrics.end()) {                                  \
-      return;                                                             \
-    }                                                                     \
-    const ViewDescriptor view_descriptor =                                \
-        ViewDescriptor()                                                  \
-            .set_name(k##_v##View)                                        \
-            .set_measure(k##_v##Measure)                                  \
-            .set_expiry_duration(expiry_duration)                         \
-            .set_aggregation(Aggregation::Distribution(                   \
-                BucketBoundaries::Exponential(20, 1, 2))) ADD_TAGS;       \
-    View view(view_descriptor);                                           \
-    view_descriptor.RegisterForExport();                                  \
+#define REGISTER_DISTRIBUTION_VIEW(_v)                                                             \
+  void register##_v##View(absl::Duration expiry_duration,                                          \
+                          std::vector<std::string> dropped_metrics) {                              \
+    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), k##_v##View);            \
+    if (iter != dropped_metrics.end()) {                                                           \
+      return;                                                                                      \
+    }                                                                                              \
+    const ViewDescriptor view_descriptor =                                                         \
+        ViewDescriptor()                                                                           \
+            .set_name(k##_v##View)                                                                 \
+            .set_measure(k##_v##Measure)                                                           \
+            .set_expiry_duration(expiry_duration)                                                  \
+            .set_aggregation(Aggregation::Distribution(BucketBoundaries::Exponential(20, 1, 2)))   \
+                ADD_TAGS;                                                                          \
+    View view(view_descriptor);                                                                    \
+    view_descriptor.RegisterForExport();                                                           \
   }
 
-#define REGISTER_BYTES_DISTRIBUTION_VIEW(_v)                              \
-  void register##_v##View(absl::Duration expiry_duration,                 \
-                          std::vector<std::string> dropped_metrics) {     \
-    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), \
-                          k##_v##View);                                   \
-    if (iter != dropped_metrics.end()) {                                  \
-      return;                                                             \
-    }                                                                     \
-    const ViewDescriptor view_descriptor =                                \
-        ViewDescriptor()                                                  \
-            .set_name(k##_v##View)                                        \
-            .set_measure(k##_v##Measure)                                  \
-            .set_expiry_duration(expiry_duration)                         \
-            .set_aggregation(Aggregation::Distribution(                   \
-                BucketBoundaries::Exponential(7, 1, 10))) ADD_TAGS;       \
-    View view(view_descriptor);                                           \
-    view_descriptor.RegisterForExport();                                  \
+#define REGISTER_BYTES_DISTRIBUTION_VIEW(_v)                                                       \
+  void register##_v##View(absl::Duration expiry_duration,                                          \
+                          std::vector<std::string> dropped_metrics) {                              \
+    auto iter = std::find(dropped_metrics.begin(), dropped_metrics.end(), k##_v##View);            \
+    if (iter != dropped_metrics.end()) {                                                           \
+      return;                                                                                      \
+    }                                                                                              \
+    const ViewDescriptor view_descriptor =                                                         \
+        ViewDescriptor()                                                                           \
+            .set_name(k##_v##View)                                                                 \
+            .set_measure(k##_v##Measure)                                                           \
+            .set_expiry_duration(expiry_duration)                                                  \
+            .set_aggregation(Aggregation::Distribution(BucketBoundaries::Exponential(7, 1, 10)))   \
+                ADD_TAGS;                                                                          \
+    View view(view_descriptor);                                                                    \
+    view_descriptor.RegisterForExport();                                                           \
   }
 
 #define ADD_TAGS ADD_COMMON_TAGS ADD_HTTP_GRPC_TAGS
 
-#define ADD_HTTP_GRPC_TAGS           \
-  .add_column(requestOperationKey()) \
-      .add_column(responseCodeKey()) \
-      .add_column(apiVersionKey())   \
+#define ADD_HTTP_GRPC_TAGS                                                                         \
+  .add_column(requestOperationKey())                                                               \
+      .add_column(responseCodeKey())                                                               \
+      .add_column(apiVersionKey())                                                                 \
       .add_column(apiNameKey())
 
-#define ADD_COMMON_TAGS                                      \
-  .add_column(requestProtocolKey())                          \
-      .add_column(serviceAuthenticationPolicyKey())          \
-      .add_column(meshUIDKey())                              \
-      .add_column(destinationServiceNameKey())               \
-      .add_column(destinationServiceNamespaceKey())          \
-      .add_column(destinationPortKey())                      \
-      .add_column(sourcePrincipalKey())                      \
-      .add_column(sourceWorkloadNameKey())                   \
-      .add_column(sourceWorkloadNamespaceKey())              \
-      .add_column(sourceOwnerKey())                          \
-      .add_column(destinationPrincipalKey())                 \
-      .add_column(destinationWorkloadNameKey())              \
-      .add_column(destinationWorkloadNamespaceKey())         \
-      .add_column(destinationOwnerKey())                     \
-      .add_column(destinationCanonicalServiceNameKey())      \
-      .add_column(destinationCanonicalServiceNamespaceKey()) \
-      .add_column(sourceCanonicalServiceNameKey())           \
-      .add_column(sourceCanonicalServiceNamespaceKey())      \
-      .add_column(destinationCanonicalRevisionKey())         \
+#define ADD_COMMON_TAGS                                                                            \
+  .add_column(requestProtocolKey())                                                                \
+      .add_column(serviceAuthenticationPolicyKey())                                                \
+      .add_column(meshUIDKey())                                                                    \
+      .add_column(destinationServiceNameKey())                                                     \
+      .add_column(destinationServiceNamespaceKey())                                                \
+      .add_column(destinationPortKey())                                                            \
+      .add_column(sourcePrincipalKey())                                                            \
+      .add_column(sourceWorkloadNameKey())                                                         \
+      .add_column(sourceWorkloadNamespaceKey())                                                    \
+      .add_column(sourceOwnerKey())                                                                \
+      .add_column(destinationPrincipalKey())                                                       \
+      .add_column(destinationWorkloadNameKey())                                                    \
+      .add_column(destinationWorkloadNamespaceKey())                                               \
+      .add_column(destinationOwnerKey())                                                           \
+      .add_column(destinationCanonicalServiceNameKey())                                            \
+      .add_column(destinationCanonicalServiceNamespaceKey())                                       \
+      .add_column(sourceCanonicalServiceNameKey())                                                 \
+      .add_column(sourceCanonicalServiceNamespaceKey())                                            \
+      .add_column(destinationCanonicalRevisionKey())                                               \
       .add_column(sourceCanonicalRevisionKey())
 
 // Functions to register opencensus views to export.
@@ -354,11 +319,10 @@ REGISTER_TCP_SUM_VIEW(ClientSentBytesCount)
 /*
  * measure function macros
  */
-#define MEASURE_FUNC(_fn, _m, _u, _t)                   \
-  Measure##_t _fn##Measure() {                          \
-    static const Measure##_t measure =                  \
-        Measure##_t::Register(k##_m##Measure, "", #_u); \
-    return measure;                                     \
+#define MEASURE_FUNC(_fn, _m, _u, _t)                                                              \
+  Measure##_t _fn##Measure() {                                                                     \
+    static const Measure##_t measure = Measure##_t::Register(k##_m##Measure, "", #_u);             \
+    return measure;                                                                                \
   }
 
 // Meausre functions
@@ -427,10 +391,10 @@ void dropViews(const std::vector<std::string>& dropped_metrics) {
 /*
  * tag key function macros
  */
-#define TAG_KEY_FUNC(_t, _f)                                              \
-  opencensus::tags::TagKey _f##Key() {                                    \
-    static const auto _t##_key = opencensus::tags::TagKey::Register(#_t); \
-    return _t##_key;                                                      \
+#define TAG_KEY_FUNC(_t, _f)                                                                       \
+  opencensus::tags::TagKey _f##Key() {                                                             \
+    static const auto _t##_key = opencensus::tags::TagKey::Register(#_t);                          \
+    return _t##_key;                                                                               \
   }
 
 // Tag key functions
@@ -452,17 +416,14 @@ TAG_KEY_FUNC(destination_workload_name, destinationWorkloadName)
 TAG_KEY_FUNC(destination_workload_namespace, destinationWorkloadNamespace)
 TAG_KEY_FUNC(destination_owner, destinationOwner)
 TAG_KEY_FUNC(source_canonical_service_name, sourceCanonicalServiceName)
-TAG_KEY_FUNC(source_canonical_service_namespace,
-             sourceCanonicalServiceNamespace)
-TAG_KEY_FUNC(destination_canonical_service_name,
-             destinationCanonicalServiceName)
-TAG_KEY_FUNC(destination_canonical_service_namespace,
-             destinationCanonicalServiceNamespace)
+TAG_KEY_FUNC(source_canonical_service_namespace, sourceCanonicalServiceNamespace)
+TAG_KEY_FUNC(destination_canonical_service_name, destinationCanonicalServiceName)
+TAG_KEY_FUNC(destination_canonical_service_namespace, destinationCanonicalServiceNamespace)
 TAG_KEY_FUNC(source_canonical_revision, sourceCanonicalRevision)
 TAG_KEY_FUNC(destination_canonical_revision, destinationCanonicalRevision)
 TAG_KEY_FUNC(api_name, apiName)
 TAG_KEY_FUNC(api_version, apiVersion)
 
-}  // namespace Metric
-}  // namespace Stackdriver
-}  // namespace Extensions
+} // namespace Metric
+} // namespace Stackdriver
+} // namespace Extensions

@@ -27,13 +27,11 @@ Network::FilterFactoryCb
 ForwardDownstreamSniNetworkFilterConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message&, Server::Configuration::FactoryContext&) {
   return [](Network::FilterManager& filter_manager) -> void {
-    filter_manager.addReadFilter(
-        std::make_shared<ForwardDownstreamSniFilter>());
+    filter_manager.addReadFilter(std::make_shared<ForwardDownstreamSniFilter>());
   };
 }
 
-ProtobufTypes::MessagePtr
-ForwardDownstreamSniNetworkFilterConfigFactory::createEmptyConfigProto() {
+ProtobufTypes::MessagePtr ForwardDownstreamSniNetworkFilterConfigFactory::createEmptyConfigProto() {
   return std::make_unique<io::istio::tcp::forward_downstream_sni::v1::Config>();
 }
 
@@ -41,11 +39,10 @@ ForwardDownstreamSniNetworkFilterConfigFactory::createEmptyConfigProto() {
  * Static registration for the forward_original_sni filter. @see
  * RegisterFactory.
  */
-static Registry::RegisterFactory<
-    ForwardDownstreamSniNetworkFilterConfigFactory,
-    Server::Configuration::NamedNetworkFilterConfigFactory>
+static Registry::RegisterFactory<ForwardDownstreamSniNetworkFilterConfigFactory,
+                                 Server::Configuration::NamedNetworkFilterConfigFactory>
     registered_;
 
-}  // namespace ForwardDownstreamSni
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace ForwardDownstreamSni
+} // namespace Tcp
+} // namespace Envoy

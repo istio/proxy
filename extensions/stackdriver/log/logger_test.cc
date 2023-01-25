@@ -36,11 +36,11 @@ using google::protobuf::util::TimeUtil;
 namespace {
 
 class MockExporter : public Exporter {
- public:
-  MOCK_METHOD2(exportLogs,
-               void(const std::vector<std::unique_ptr<
-                        const google::logging::v2::WriteLogEntriesRequest>>&,
-                    bool));
+public:
+  MOCK_METHOD2(
+      exportLogs,
+      void(const std::vector<std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&,
+           bool));
 };
 
 const ::Wasm::Common::FlatNode& nodeInfo(flatbuffers::FlatBufferBuilder& fbb) {
@@ -49,17 +49,13 @@ const ::Wasm::Common::FlatNode& nodeInfo(flatbuffers::FlatBufferBuilder& fbb) {
   auto workload_name = fbb.CreateString("test_workload");
   auto mesh_id = fbb.CreateString("mesh");
   std::vector<flatbuffers::Offset<::Wasm::Common::KeyVal>> platform_metadata = {
-      ::Wasm::Common::CreateKeyVal(fbb,
-                                   fbb.CreateString(Common::kGCPProjectKey),
+      ::Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(Common::kGCPProjectKey),
                                    fbb.CreateString("test_project")),
-      ::Wasm::Common::CreateKeyVal(fbb,
-                                   fbb.CreateString(Common::kGCPClusterNameKey),
+      ::Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(Common::kGCPClusterNameKey),
                                    fbb.CreateString("test_cluster")),
-      ::Wasm::Common::CreateKeyVal(fbb,
-                                   fbb.CreateString(Common::kGCPLocationKey),
+      ::Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(Common::kGCPLocationKey),
                                    fbb.CreateString("test_location"))};
-  auto platform_metadata_offset =
-      fbb.CreateVectorOfSortedTables(&platform_metadata);
+  auto platform_metadata_offset = fbb.CreateVectorOfSortedTables(&platform_metadata);
   ::Wasm::Common::FlatNodeBuilder node(fbb);
   node.add_name(name);
   node.add_namespace_(namespace_);
@@ -68,27 +64,21 @@ const ::Wasm::Common::FlatNode& nodeInfo(flatbuffers::FlatBufferBuilder& fbb) {
   node.add_platform_metadata(platform_metadata_offset);
   auto data = node.Finish();
   fbb.Finish(data);
-  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-      fbb.GetBufferPointer());
+  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(fbb.GetBufferPointer());
 }
 
-const ::Wasm::Common::FlatNode& peerNodeInfo(
-    flatbuffers::FlatBufferBuilder& fbb) {
+const ::Wasm::Common::FlatNode& peerNodeInfo(flatbuffers::FlatBufferBuilder& fbb) {
   auto name = fbb.CreateString("test_peer_pod");
   auto namespace_ = fbb.CreateString("test_peer_namespace");
   auto workload_name = fbb.CreateString("test_peer_workload");
   std::vector<flatbuffers::Offset<::Wasm::Common::KeyVal>> platform_metadata = {
-      ::Wasm::Common::CreateKeyVal(fbb,
-                                   fbb.CreateString(Common::kGCPProjectKey),
+      ::Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(Common::kGCPProjectKey),
                                    fbb.CreateString("test_project")),
-      ::Wasm::Common::CreateKeyVal(fbb,
-                                   fbb.CreateString(Common::kGCPClusterNameKey),
+      ::Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(Common::kGCPClusterNameKey),
                                    fbb.CreateString("test_cluster")),
-      ::Wasm::Common::CreateKeyVal(fbb,
-                                   fbb.CreateString(Common::kGCPLocationKey),
+      ::Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(Common::kGCPLocationKey),
                                    fbb.CreateString("test_location"))};
-  auto platform_metadata_offset =
-      fbb.CreateVectorOfSortedTables(&platform_metadata);
+  auto platform_metadata_offset = fbb.CreateVectorOfSortedTables(&platform_metadata);
   ::Wasm::Common::FlatNodeBuilder node(fbb);
   node.add_name(name);
   node.add_namespace_(namespace_);
@@ -96,8 +86,7 @@ const ::Wasm::Common::FlatNode& peerNodeInfo(
   node.add_platform_metadata(platform_metadata_offset);
   auto data = node.Finish();
   fbb.Finish(data);
-  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-      fbb.GetBufferPointer());
+  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(fbb.GetBufferPointer());
 }
 
 ::Wasm::Common::RequestInfo requestInfo(int response_code = 200) {
@@ -111,9 +100,8 @@ const ::Wasm::Common::FlatNode& peerNodeInfo(
   request_info.request_protocol = ::Wasm::Common::Protocol::HTTP;
   request_info.destination_principal = "destination_principal";
   request_info.source_principal = "source_principal";
-  request_info.service_auth_policy =
-      ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS;
-  request_info.duration = 10000000000;  // 10s in nanoseconds
+  request_info.service_auth_policy = ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS;
+  request_info.duration = 10000000000; // 10s in nanoseconds
   request_info.url_scheme = "http";
   request_info.url_host = "httpbin.org";
   request_info.url_path = "/headers";
@@ -308,14 +296,12 @@ std::string write_error_log_request_json = R"({
   ]
 })";
 
-google::logging::v2::WriteLogEntriesRequest expectedRequest(
-    int log_entry_count, bool for_audit = false, bool use_error_log = false) {
+google::logging::v2::WriteLogEntriesRequest
+expectedRequest(int log_entry_count, bool for_audit = false, bool use_error_log = false) {
   google::logging::v2::WriteLogEntriesRequest req;
   google::protobuf::util::JsonParseOptions options;
-  std::string non_audit_log =
-      use_error_log ? write_error_log_request_json : write_log_request_json;
-  JsonStringToMessage((for_audit ? write_audit_request_json : non_audit_log),
-                      &req, options);
+  std::string non_audit_log = use_error_log ? write_error_log_request_json : write_log_request_json;
+  JsonStringToMessage((for_audit ? write_audit_request_json : non_audit_log), &req, options);
   for (int i = 1; i < log_entry_count; i++) {
     auto* new_entry = req.mutable_entries()->Add();
     new_entry->CopyFrom(req.entries()[0]);
@@ -323,21 +309,19 @@ google::logging::v2::WriteLogEntriesRequest expectedRequest(
   return req;
 }
 
-}  // namespace
+} // namespace
 
 TEST(LoggerTest, TestWriteLogEntry) {
   auto exporter = std::make_unique<::testing::NiceMock<MockExporter>>();
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
   std::unordered_map<std::string, std::string> extra_labels;
-  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter),
-                                         extra_labels);
-  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false,
-                      false);
+  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter), extra_labels);
+  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false, false);
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
-          [](const std::vector<std::unique_ptr<
-                 const google::logging::v2::WriteLogEntriesRequest>>& requests,
+          [](const std::vector<std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&
+                 requests,
              bool) {
             for (const auto& req : requests) {
               std::string diff;
@@ -356,21 +340,18 @@ TEST(LoggerTest, TestWriteErrorLogEntry) {
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
   std::unordered_map<std::string, std::string> extra_labels;
-  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter),
-                                         extra_labels);
-  logger->addLogEntry(requestInfo(404), peerNodeInfo(peer), extra_labels, false,
-                      false);
+  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter), extra_labels);
+  logger->addLogEntry(requestInfo(404), peerNodeInfo(peer), extra_labels, false, false);
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
-          [](const std::vector<std::unique_ptr<
-                 const google::logging::v2::WriteLogEntriesRequest>>& requests,
+          [](const std::vector<std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&
+                 requests,
              bool) {
             for (const auto& req : requests) {
               std::string diff;
               MessageDifferencer differ;
               differ.ReportDifferencesToString(&diff);
-              if (!differ.Compare(expectedRequest(1, false /* audit log */,
-                                                  true /* error log */),
+              if (!differ.Compare(expectedRequest(1, false /* audit log */, true /* error log */),
                                   *req)) {
                 FAIL() << "unexpected log entry " << diff << "\n";
               }
@@ -384,17 +365,15 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
   std::unordered_map<std::string, std::string> extra_labels;
-  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter),
-                                         extra_labels, 1200);
+  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter), extra_labels, 1200);
 
   for (int i = 0; i < 10; i++) {
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false,
-                        false);
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false, false);
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
-          [](const std::vector<std::unique_ptr<
-                 const google::logging::v2::WriteLogEntriesRequest>>& requests,
+          [](const std::vector<std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&
+                 requests,
              bool) {
             EXPECT_EQ(requests.size(), 5);
             for (const auto& req : requests) {
@@ -414,14 +393,12 @@ TEST(LoggerTest, TestWriteAuditEntry) {
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
   std::unordered_map<std::string, std::string> extra_labels;
-  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter),
-                                         extra_labels);
-  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false,
-                      true);
+  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter), extra_labels);
+  logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false, true);
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
-          [](const std::vector<std::unique_ptr<
-                 const google::logging::v2::WriteLogEntriesRequest>>& requests,
+          [](const std::vector<std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&
+                 requests,
              bool) {
             for (const auto& req : requests) {
               std::string diff;
@@ -440,18 +417,15 @@ TEST(LoggerTest, TestWriteAuditAndLogEntry) {
   auto exporter_ptr = exporter.get();
   flatbuffers::FlatBufferBuilder local, peer;
   std::unordered_map<std::string, std::string> extra_labels;
-  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter),
-                                         extra_labels);
+  auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter), extra_labels);
   for (int i = 0; i < 5; i++) {
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false,
-                        false);
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false,
-                        true);
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false, false);
+    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false, true);
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
-          [](const std::vector<std::unique_ptr<
-                 const google::logging::v2::WriteLogEntriesRequest>>& requests,
+          [](const std::vector<std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&
+                 requests,
              bool) {
             bool foundAudit = false;
             bool foundLog = false;
@@ -475,6 +449,6 @@ TEST(LoggerTest, TestWriteAuditAndLogEntry) {
   logger->exportLogEntry(/* is_on_done = */ false);
 }
 
-}  // namespace Log
-}  // namespace Stackdriver
-}  // namespace Extensions
+} // namespace Log
+} // namespace Stackdriver
+} // namespace Extensions

@@ -29,52 +29,44 @@ namespace ConnectBaggage {
 constexpr absl::string_view Baggage = "baggage";
 constexpr absl::string_view DownstreamPeerKey = "wasm.downstream_peer";
 
-Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
-                                                bool) {
+Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers, bool) {
   if (propagate_) {
     const auto* object = decoder_callbacks_->streamInfo()
                              .filterState()
-                             ->getDataReadOnly<Filters::Common::Expr::CelState>(
-                                 DownstreamPeerKey);
+                             ->getDataReadOnly<Filters::Common::Expr::CelState>(DownstreamPeerKey);
     if (object) {
       const auto peer = Istio::Common::convertFlatNodeToWorkloadMetadata(
-          *flatbuffers::GetRoot<Wasm::Common::FlatNode>(
-              object->value().data()));
+          *flatbuffers::GetRoot<Wasm::Common::FlatNode>(object->value().data()));
       headers.addCopy(Http::LowerCaseString(Baggage), peer.baggage());
     }
     return Http::FilterHeadersStatus::Continue;
   }
-  const auto header_string = Http::HeaderUtility::getAllOfHeaderAsString(
-      headers, Http::LowerCaseString(Baggage));
+  const auto header_string =
+      Http::HeaderUtility::getAllOfHeaderAsString(headers, Http::LowerCaseString(Baggage));
   const auto result = header_string.result();
   if (result) {
-    const auto metadata_object =
-        Istio::Common::WorkloadMetadataObject::fromBaggage(*result);
-    const auto fb =
-        Istio::Common::convertWorkloadMetadataToFlatNode(metadata_object);
+    const auto metadata_object = Istio::Common::WorkloadMetadataObject::fromBaggage(*result);
+    const auto fb = Istio::Common::convertWorkloadMetadataToFlatNode(metadata_object);
     {
       Filters::Common::Expr::CelStatePrototype prototype(
           true, Filters::Common::Expr::CelStateType::FlatBuffers,
           toAbslStringView(Wasm::Common::nodeInfoSchema()),
           StreamInfo::FilterState::LifeSpan::FilterChain);
       auto state = std::make_unique<Filters::Common::Expr::CelState>(prototype);
-      state->setValue(absl::string_view(
-          reinterpret_cast<const char*>(fb.data()), fb.size()));
+      state->setValue(absl::string_view(reinterpret_cast<const char*>(fb.data()), fb.size()));
       decoder_callbacks_->streamInfo().filterState()->setData(
-          "wasm.downstream_peer", std::move(state),
-          StreamInfo::FilterState::StateType::Mutable,
+          "wasm.downstream_peer", std::move(state), StreamInfo::FilterState::StateType::Mutable,
           StreamInfo::FilterState::LifeSpan::FilterChain,
           StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
     }
     {
       Filters::Common::Expr::CelStatePrototype prototype(
-          true, Filters::Common::Expr::CelStateType::String,
-          absl::string_view(), StreamInfo::FilterState::LifeSpan::FilterChain);
+          true, Filters::Common::Expr::CelStateType::String, absl::string_view(),
+          StreamInfo::FilterState::LifeSpan::FilterChain);
       auto state = std::make_unique<Filters::Common::Expr::CelState>(prototype);
       state->setValue("unknown");
       decoder_callbacks_->streamInfo().filterState()->setData(
-          "wasm.downstream_peer_id", std::move(state),
-          StreamInfo::FilterState::StateType::Mutable,
+          "wasm.downstream_peer_id", std::move(state), StreamInfo::FilterState::StateType::Mutable,
           StreamInfo::FilterState::LifeSpan::FilterChain,
           StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
     }
@@ -91,10 +83,9 @@ Http::FilterFactoryCb FilterConfigFactory::createFilterFactoryFromProtoTyped(
   };
 }
 
-REGISTER_FACTORY(FilterConfigFactory,
-                 Server::Configuration::NamedHttpFilterConfigFactory);
+REGISTER_FACTORY(FilterConfigFactory, Server::Configuration::NamedHttpFilterConfigFactory);
 
-}  // namespace ConnectBaggage
-}  // namespace HttpFilters
-}  // namespace Extensions
-}  // namespace Envoy
+} // namespace ConnectBaggage
+} // namespace HttpFilters
+} // namespace Extensions
+} // namespace Envoy

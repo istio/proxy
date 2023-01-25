@@ -35,8 +35,7 @@ TEST(UtilsTest, TestEnvoyGrpcInsecure) {
         }
     })";
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service,
-                      options);
+  JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service, options);
 
   StackdriverStubOption opt;
   opt.insecure_endpoint = "test";
@@ -74,8 +73,7 @@ TEST(UtilsTest, TestEnvoyGrpcSTS) {
         }
     })";
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service,
-                      options);
+  JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service, options);
 
   StackdriverStubOption opt;
   opt.secure_endpoint = "secure";
@@ -103,8 +101,7 @@ TEST(UtilsTest, TestEnvoyGrpcDefaultCredential) {
         }
     })";
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service,
-                      options);
+  JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service, options);
 
   StackdriverStubOption opt;
   opt.secure_endpoint = "secure";
@@ -119,6 +116,6 @@ TEST(UtilsTest, TestEnvoyGrpcDefaultCredential) {
   }
 }
 
-}  // namespace Common
-}  // namespace Stackdriver
-}  // namespace Extensions
+} // namespace Common
+} // namespace Stackdriver
+} // namespace Extensions

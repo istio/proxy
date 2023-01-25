@@ -27,21 +27,20 @@
 #ifndef NULL_PLUGIN
 #include "proxy_wasm_intrinsics.h"
 
-#else  // NULL_PLUGIN
+#else // NULL_PLUGIN
 
 #include "include/proxy-wasm/null_plugin.h"
 
 namespace proxy_wasm {
 namespace null_plugin {
 
-#endif  // NULL_PLUGIN
+#endif // NULL_PLUGIN
 
 // END WASM_PROLOG
 
 namespace Stats {
 
-template <typename K, typename V>
-using Map = std::unordered_map<K, V>;
+template <typename K, typename V> using Map = std::unordered_map<K, V>;
 
 constexpr std::string_view Sep = "#@";
 
@@ -57,31 +56,31 @@ const std::string default_stat_prefix = "istio";
 
 // The order of the fields is important! The metrics indicate the cut-off line
 // using an index.
-#define STD_ISTIO_DIMENSIONS(FIELD_FUNC)     \
-  FIELD_FUNC(reporter)                       \
-  FIELD_FUNC(source_workload)                \
-  FIELD_FUNC(source_workload_namespace)      \
-  FIELD_FUNC(source_principal)               \
-  FIELD_FUNC(source_app)                     \
-  FIELD_FUNC(source_version)                 \
-  FIELD_FUNC(source_canonical_service)       \
-  FIELD_FUNC(source_canonical_revision)      \
-  FIELD_FUNC(source_cluster)                 \
-  FIELD_FUNC(destination_workload)           \
-  FIELD_FUNC(destination_workload_namespace) \
-  FIELD_FUNC(destination_principal)          \
-  FIELD_FUNC(destination_app)                \
-  FIELD_FUNC(destination_version)            \
-  FIELD_FUNC(destination_service)            \
-  FIELD_FUNC(destination_service_name)       \
-  FIELD_FUNC(destination_service_namespace)  \
-  FIELD_FUNC(destination_canonical_service)  \
-  FIELD_FUNC(destination_canonical_revision) \
-  FIELD_FUNC(destination_cluster)            \
-  FIELD_FUNC(request_protocol)               \
-  FIELD_FUNC(response_flags)                 \
-  FIELD_FUNC(connection_security_policy)     \
-  FIELD_FUNC(response_code)                  \
+#define STD_ISTIO_DIMENSIONS(FIELD_FUNC)                                                           \
+  FIELD_FUNC(reporter)                                                                             \
+  FIELD_FUNC(source_workload)                                                                      \
+  FIELD_FUNC(source_workload_namespace)                                                            \
+  FIELD_FUNC(source_principal)                                                                     \
+  FIELD_FUNC(source_app)                                                                           \
+  FIELD_FUNC(source_version)                                                                       \
+  FIELD_FUNC(source_canonical_service)                                                             \
+  FIELD_FUNC(source_canonical_revision)                                                            \
+  FIELD_FUNC(source_cluster)                                                                       \
+  FIELD_FUNC(destination_workload)                                                                 \
+  FIELD_FUNC(destination_workload_namespace)                                                       \
+  FIELD_FUNC(destination_principal)                                                                \
+  FIELD_FUNC(destination_app)                                                                      \
+  FIELD_FUNC(destination_version)                                                                  \
+  FIELD_FUNC(destination_service)                                                                  \
+  FIELD_FUNC(destination_service_name)                                                             \
+  FIELD_FUNC(destination_service_namespace)                                                        \
+  FIELD_FUNC(destination_canonical_service)                                                        \
+  FIELD_FUNC(destination_canonical_revision)                                                       \
+  FIELD_FUNC(destination_cluster)                                                                  \
+  FIELD_FUNC(request_protocol)                                                                     \
+  FIELD_FUNC(response_flags)                                                                       \
+  FIELD_FUNC(connection_security_policy)                                                           \
+  FIELD_FUNC(response_code)                                                                        \
   FIELD_FUNC(grpc_response_status)
 
 // Aggregate metric values in a shared and reusable bag.
@@ -94,22 +93,18 @@ enum class StandardLabels : int32_t {
       xxx_last_metric
 };
 
-#define DECLARE_CONSTANT(name) \
-  const int32_t name = static_cast<int32_t>(StandardLabels::name);
+#define DECLARE_CONSTANT(name) const int32_t name = static_cast<int32_t>(StandardLabels::name);
 STD_ISTIO_DIMENSIONS(DECLARE_CONSTANT)
 #undef DECLARE_CONSTANT
 
 // All labels.
-const size_t count_standard_labels =
-    static_cast<size_t>(StandardLabels::xxx_last_metric);
+const size_t count_standard_labels = static_cast<size_t>(StandardLabels::xxx_last_metric);
 
 // Labels related to peer information.
-const size_t count_peer_labels =
-    static_cast<size_t>(StandardLabels::destination_cluster) + 1;
+const size_t count_peer_labels = static_cast<size_t>(StandardLabels::destination_cluster) + 1;
 
 // Labels related to TCP streams, including peer information.
-const size_t count_tcp_labels =
-    static_cast<size_t>(StandardLabels::connection_security_policy) + 1;
+const size_t count_tcp_labels = static_cast<size_t>(StandardLabels::connection_security_policy) + 1;
 
 struct HashIstioDimensions {
   size_t operator()(const IstioDimensions& c) const {
@@ -124,18 +119,13 @@ struct HashIstioDimensions {
 
 // Value extractor can mutate the request info to flush data between multiple
 // reports.
-using ValueExtractorFn =
-    std::function<uint64_t(::Wasm::Common::RequestInfo& request_info)>;
+using ValueExtractorFn = std::function<uint64_t(::Wasm::Common::RequestInfo& request_info)>;
 
 // SimpleStat record a pre-resolved metric based on the values function.
 class SimpleStat {
- public:
-  SimpleStat(uint32_t metric_id, ValueExtractorFn value_fn, MetricType type,
-             bool recurrent)
-      : metric_id_(metric_id),
-        recurrent_(recurrent),
-        value_fn_(value_fn),
-        type_(type){};
+public:
+  SimpleStat(uint32_t metric_id, ValueExtractorFn value_fn, MetricType type, bool recurrent)
+      : metric_id_(metric_id), recurrent_(recurrent), value_fn_(value_fn), type_(type){};
 
   inline void record(::Wasm::Common::RequestInfo& request_info) {
     const uint64_t val = value_fn_(request_info);
@@ -149,7 +139,7 @@ class SimpleStat {
   const uint32_t metric_id_;
   const bool recurrent_;
 
- private:
+private:
   ValueExtractorFn value_fn_;
   MetricType type_;
 };
@@ -167,19 +157,13 @@ struct MetricFactory {
 
 // StatGen creates a SimpleStat based on resolved metric_id.
 class StatGen {
- public:
-  explicit StatGen(const std::string& stat_prefix,
-                   const MetricFactory& metric_factory,
-                   const std::vector<MetricTag>& tags,
-                   const std::vector<size_t>& indexes,
-                   const std::string& field_separator,
-                   const std::string& value_separator)
-      : recurrent_(metric_factory.recurrent),
-        protocols_(metric_factory.protocols),
-        indexes_(indexes),
-        extractor_(metric_factory.extractor),
-        metric_(metric_factory.type,
-                absl::StrCat(stat_prefix, metric_factory.name), tags,
+public:
+  explicit StatGen(const std::string& stat_prefix, const MetricFactory& metric_factory,
+                   const std::vector<MetricTag>& tags, const std::vector<size_t>& indexes,
+                   const std::string& field_separator, const std::string& value_separator)
+      : recurrent_(metric_factory.recurrent), protocols_(metric_factory.protocols),
+        indexes_(indexes), extractor_(metric_factory.extractor),
+        metric_(metric_factory.type, absl::StrCat(stat_prefix, metric_factory.name), tags,
                 field_separator, value_separator) {
     if (tags.size() != indexes.size()) {
       logAbort("metric tags.size() != indexes.size()");
@@ -222,7 +206,7 @@ class StatGen {
 
   const bool recurrent_;
 
- private:
+private:
   const uint32_t protocols_;
   const std::vector<size_t> indexes_;
   const ValueExtractorFn extractor_;
@@ -233,7 +217,7 @@ class StatGen {
 // thread. It has the same lifetime as the worker thread and acts as target
 // for interactions that outlives individual stream, e.g. timer, async calls.
 class PluginRootContext : public RootContext {
- public:
+public:
   PluginRootContext(uint32_t id, std::string_view root_id, bool is_outbound)
       : RootContext(id, root_id), outbound_(is_outbound) {
     Metric cache_count(MetricType::Counter, "metric_cache_count",
@@ -259,11 +243,10 @@ class PluginRootContext : public RootContext {
   void onTick() override;
   void report(::Wasm::Common::RequestInfo& request_info, bool end_stream);
   bool useHostHeaderFallback() const { return use_host_header_fallback_; };
-  void addToRequestQueue(uint32_t context_id,
-                         ::Wasm::Common::RequestInfo* request_info);
+  void addToRequestQueue(uint32_t context_id, ::Wasm::Common::RequestInfo* request_info);
   void deleteFromRequestQueue(uint32_t context_id);
 
- protected:
+protected:
   const std::vector<MetricTag>& defaultTags();
   const std::vector<MetricFactory>& defaultMetrics();
   // Update the dimensions and the expressions data structures with the new
@@ -276,7 +259,7 @@ class PluginRootContext : public RootContext {
   // Allocate an int expression and return its token if successful.
   std::optional<uint32_t> addIntExpression(const std::string& input);
 
- private:
+private:
   flatbuffers::DetachedBuffer local_node_info_;
   flatbuffers::DetachedBuffer empty_node_info_;
 
@@ -304,9 +287,7 @@ class PluginRootContext : public RootContext {
 
   // Resolved metric where value can be recorded.
   // Maps resolved dimensions to a set of related metrics.
-  std::unordered_map<IstioDimensions, std::vector<SimpleStat>,
-                     HashIstioDimensions>
-      metrics_;
+  std::unordered_map<IstioDimensions, std::vector<SimpleStat>, HashIstioDimensions> metrics_;
   Map<uint32_t, ::Wasm::Common::RequestInfo*> request_queue_;
   // Peer stats to be generated for a dimensioned metrics set.
   std::vector<StatGen> stats_;
@@ -314,20 +295,20 @@ class PluginRootContext : public RootContext {
 };
 
 class PluginRootContextOutbound : public PluginRootContext {
- public:
+public:
   PluginRootContextOutbound(uint32_t id, std::string_view root_id)
       : PluginRootContext(id, root_id, /* is outbound */ true){};
 };
 
 class PluginRootContextInbound : public PluginRootContext {
- public:
+public:
   PluginRootContextInbound(uint32_t id, std::string_view root_id)
       : PluginRootContext(id, root_id, /* is outbound */ false){};
 };
 
 // Per-stream context.
 class PluginContext : public Context {
- public:
+public:
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
   // Called for both HTTP and TCP streams, as a final data callback.
@@ -378,7 +359,7 @@ class PluginContext : public Context {
     return FilterStatus::Continue;
   }
 
- private:
+private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
@@ -390,18 +371,18 @@ class PluginContext : public Context {
 PROXY_WASM_NULL_PLUGIN_REGISTRY;
 #endif
 
-static RegisterContextFactory register_StatsOutbound(
-    CONTEXT_FACTORY(Stats::PluginContext),
-    ROOT_FACTORY(Stats::PluginRootContextOutbound), "stats_outbound");
+static RegisterContextFactory register_StatsOutbound(CONTEXT_FACTORY(Stats::PluginContext),
+                                                     ROOT_FACTORY(Stats::PluginRootContextOutbound),
+                                                     "stats_outbound");
 
-static RegisterContextFactory register_StatsInbound(
-    CONTEXT_FACTORY(Stats::PluginContext),
-    ROOT_FACTORY(Stats::PluginRootContextInbound), "stats_inbound");
+static RegisterContextFactory register_StatsInbound(CONTEXT_FACTORY(Stats::PluginContext),
+                                                    ROOT_FACTORY(Stats::PluginRootContextInbound),
+                                                    "stats_inbound");
 
-}  // namespace Stats
+} // namespace Stats
 
 // WASM_EPILOG
 #ifdef NULL_PLUGIN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

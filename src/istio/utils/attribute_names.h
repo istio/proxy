@@ -111,7 +111,7 @@ struct AttributeName {
   static const char kRbacPermissivePolicyId[];
 };
 
-}  // namespace utils
-}  // namespace istio
+} // namespace utils
+} // namespace istio
 
-#endif  // ISTIO_UTILS_ATTRIBUTE_NAMES_H
+#endif // ISTIO_UTILS_ATTRIBUTE_NAMES_H

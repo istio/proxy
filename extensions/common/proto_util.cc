@@ -25,22 +25,22 @@
 #ifndef NULL_PLUGIN
 #include "proxy_wasm_intrinsics.h"
 
-#else  // NULL_PLUGIN
+#else // NULL_PLUGIN
 
 #include "include/proxy-wasm/null_plugin.h"
 
-#endif  // NULL_PLUGIN
+#endif // NULL_PLUGIN
 
 // END WASM_PROLOG
 
 namespace Wasm {
 namespace Common {
 
-flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
-    const google::protobuf::Struct& metadata) {
+flatbuffers::DetachedBuffer
+extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata) {
   flatbuffers::FlatBufferBuilder fbb;
-  flatbuffers::Offset<flatbuffers::String> name, namespace_, owner,
-      workload_name, istio_version, mesh_id, cluster_id;
+  flatbuffers::Offset<flatbuffers::String> name, namespace_, owner, workload_name, istio_version,
+      mesh_id, cluster_id;
   std::vector<flatbuffers::Offset<KeyVal>> labels, platform_metadata;
   std::vector<flatbuffers::Offset<flatbuffers::String>> app_containers;
   std::vector<flatbuffers::Offset<flatbuffers::String>> ip_addrs;
@@ -61,9 +61,8 @@ flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
       cluster_id = fbb.CreateString(it.second.string_value());
     } else if (it.first == "LABELS") {
       for (const auto& labels_it : it.second.struct_value().fields()) {
-        labels.push_back(
-            CreateKeyVal(fbb, fbb.CreateString(labels_it.first),
-                         fbb.CreateString(labels_it.second.string_value())));
+        labels.push_back(CreateKeyVal(fbb, fbb.CreateString(labels_it.first),
+                                      fbb.CreateString(labels_it.second.string_value())));
       }
     } else if (it.first == "PLATFORM_METADATA") {
       for (const auto& platform_it : it.second.struct_value().fields()) {
@@ -72,37 +71,32 @@ flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
                          fbb.CreateString(platform_it.second.string_value())));
       }
     } else if (it.first == "APP_CONTAINERS") {
-      std::vector<absl::string_view> containers =
-          absl::StrSplit(it.second.string_value(), ',');
+      std::vector<absl::string_view> containers = absl::StrSplit(it.second.string_value(), ',');
       for (const auto& container : containers) {
         app_containers.push_back(fbb.CreateString(toStdStringView(container)));
       }
     } else if (it.first == "INSTANCE_IPS") {
-      std::vector<absl::string_view> ip_addresses =
-          absl::StrSplit(it.second.string_value(), ',');
+      std::vector<absl::string_view> ip_addresses = absl::StrSplit(it.second.string_value(), ',');
       for (const auto& ip : ip_addresses) {
         ip_addrs.push_back(fbb.CreateString(toStdStringView(ip)));
       }
     }
   }
   // finish pre-order construction
-  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<KeyVal>>>
-      labels_offset, platform_metadata_offset;
+  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<KeyVal>>> labels_offset,
+      platform_metadata_offset;
   if (labels.size() > 0) {
     labels_offset = fbb.CreateVectorOfSortedTables(&labels);
   }
   if (platform_metadata.size() > 0) {
-    platform_metadata_offset =
-        fbb.CreateVectorOfSortedTables(&platform_metadata);
+    platform_metadata_offset = fbb.CreateVectorOfSortedTables(&platform_metadata);
   }
-  flatbuffers::Offset<
-      flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>>
+  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>>
       app_containers_offset;
   if (app_containers.size() > 0) {
     app_containers_offset = fbb.CreateVector(app_containers);
   }
-  flatbuffers::Offset<
-      flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>>
+  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>>
       ip_addrs_offset;
   if (ip_addrs.size() > 0) {
     ip_addrs_offset = fbb.CreateVector(ip_addrs);
@@ -128,48 +122,40 @@ flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
   return fbb.Release();
 }
 
-void extractStructFromNodeFlatBuffer(const FlatNode& node,
-                                     google::protobuf::Struct* metadata) {
+void extractStructFromNodeFlatBuffer(const FlatNode& node, google::protobuf::Struct* metadata) {
   if (node.name()) {
     (*metadata->mutable_fields())["NAME"].set_string_value(node.name()->str());
   }
   if (node.namespace_()) {
-    (*metadata->mutable_fields())["NAMESPACE"].set_string_value(
-        node.namespace_()->str());
+    (*metadata->mutable_fields())["NAMESPACE"].set_string_value(node.namespace_()->str());
   }
   if (node.owner()) {
-    (*metadata->mutable_fields())["OWNER"].set_string_value(
-        node.owner()->str());
+    (*metadata->mutable_fields())["OWNER"].set_string_value(node.owner()->str());
   }
   if (node.workload_name()) {
-    (*metadata->mutable_fields())["WORKLOAD_NAME"].set_string_value(
-        node.workload_name()->str());
+    (*metadata->mutable_fields())["WORKLOAD_NAME"].set_string_value(node.workload_name()->str());
   }
   if (node.istio_version()) {
-    (*metadata->mutable_fields())["ISTIO_VERSION"].set_string_value(
-        node.istio_version()->str());
+    (*metadata->mutable_fields())["ISTIO_VERSION"].set_string_value(node.istio_version()->str());
   }
   if (node.mesh_id()) {
-    (*metadata->mutable_fields())["MESH_ID"].set_string_value(
-        node.mesh_id()->str());
+    (*metadata->mutable_fields())["MESH_ID"].set_string_value(node.mesh_id()->str());
   }
   if (node.cluster_id()) {
-    (*metadata->mutable_fields())["CLUSTER_ID"].set_string_value(
-        node.cluster_id()->str());
+    (*metadata->mutable_fields())["CLUSTER_ID"].set_string_value(node.cluster_id()->str());
   }
   if (node.labels()) {
     auto* map = (*metadata->mutable_fields())["LABELS"].mutable_struct_value();
     for (const auto keyval : *node.labels()) {
-      (*map->mutable_fields())[flatbuffers::GetString(keyval->key())]
-          .set_string_value(flatbuffers::GetString(keyval->value()));
+      (*map->mutable_fields())[flatbuffers::GetString(keyval->key())].set_string_value(
+          flatbuffers::GetString(keyval->value()));
     }
   }
   if (node.platform_metadata()) {
-    auto* map = (*metadata->mutable_fields())["PLATFORM_METADATA"]
-                    .mutable_struct_value();
+    auto* map = (*metadata->mutable_fields())["PLATFORM_METADATA"].mutable_struct_value();
     for (const auto keyval : *node.platform_metadata()) {
-      (*map->mutable_fields())[flatbuffers::GetString(keyval->key())]
-          .set_string_value(flatbuffers::GetString(keyval->value()));
+      (*map->mutable_fields())[flatbuffers::GetString(keyval->key())].set_string_value(
+          flatbuffers::GetString(keyval->value()));
     }
   }
   if (node.app_containers()) {
@@ -185,8 +171,7 @@ void extractStructFromNodeFlatBuffer(const FlatNode& node,
     for (const auto ip : *node.instance_ips()) {
       ip_addrs.push_back(flatbuffers::GetString(ip));
     }
-    (*metadata->mutable_fields())["INSTANCE_IPS"].set_string_value(
-        absl::StrJoin(ip_addrs, ","));
+    (*metadata->mutable_fields())["INSTANCE_IPS"].set_string_value(absl::StrJoin(ip_addrs, ","));
   }
 }
 
@@ -202,5 +187,5 @@ bool serializeToStringDeterministic(const google::protobuf::Message& metadata,
   return true;
 }
 
-}  // namespace Common
-}  // namespace Wasm
+} // namespace Common
+} // namespace Wasm

@@ -93,8 +93,7 @@ message PluginConfig {
   // reporting every `10m`.
   // Deprecated -- Mesh edge reporting is no longer supported and this setting
   // is no-op.
-  google.protobuf.Duration mesh_edges_reporting_duration = 4
-      [deprecated = true];
+  google.protobuf.Duration mesh_edges_reporting_duration = 4 [deprecated = true];
 
   // maximum size of the peer metadata cache.
   // A long lived proxy that connects with many transient peers can build up a

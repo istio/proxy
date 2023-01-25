@@ -28,22 +28,19 @@ namespace MetadataExchange {
  */
 class MetadataExchangeConfigFactory
     : public Server::Configuration::NamedNetworkFilterConfigFactory {
- public:
-  Network::FilterFactoryCb createFilterFactoryFromProto(
-      const Protobuf::Message&,
-      Server::Configuration::FactoryContext&) override;
+public:
+  Network::FilterFactoryCb
+  createFilterFactoryFromProto(const Protobuf::Message&,
+                               Server::Configuration::FactoryContext&) override;
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
 
-  std::string name() const override {
-    return "envoy.filters.network.metadata_exchange";
-  }
+  std::string name() const override { return "envoy.filters.network.metadata_exchange"; }
 
- private:
-  Network::FilterFactoryCb createFilterFactory(
-      const envoy::tcp::metadataexchange::config::MetadataExchange&
-          proto_config,
-      Server::Configuration::FactoryContext& context);
+private:
+  Network::FilterFactoryCb
+  createFilterFactory(const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
+                      Server::Configuration::FactoryContext& context);
 };
 
 /**
@@ -52,24 +49,21 @@ class MetadataExchangeConfigFactory
  */
 class MetadataExchangeUpstreamConfigFactory
     : public Server::Configuration::NamedUpstreamNetworkFilterConfigFactory {
- public:
-  Network::FilterFactoryCb createFilterFactoryFromProto(
-      const Protobuf::Message&,
-      Server::Configuration::CommonFactoryContext&) override;
+public:
+  Network::FilterFactoryCb
+  createFilterFactoryFromProto(const Protobuf::Message&,
+                               Server::Configuration::CommonFactoryContext&) override;
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
 
-  std::string name() const override {
-    return "envoy.filters.network.upstream.metadata_exchange";
-  }
+  std::string name() const override { return "envoy.filters.network.upstream.metadata_exchange"; }
 
- private:
-  Network::FilterFactoryCb createFilterFactory(
-      const envoy::tcp::metadataexchange::config::MetadataExchange&
-          proto_config,
-      Server::Configuration::CommonFactoryContext& context);
+private:
+  Network::FilterFactoryCb
+  createFilterFactory(const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
+                      Server::Configuration::CommonFactoryContext& context);
 };
 
-}  // namespace MetadataExchange
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace MetadataExchange
+} // namespace Tcp
+} // namespace Envoy

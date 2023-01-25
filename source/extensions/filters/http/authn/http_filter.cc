@@ -49,15 +49,14 @@ void AuthenticationFilter::onDestroy() {
   ENVOY_LOG(debug, "Called AuthenticationFilter : {}", __func__);
 }
 
-FilterHeadersStatus AuthenticationFilter::decodeHeaders(
-    RequestHeaderMap& headers, bool) {
+FilterHeadersStatus AuthenticationFilter::decodeHeaders(RequestHeaderMap& headers, bool) {
   ENVOY_LOG(debug, "AuthenticationFilter::decodeHeaders with config\n{}",
             filter_config_.DebugString());
   state_ = State::PROCESSING;
 
-  filter_context_.reset(new Istio::AuthN::FilterContext(
-      decoder_callbacks_->streamInfo().dynamicMetadata(), headers,
-      decoder_callbacks_->connection().ptr(), filter_config_));
+  filter_context_.reset(
+      new Istio::AuthN::FilterContext(decoder_callbacks_->streamInfo().dynamicMetadata(), headers,
+                                      decoder_callbacks_->connection().ptr(), filter_config_));
 
   Payload payload;
 
@@ -67,9 +66,8 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(
     return FilterHeadersStatus::StopIteration;
   }
 
-  bool success =
-      createOriginAuthenticator(filter_context_.get())->run(&payload) ||
-      filter_config_.policy().origin_is_optional();
+  bool success = createOriginAuthenticator(filter_context_.get())->run(&payload) ||
+                 filter_config_.policy().origin_is_optional();
 
   if (!success) {
     rejectRequest("Origin authentication failed.");
@@ -81,10 +79,10 @@ FilterHeadersStatus AuthenticationFilter::decodeHeaders(
     // Save auth results in the metadata, could be used later by RBAC and/or
     // mixer filter.
     ProtobufWkt::Struct data;
-    Utils::Authentication::SaveAuthAttributesToStruct(
-        filter_context_->authenticationResult(), data);
-    decoder_callbacks_->streamInfo().setDynamicMetadata(
-        Utils::IstioFilterName::kAuthentication, data);
+    Utils::Authentication::SaveAuthAttributesToStruct(filter_context_->authenticationResult(),
+                                                      data);
+    decoder_callbacks_->streamInfo().setDynamicMetadata(Utils::IstioFilterName::kAuthentication,
+                                                        data);
     ENVOY_LOG(debug, "Saved Dynamic Metadata:\n{}", data.DebugString());
     if (!filter_config_.disable_clear_route_cache()) {
       // Clear the route cache after saving the dynamic metadata for routing
@@ -111,8 +109,7 @@ FilterTrailersStatus AuthenticationFilter::decodeTrailers(RequestTrailerMap&) {
   return FilterTrailersStatus::Continue;
 }
 
-void AuthenticationFilter::setDecoderFilterCallbacks(
-    StreamDecoderFilterCallbacks& callbacks) {
+void AuthenticationFilter::setDecoderFilterCallbacks(StreamDecoderFilterCallbacks& callbacks) {
   decoder_callbacks_ = &callbacks;
 }
 
@@ -121,26 +118,22 @@ void AuthenticationFilter::rejectRequest(const std::string& message) {
     return;
   }
   state_ = State::REJECTED;
-  decoder_callbacks_->sendLocalReply(Http::Code::Unauthorized, message, nullptr,
-                                     absl::nullopt,
+  decoder_callbacks_->sendLocalReply(Http::Code::Unauthorized, message, nullptr, absl::nullopt,
                                      RcDetails::get().IstioAuthnAccessDenied);
 }
 
 std::unique_ptr<Istio::AuthN::AuthenticatorBase>
-AuthenticationFilter::createPeerAuthenticator(
-    Istio::AuthN::FilterContext* filter_context) {
-  return std::make_unique<Istio::AuthN::PeerAuthenticator>(
-      filter_context, filter_config_.policy());
+AuthenticationFilter::createPeerAuthenticator(Istio::AuthN::FilterContext* filter_context) {
+  return std::make_unique<Istio::AuthN::PeerAuthenticator>(filter_context, filter_config_.policy());
 }
 
 std::unique_ptr<Istio::AuthN::AuthenticatorBase>
-AuthenticationFilter::createOriginAuthenticator(
-    Istio::AuthN::FilterContext* filter_context) {
-  return std::make_unique<Istio::AuthN::OriginAuthenticator>(
-      filter_context, filter_config_.policy());
+AuthenticationFilter::createOriginAuthenticator(Istio::AuthN::FilterContext* filter_context) {
+  return std::make_unique<Istio::AuthN::OriginAuthenticator>(filter_context,
+                                                             filter_config_.policy());
 }
 
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

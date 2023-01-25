@@ -29,7 +29,7 @@ namespace AuthN {
 // to perform individual authentication methods, which can be used to construct
 // compound authentication flow.
 class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
- public:
+public:
   AuthenticatorBase(FilterContext* filter_context);
   virtual ~AuthenticatorBase();
 
@@ -39,9 +39,8 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
   // Validate TLS/MTLS connection and extract authenticated attributes (just
   // source user identity for now). Unlike mTLS, TLS connection does not require
   // a client certificate.
-  virtual bool validateX509(
-      const istio::authentication::v1alpha1::MutualTls& params,
-      istio::authn::Payload* payload) const;
+  virtual bool validateX509(const istio::authentication::v1alpha1::MutualTls& params,
+                            istio::authn::Payload* payload) const;
 
   // Validates JWT given the jwt params. If JWT is validated, it will extract
   // attributes and claims (JwtPayload), returns status SUCCESS.
@@ -52,14 +51,14 @@ class AuthenticatorBase : public Logger::Loggable<Logger::Id::filter> {
   // Mutable accessor to filter context.
   FilterContext* filter_context() { return &filter_context_; }
 
- private:
+private:
   // Pointer to filter state. Do not own.
   FilterContext& filter_context_;
 
   bool validateTrustDomain(const Network::Connection* connection) const;
 };
 
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

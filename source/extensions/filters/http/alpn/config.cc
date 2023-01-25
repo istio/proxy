@@ -24,38 +24,33 @@ using istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig;
 namespace Envoy {
 namespace Http {
 namespace Alpn {
-Http::FilterFactoryCb AlpnConfigFactory::createFilterFactoryFromProto(
-    const Protobuf::Message &config, const std::string &,
-    Server::Configuration::FactoryContext &context) {
-  return createFilterFactory(dynamic_cast<const FilterConfig &>(config),
-                             context.clusterManager());
+Http::FilterFactoryCb
+AlpnConfigFactory::createFilterFactoryFromProto(const Protobuf::Message& config, const std::string&,
+                                                Server::Configuration::FactoryContext& context) {
+  return createFilterFactory(dynamic_cast<const FilterConfig&>(config), context.clusterManager());
 }
 
 ProtobufTypes::MessagePtr AlpnConfigFactory::createEmptyConfigProto() {
   return ProtobufTypes::MessagePtr{new FilterConfig};
 }
 
-std::string AlpnConfigFactory::name() const {
-  return Utils::IstioFilterName::kAlpn;
-}
+std::string AlpnConfigFactory::name() const { return Utils::IstioFilterName::kAlpn; }
 
-Http::FilterFactoryCb AlpnConfigFactory::createFilterFactory(
-    const FilterConfig &proto_config,
-    Upstream::ClusterManager &cluster_manager) {
+Http::FilterFactoryCb
+AlpnConfigFactory::createFilterFactory(const FilterConfig& proto_config,
+                                       Upstream::ClusterManager& cluster_manager) {
   AlpnFilterConfigSharedPtr filter_config{
       std::make_shared<AlpnFilterConfig>(proto_config, cluster_manager)};
-  return [filter_config](Http::FilterChainFactoryCallbacks &callbacks) -> void {
-    callbacks.addStreamDecoderFilter(
-        std::make_unique<AlpnFilter>(filter_config));
+  return [filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+    callbacks.addStreamDecoderFilter(std::make_unique<AlpnFilter>(filter_config));
   };
 }
 
 /**
  * Static registration for the alpn override filter. @see RegisterFactory.
  */
-REGISTER_FACTORY(AlpnConfigFactory,
-                 Server::Configuration::NamedHttpFilterConfigFactory);
+REGISTER_FACTORY(AlpnConfigFactory, Server::Configuration::NamedHttpFilterConfigFactory);
 
-}  // namespace Alpn
-}  // namespace Http
-}  // namespace Envoy
+} // namespace Alpn
+} // namespace Http
+} // namespace Envoy

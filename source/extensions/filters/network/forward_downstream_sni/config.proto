@@ -17,4 +17,5 @@ syntax = "proto3";
 
 package io.istio.tcp.forward_downstream_sni.v1;
 
-message Config {}
+message Config {
+}

@@ -21,13 +21,14 @@ namespace null_plugin {
 namespace MetadataExchange {
 namespace Plugin {
 NullPluginRegistry* context_registry_{};
-}  // namespace Plugin
+} // namespace Plugin
 
 // Registration glue
-RegisterNullVmPluginFactory register_http_metadata_exchange_filter(
-    "envoy.wasm.metadata_exchange",
-    []() { return std::make_unique<NullPlugin>(Plugin::context_registry_); });
+RegisterNullVmPluginFactory
+    register_http_metadata_exchange_filter("envoy.wasm.metadata_exchange", []() {
+      return std::make_unique<NullPlugin>(Plugin::context_registry_);
+    });
 
-}  // namespace MetadataExchange
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace MetadataExchange
+} // namespace null_plugin
+} // namespace proxy_wasm

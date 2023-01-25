@@ -43,21 +43,19 @@ using Base64 = Envoy::Base64;
 
 #endif
 
-static RegisterContextFactory register_MetadataExchange(
-    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
+static RegisterContextFactory register_MetadataExchange(CONTEXT_FACTORY(PluginContext),
+                                                        ROOT_FACTORY(PluginRootContext));
 
 void PluginRootContext::updateMetadataValue() {
   auto node_info = ::Wasm::Common::extractLocalNodeFlatBuffer();
 
   google::protobuf::Struct metadata;
   ::Wasm::Common::extractStructFromNodeFlatBuffer(
-      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(node_info.data()),
-      &metadata);
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(node_info.data()), &metadata);
 
   std::string metadata_bytes;
   ::Wasm::Common::serializeToStringDeterministic(metadata, &metadata_bytes);
-  metadata_value_ =
-      Base64::encode(metadata_bytes.data(), metadata_bytes.size());
+  metadata_value_ = Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 }
 
 // Metadata exchange has sane defaults and therefore it will be fully
@@ -68,8 +66,8 @@ bool PluginRootContext::onConfigure(size_t size) {
   if (!getValue({"node", "id"}, &node_id_)) {
     LOG_DEBUG("cannot get node ID");
   }
-  LOG_DEBUG(absl::StrCat("metadata_value_ id:", id(),
-                         " value:", metadata_value_, " node:", node_id_));
+  LOG_DEBUG(
+      absl::StrCat("metadata_value_ id:", id(), " value:", metadata_value_, " node:", node_id_));
 
   // Parse configuration JSON string.
   if (size > 0 && !configure(size)) {
@@ -80,48 +78,42 @@ bool PluginRootContext::onConfigure(size_t size) {
   const std::string function = "declare_property";
   envoy::source::extensions::common::wasm::DeclarePropertyArguments args;
   args.set_type(envoy::source::extensions::common::wasm::WasmType::FlatBuffers);
-  args.set_span(
-      envoy::source::extensions::common::wasm::LifeSpan::DownstreamRequest);
-  args.set_schema(::Wasm::Common::nodeInfoSchema().data(),
-                  ::Wasm::Common::nodeInfoSchema().size());
+  args.set_span(envoy::source::extensions::common::wasm::LifeSpan::DownstreamRequest);
+  args.set_schema(::Wasm::Common::nodeInfoSchema().data(), ::Wasm::Common::nodeInfoSchema().size());
   std::string in;
   args.set_name(std::string(::Wasm::Common::kUpstreamMetadataKey));
   args.SerializeToString(&in);
-  proxy_call_foreign_function(function.data(), function.size(), in.data(),
-                              in.size(), nullptr, nullptr);
+  proxy_call_foreign_function(function.data(), function.size(), in.data(), in.size(), nullptr,
+                              nullptr);
 
   args.set_name(std::string(::Wasm::Common::kDownstreamMetadataKey));
   args.SerializeToString(&in);
-  proxy_call_foreign_function(function.data(), function.size(), in.data(),
-                              in.size(), nullptr, nullptr);
+  proxy_call_foreign_function(function.data(), function.size(), in.data(), in.size(), nullptr,
+                              nullptr);
 
   return true;
 }
 
 bool PluginRootContext::configure(size_t configuration_size) {
-  auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
-                                           0, configuration_size);
+  auto configuration_data =
+      getBufferBytes(WasmBufferType::PluginConfiguration, 0, configuration_size);
   // Parse configuration JSON string.
   auto result = ::Wasm::Common::JsonParse(configuration_data->view());
   if (!result.has_value()) {
-    LOG_WARN(absl::StrCat(
-        "cannot parse plugin configuration JSON string: ",
-        ::Wasm::Common::toAbslStringView(configuration_data->view())));
+    LOG_WARN(absl::StrCat("cannot parse plugin configuration JSON string: ",
+                          ::Wasm::Common::toAbslStringView(configuration_data->view())));
     return false;
   }
 
   auto j = result.value();
-  auto max_peer_cache_size_field =
-      ::Wasm::Common::JsonGetField<int64_t>(j, "max_peer_cache_size");
-  if (max_peer_cache_size_field.detail() ==
-      Wasm::Common::JsonParserResultDetail::OK) {
+  auto max_peer_cache_size_field = ::Wasm::Common::JsonGetField<int64_t>(j, "max_peer_cache_size");
+  if (max_peer_cache_size_field.detail() == Wasm::Common::JsonParserResultDetail::OK) {
     max_peer_cache_size_ = max_peer_cache_size_field.value();
   }
   return true;
 }
 
-bool PluginRootContext::updatePeer(std::string_view key,
-                                   std::string_view peer_id,
+bool PluginRootContext::updatePeer(std::string_view key, std::string_view peer_id,
                                    std::string_view peer_header) {
   std::string id = std::string(peer_id);
   if (max_peer_cache_size_ > 0) {
@@ -164,18 +156,15 @@ bool PluginRootContext::updatePeer(std::string_view key,
 FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t, bool) {
   // strip and store downstream peer metadata
   auto downstream_metadata_id = getRequestHeader(ExchangeMetadataHeaderId);
-  if (downstream_metadata_id != nullptr &&
-      !downstream_metadata_id->view().empty()) {
+  if (downstream_metadata_id != nullptr && !downstream_metadata_id->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeaderId);
-    setFilterState(::Wasm::Common::kDownstreamMetadataIdKey,
-                   downstream_metadata_id->view());
+    setFilterState(::Wasm::Common::kDownstreamMetadataIdKey, downstream_metadata_id->view());
   } else {
     metadata_id_received_ = false;
   }
 
   auto downstream_metadata_value = getRequestHeader(ExchangeMetadataHeader);
-  if (downstream_metadata_value != nullptr &&
-      !downstream_metadata_value->view().empty()) {
+  if (downstream_metadata_value != nullptr && !downstream_metadata_value->view().empty()) {
     removeRequestHeader(ExchangeMetadataHeader);
     if (!rootContext()->updatePeer(::Wasm::Common::kDownstreamMetadataKey,
                                    downstream_metadata_id->view(),
@@ -207,20 +196,16 @@ FilterHeadersStatus PluginContext::onRequestHeaders(uint32_t, bool) {
 FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t, bool) {
   // strip and store upstream peer metadata
   auto upstream_metadata_id = getResponseHeader(ExchangeMetadataHeaderId);
-  if (upstream_metadata_id != nullptr &&
-      !upstream_metadata_id->view().empty()) {
+  if (upstream_metadata_id != nullptr && !upstream_metadata_id->view().empty()) {
     removeResponseHeader(ExchangeMetadataHeaderId);
-    setFilterState(::Wasm::Common::kUpstreamMetadataIdKey,
-                   upstream_metadata_id->view());
+    setFilterState(::Wasm::Common::kUpstreamMetadataIdKey, upstream_metadata_id->view());
   }
 
   auto upstream_metadata_value = getResponseHeader(ExchangeMetadataHeader);
-  if (upstream_metadata_value != nullptr &&
-      !upstream_metadata_value->view().empty()) {
+  if (upstream_metadata_value != nullptr && !upstream_metadata_value->view().empty()) {
     removeResponseHeader(ExchangeMetadataHeader);
     if (!rootContext()->updatePeer(::Wasm::Common::kUpstreamMetadataKey,
-                                   upstream_metadata_id->view(),
-                                   upstream_metadata_value->view())) {
+                                   upstream_metadata_id->view(), upstream_metadata_value->view())) {
       LOG_DEBUG("cannot set upstream peer node");
     }
   }
@@ -244,8 +229,8 @@ FilterHeadersStatus PluginContext::onResponseHeaders(uint32_t, bool) {
 }
 
 #ifdef NULL_PLUGIN
-}  // namespace Plugin
-}  // namespace MetadataExchange
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace Plugin
+} // namespace MetadataExchange
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

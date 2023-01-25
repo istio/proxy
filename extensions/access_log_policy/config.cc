@@ -21,13 +21,13 @@ namespace null_plugin {
 namespace AccessLogPolicy {
 namespace Plugin {
 NullPluginRegistry* context_registry_{};
-}  // namespace Plugin
+} // namespace Plugin
 
 // Registration glue
-RegisterNullVmPluginFactory register_access_log_policy_filter(
-    "envoy.wasm.access_log_policy",
-    []() { return std::make_unique<NullPlugin>(Plugin::context_registry_); });
+RegisterNullVmPluginFactory register_access_log_policy_filter("envoy.wasm.access_log_policy", []() {
+  return std::make_unique<NullPlugin>(Plugin::context_registry_);
+});
 
-}  // namespace AccessLogPolicy
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace AccessLogPolicy
+} // namespace null_plugin
+} // namespace proxy_wasm

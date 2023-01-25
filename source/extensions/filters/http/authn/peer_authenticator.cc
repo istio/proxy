@@ -27,8 +27,7 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
-PeerAuthenticator::PeerAuthenticator(FilterContext* filter_context,
-                                     const iaapi::Policy& policy)
+PeerAuthenticator::PeerAuthenticator(FilterContext* filter_context, const iaapi::Policy& policy)
     : AuthenticatorBase(filter_context), policy_(policy) {}
 
 bool PeerAuthenticator::run(Payload* payload) {
@@ -40,17 +39,16 @@ bool PeerAuthenticator::run(Payload* payload) {
   }
   for (const auto& method : policy_.peers()) {
     switch (method.params_case()) {
-      case iaapi::PeerAuthenticationMethod::ParamsCase::kMtls:
-        success = validateX509(method.mtls(), payload);
-        break;
-      case iaapi::PeerAuthenticationMethod::ParamsCase::kJwt:
-        success = validateJwt(method.jwt(), payload);
-        break;
-      default:
-        ENVOY_LOG(error, "Unknown peer authentication param {}",
-                  method.DebugString());
-        success = false;
-        break;
+    case iaapi::PeerAuthenticationMethod::ParamsCase::kMtls:
+      success = validateX509(method.mtls(), payload);
+      break;
+    case iaapi::PeerAuthenticationMethod::ParamsCase::kJwt:
+      success = validateJwt(method.jwt(), payload);
+      break;
+    default:
+      ENVOY_LOG(error, "Unknown peer authentication param {}", method.DebugString());
+      success = false;
+      break;
     }
 
     if (success) {
@@ -65,7 +63,7 @@ bool PeerAuthenticator::run(Payload* payload) {
   return success;
 }
 
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

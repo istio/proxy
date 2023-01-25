@@ -25,7 +25,7 @@
 #ifndef NULL_PLUGIN
 #include "proxy_wasm_intrinsics.h"
 
-#else  // NULL_PLUGIN
+#else // NULL_PLUGIN
 
 #include "include/proxy-wasm/null_plugin.h"
 
@@ -34,7 +34,7 @@ using proxy_wasm::null_plugin::getHeaderMapValue;
 using proxy_wasm::null_plugin::getProperty;
 using proxy_wasm::null_plugin::getValue;
 
-#endif  // NULL_PLUGIN
+#endif // NULL_PLUGIN
 
 // END WASM_PROLOG
 
@@ -60,13 +60,11 @@ namespace {
 // * Otherwise, try fetching cluster metadata for destination service name and
 //   host. If cluster metadata is not available, set destination service name
 //   the same as destination service host.
-void populateDestinationService(bool outbound, bool use_host_header,
-                                RequestInfo* request_info) {
+void populateDestinationService(bool outbound, bool use_host_header, RequestInfo* request_info) {
   if (use_host_header) {
     request_info->destination_service_host = request_info->url_host;
   } else {
-    request_info->destination_service_host =
-        outbound ? "unknown" : getServiceNameFallback();
+    request_info->destination_service_host = outbound ? "unknown" : getServiceNameFallback();
   }
 
   // override the cluster name if this is being sent to the
@@ -81,8 +79,7 @@ void populateDestinationService(bool outbound, bool use_host_header,
   }
 
   const std::string& cluster_name = request_info->upstream_cluster;
-  if (cluster_name == kBlackHoleCluster ||
-      cluster_name == kPassThroughCluster ||
+  if (cluster_name == kBlackHoleCluster || cluster_name == kPassThroughCluster ||
       cluster_name == kInboundPassthroughClusterIpv4 ||
       cluster_name == kInboundPassthroughClusterIpv6) {
     request_info->destination_service_name = cluster_name;
@@ -105,26 +102,22 @@ void populateDestinationService(bool outbound, bool use_host_header,
   // oldest service) to get destination service information. Ideally client will
   // forward the canonical host to the server side so that it could accurately
   // identify the intended host.
-  if (getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0",
-                "name"},
+  if (getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0", "name"},
                &request_info->destination_service_name)) {
-    getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0",
-              "host"},
+    getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0", "host"},
              &request_info->destination_service_host);
   } else {
     // if cluster metadata cannot be found, fallback to destination service
     // host. If host header fallback is enabled, this will be host header. If
     // host header fallback is disabled, this will be unknown. This could happen
     // if a request does not route to any cluster.
-    request_info->destination_service_name =
-        request_info->destination_service_host;
+    request_info->destination_service_name = request_info->destination_service_host;
   }
 }
 
-}  // namespace
+} // namespace
 
-void populateRequestInfo(bool outbound, bool use_host_header_fallback,
-                         RequestInfo* request_info) {
+void populateRequestInfo(bool outbound, bool use_host_header_fallback, RequestInfo* request_info) {
   if (request_info->is_populated) {
     return;
   }
@@ -140,10 +133,8 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
   uint64_t destination_port = 0;
   if (outbound) {
     getValue({"upstream", "port"}, &destination_port);
-    getValue({"upstream", "uri_san_peer_certificate"},
-             &request_info->destination_principal);
-    getValue({"upstream", "uri_san_local_certificate"},
-             &request_info->source_principal);
+    getValue({"upstream", "uri_san_peer_certificate"}, &request_info->destination_principal);
+    getValue({"upstream", "uri_san_local_certificate"}, &request_info->source_principal);
   } else {
     getValue({"destination", "port"}, &destination_port);
 
@@ -153,51 +144,48 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback,
           mtls ? ::Wasm::Common::ServiceAuthenticationPolicy::MutualTLS
                : ::Wasm::Common::ServiceAuthenticationPolicy::None;
     }
-    getValue({"connection", "uri_san_local_certificate"},
-             &request_info->destination_principal);
-    getValue({"connection", "uri_san_peer_certificate"},
-             &request_info->source_principal);
+    getValue({"connection", "uri_san_local_certificate"}, &request_info->destination_principal);
+    getValue({"connection", "uri_san_peer_certificate"}, &request_info->source_principal);
   }
   request_info->destination_port = destination_port;
 }
 
-std::string_view AuthenticationPolicyString(
-    ServiceAuthenticationPolicy policy) {
+std::string_view AuthenticationPolicyString(ServiceAuthenticationPolicy policy) {
   switch (policy) {
-    case ServiceAuthenticationPolicy::None:
-      return kNone;
-    case ServiceAuthenticationPolicy::MutualTLS:
-      return kMutualTLS;
-    default:
-      break;
+  case ServiceAuthenticationPolicy::None:
+    return kNone;
+  case ServiceAuthenticationPolicy::MutualTLS:
+    return kMutualTLS;
+  default:
+    break;
   }
   return {};
 }
 
 std::string_view TCPConnectionStateString(TCPConnectionState state) {
   switch (state) {
-    case TCPConnectionState::Open:
-      return kOpen;
-    case TCPConnectionState::Connected:
-      return kConnected;
-    case TCPConnectionState::Close:
-      return kClose;
-    default:
-      break;
+  case TCPConnectionState::Open:
+    return kOpen;
+  case TCPConnectionState::Connected:
+    return kConnected;
+  case TCPConnectionState::Close:
+    return kClose;
+  default:
+    break;
   }
   return {};
 }
 
 std::string_view ProtocolString(Protocol protocol) {
   switch (protocol) {
-    case Protocol::TCP:
-      return kProtocolTCP;
-    case Protocol::HTTP:
-      return kProtocolHTTP;
-    case Protocol::GRPC:
-      return kProtocolGRPC;
-    default:
-      break;
+  case Protocol::TCP:
+    return kProtocolTCP;
+  case Protocol::HTTP:
+    return kProtocolHTTP;
+  case Protocol::GRPC:
+    return kProtocolGRPC;
+  default:
+    break;
   }
   return {};
 }
@@ -221,8 +209,8 @@ flatbuffers::DetachedBuffer extractEmptyNodeFlatBuffer() {
 
 flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
   flatbuffers::FlatBufferBuilder fbb;
-  flatbuffers::Offset<flatbuffers::String> name, namespace_, owner,
-      workload_name, istio_version, mesh_id, cluster_id;
+  flatbuffers::Offset<flatbuffers::String> name, namespace_, owner, workload_name, istio_version,
+      mesh_id, cluster_id;
   std::vector<flatbuffers::Offset<KeyVal>> labels, platform_metadata;
   std::vector<flatbuffers::Offset<flatbuffers::String>> app_containers;
   std::vector<flatbuffers::Offset<flatbuffers::String>> ip_addrs;
@@ -252,8 +240,7 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
     auto buf = getProperty({"node", "metadata", "LABELS"});
     if (buf.has_value()) {
       for (const auto& [key, val] : buf.value()->pairs()) {
-        labels.push_back(
-            CreateKeyVal(fbb, fbb.CreateString(key), fbb.CreateString(val)));
+        labels.push_back(CreateKeyVal(fbb, fbb.CreateString(key), fbb.CreateString(val)));
       }
     }
   }
@@ -280,8 +267,7 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
   }
 
   auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
-  auto platform_metadata_offset =
-      fbb.CreateVectorOfSortedTables(&platform_metadata);
+  auto platform_metadata_offset = fbb.CreateVectorOfSortedTables(&platform_metadata);
   auto app_containers_offset = fbb.CreateVector(app_containers);
   auto ip_addrs_offset = fbb.CreateVector(ip_addrs);
   FlatNodeBuilder node(fbb);
@@ -303,11 +289,10 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
 
 namespace {
 
-bool extractPeerMetadataFromUpstreamMetadata(
-    const std::string& metadata_type, flatbuffers::FlatBufferBuilder& fbb) {
+bool extractPeerMetadataFromUpstreamMetadata(const std::string& metadata_type,
+                                             flatbuffers::FlatBufferBuilder& fbb) {
   std::string endpoint_labels;
-  if (!getValue({metadata_type, "filter_metadata", "istio", "workload"},
-                &endpoint_labels)) {
+  if (!getValue({metadata_type, "filter_metadata", "istio", "workload"}, &endpoint_labels)) {
     return false;
   }
   std::vector<absl::string_view> parts = absl::StrSplit(endpoint_labels, ';');
@@ -317,20 +302,17 @@ bool extractPeerMetadataFromUpstreamMetadata(
     return false;
   }
 
-  flatbuffers::Offset<flatbuffers::String> workload_name, namespace_,
-      cluster_id;
+  flatbuffers::Offset<flatbuffers::String> workload_name, namespace_, cluster_id;
   std::vector<flatbuffers::Offset<KeyVal>> labels;
   workload_name = fbb.CreateString(toStdStringView(parts[0]));
   namespace_ = fbb.CreateString(toStdStringView(parts[1]));
   if (!parts[2].empty()) {
-    labels.push_back(CreateKeyVal(fbb,
-                                  fbb.CreateString(kCanonicalServiceLabelName),
+    labels.push_back(CreateKeyVal(fbb, fbb.CreateString(kCanonicalServiceLabelName),
                                   fbb.CreateString(toStdStringView(parts[2]))));
   }
   if (!parts[3].empty()) {
-    labels.push_back(
-        CreateKeyVal(fbb, fbb.CreateString(kCanonicalServiceRevisionLabelName),
-                     fbb.CreateString(toStdStringView(parts[3]))));
+    labels.push_back(CreateKeyVal(fbb, fbb.CreateString(kCanonicalServiceRevisionLabelName),
+                                  fbb.CreateString(toStdStringView(parts[3]))));
   }
   if (parts.size() >= 5) {
     // In case newer proxy runs with old control plane, only extract cluster
@@ -351,15 +333,13 @@ bool extractPeerMetadataFromUpstreamMetadata(
   return true;
 }
 
-}  // namespace
+} // namespace
 
-bool extractPeerMetadataFromUpstreamClusterMetadata(
-    flatbuffers::FlatBufferBuilder& fbb) {
+bool extractPeerMetadataFromUpstreamClusterMetadata(flatbuffers::FlatBufferBuilder& fbb) {
   return extractPeerMetadataFromUpstreamMetadata("cluster_metadata", fbb);
 }
 
-bool extractPeerMetadataFromUpstreamHostMetadata(
-    flatbuffers::FlatBufferBuilder& fbb) {
+bool extractPeerMetadataFromUpstreamHostMetadata(flatbuffers::FlatBufferBuilder& fbb) {
   return extractPeerMetadataFromUpstreamMetadata("upstream_host_metadata", fbb);
 }
 
@@ -398,8 +378,7 @@ const ::Wasm::Common::FlatNode& PeerNodeInfo::get() const {
     return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
         reinterpret_cast<const uint8_t*>(peer_node_.data()));
   }
-  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-      fallback_peer_node_.data());
+  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(fallback_peer_node_.data());
 }
 
 // Host header is used if use_host_header_fallback==true.
@@ -430,9 +409,7 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   request_info->request_operation =
       getValue({::Wasm::Common::kRequestOperationKey}, &operation_id)
           ? operation_id
-          : getHeaderMapValue(WasmHeaderMapType::RequestHeaders,
-                              kMethodHeaderKey)
-                ->toString();
+          : getHeaderMapValue(WasmHeaderMapType::RequestHeaders, kMethodHeaderKey)->toString();
 
   getValue({"request", "time"}, &request_info->start_time);
   getValue({"request", "duration"}, &request_info->duration);
@@ -441,9 +418,8 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
 }
 
 std::string_view nodeInfoSchema() {
-  return std::string_view(
-      reinterpret_cast<const char*>(FlatNodeBinarySchema::data()),
-      FlatNodeBinarySchema::size());
+  return std::string_view(reinterpret_cast<const char*>(FlatNodeBinarySchema::data()),
+                          FlatNodeBinarySchema::size());
 }
 
 void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
@@ -459,14 +435,11 @@ void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {
     sanitizeBytes(&request_info->request_id);
   }
   std::string trace_sampled;
-  if (getValue({"request", "headers", "x-b3-sampled"}, &trace_sampled) &&
-      trace_sampled == "1") {
-    if (getValue({"request", "headers", "x-b3-traceid"},
-                 &request_info->b3_trace_id)) {
+  if (getValue({"request", "headers", "x-b3-sampled"}, &trace_sampled) && trace_sampled == "1") {
+    if (getValue({"request", "headers", "x-b3-traceid"}, &request_info->b3_trace_id)) {
       sanitizeBytes(&request_info->b3_trace_id);
     }
-    if (getValue({"request", "headers", "x-b3-spanid"},
-                 &request_info->b3_span_id)) {
+    if (getValue({"request", "headers", "x-b3-spanid"}, &request_info->b3_span_id)) {
       sanitizeBytes(&request_info->b3_span_id);
     }
     request_info->b3_trace_sampled = true;
@@ -488,15 +461,13 @@ void populateExtendedRequestInfo(RequestInfo* request_info) {
   getValue({"source", "port"}, &request_info->source_port);
   getValue({"connection_id"}, &request_info->connection_id);
   getValue({"upstream", "address"}, &request_info->upstream_host);
-  getValue({"connection", "requested_server_name"},
-           &request_info->requested_server_name);
-  auto envoy_original_path = getHeaderMapValue(
-      WasmHeaderMapType::RequestHeaders, kEnvoyOriginalPathKey);
-  request_info->x_envoy_original_path =
-      envoy_original_path ? envoy_original_path->toString() : "";
+  getValue({"connection", "requested_server_name"}, &request_info->requested_server_name);
+  auto envoy_original_path =
+      getHeaderMapValue(WasmHeaderMapType::RequestHeaders, kEnvoyOriginalPathKey);
+  request_info->x_envoy_original_path = envoy_original_path ? envoy_original_path->toString() : "";
   sanitizeBytes(&request_info->x_envoy_original_path);
-  auto envoy_original_dst_host = getHeaderMapValue(
-      WasmHeaderMapType::RequestHeaders, kEnvoyOriginalDstHostKey);
+  auto envoy_original_dst_host =
+      getHeaderMapValue(WasmHeaderMapType::RequestHeaders, kEnvoyOriginalDstHostKey);
   request_info->x_envoy_original_dst_host =
       envoy_original_dst_host ? envoy_original_dst_host->toString() : "";
   sanitizeBytes(&request_info->x_envoy_original_dst_host);
@@ -523,8 +494,7 @@ void populateTCPRequestInfo(bool outbound, RequestInfo* request_info) {
 
 void populateRequestProtocol(RequestInfo* request_info) {
   if (kGrpcContentTypes.count(
-          getHeaderMapValue(WasmHeaderMapType::RequestHeaders,
-                            kContentTypeHeaderKey)
+          getHeaderMapValue(WasmHeaderMapType::RequestHeaders, kContentTypeHeaderKey)
               ->toString()) != 0) {
     request_info->request_protocol = Protocol::GRPC;
   } else {
@@ -551,9 +521,8 @@ bool populateGRPCInfo(RequestInfo* request_info) {
 
 bool getAuditPolicy() {
   bool shouldAudit = false;
-  if (!getValue<bool>(
-          {"metadata", "filter_metadata", "envoy.common", "access_log_hint"},
-          &shouldAudit)) {
+  if (!getValue<bool>({"metadata", "filter_metadata", "envoy.common", "access_log_hint"},
+                      &shouldAudit)) {
     return false;
   }
 
@@ -593,5 +562,5 @@ std::string getServiceNameFallback() {
   return "unknown";
 }
 
-}  // namespace Common
-}  // namespace Wasm
+} // namespace Common
+} // namespace Wasm

@@ -26,7 +26,7 @@
 // WASM_PROLOG
 #ifdef NULL_PLUGIN
 namespace Wasm {
-#endif  // NULL_PLUGIN
+#endif // NULL_PLUGIN
 
 // END WASM_PROLOG
 
@@ -55,43 +55,36 @@ constexpr std::string_view node_metadata_json = R"###(
 }
 )###";
 
-constexpr std::string_view metadata_id_key =
-    "envoy.wasm.metadata_exchange.downstream_id";
-constexpr std::string_view metadata_key =
-    "envoy.wasm.metadata_exchange.downstream";
+constexpr std::string_view metadata_id_key = "envoy.wasm.metadata_exchange.downstream_id";
+constexpr std::string_view metadata_key = "envoy.wasm.metadata_exchange.downstream";
 constexpr std::string_view node_id = "test_pod.test_namespace";
 
-static void setData(Envoy::StreamInfo::FilterStateImpl& filter_state,
-                    std::string_view key, std::string_view value) {
+static void setData(Envoy::StreamInfo::FilterStateImpl& filter_state, std::string_view key,
+                    std::string_view value) {
   Envoy::Extensions::Filters::Common::Expr::CelStatePrototype prototype;
-  auto state_ptr =
-      std::make_unique<Envoy::Extensions::Filters::Common::Expr::CelState>(
-          prototype);
+  auto state_ptr = std::make_unique<Envoy::Extensions::Filters::Common::Expr::CelState>(prototype);
   state_ptr->setValue(toAbslStringView(value));
   filter_state.setData(toAbslStringView(key), std::move(state_ptr),
                        Envoy::StreamInfo::FilterState::StateType::Mutable);
 }
 
-static const std::string& getData(
-    Envoy::StreamInfo::FilterStateImpl& filter_state, std::string_view key) {
+static const std::string& getData(Envoy::StreamInfo::FilterStateImpl& filter_state,
+                                  std::string_view key) {
   return filter_state
-      .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
-          toAbslStringView(key))
+      .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(toAbslStringView(key))
       ->value();
 }
 
 static void BM_ReadFlatBuffer(benchmark::State& state) {
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
-                      json_parse_options);
+  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct, json_parse_options);
   auto out = extractNodeFlatBufferFromStruct(metadata_struct);
 
   Envoy::StreamInfo::FilterStateImpl filter_state{
       Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
-  setData(
-      filter_state, metadata_key,
-      std::string_view(reinterpret_cast<const char*>(out.data()), out.size()));
+  setData(filter_state, metadata_key,
+          std::string_view(reinterpret_cast<const char*>(out.data()), out.size()));
 
   size_t size = 0;
   for (auto _ : state) {
@@ -108,8 +101,7 @@ BENCHMARK(BM_ReadFlatBuffer);
 static void BM_WriteRawBytes(benchmark::State& state) {
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
-                      json_parse_options);
+  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct, json_parse_options);
   auto bytes = metadata_struct.SerializeAsString();
   Envoy::StreamInfo::FilterStateImpl filter_state{
       Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
@@ -124,8 +116,7 @@ BENCHMARK(BM_WriteRawBytes);
 static void BM_WriteFlatBufferWithCache(benchmark::State& state) {
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct,
-                      json_parse_options);
+  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct, json_parse_options);
   auto bytes = metadata_struct.SerializeAsString();
   Envoy::StreamInfo::FilterStateImpl filter_state{
       Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
@@ -144,10 +135,7 @@ static void BM_WriteFlatBufferWithCache(benchmark::State& state) {
       auto out = extractNodeFlatBufferFromStruct(test_struct);
 
       node_info =
-          cache
-              .emplace(node_id,
-                       std::string(reinterpret_cast<const char*>(out.data()),
-                                   out.size()))
+          cache.emplace(node_id, std::string(reinterpret_cast<const char*>(out.data()), out.size()))
               .first->second;
     } else {
       node_info = nodeinfo_it->second;
@@ -180,11 +168,9 @@ static void BM_DecodeFlatBuffer(benchmark::State& state) {
   // Construct a header from sample value.
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_flatbuffer_json), &metadata_struct,
-                      json_parse_options);
+  JsonStringToMessage(std::string(node_flatbuffer_json), &metadata_struct, json_parse_options);
   std::string metadata_bytes;
-  ::Wasm::Common::serializeToStringDeterministic(metadata_struct,
-                                                 &metadata_bytes);
+  ::Wasm::Common::serializeToStringDeterministic(metadata_struct, &metadata_bytes);
   const std::string header_value =
       Envoy::Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 
@@ -205,12 +191,10 @@ static void BM_DecodeBaggage(benchmark::State& state) {
   // Construct a header from sample value.
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_flatbuffer_json), &metadata_struct,
-                      json_parse_options);
+  JsonStringToMessage(std::string(node_flatbuffer_json), &metadata_struct, json_parse_options);
   auto fb = ::Wasm::Common::extractNodeFlatBufferFromStruct(metadata_struct);
   const auto& node = *flatbuffers::GetRoot<Wasm::Common::FlatNode>(fb.data());
-  const std::string baggage =
-      Istio::Common::convertFlatNodeToWorkloadMetadata(node).baggage();
+  const std::string baggage = Istio::Common::convertFlatNodeToWorkloadMetadata(node).baggage();
 
   size_t size = 0;
   for (auto _ : state) {
@@ -222,9 +206,9 @@ static void BM_DecodeBaggage(benchmark::State& state) {
 
 BENCHMARK(BM_DecodeBaggage);
 
-}  // namespace Common
+} // namespace Common
 
 // WASM_EPILOG
 #ifdef NULL_PLUGIN
-}  // namespace Wasm
+} // namespace Wasm
 #endif

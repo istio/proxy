@@ -28,27 +28,23 @@ namespace Utils {
 namespace {
 
 // Helper function to set a key/value pair into Struct.
-static void setKeyValue(::google::protobuf::Struct& data, std::string key,
-                        std::string value) {
+static void setKeyValue(::google::protobuf::Struct& data, std::string key, std::string value) {
   (*data.mutable_fields())[key].set_string_value(value);
 }
 
-}  // namespace
+} // namespace
 
-void Authentication::SaveAuthAttributesToStruct(
-    const istio::authn::Result& result, ::google::protobuf::Struct& data) {
+void Authentication::SaveAuthAttributesToStruct(const istio::authn::Result& result,
+                                                ::google::protobuf::Struct& data) {
   // TODO(diemvu): Refactor istio::authn::Result this conversion can be removed.
   if (!result.principal().empty()) {
-    setKeyValue(data, istio::utils::AttributeName::kRequestAuthPrincipal,
-                result.principal());
+    setKeyValue(data, istio::utils::AttributeName::kRequestAuthPrincipal, result.principal());
   }
   if (!result.peer_user().empty()) {
     // TODO(diemtvu): remove kSourceUser once migration to source.principal is
     // over. https://github.com/istio/istio/issues/4689
-    setKeyValue(data, istio::utils::AttributeName::kSourceUser,
-                result.peer_user());
-    setKeyValue(data, istio::utils::AttributeName::kSourcePrincipal,
-                result.peer_user());
+    setKeyValue(data, istio::utils::AttributeName::kSourceUser, result.peer_user());
+    setKeyValue(data, istio::utils::AttributeName::kSourcePrincipal, result.peer_user());
     auto source_ns = GetNamespace(result.peer_user());
     if (source_ns) {
       setKeyValue(data, istio::utils::AttributeName::kSourceNamespace,
@@ -61,34 +57,29 @@ void Authentication::SaveAuthAttributesToStruct(
       // TODO(diemtvu): this should be send as repeated field once mixer
       // support string_list (https://github.com/istio/istio/issues/2802) For
       // now, just use the first value.
-      setKeyValue(data, istio::utils::AttributeName::kRequestAuthAudiences,
-                  origin.audiences(0));
+      setKeyValue(data, istio::utils::AttributeName::kRequestAuthAudiences, origin.audiences(0));
     }
     if (!origin.presenter().empty()) {
-      setKeyValue(data, istio::utils::AttributeName::kRequestAuthPresenter,
-                  origin.presenter());
+      setKeyValue(data, istio::utils::AttributeName::kRequestAuthPresenter, origin.presenter());
     }
     if (!origin.claims().fields().empty()) {
-      *((*data.mutable_fields())
-            [istio::utils::AttributeName::kRequestAuthClaims]
-                .mutable_struct_value()) = origin.claims();
+      *((*data.mutable_fields())[istio::utils::AttributeName::kRequestAuthClaims]
+            .mutable_struct_value()) = origin.claims();
     }
     if (!origin.raw_claims().empty()) {
-      setKeyValue(data, istio::utils::AttributeName::kRequestAuthRawClaims,
-                  origin.raw_claims());
+      setKeyValue(data, istio::utils::AttributeName::kRequestAuthRawClaims, origin.raw_claims());
     }
   }
 }
 
-const ProtobufWkt::Struct* Authentication::GetResultFromMetadata(
-    const envoy::config::core::v3::Metadata& metadata) {
-  const auto& iter =
-      metadata.filter_metadata().find(Utils::IstioFilterName::kAuthentication);
+const ProtobufWkt::Struct*
+Authentication::GetResultFromMetadata(const envoy::config::core::v3::Metadata& metadata) {
+  const auto& iter = metadata.filter_metadata().find(Utils::IstioFilterName::kAuthentication);
   if (iter == metadata.filter_metadata().end()) {
     return nullptr;
   }
   return &(iter->second);
 }
 
-}  // namespace Utils
-}  // namespace Envoy
+} // namespace Utils
+} // namespace Envoy

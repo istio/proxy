@@ -41,26 +41,21 @@ Network::FilterStatus TcpClusterRewriteFilter::onNewConnection() {
       read_callbacks_->connection()
           .streamInfo()
           .filterState()
-          ->hasData<TcpProxy::PerConnectionCluster>(
-              TcpProxy::PerConnectionCluster::key())) {
+          ->hasData<TcpProxy::PerConnectionCluster>(TcpProxy::PerConnectionCluster::key())) {
     absl::string_view cluster_name =
         read_callbacks_->connection()
             .streamInfo()
             .filterState()
-            ->getDataReadOnly<TcpProxy::PerConnectionCluster>(
-                TcpProxy::PerConnectionCluster::key())
+            ->getDataReadOnly<TcpProxy::PerConnectionCluster>(TcpProxy::PerConnectionCluster::key())
             ->value();
-    ENVOY_CONN_LOG(trace,
-                   "tcp_cluster_rewrite: new connection with server name {}",
+    ENVOY_CONN_LOG(trace, "tcp_cluster_rewrite: new connection with server name {}",
                    read_callbacks_->connection(), cluster_name);
 
     // Rewrite the cluster name prior to setting the tcp_proxy cluster name.
     std::string final_cluster_name(absl::StrCat(cluster_name));
-    final_cluster_name =
-        std::regex_replace(final_cluster_name, config_->clusterPattern(),
-                           config_->clusterReplacement());
-    ENVOY_CONN_LOG(trace,
-                   "tcp_cluster_rewrite: final tcp proxy cluster name {}",
+    final_cluster_name = std::regex_replace(final_cluster_name, config_->clusterPattern(),
+                                            config_->clusterReplacement());
+    ENVOY_CONN_LOG(trace, "tcp_cluster_rewrite: final tcp proxy cluster name {}",
                    read_callbacks_->connection(), final_cluster_name);
 
     try {
@@ -75,9 +70,7 @@ Network::FilterStatus TcpClusterRewriteFilter::onNewConnection() {
                      read_callbacks_->connection(), e.what());
       throw;
     } catch (...) {
-      ENVOY_LOG(
-          critical,
-          "tcp_cluster_rewrite: error setting data due to unknown exception");
+      ENVOY_LOG(critical, "tcp_cluster_rewrite: error setting data due to unknown exception");
       throw;
     }
   }
@@ -85,6 +78,6 @@ Network::FilterStatus TcpClusterRewriteFilter::onNewConnection() {
   return Network::FilterStatus::Continue;
 }
 
-}  // namespace TcpClusterRewrite
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace TcpClusterRewrite
+} // namespace Tcp
+} // namespace Envoy

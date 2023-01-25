@@ -88,8 +88,7 @@ constexpr char kBadToken[] =
     "9ZwehqfgSCJWYUoBTrdM06N3jEemlWB83ZY4OXoW0pNx-ecu"
     "3asJVbwyxV2_HT6_aUsdHwTYwHv2hXBjdKEfwZxSsBxbKpA";
 
-constexpr char kExpectedPrincipal[] =
-    "testing@secure.istio.io/testing@secure.istio.io";
+constexpr char kExpectedPrincipal[] = "testing@secure.istio.io/testing@secure.istio.io";
 
 constexpr char kDestinationNamespace[] = "pod";
 constexpr char kDestinationUID[] = "kubernetes://dest.pod";
@@ -152,10 +151,8 @@ std::string MakeEnvoyJwtFilterConfig() {
       "4WTiULmmHSGZHOjzwa8WtrtOQGsAFjIbno85jp6MnGGGZPYZbDAa_b3y5u-"
       "YpW7ypZrvD8BgtKVjgtQgZhLAGezMt0ua3DRrWnKqTZ0BJ_EyxOGuHJrLsn00fnMQ\"}]}";
 
-  return fmt::sprintf(kJwtFilterTemplate,
-                      Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn,
-                      StringUtil::escape(kJwksInline),
-                      StringUtil::escape(kJwksInline));
+  return fmt::sprintf(kJwtFilterTemplate, Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn,
+                      StringUtil::escape(kJwksInline), StringUtil::escape(kJwksInline));
 }
 
 std::string MakeAuthFilterConfig() {
@@ -175,8 +172,7 @@ std::string MakeAuthFilterConfig() {
               jwks_uri: http://localhost:8081/
           principalBinding: USE_ORIGIN
 )";
-  return fmt::sprintf(kAuthnFilterWithJwtTemplate,
-                      Utils::IstioFilterName::kAuthentication);
+  return fmt::sprintf(kAuthnFilterWithJwtTemplate, Utils::IstioFilterName::kAuthentication);
 }
 
 std::string MakeRbacFilterConfig() {
@@ -200,16 +196,14 @@ std::string MakeRbacFilterConfig() {
                     string_match:
                       exact: %s
 )";
-  return fmt::sprintf(
-      kRbacFilterTemplate, Utils::IstioFilterName::kAuthentication,
-      istio::utils::AttributeName::kRequestAuthPrincipal, kExpectedPrincipal);
+  return fmt::sprintf(kRbacFilterTemplate, Utils::IstioFilterName::kAuthentication,
+                      istio::utils::AttributeName::kRequestAuthPrincipal, kExpectedPrincipal);
 }
 
 // This integration is exact the same as one in istio_http_integration_test.cc,
 // except this test uses Envoy jwt filter, rather than Istio jwt filter.
-class IstioHttpIntegrationTestWithEnvoyJwtFilter
-    : public HttpProtocolIntegrationTest {
- public:
+class IstioHttpIntegrationTestWithEnvoyJwtFilter : public HttpProtocolIntegrationTest {
+public:
   void createUpstreams() override {
     HttpProtocolIntegrationTest::createUpstreams();
     FakeUpstreamConfig config(timeSystem());
@@ -241,14 +235,13 @@ class IstioHttpIntegrationTestWithEnvoyJwtFilter
   ConfigHelper::ConfigModifierFunction addNodeMetadata() {
     return [](envoy::config::bootstrap::v3::Bootstrap& bootstrap) {
       ::google::protobuf::Struct meta;
-      MessageUtil::loadFromJson(
-          fmt::sprintf(R"({
+      MessageUtil::loadFromJson(fmt::sprintf(R"({
         "ISTIO_VERSION": "1.0.1",
         "NODE_UID": "%s",
         "NODE_NAMESPACE": "%s"
       })",
-                       kDestinationUID, kDestinationNamespace),
-          meta);
+                                             kDestinationUID, kDestinationNamespace),
+                                meta);
       bootstrap.mutable_node()->mutable_metadata()->MergeFrom(meta);
     };
   }
@@ -267,13 +260,14 @@ class IstioHttpIntegrationTestWithEnvoyJwtFilter
   }
 
   ConfigHelper::HttpModifierFunction addTracingRate() {
-    return [](envoy::extensions::filters::network::http_connection_manager::v3::
-                  HttpConnectionManager& hcm) {
-      auto* tracing = hcm.mutable_tracing();
-      tracing->mutable_client_sampling()->set_value(100.0);
-      tracing->mutable_random_sampling()->set_value(100.0);
-      tracing->mutable_overall_sampling()->set_value(100.0);
-    };
+    return
+        [](envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager&
+               hcm) {
+          auto* tracing = hcm.mutable_tracing();
+          tracing->mutable_client_sampling()->set_value(100.0);
+          tracing->mutable_random_sampling()->set_value(100.0);
+          tracing->mutable_overall_sampling()->set_value(100.0);
+        };
   }
 
   ConfigHelper::ConfigModifierFunction addCluster(const std::string& name) {
@@ -299,15 +293,13 @@ class IstioHttpIntegrationTestWithEnvoyJwtFilter
   FakeStreamPtr zipkin_request_{};
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Protocols, IstioHttpIntegrationTestWithEnvoyJwtFilter,
-    testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
-    HttpProtocolIntegrationTest::protocolTestParamsToString);
+INSTANTIATE_TEST_SUITE_P(Protocols, IstioHttpIntegrationTestWithEnvoyJwtFilter,
+                         testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
+                         HttpProtocolIntegrationTest::protocolTestParamsToString);
 
 TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, NoJwt) {
   // initialize();
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
   auto response = codec_client_->makeHeaderOnlyRequest(BaseRequestHeaders());
 
   ASSERT_TRUE(response->waitForEndStream());
@@ -316,10 +308,8 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, NoJwt) {
 }
 
 TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, BadJwt) {
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
-  auto response =
-      codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kBadToken));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  auto response = codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kBadToken));
 
   ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
@@ -327,10 +317,8 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, BadJwt) {
 }
 
 TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, RbacDeny) {
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
-  auto response =
-      codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kRbacGoodToken));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  auto response = codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kRbacGoodToken));
 
   ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
@@ -340,15 +328,12 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, RbacDeny) {
 }
 
 TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, GoodJwt) {
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
-  auto response =
-      codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kGoodToken));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  auto response = codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kGoodToken));
 
   waitForNextUpstreamRequest(0);
   // Send backend response.
-  upstream_request_->encodeHeaders(
-      Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
+  upstream_request_->encodeHeaders(Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
   ASSERT_TRUE(response->waitForEndStream());
 
   EXPECT_TRUE(response->complete());
@@ -356,20 +341,16 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, GoodJwt) {
 }
 
 TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, TracingHeader) {
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
-  auto response =
-      codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kGoodToken));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  auto response = codec_client_->makeHeaderOnlyRequest(HeadersWithToken(kGoodToken));
 
   waitForNextUpstreamRequest(0);
   // Send backend response.
-  upstream_request_->encodeHeaders(
-      Http::TestRequestHeaderMapImpl{{":status", "200"}}, true);
+  upstream_request_->encodeHeaders(Http::TestRequestHeaderMapImpl{{":status", "200"}}, true);
   ASSERT_TRUE(response->waitForEndStream());
 
   EXPECT_TRUE(response->complete());
-  Http::TestResponseHeaderMapImpl upstream_headers(
-      upstream_request_->headers());
+  Http::TestResponseHeaderMapImpl upstream_headers(upstream_request_->headers());
 
   // Trace headers should be added into upstream request
   EXPECT_TRUE(upstream_headers.has(Envoy::Utils::kTraceID));
@@ -377,5 +358,5 @@ TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, TracingHeader) {
   EXPECT_TRUE(upstream_headers.has(Envoy::Utils::kSampled));
 }
 
-}  // namespace
-}  // namespace Envoy
+} // namespace
+} // namespace Envoy

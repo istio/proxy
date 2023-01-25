@@ -40,11 +40,11 @@ using ::Envoy::Extensions::Filters::Common::Expr::CelStatePrototype;
 /**
  * All MetadataExchange filter stats. @see stats_macros.h
  */
-#define ALL_METADATA_EXCHANGE_STATS(COUNTER) \
-  COUNTER(alpn_protocol_not_found)           \
-  COUNTER(alpn_protocol_found)               \
-  COUNTER(initial_header_not_found)          \
-  COUNTER(header_not_found)                  \
+#define ALL_METADATA_EXCHANGE_STATS(COUNTER)                                                       \
+  COUNTER(alpn_protocol_not_found)                                                                 \
+  COUNTER(alpn_protocol_found)                                                                     \
+  COUNTER(initial_header_not_found)                                                                \
+  COUNTER(header_not_found)                                                                        \
   COUNTER(metadata_added)
 
 /**
@@ -64,11 +64,9 @@ enum FilterDirection { Downstream, Upstream };
  * Configuration for the MetadataExchange filter.
  */
 class MetadataExchangeConfig {
- public:
-  MetadataExchangeConfig(const std::string& stat_prefix,
-                         const std::string& protocol,
-                         const FilterDirection filter_direction,
-                         Stats::Scope& scope);
+public:
+  MetadataExchangeConfig(const std::string& stat_prefix, const std::string& protocol,
+                         const FilterDirection filter_direction, Stats::Scope& scope);
 
   const MetadataExchangeStats& stats() { return stats_; }
 
@@ -85,18 +83,15 @@ class MetadataExchangeConfig {
 
   static const CelStatePrototype& nodeInfoPrototype() {
     static const CelStatePrototype* const prototype = new CelStatePrototype(
-        true,
-        ::Envoy::Extensions::Filters::Common::Expr::CelStateType::FlatBuffers,
+        true, ::Envoy::Extensions::Filters::Common::Expr::CelStateType::FlatBuffers,
         toAbslStringView(::Wasm::Common::nodeInfoSchema()),
         StreamInfo::FilterState::LifeSpan::Connection);
     return *prototype;
   }
 
- private:
-  MetadataExchangeStats generateStats(const std::string& prefix,
-                                      Stats::Scope& scope) {
-    return MetadataExchangeStats{
-        ALL_METADATA_EXCHANGE_STATS(POOL_COUNTER_PREFIX(scope, prefix))};
+private:
+  MetadataExchangeStats generateStats(const std::string& prefix, Stats::Scope& scope) {
+    return MetadataExchangeStats{ALL_METADATA_EXCHANGE_STATS(POOL_COUNTER_PREFIX(scope, prefix))};
   }
 };
 
@@ -107,30 +102,24 @@ using MetadataExchangeConfigSharedPtr = std::shared_ptr<MetadataExchangeConfig>;
  */
 class MetadataExchangeFilter : public Network::Filter,
                                protected Logger::Loggable<Logger::Id::filter> {
- public:
+public:
   MetadataExchangeFilter(MetadataExchangeConfigSharedPtr config,
                          const LocalInfo::LocalInfo& local_info)
-      : config_(config),
-        local_info_(local_info),
-        conn_state_(ConnProtocolNotRead) {}
+      : config_(config), local_info_(local_info), conn_state_(ConnProtocolNotRead) {}
 
   // Network::ReadFilter
-  Network::FilterStatus onData(Buffer::Instance& data,
-                               bool end_stream) override;
+  Network::FilterStatus onData(Buffer::Instance& data, bool end_stream) override;
   Network::FilterStatus onNewConnection() override;
-  Network::FilterStatus onWrite(Buffer::Instance& data,
-                                bool end_stream) override;
-  void initializeReadFilterCallbacks(
-      Network::ReadFilterCallbacks& callbacks) override {
+  Network::FilterStatus onWrite(Buffer::Instance& data, bool end_stream) override;
+  void initializeReadFilterCallbacks(Network::ReadFilterCallbacks& callbacks) override {
     read_callbacks_ = &callbacks;
     // read_callbacks_->connection().addConnectionCallbacks(*this);
   }
-  void initializeWriteFilterCallbacks(
-      Network::WriteFilterCallbacks& callbacks) override {
+  void initializeWriteFilterCallbacks(Network::WriteFilterCallbacks& callbacks) override {
     write_callbacks_ = &callbacks;
   }
 
- private:
+private:
   // Writes node metadata in write pipeline of the filter chain.
   // Also, sets node metadata in Dynamic Metadata to be available for subsequent
   // filters.
@@ -171,22 +160,21 @@ class MetadataExchangeFilter : public Network::Filter,
   const std::string ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
 
   // Type url of google::protobug::struct.
-  const std::string StructTypeUrl =
-      "type.googleapis.com/google.protobuf.Struct";
+  const std::string StructTypeUrl = "type.googleapis.com/google.protobuf.Struct";
 
   // Captures the state machine of what is going on in the filter.
   enum {
-    ConnProtocolNotRead,        // Connection Protocol has not been read yet
-    WriteMetadata,              // Write node metadata
-    ReadingInitialHeader,       // MetadataExchangeInitialHeader is being read
-    ReadingProxyHeader,         // Proxy Header is being read
-    NeedMoreDataInitialHeader,  // Need more data to be read
-    NeedMoreDataProxyHeader,    // Need more data to be read
-    Done,                       // Alpn Protocol Found and all the read is done
-    Invalid,                    // Invalid state, all operations fail
+    ConnProtocolNotRead,       // Connection Protocol has not been read yet
+    WriteMetadata,             // Write node metadata
+    ReadingInitialHeader,      // MetadataExchangeInitialHeader is being read
+    ReadingProxyHeader,        // Proxy Header is being read
+    NeedMoreDataInitialHeader, // Need more data to be read
+    NeedMoreDataProxyHeader,   // Need more data to be read
+    Done,                      // Alpn Protocol Found and all the read is done
+    Invalid,                   // Invalid state, all operations fail
   } conn_state_;
 };
 
-}  // namespace MetadataExchange
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace MetadataExchange
+} // namespace Tcp
+} // namespace Envoy

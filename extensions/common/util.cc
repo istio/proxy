@@ -45,8 +45,7 @@ constexpr static absl::string_view RATELIMIT_SERVICE_ERROR = "RLSE";
 constexpr static absl::string_view STREAM_IDLE_TIMEOUT = "SI";
 constexpr static absl::string_view INVALID_ENVOY_REQUEST_HEADERS = "IH";
 constexpr static absl::string_view DOWNSTREAM_PROTOCOL_ERROR = "DPE";
-constexpr static absl::string_view UPSTREAM_MAX_STREAM_DURATION_REACHED =
-    "UMSDR";
+constexpr static absl::string_view UPSTREAM_MAX_STREAM_DURATION_REACHED = "UMSDR";
 constexpr static absl::string_view RESPONSE_FROM_CACHE_FILTER = "RFCF";
 constexpr static absl::string_view NO_FILTER_CONFIG_FOUND = "NFCF";
 constexpr static absl::string_view DURATION_TIMEOUT = "DT";
@@ -94,7 +93,7 @@ void appendString(std::string& result, const absl::string_view& append) {
   }
 }
 
-}  // namespace
+} // namespace
 
 const std::string parseResponseFlag(uint64_t response_flag) {
   std::string result;
@@ -216,5 +215,5 @@ const std::string parseResponseFlag(uint64_t response_flag) {
   return result.empty() ? ::Wasm::Common::NONE : result;
 }
 
-}  // namespace Common
-}  // namespace Wasm
+} // namespace Common
+} // namespace Wasm

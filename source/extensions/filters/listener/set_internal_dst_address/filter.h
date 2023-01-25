@@ -24,26 +24,22 @@ const absl::string_view FilterStateKey = "istio.set_internal_dst_address";
 
 struct Authority : public Envoy::StreamInfo::FilterState::Object {
   Authority(absl::string_view value) : value_(value) {}
-  absl::optional<std::string> serializeAsString() const override {
-    return value_;
-  }
+  absl::optional<std::string> serializeAsString() const override { return value_; }
   const std::string value_;
 };
 
 class Filter : public Envoy::Network::ListenerFilter,
                public Envoy::Logger::Loggable<Envoy::Logger::Id::filter> {
- public:
+public:
   // Network::ListenerFilter
-  Envoy::Network::FilterStatus onAccept(
-      Envoy::Network::ListenerFilterCallbacks& cb) override;
+  Envoy::Network::FilterStatus onAccept(Envoy::Network::ListenerFilterCallbacks& cb) override;
 
-  Envoy::Network::FilterStatus onData(
-      Envoy::Network::ListenerFilterBuffer&) override {
+  Envoy::Network::FilterStatus onData(Envoy::Network::ListenerFilterBuffer&) override {
     return Envoy::Network::FilterStatus::Continue;
   }
 
   size_t maxReadBytes() const override { return 0; }
 };
 
-}  // namespace SetInternalDstAddress
-}  // namespace Istio
+} // namespace SetInternalDstAddress
+} // namespace Istio

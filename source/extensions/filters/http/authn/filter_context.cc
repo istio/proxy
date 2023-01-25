@@ -31,17 +31,17 @@ namespace AuthN {
 void FilterContext::setPeerResult(const Payload* payload) {
   if (payload != nullptr) {
     switch (payload->payload_case()) {
-      case Payload::kX509:
-        ENVOY_LOG(debug, "Set peer from X509: {}", payload->x509().user());
-        result_.set_peer_user(payload->x509().user());
-        break;
-      case Payload::kJwt:
-        ENVOY_LOG(debug, "Set peer from JWT: {}", payload->jwt().user());
-        result_.set_peer_user(payload->jwt().user());
-        break;
-      default:
-        ENVOY_LOG(debug, "Payload has not peer authentication data");
-        break;
+    case Payload::kX509:
+      ENVOY_LOG(debug, "Set peer from X509: {}", payload->x509().user());
+      result_.set_peer_user(payload->x509().user());
+      break;
+    case Payload::kJwt:
+      ENVOY_LOG(debug, "Set peer from JWT: {}", payload->jwt().user());
+      result_.set_peer_user(payload->jwt().user());
+      break;
+    default:
+      ENVOY_LOG(debug, "Payload has not peer authentication data");
+      break;
     }
   }
 }
@@ -57,32 +57,30 @@ void FilterContext::setOriginResult(const Payload* payload) {
 
 void FilterContext::setPrincipal(const iaapi::PrincipalBinding& binding) {
   switch (binding) {
-    case iaapi::PrincipalBinding::USE_PEER:
-      ENVOY_LOG(debug, "Set principal from peer: {}", result_.peer_user());
-      result_.set_principal(result_.peer_user());
-      return;
-    case iaapi::PrincipalBinding::USE_ORIGIN:
-      ENVOY_LOG(debug, "Set principal from origin: {}",
-                result_.origin().user());
-      result_.set_principal(result_.origin().user());
-      return;
-    default:
-      // Should never come here.
-      ENVOY_LOG(error, "Invalid binding value {}", binding);
-      return;
+  case iaapi::PrincipalBinding::USE_PEER:
+    ENVOY_LOG(debug, "Set principal from peer: {}", result_.peer_user());
+    result_.set_principal(result_.peer_user());
+    return;
+  case iaapi::PrincipalBinding::USE_ORIGIN:
+    ENVOY_LOG(debug, "Set principal from origin: {}", result_.origin().user());
+    result_.set_principal(result_.origin().user());
+    return;
+  default:
+    // Should never come here.
+    ENVOY_LOG(error, "Invalid binding value {}", binding);
+    return;
   }
 }
 
-bool FilterContext::getJwtPayload(const std::string& issuer,
-                                  std::string* payload) const {
+bool FilterContext::getJwtPayload(const std::string& issuer, std::string* payload) const {
   // Prefer to use the jwt payload from Envoy jwt filter over the Istio jwt
   // filter's one.
   return getJwtPayloadFromEnvoyJwtFilter(issuer, payload) ||
          getJwtPayloadFromIstioJwtFilter(issuer, payload);
 }
 
-bool FilterContext::getJwtPayloadFromEnvoyJwtFilter(
-    const std::string& issuer, std::string* payload) const {
+bool FilterContext::getJwtPayloadFromEnvoyJwtFilter(const std::string& issuer,
+                                                    std::string* payload) const {
   // Try getting the Jwt payload from Envoy jwt_authn filter.
   auto filter_it = dynamic_metadata_.filter_metadata().find(
       Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn);
@@ -112,14 +110,12 @@ bool FilterContext::getJwtPayloadFromEnvoyJwtFilter(
   return true;
 }
 
-bool FilterContext::getJwtPayloadFromIstioJwtFilter(
-    const std::string& issuer, std::string* payload) const {
+bool FilterContext::getJwtPayloadFromIstioJwtFilter(const std::string& issuer,
+                                                    std::string* payload) const {
   // Try getting the Jwt payload from Istio jwt-auth filter.
-  auto filter_it =
-      dynamic_metadata_.filter_metadata().find(Utils::IstioFilterName::kJwt);
+  auto filter_it = dynamic_metadata_.filter_metadata().find(Utils::IstioFilterName::kJwt);
   if (filter_it == dynamic_metadata_.filter_metadata().end()) {
-    ENVOY_LOG(debug, "No dynamic_metadata found for filter {}",
-              Utils::IstioFilterName::kJwt);
+    ENVOY_LOG(debug, "No dynamic_metadata found for filter {}", Utils::IstioFilterName::kJwt);
     return false;
   }
 
@@ -138,7 +134,7 @@ bool FilterContext::getJwtPayloadFromIstioJwtFilter(
   return true;
 }
 
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

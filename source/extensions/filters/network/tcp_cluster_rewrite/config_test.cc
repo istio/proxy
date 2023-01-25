@@ -30,19 +30,17 @@ TEST(ConfigTest, ConfigTest) {
   NiceMock<Server::Configuration::MockFactoryContext> context;
   TcpClusterRewriteFilterConfigFactory factory;
   v2alpha1::TcpClusterRewrite config =
-      *dynamic_cast<v2alpha1::TcpClusterRewrite*>(
-          factory.createEmptyConfigProto().get());
+      *dynamic_cast<v2alpha1::TcpClusterRewrite*>(factory.createEmptyConfigProto().get());
 
   config.set_cluster_pattern("connection\\.sni");
   config.set_cluster_replacement("replacement.sni");
 
-  Network::FilterFactoryCb cb =
-      factory.createFilterFactoryFromProto(config, context);
+  Network::FilterFactoryCb cb = factory.createFilterFactoryFromProto(config, context);
   Network::MockConnection connection;
   EXPECT_CALL(connection, addReadFilter(_));
   cb(connection);
 }
 
-}  // namespace TcpClusterRewrite
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace TcpClusterRewrite
+} // namespace Tcp
+} // namespace Envoy

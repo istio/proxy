@@ -25,23 +25,21 @@ namespace Alpn {
 /**
  * Config registration for the alpn filter.
  */
-class AlpnConfigFactory
-    : public Server::Configuration::NamedHttpFilterConfigFactory {
- public:
+class AlpnConfigFactory : public Server::Configuration::NamedHttpFilterConfigFactory {
+public:
   // Server::Configuration::NamedHttpFilterConfigFactory
-  Http::FilterFactoryCb createFilterFactoryFromProto(
-      const Protobuf::Message &config, const std::string &stat_prefix,
-      Server::Configuration::FactoryContext &context) override;
+  Http::FilterFactoryCb
+  createFilterFactoryFromProto(const Protobuf::Message& config, const std::string& stat_prefix,
+                               Server::Configuration::FactoryContext& context) override;
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
   std::string name() const override;
 
- private:
+private:
   Http::FilterFactoryCb createFilterFactory(
-      const istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig
-          &config_pb,
-      Upstream::ClusterManager &cluster_manager);
+      const istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig& config_pb,
+      Upstream::ClusterManager& cluster_manager);
 };
 
-}  // namespace Alpn
-}  // namespace Http
-}  // namespace Envoy
+} // namespace Alpn
+} // namespace Http
+} // namespace Envoy

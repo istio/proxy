@@ -25,45 +25,43 @@ namespace HttpFilters {
 namespace ConnectAuthority {
 
 class FilterConfig : public Router::RouteSpecificFilterConfig {
- public:
+public:
   FilterConfig(const io::istio::http::connect_authority::Config& config)
       : enabled_(config.enabled()) {}
   bool enabled() const { return enabled_; }
 
- private:
+private:
   const bool enabled_;
 };
 
 class Filter : public Http::PassThroughFilter {
- public:
-  Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap&,
-                                          bool) override;
+public:
+  Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap&, bool) override;
 };
 
-class FilterConfigFactory
-    : public Common::FactoryBase<io::istio::http::connect_authority::Config> {
- public:
+class FilterConfigFactory : public Common::FactoryBase<io::istio::http::connect_authority::Config> {
+public:
   FilterConfigFactory() : FactoryBase("envoy.filters.http.connect_authority") {}
 
- private:
-  Http::FilterFactoryCb createFilterFactoryFromProtoTyped(
-      const io::istio::http::connect_authority::Config&, const std::string&,
-      Server::Configuration::FactoryContext&) override {
+private:
+  Http::FilterFactoryCb
+  createFilterFactoryFromProtoTyped(const io::istio::http::connect_authority::Config&,
+                                    const std::string&,
+                                    Server::Configuration::FactoryContext&) override {
     return [](Http::FilterChainFactoryCallbacks& callbacks) {
       auto filter = std::make_shared<Filter>();
       callbacks.addStreamFilter(filter);
     };
   }
   Router::RouteSpecificFilterConfigConstSharedPtr
-  createRouteSpecificFilterConfigTyped(
-      const io::istio::http::connect_authority::Config& config,
-      Envoy::Server::Configuration::ServerFactoryContext&,
-      ProtobufMessage::ValidationVisitor&) override {
+  createRouteSpecificFilterConfigTyped(const io::istio::http::connect_authority::Config& config,
+                                       Envoy::Server::Configuration::ServerFactoryContext&,
+                                       ProtobufMessage::ValidationVisitor&) override {
     return std::make_shared<FilterConfig>(config);
   }
 };
 
-}  // namespace ConnectAuthority
-}  // namespace HttpFilters
-}  // namespace Extensions
-}  // namespace Envoy
+} // namespace ConnectAuthority
+} // namespace HttpFilters
+} // namespace Extensions
+} // namespace Envoy

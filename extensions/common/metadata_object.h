@@ -31,8 +31,7 @@ enum class WorkloadType {
   CronJob,
 };
 
-constexpr absl::string_view OwnerPrefix =
-    "kubernetes://apis/apps/v1/namespaces/";
+constexpr absl::string_view OwnerPrefix = "kubernetes://apis/apps/v1/namespaces/";
 constexpr absl::string_view PodSuffix = "pod";
 constexpr absl::string_view DeploymentSuffix = "deployment";
 constexpr absl::string_view JobSuffix = "job";
@@ -62,41 +61,29 @@ constexpr absl::string_view CronJobNameToken = "k8s.cronjob.name";
 constexpr absl::string_view AppNameToken = "app.name";
 constexpr absl::string_view AppVersionToken = "app.version";
 
-constexpr absl::string_view kSourceMetadataObjectKey =
-    "ambient.source.workloadMetadata";
-constexpr absl::string_view kSourceMetadataBaggageKey =
-    "ambient.source.workloadMetadataBaggage";
-constexpr absl::string_view kDestinationMetadataObjectKey =
-    "ambient.destination.workloadMetadata";
+constexpr absl::string_view kSourceMetadataObjectKey = "ambient.source.workloadMetadata";
+constexpr absl::string_view kSourceMetadataBaggageKey = "ambient.source.workloadMetadataBaggage";
+constexpr absl::string_view kDestinationMetadataObjectKey = "ambient.destination.workloadMetadata";
 
 struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
                                 public Envoy::Hashable {
-  explicit WorkloadMetadataObject(
-      absl::string_view instance_name, absl::string_view cluster_name,
-      absl::string_view namespace_name, absl::string_view workload_name,
-      absl::string_view canonical_name, absl::string_view canonical_revision,
-      absl::string_view app_name, absl::string_view app_version,
-      const WorkloadType workload_type)
-      : instance_name_(instance_name),
-        cluster_name_(cluster_name),
-        namespace_name_(namespace_name),
-        workload_name_(workload_name),
-        canonical_name_(canonical_name),
-        canonical_revision_(canonical_revision),
-        app_name_(app_name),
-        app_version_(app_version),
+  explicit WorkloadMetadataObject(absl::string_view instance_name, absl::string_view cluster_name,
+                                  absl::string_view namespace_name, absl::string_view workload_name,
+                                  absl::string_view canonical_name,
+                                  absl::string_view canonical_revision, absl::string_view app_name,
+                                  absl::string_view app_version, const WorkloadType workload_type)
+      : instance_name_(instance_name), cluster_name_(cluster_name), namespace_name_(namespace_name),
+        workload_name_(workload_name), canonical_name_(canonical_name),
+        canonical_revision_(canonical_revision), app_name_(app_name), app_version_(app_version),
         workload_type_(workload_type) {}
 
-  static WorkloadMetadataObject fromBaggage(
-      absl::string_view baggage_header_value);
+  static WorkloadMetadataObject fromBaggage(absl::string_view baggage_header_value);
 
   std::string baggage() const;
 
   absl::optional<uint64_t> hash() const override;
 
-  absl::optional<std::string> serializeAsString() const override {
-    return baggage();
-  }
+  absl::optional<std::string> serializeAsString() const override { return baggage(); }
 
   const std::string instance_name_;
   const std::string cluster_name_;
@@ -110,20 +97,18 @@ struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
 };
 
 // Convert metadata object to flatbuffer.
-flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(
-    const WorkloadMetadataObject& obj);
+flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(const WorkloadMetadataObject& obj);
 
 // Convert flatbuffer to metadata object.
-WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(
-    const Wasm::Common::FlatNode& node);
+WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(const Wasm::Common::FlatNode& node);
 
 // Convert endpoint metadata string to a metadata object.
 // Telemetry metadata is compressed into a semicolon separated string:
 // workload-name;namespace;canonical-service-name;canonical-service-revision;cluster-id.
 // Telemetry metadata is stored as a string under "istio", "workload" field
 // path.
-absl::optional<WorkloadMetadataObject> convertEndpointMetadata(
-    const std::string& endpoint_encoding);
+absl::optional<WorkloadMetadataObject>
+convertEndpointMetadata(const std::string& endpoint_encoding);
 
-}  // namespace Common
-}  // namespace Istio
+} // namespace Common
+} // namespace Istio

@@ -37,17 +37,13 @@ const std::string kMetadataDestinationUID("uid");
 const std::string kNamespaceKey("/ns/");
 const char kDelimiter = '/';
 
-bool hasSPIFFEPrefix(const std::string& san) {
-  return absl::StartsWith(san, kSPIFFEPrefix);
-}
+bool hasSPIFFEPrefix(const std::string& san) { return absl::StartsWith(san, kSPIFFEPrefix); }
 
-bool getCertSAN(const Network::Connection* connection, bool peer,
-                std::string* principal) {
+bool getCertSAN(const Network::Connection* connection, bool peer, std::string* principal) {
   if (connection) {
     const auto ssl = connection->ssl();
     if (ssl != nullptr) {
-      const auto& sans =
-          (peer ? ssl->uriSanPeerCertificate() : ssl->uriSanLocalCertificate());
+      const auto& sans = (peer ? ssl->uriSanPeerCertificate() : ssl->uriSanLocalCertificate());
       if (sans.empty()) {
         // empty result is not allowed.
         return false;
@@ -67,50 +63,44 @@ bool getCertSAN(const Network::Connection* connection, bool peer,
   return false;
 }
 
-}  // namespace
+} // namespace
 
-void ExtractHeaders(const Http::HeaderMap& header_map,
-                    const std::set<std::string>& exclusives,
+void ExtractHeaders(const Http::HeaderMap& header_map, const std::set<std::string>& exclusives,
                     std::map<std::string, std::string>& headers) {
   struct Context {
-    Context(const std::set<std::string>& exclusives,
-            std::map<std::string, std::string>& headers)
+    Context(const std::set<std::string>& exclusives, std::map<std::string, std::string>& headers)
         : exclusives(exclusives), headers(headers) {}
     const std::set<std::string>& exclusives;
     std::map<std::string, std::string>& headers;
   };
   Context ctx(exclusives, headers);
-  header_map.iterate(
-      [&ctx](const Http::HeaderEntry& header) -> Http::HeaderMap::Iterate {
-        auto key = std::string(header.key().getStringView());
-        auto value = std::string(header.value().getStringView());
-        if (ctx.exclusives.count(key) == 0) {
-          ctx.headers[key] = value;
-        }
-        return Http::HeaderMap::Iterate::Continue;
-      });
+  header_map.iterate([&ctx](const Http::HeaderEntry& header) -> Http::HeaderMap::Iterate {
+    auto key = std::string(header.key().getStringView());
+    auto value = std::string(header.value().getStringView());
+    if (ctx.exclusives.count(key) == 0) {
+      ctx.headers[key] = value;
+    }
+    return Http::HeaderMap::Iterate::Continue;
+  });
 }
 
-void FindHeaders(const Http::HeaderMap& header_map,
-                 const std::set<std::string>& inclusives,
+void FindHeaders(const Http::HeaderMap& header_map, const std::set<std::string>& inclusives,
                  std::map<std::string, std::string>& headers) {
   struct Context {
-    Context(const std::set<std::string>& inclusives,
-            std::map<std::string, std::string>& headers)
+    Context(const std::set<std::string>& inclusives, std::map<std::string, std::string>& headers)
         : inclusives(inclusives), headers(headers) {}
     const std::set<std::string>& inclusives;
     std::map<std::string, std::string>& headers;
   };
   Context ctx(inclusives, headers);
-  header_map.iterate(
-      [&ctx](const Http::HeaderEntry& header) -> Http::HeaderMap::Iterate {
-        auto key = std::string(header.key().getStringView());
-        auto value = std::string(header.value().getStringView());
-        if (ctx.inclusives.count(key) != 0) {
-          ctx.headers[key] = value;
-        }
-        return Http::HeaderMap::Iterate::Continue;
-      });
+  header_map.iterate([&ctx](const Http::HeaderEntry& header) -> Http::HeaderMap::Iterate {
+    auto key = std::string(header.key().getStringView());
+    auto value = std::string(header.value().getStringView());
+    if (ctx.inclusives.count(key) != 0) {
+      ctx.headers[key] = value;
+    }
+    return Http::HeaderMap::Iterate::Continue;
+  });
 }
 
 bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port) {
@@ -130,8 +120,7 @@ bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port) {
   return false;
 }
 
-bool GetDestinationUID(const envoy::config::core::v3::Metadata& metadata,
-                       std::string* uid) {
+bool GetDestinationUID(const envoy::config::core::v3::Metadata& metadata, std::string* uid) {
   const auto filter_it = metadata.filter_metadata().find(kPerHostMetadataKey);
   if (filter_it == metadata.filter_metadata().end()) {
     return false;
@@ -145,8 +134,7 @@ bool GetDestinationUID(const envoy::config::core::v3::Metadata& metadata,
   return true;
 }
 
-bool GetPrincipal(const Network::Connection* connection, bool peer,
-                  std::string* principal) {
+bool GetPrincipal(const Network::Connection* connection, bool peer, std::string* principal) {
   std::string cert_san;
   if (getCertSAN(connection, peer, &cert_san)) {
     if (hasSPIFFEPrefix(cert_san)) {
@@ -160,8 +148,7 @@ bool GetPrincipal(const Network::Connection* connection, bool peer,
   return false;
 }
 
-bool GetTrustDomain(const Network::Connection* connection, bool peer,
-                    std::string* trust_domain) {
+bool GetTrustDomain(const Network::Connection* connection, bool peer, std::string* trust_domain) {
   std::string cert_san;
   if (!getCertSAN(connection, peer, &cert_san) || !hasSPIFFEPrefix(cert_san)) {
     return false;
@@ -183,8 +170,7 @@ bool IsMutualTLS(const Network::Connection* connection) {
          connection->ssl()->peerCertificatePresented();
 }
 
-bool GetRequestedServerName(const Network::Connection* connection,
-                            std::string* name) {
+bool GetRequestedServerName(const Network::Connection* connection, std::string* name) {
   if (connection && !connection->requestedServerName().empty()) {
     *name = std::string(connection->requestedServerName());
     return true;
@@ -213,5 +199,5 @@ absl::optional<absl::string_view> GetNamespace(absl::string_view principal) {
   return {principal.substr(begin, len)};
 }
 
-}  // namespace Utils
-}  // namespace Envoy
+} // namespace Utils
+} // namespace Envoy

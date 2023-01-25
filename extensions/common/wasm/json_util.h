@@ -38,8 +38,7 @@ enum JsonParserResultDetail {
 std::optional<JsonObject> JsonParse(std::string_view str);
 
 template <typename T>
-std::pair<std::optional<T>, JsonParserResultDetail> JsonValueAs(
-    const JsonObject&) {
+std::pair<std::optional<T>, JsonParserResultDetail> JsonValueAs(const JsonObject&) {
   static_assert(true, "Unsupported Type");
 }
 
@@ -52,16 +51,14 @@ std::pair<std::optional<std::string>, JsonParserResultDetail>
 JsonValueAs<std::string>(const JsonObject& j);
 
 template <>
-std::pair<std::optional<int64_t>, JsonParserResultDetail> JsonValueAs<int64_t>(
-    const JsonObject& j);
+std::pair<std::optional<int64_t>, JsonParserResultDetail> JsonValueAs<int64_t>(const JsonObject& j);
 
 template <>
 std::pair<std::optional<uint64_t>, JsonParserResultDetail>
 JsonValueAs<uint64_t>(const JsonObject& j);
 
 template <>
-std::pair<std::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(
-    const JsonObject& j);
+std::pair<std::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(const JsonObject& j);
 
 template <>
 std::pair<std::optional<JsonObject>, JsonParserResultDetail>
@@ -71,9 +68,8 @@ template <>
 std::pair<std::optional<std::vector<std::string_view>>, JsonParserResultDetail>
 JsonValueAs<std::vector<std::string_view>>(const JsonObject& j);
 
-template <class T>
-class JsonGetField {
- public:
+template <class T> class JsonGetField {
+public:
   JsonGetField(const JsonObject& j, std::string_view field);
   const JsonParserResultDetail& detail() { return detail_; }
   T value() { return object_; }
@@ -84,13 +80,12 @@ class JsonGetField {
       return object_;
   };
 
- private:
+private:
   JsonParserResultDetail detail_;
   T object_;
 };
 
-template <class T>
-JsonGetField<T>::JsonGetField(const JsonObject& j, std::string_view field) {
+template <class T> JsonGetField<T>::JsonGetField(const JsonObject& j, std::string_view field) {
   auto it = j.find(field);
   if (it == j.end()) {
     detail_ = JsonParserResultDetail::OUT_OF_RANGE;
@@ -106,17 +101,15 @@ JsonGetField<T>::JsonGetField(const JsonObject& j, std::string_view field) {
 // Iterate over an optional array field.
 // Returns false if set and not an array, or any of the visitor calls returns
 // false.
-bool JsonArrayIterate(
-    const JsonObject& j, std::string_view field,
-    const std::function<bool(const JsonObject& elt)>& visitor);
+bool JsonArrayIterate(const JsonObject& j, std::string_view field,
+                      const std::function<bool(const JsonObject& elt)>& visitor);
 
 // Iterate over an optional object field key set.
 // Returns false if set and not an object, or any of the visitor calls returns
 // false.
 bool JsonObjectIterate(const JsonObject& j, std::string_view field,
                        const std::function<bool(std::string key)>& visitor);
-bool JsonObjectIterate(const JsonObject& j,
-                       const std::function<bool(std::string key)>& visitor);
+bool JsonObjectIterate(const JsonObject& j, const std::function<bool(std::string key)>& visitor);
 
-}  // namespace Common
-}  // namespace Wasm
+} // namespace Common
+} // namespace Wasm

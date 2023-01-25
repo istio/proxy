@@ -31,10 +31,9 @@ namespace iaapi = istio::authentication::v1alpha1;
 
 class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
                           public Logger::Loggable<Logger::Id::filter> {
- public:
-  Http::FilterFactoryCb createFilterFactoryFromProto(
-      const Protobuf::Message& proto_config, const std::string&,
-      FactoryContext&) override {
+public:
+  Http::FilterFactoryCb createFilterFactoryFromProto(const Protobuf::Message& proto_config,
+                                                     const std::string&, FactoryContext&) override {
     auto filter_config = dynamic_cast<const FilterConfig&>(proto_config);
     return createFilterFactory(filter_config);
   }
@@ -44,11 +43,9 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
     return ProtobufTypes::MessagePtr{new FilterConfig};
   }
 
-  std::string name() const override {
-    return Utils::IstioFilterName::kAuthentication;
-  }
+  std::string name() const override { return Utils::IstioFilterName::kAuthentication; }
 
- private:
+private:
   Http::FilterFactoryCb createFilterFactory(const FilterConfig& config_pb) {
     ENVOY_LOG(debug, "Called AuthnFilterConfig : {}", __func__);
     // Make it shared_ptr so that the object is still reachable when callback is
@@ -56,22 +53,18 @@ class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
     // TODO(incfly): add a test to simulate different config can be handled
     // correctly similar to multiplexing on different port.
     auto filter_config = std::make_shared<FilterConfig>(config_pb);
-    return
-        [filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
-          callbacks.addStreamDecoderFilter(
-              std::make_shared<Http::Istio::AuthN::AuthenticationFilter>(
-                  *filter_config));
-        };
+    return [filter_config](Http::FilterChainFactoryCallbacks& callbacks) -> void {
+      callbacks.addStreamDecoderFilter(
+          std::make_shared<Http::Istio::AuthN::AuthenticationFilter>(*filter_config));
+    };
   }
 };
 
 /**
  * Static registration for the Authn filter. @see RegisterFactory.
  */
-static Registry::RegisterFactory<AuthnFilterConfig,
-                                 NamedHttpFilterConfigFactory>
-    register_;
+static Registry::RegisterFactory<AuthnFilterConfig, NamedHttpFilterConfigFactory> register_;
 
-}  // namespace Configuration
-}  // namespace Server
-}  // namespace Envoy
+} // namespace Configuration
+} // namespace Server
+} // namespace Envoy

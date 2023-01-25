@@ -25,19 +25,19 @@ namespace AuthN {
 
 // OriginAuthenticator performs origin authentication for given credential rule.
 class OriginAuthenticator : public AuthenticatorBase {
- public:
+public:
   OriginAuthenticator(FilterContext* filter_context,
                       const istio::authentication::v1alpha1::Policy& policy);
 
   bool run(istio::authn::Payload*) override;
 
- private:
+private:
   // Reference to the authentication policy that the authenticator should
   // enforce. Typically, the actual object is owned by filter.
   const istio::authentication::v1alpha1::Policy& policy_;
 };
 
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

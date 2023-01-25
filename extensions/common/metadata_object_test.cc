@@ -23,62 +23,51 @@ namespace Common {
 using ::testing::NiceMock;
 
 TEST(WorkloadMetadataObjectTest, Hash) {
-  WorkloadMetadataObject obj1("foo-pod-12345", "my-cluster", "default", "foo",
-                              "foo", "latest", "foo-app", "v1",
-                              WorkloadType::Deployment);
-  WorkloadMetadataObject obj2("foo-pod-12345", "my-cluster", "default", "bar",
-                              "baz", "first", "foo-app", "v1",
-                              WorkloadType::Job);
+  WorkloadMetadataObject obj1("foo-pod-12345", "my-cluster", "default", "foo", "foo", "latest",
+                              "foo-app", "v1", WorkloadType::Deployment);
+  WorkloadMetadataObject obj2("foo-pod-12345", "my-cluster", "default", "bar", "baz", "first",
+                              "foo-app", "v1", WorkloadType::Job);
 
   EXPECT_EQ(obj1.hash().value(), obj2.hash().value());
 }
 
 TEST(WorkloadMetadataObjectTest, Baggage) {
-  WorkloadMetadataObject deploy("pod-foo-1234", "my-cluster", "default", "foo",
-                                "foo-service", "v1alpha3", "foo-app", "v1",
-                                WorkloadType::Deployment);
+  WorkloadMetadataObject deploy("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
+                                "v1alpha3", "foo-app", "v1", WorkloadType::Deployment);
 
-  WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo",
-                             "foo-service", "v1alpha3", "foo-app", "v1",
-                             WorkloadType::Pod);
+  WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
+                             "v1alpha3", "foo-app", "v1", WorkloadType::Pod);
 
-  WorkloadMetadataObject cronjob("pod-foo-1234", "my-cluster", "default", "foo",
-                                 "foo-service", "v1alpha3", "foo-app", "v1",
-                                 WorkloadType::CronJob);
+  WorkloadMetadataObject cronjob("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
+                                 "v1alpha3", "foo-app", "v1", WorkloadType::CronJob);
 
-  WorkloadMetadataObject job("pod-foo-1234", "my-cluster", "default", "foo",
-                             "foo-service", "v1alpha3", "foo-app", "v1",
-                             WorkloadType::Job);
+  WorkloadMetadataObject job("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
+                             "v1alpha3", "foo-app", "v1", WorkloadType::Job);
 
-  EXPECT_EQ(deploy.baggage(),
-            absl::StrCat("k8s.deployment.name=foo,k8s.cluster.name=my-cluster,",
-                         "k8s.namespace.name=default,",
-                         "service.name=foo-service,service.version=v1alpha3,",
-                         "app.name=foo-app,app.version=v1"));
+  EXPECT_EQ(deploy.baggage(), absl::StrCat("k8s.deployment.name=foo,k8s.cluster.name=my-cluster,",
+                                           "k8s.namespace.name=default,",
+                                           "service.name=foo-service,service.version=v1alpha3,",
+                                           "app.name=foo-app,app.version=v1"));
 
-  EXPECT_EQ(pod.baggage(),
-            absl::StrCat("k8s.pod.name=foo,k8s.cluster.name=my-cluster,",
-                         "k8s.namespace.name=default,",
-                         "service.name=foo-service,service.version=v1alpha3,",
-                         "app.name=foo-app,app.version=v1"));
+  EXPECT_EQ(pod.baggage(), absl::StrCat("k8s.pod.name=foo,k8s.cluster.name=my-cluster,",
+                                        "k8s.namespace.name=default,",
+                                        "service.name=foo-service,service.version=v1alpha3,",
+                                        "app.name=foo-app,app.version=v1"));
 
-  EXPECT_EQ(cronjob.baggage(),
-            absl::StrCat("k8s.cronjob.name=foo,k8s.cluster.name=my-cluster,",
-                         "k8s.namespace.name=default,"
-                         "service.name=foo-service,service.version=v1alpha3,",
-                         "app.name=foo-app,app.version=v1"));
+  EXPECT_EQ(cronjob.baggage(), absl::StrCat("k8s.cronjob.name=foo,k8s.cluster.name=my-cluster,",
+                                            "k8s.namespace.name=default,"
+                                            "service.name=foo-service,service.version=v1alpha3,",
+                                            "app.name=foo-app,app.version=v1"));
 
-  EXPECT_EQ(job.baggage(),
-            absl::StrCat("k8s.job.name=foo,k8s.cluster.name=my-cluster,",
-                         "k8s.namespace.name=default,",
-                         "service.name=foo-service,service.version=v1alpha3,",
-                         "app.name=foo-app,app.version=v1"));
+  EXPECT_EQ(job.baggage(), absl::StrCat("k8s.job.name=foo,k8s.cluster.name=my-cluster,",
+                                        "k8s.namespace.name=default,",
+                                        "service.name=foo-service,service.version=v1alpha3,",
+                                        "app.name=foo-app,app.version=v1"));
 }
 
 void checkFlatNodeConversion(const WorkloadMetadataObject& obj) {
   auto buffer = convertWorkloadMetadataToFlatNode(obj);
-  const auto& node =
-      *flatbuffers::GetRoot<Wasm::Common::FlatNode>(buffer.data());
+  const auto& node = *flatbuffers::GetRoot<Wasm::Common::FlatNode>(buffer.data());
   auto obj2 = convertFlatNodeToWorkloadMetadata(node);
   EXPECT_EQ(obj2.baggage(), obj.baggage());
 }
@@ -149,8 +138,7 @@ TEST(WorkloadMetadataObjectTest, FromBaggage) {
 
   {
     auto obj = WorkloadMetadataObject::fromBaggage(absl::StrCat(
-        "k8s.deployment.name=foo,k8s.namespace.name=default,",
-        "service.name=foo-service,",
+        "k8s.deployment.name=foo,k8s.namespace.name=default,", "service.name=foo-service,",
         "service.version=v1alpha3,app.name=foo-app,app.version=v1"));
 
     EXPECT_EQ(obj.canonical_name_, "foo-service");
@@ -171,8 +159,7 @@ TEST(WorkloadMetadataObjectTest, ConvertFromFlatNode) {
   auto data = builder.Finish();
   fbb.Finish(data);
   auto buffer = fbb.Release();
-  const auto& node =
-      *flatbuffers::GetRoot<Wasm::Common::FlatNode>(buffer.data());
+  const auto& node = *flatbuffers::GetRoot<Wasm::Common::FlatNode>(buffer.data());
   auto obj = convertFlatNodeToWorkloadMetadata(node);
   EXPECT_EQ(obj.baggage(), "k8s.pod.name=");
 }
@@ -182,13 +169,11 @@ TEST(WorkloadMetadataObjectTest, ConvertFromEndpointMetadata) {
   EXPECT_EQ(absl::nullopt, convertEndpointMetadata("a;b"));
   EXPECT_EQ(absl::nullopt, convertEndpointMetadata("a;;;b"));
   EXPECT_EQ(absl::nullopt, convertEndpointMetadata("a;b;c;d"));
-  auto obj =
-      convertEndpointMetadata("foo-pod;default;foo-service;v1;my-cluster");
+  auto obj = convertEndpointMetadata("foo-pod;default;foo-service;v1;my-cluster");
   ASSERT_TRUE(obj.has_value());
-  EXPECT_EQ(obj->baggage(),
-            "k8s.pod.name=foo-pod,k8s.cluster.name=my-cluster,k8s.namespace."
-            "name=default,service.name=foo-service,service.version=v1");
+  EXPECT_EQ(obj->baggage(), "k8s.pod.name=foo-pod,k8s.cluster.name=my-cluster,k8s.namespace."
+                            "name=default,service.name=foo-service,service.version=v1");
 }
 
-}  // namespace Common
-}  // namespace Istio
+} // namespace Common
+} // namespace Istio

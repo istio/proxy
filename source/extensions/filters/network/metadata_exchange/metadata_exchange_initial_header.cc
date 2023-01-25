@@ -21,6 +21,6 @@ namespace MetadataExchange {
 
 const uint32_t MetadataExchangeInitialHeader::magic_number;
 
-}  // namespace MetadataExchange
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace MetadataExchange
+} // namespace Tcp
+} // namespace Envoy
