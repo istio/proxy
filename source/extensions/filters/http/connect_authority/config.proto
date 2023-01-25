@@ -21,4 +21,6 @@ package io.istio.http.connect_authority;
 message Config {
   // To support per-route overrides.
   bool enabled = 1;
+  // Tunnel port for the override.
+  uint32 port = 2;
 }

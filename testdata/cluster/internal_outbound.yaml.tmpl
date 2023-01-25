@@ -11,6 +11,7 @@ load_assignment:
       metadata:
         filter_metadata:
           tunnel:
+            address: 127.0.0.1:{{ .Ports.ServerTunnelPort }}
             destination: 127.0.0.1:{{ .Ports.ServerPort }}
 {{- end }}
 transport_socket:

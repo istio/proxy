@@ -33,6 +33,7 @@ filter_chains:
                 type_url: type.googleapis.com/io.istio.http.connect_authority.Config
                 value:
                   enabled: true
+                  port: {{ .Ports.ServerTunnelPort }}
             route:
               cluster: internal_outbound
               timeout: 0s

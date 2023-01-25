@@ -23,11 +23,13 @@ namespace SetInternalDstAddress {
 const absl::string_view FilterStateKey = "istio.set_internal_dst_address";
 
 struct Authority : public Envoy::StreamInfo::FilterState::Object {
-  Authority(absl::string_view value) : value_(value) {}
+  Authority(absl::string_view value, uint32_t port)
+      : value_(value), port_(port) {}
   absl::optional<std::string> serializeAsString() const override {
     return value_;
   }
   const std::string value_;
+  const uint32_t port_;
 };
 
 class Filter : public Envoy::Network::ListenerFilter,
