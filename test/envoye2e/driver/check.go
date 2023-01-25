@@ -33,6 +33,8 @@ const (
 type HTTPCall struct {
 	// Method
 	Method string
+	// Authority override
+	Authority string
 	// URL path
 	Path string
 	// Port specifies the port in 127.0.0.1:PORT
@@ -51,7 +53,7 @@ type HTTPCall struct {
 	DisableRedirect bool
 }
 
-func Get(port uint16, body string) Step {
+func Get(port uint16, body string) *HTTPCall {
 	return &HTTPCall{
 		Method: http.MethodGet,
 		Port:   port,
@@ -70,6 +72,9 @@ func (g *HTTPCall) Run(_ *Params) error {
 	}
 	for key, val := range g.RequestHeaders {
 		req.Header.Add(key, val)
+	}
+	if len(g.Authority) > 0 {
+		req.Host = g.Authority
 	}
 	dump, _ := httputil.DumpRequest(req, false)
 	log.Printf("HTTP request:\n%s", string(dump))

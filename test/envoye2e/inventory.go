@@ -33,6 +33,8 @@ func init() {
 			"TestBasicTCPFlow",
 			"TestBasicCONNECT/quic",
 			"TestBasicCONNECT/h2",
+			"TestPassthroughCONNECT/quic",
+			"TestPassthroughCONNECT/h2",
 			"TestHTTPExchange",
 			"TestHTTPLocalRatelimit",
 			"TestStackdriverAccessLog/AllClientErrorRequestsGetsLoggedOnNoMxAndError",

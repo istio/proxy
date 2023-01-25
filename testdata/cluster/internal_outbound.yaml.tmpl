@@ -7,11 +7,12 @@ load_assignment:
         address:
           envoy_internal_address:
             server_listener_name: internal_outbound
+{{- if eq .Vars.EnableTunnelEndpointMetadata "true" }}
       metadata:
         filter_metadata:
           tunnel:
-            address: 127.0.0.1:{{ .Ports.ServerTunnelPort }}
             destination: 127.0.0.1:{{ .Ports.ServerPort }}
+{{- end }}
 transport_socket:
   name: envoy.transport_sockets.internal_upstream
   typed_config:

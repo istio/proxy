@@ -25,11 +25,28 @@ namespace SetInternalDstAddress {
 
 constexpr std::string_view MetadataKey = "tunnel";
 constexpr std::string_view DestinationAddressField = "destination";
-constexpr std::string_view TunnelAddressField = "address";
 
 Envoy::Network::FilterStatus Filter::onAccept(
     Envoy::Network::ListenerFilterCallbacks& cb) {
   auto& socket = cb.socket();
+  // First, check the filter state;
+  const auto* object =
+      cb.filterState().getDataReadOnly<Authority>(FilterStateKey);
+  if (object) {
+    auto local_address =
+        Envoy::Network::Utility::parseInternetAddressAndPortNoThrow(
+            object->value_, /*v6only=*/false);
+    if (local_address) {
+      ENVOY_LOG_MISC(trace, "Restore local address from filter state: {}",
+                     local_address->asString());
+      socket.connectionInfoProvider().restoreLocalAddress(local_address);
+    } else {
+      ENVOY_LOG_MISC(trace, "Failed to parse filter state address: {}",
+                     object->value_);
+    }
+    return Envoy::Network::FilterStatus::Continue;
+  }
+  // Second, try the dynamic metadata from the endpoint.
   auto iter = cb.dynamicMetadata().filter_metadata().find(MetadataKey);
   if (iter != cb.dynamicMetadata().filter_metadata().end()) {
     auto address_it = iter->second.fields().find(DestinationAddressField);
@@ -50,28 +67,6 @@ Envoy::Network::FilterStatus Filter::onAccept(
     } else {
       ENVOY_LOG_MISC(trace, "Missing metadata field '{}'",
                      DestinationAddressField);
-    }
-    address_it = iter->second.fields().find(TunnelAddressField);
-    if (address_it != iter->second.fields().end() &&
-        address_it->second.has_string_value()) {
-      auto tunnel_address =
-          Envoy::Network::Utility::parseInternetAddressAndPortNoThrow(
-              address_it->second.string_value(), /*v6only=*/false);
-      if (tunnel_address) {
-        ENVOY_LOG_MISC(trace, "Restore ORIGINAL_DST address: {}",
-                       tunnel_address->asString());
-        // Should never throw as the stream info is initialized as empty.
-        cb.filterState().setData(
-            Envoy::Network::DestinationAddress::key(),
-            std::make_shared<Envoy::Network::DestinationAddress>(
-                tunnel_address),
-            Envoy::StreamInfo::FilterState::StateType::ReadOnly);
-      } else {
-        ENVOY_LOG_MISC(trace, "Failed to parse {} address: {}",
-                       TunnelAddressField, address_it->second.string_value());
-      }
-    } else {
-      ENVOY_LOG_MISC(trace, "Missing metadata field '{}'", TunnelAddressField);
     }
   } else {
     ENVOY_LOG_MISC(trace, "Cannot find dynamic metadata '{}'", MetadataKey);

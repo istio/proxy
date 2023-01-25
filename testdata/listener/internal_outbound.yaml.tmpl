@@ -12,7 +12,7 @@ filter_chains:
       "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
       cluster: original_dst
       tunneling_config:
-        hostname: host.com:443
+        hostname: "%DOWNSTREAM_LOCAL_ADDRESS%"
         headers_to_add:
         - header:
             key: baggage
