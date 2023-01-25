@@ -29,8 +29,8 @@ std::optional<JsonObject> JsonParse(std::string_view str) {
 }
 
 template <>
-std::pair<std::optional<int64_t>, JsonParserResultDetail> JsonValueAs<int64_t>(
-    const JsonObject& j) {
+std::pair<std::optional<int64_t>, JsonParserResultDetail>
+JsonValueAs<int64_t>(const JsonObject& j) {
   if (j.is_number()) {
     return std::make_pair(j.get<int64_t>(), JsonParserResultDetail::OK);
   } else if (j.is_string()) {
@@ -38,8 +38,7 @@ std::pair<std::optional<int64_t>, JsonParserResultDetail> JsonValueAs<int64_t>(
     if (absl::SimpleAtoi(j.get_ref<std::string const&>(), &result)) {
       return std::make_pair(result, JsonParserResultDetail::OK);
     } else {
-      return std::make_pair(std::nullopt,
-                            JsonParserResultDetail::INVALID_VALUE);
+      return std::make_pair(std::nullopt, JsonParserResultDetail::INVALID_VALUE);
     }
   }
   return std::make_pair(std::nullopt, JsonParserResultDetail::TYPE_ERROR);
@@ -55,8 +54,7 @@ JsonValueAs<uint64_t>(const JsonObject& j) {
     if (absl::SimpleAtoi(j.get_ref<std::string const&>(), &result)) {
       return std::make_pair(result, JsonParserResultDetail::OK);
     } else {
-      return std::make_pair(std::nullopt,
-                            JsonParserResultDetail::INVALID_VALUE);
+      return std::make_pair(std::nullopt, JsonParserResultDetail::INVALID_VALUE);
     }
   }
   return std::make_pair(std::nullopt, JsonParserResultDetail::TYPE_ERROR);
@@ -76,15 +74,13 @@ template <>
 std::pair<std::optional<std::string>, JsonParserResultDetail>
 JsonValueAs<std::string>(const JsonObject& j) {
   if (j.is_string()) {
-    return std::make_pair(j.get_ref<std::string const&>(),
-                          JsonParserResultDetail::OK);
+    return std::make_pair(j.get_ref<std::string const&>(), JsonParserResultDetail::OK);
   }
   return std::make_pair(std::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
 
 template <>
-std::pair<std::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(
-    const JsonObject& j) {
+std::pair<std::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(const JsonObject& j) {
   if (j.is_boolean()) {
     return std::make_pair(j.get<bool>(), JsonParserResultDetail::OK);
   }
@@ -95,8 +91,7 @@ std::pair<std::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(
     } else if (v == "false") {
       return std::make_pair(false, JsonParserResultDetail::OK);
     } else {
-      return std::make_pair(std::nullopt,
-                            JsonParserResultDetail::INVALID_VALUE);
+      return std::make_pair(std::nullopt, JsonParserResultDetail::INVALID_VALUE);
     }
   }
   return std::make_pair(std::nullopt, JsonParserResultDetail::TYPE_ERROR);
@@ -105,9 +100,8 @@ std::pair<std::optional<bool>, JsonParserResultDetail> JsonValueAs<bool>(
 template <>
 std::pair<std::optional<std::vector<std::string_view>>, JsonParserResultDetail>
 JsonValueAs<std::vector<std::string_view>>(const JsonObject& j) {
-  std::pair<std::optional<std::vector<std::string_view>>,
-            JsonParserResultDetail>
-      values = std::make_pair(std::nullopt, JsonParserResultDetail::OK);
+  std::pair<std::optional<std::vector<std::string_view>>, JsonParserResultDetail> values =
+      std::make_pair(std::nullopt, JsonParserResultDetail::OK);
   if (j.is_array()) {
     for (const auto& elt : j) {
       if (!elt.is_string()) {
@@ -135,9 +129,8 @@ JsonValueAs<JsonObject>(const JsonObject& j) {
   return std::make_pair(std::nullopt, JsonParserResultDetail::TYPE_ERROR);
 }
 
-bool JsonArrayIterate(
-    const JsonObject& j, std::string_view field,
-    const std::function<bool(const JsonObject& elt)>& visitor) {
+bool JsonArrayIterate(const JsonObject& j, std::string_view field,
+                      const std::function<bool(const JsonObject& elt)>& visitor) {
   auto it = j.find(field);
   if (it == j.end()) {
     return true;
@@ -174,8 +167,7 @@ bool JsonObjectIterate(const JsonObject& j, std::string_view field,
   return true;
 }
 
-bool JsonObjectIterate(const JsonObject& j,
-                       const std::function<bool(std::string key)>& visitor) {
+bool JsonObjectIterate(const JsonObject& j, const std::function<bool(std::string key)>& visitor) {
   for (const auto& elt : j.items()) {
     auto json_value = JsonValueAs<std::string>(elt.key());
     if (json_value.second != JsonParserResultDetail::OK) {
@@ -188,5 +180,5 @@ bool JsonObjectIterate(const JsonObject& j,
   return true;
 }
 
-}  // namespace Common
-}  // namespace Wasm
+} // namespace Common
+} // namespace Wasm

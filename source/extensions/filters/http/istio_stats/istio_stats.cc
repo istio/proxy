@@ -40,8 +40,7 @@ namespace IstioStats {
 namespace {
 constexpr absl::string_view CustomStatNamespace = "istiocustom";
 
-absl::string_view extractString(const ProtobufWkt::Struct& metadata,
-                                const std::string& key) {
+absl::string_view extractString(const ProtobufWkt::Struct& metadata, const std::string& key) {
   const auto& it = metadata.fields().find(key);
   if (it == metadata.fields().end()) {
     return {};
@@ -49,8 +48,7 @@ absl::string_view extractString(const ProtobufWkt::Struct& metadata,
   return it->second.string_value();
 }
 
-absl::string_view extractMapString(const ProtobufWkt::Struct& metadata,
-                                   const std::string& map_key,
+absl::string_view extractMapString(const ProtobufWkt::Struct& metadata, const std::string& map_key,
                                    const std::string& key) {
   const auto& it = metadata.fields().find(map_key);
   if (it == metadata.fields().end()) {
@@ -59,8 +57,8 @@ absl::string_view extractMapString(const ProtobufWkt::Struct& metadata,
   return extractString(it->second.struct_value(), key);
 }
 
-absl::optional<Istio::Common::WorkloadMetadataObject> extractEndpointMetadata(
-    const StreamInfo::StreamInfo& info) {
+absl::optional<Istio::Common::WorkloadMetadataObject>
+extractEndpointMetadata(const StreamInfo::StreamInfo& info) {
   auto upstream_info = info.upstreamInfo();
   auto upstream_host = upstream_info ? upstream_info->upstreamHost() : nullptr;
   if (upstream_host && upstream_host->metadata()) {
@@ -69,8 +67,7 @@ absl::optional<Istio::Common::WorkloadMetadataObject> extractEndpointMetadata(
     if (it != filter_metadata.end()) {
       const auto& workload_it = it->second.fields().find("workload");
       if (workload_it != it->second.fields().end()) {
-        return Istio::Common::convertEndpointMetadata(
-            workload_it->second.string_value());
+        return Istio::Common::convertEndpointMetadata(workload_it->second.string_value());
       }
     }
   }
@@ -88,109 +85,80 @@ enum class Reporter {
 };
 
 // Detect if peer info read is completed by TCP metadata exchange.
-bool peerInfoRead(Reporter reporter,
-                  const StreamInfo::FilterState& filter_state) {
+bool peerInfoRead(Reporter reporter, const StreamInfo::FilterState& filter_state) {
   const auto& filter_state_key =
       reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
           ? "wasm.downstream_peer_id"
           : "wasm.upstream_peer_id";
   const auto* object =
-      filter_state
-          .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
-              filter_state_key);
+      filter_state.getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
+          filter_state_key);
   return object != nullptr;
 }
 
-const Wasm::Common::FlatNode* peerInfo(
-    Reporter reporter, const StreamInfo::FilterState& filter_state) {
+const Wasm::Common::FlatNode* peerInfo(Reporter reporter,
+                                       const StreamInfo::FilterState& filter_state) {
   const auto& filter_state_key =
       reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
           ? "wasm.downstream_peer"
           : "wasm.upstream_peer";
   const auto* object =
-      filter_state
-          .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
-              filter_state_key);
-  return object ? flatbuffers::GetRoot<Wasm::Common::FlatNode>(
-                      object->value().data())
-                : nullptr;
+      filter_state.getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
+          filter_state_key);
+  return object ? flatbuffers::GetRoot<Wasm::Common::FlatNode>(object->value().data()) : nullptr;
 }
 
 // Process-wide context shared with all filter instances.
 struct Context : public Singleton::Instance {
-  explicit Context(Stats::SymbolTable& symbol_table,
-                   const envoy::config::core::v3::Node& node)
-      : pool_(symbol_table),
-        node_(node),
-        stat_namespace_(pool_.add(CustomStatNamespace)),
+  explicit Context(Stats::SymbolTable& symbol_table, const envoy::config::core::v3::Node& node)
+      : pool_(symbol_table), node_(node), stat_namespace_(pool_.add(CustomStatNamespace)),
         requests_total_(pool_.add("istio_requests_total")),
-        request_duration_milliseconds_(
-            pool_.add("istio_request_duration_milliseconds")),
+        request_duration_milliseconds_(pool_.add("istio_request_duration_milliseconds")),
         request_bytes_(pool_.add("istio_request_bytes")),
         response_bytes_(pool_.add("istio_response_bytes")),
-        tcp_connections_opened_total_(
-            pool_.add("istio_tcp_connections_opened_total")),
-        tcp_connections_closed_total_(
-            pool_.add("istio_tcp_connections_closed_total")),
+        tcp_connections_opened_total_(pool_.add("istio_tcp_connections_opened_total")),
+        tcp_connections_closed_total_(pool_.add("istio_tcp_connections_closed_total")),
         tcp_sent_bytes_total_(pool_.add("istio_tcp_sent_bytes_total")),
         tcp_received_bytes_total_(pool_.add("istio_tcp_received_bytes_total")),
-        empty_(pool_.add("")),
-        unknown_(pool_.add("unknown")),
-        source_(pool_.add("source")),
-        destination_(pool_.add("destination")),
-        latest_(pool_.add("latest")),
-        http_(pool_.add("http")),
-        grpc_(pool_.add("grpc")),
-        tcp_(pool_.add("tcp")),
-        mutual_tls_(pool_.add("mutual_tls")),
-        none_(pool_.add("none")),
-        reporter_(pool_.add("reporter")),
-        source_workload_(pool_.add("source_workload")),
+        empty_(pool_.add("")), unknown_(pool_.add("unknown")), source_(pool_.add("source")),
+        destination_(pool_.add("destination")), latest_(pool_.add("latest")),
+        http_(pool_.add("http")), grpc_(pool_.add("grpc")), tcp_(pool_.add("tcp")),
+        mutual_tls_(pool_.add("mutual_tls")), none_(pool_.add("none")),
+        reporter_(pool_.add("reporter")), source_workload_(pool_.add("source_workload")),
         source_workload_namespace_(pool_.add("source_workload_namespace")),
-        source_principal_(pool_.add("source_principal")),
-        source_app_(pool_.add("source_app")),
+        source_principal_(pool_.add("source_principal")), source_app_(pool_.add("source_app")),
         source_version_(pool_.add("source_version")),
         source_canonical_service_(pool_.add("source_canonical_service")),
         source_canonical_revision_(pool_.add("source_canonical_revision")),
         source_cluster_(pool_.add("source_cluster")),
         destination_workload_(pool_.add("destination_workload")),
-        destination_workload_namespace_(
-            pool_.add("destination_workload_namespace")),
+        destination_workload_namespace_(pool_.add("destination_workload_namespace")),
         destination_principal_(pool_.add("destination_principal")),
         destination_app_(pool_.add("destination_app")),
         destination_version_(pool_.add("destination_version")),
         destination_service_(pool_.add("destination_service")),
         destination_service_name_(pool_.add("destination_service_name")),
-        destination_service_namespace_(
-            pool_.add("destination_service_namespace")),
-        destination_canonical_service_(
-            pool_.add("destination_canonical_service")),
-        destination_canonical_revision_(
-            pool_.add("destination_canonical_revision")),
+        destination_service_namespace_(pool_.add("destination_service_namespace")),
+        destination_canonical_service_(pool_.add("destination_canonical_service")),
+        destination_canonical_revision_(pool_.add("destination_canonical_revision")),
         destination_cluster_(pool_.add("destination_cluster")),
         request_protocol_(pool_.add("request_protocol")),
         response_flags_(pool_.add("response_flags")),
         connection_security_policy_(pool_.add("connection_security_policy")),
         response_code_(pool_.add("response_code")),
         grpc_response_status_(pool_.add("grpc_response_status")),
-        workload_name_(
-            pool_.add(extractString(node.metadata(), "WORKLOAD_NAME"))),
+        workload_name_(pool_.add(extractString(node.metadata(), "WORKLOAD_NAME"))),
         namespace_(pool_.add(extractString(node.metadata(), "NAMESPACE"))),
-        canonical_name_(pool_.add(extractMapString(
-            node.metadata(), "LABELS", "service.istio.io/canonical-name"))),
-        canonical_revision_(pool_.add(extractMapString(
-            node.metadata(), "LABELS", "service.istio.io/canonical-revision"))),
+        canonical_name_(pool_.add(
+            extractMapString(node.metadata(), "LABELS", "service.istio.io/canonical-name"))),
+        canonical_revision_(pool_.add(
+            extractMapString(node.metadata(), "LABELS", "service.istio.io/canonical-revision"))),
         cluster_name_(pool_.add(extractString(node.metadata(), "CLUSTER_ID"))),
-        app_name_(
-            pool_.add(extractMapString(node.metadata(), "LABELS", "app"))),
-        app_version_(
-            pool_.add(extractMapString(node.metadata(), "LABELS", "version"))),
-        istio_build_(pool_.add("istio_build")),
-        component_(pool_.add("component")),
-        proxy_(pool_.add("proxy")),
-        tag_(pool_.add("tag")),
-        istio_version_(
-            pool_.add(extractString(node.metadata(), "ISTIO_VERSION"))) {
+        app_name_(pool_.add(extractMapString(node.metadata(), "LABELS", "app"))),
+        app_version_(pool_.add(extractMapString(node.metadata(), "LABELS", "version"))),
+        istio_build_(pool_.add("istio_build")), component_(pool_.add("component")),
+        proxy_(pool_.add("proxy")), tag_(pool_.add("tag")),
+        istio_version_(pool_.add(extractString(node.metadata(), "ISTIO_VERSION"))) {
     all_metrics_ = {
         {"requests_total", requests_total_},
         {"request_duration_milliseconds", request_duration_milliseconds_},
@@ -306,7 +274,7 @@ struct Context : public Singleton::Instance {
   const Stats::StatName proxy_;
   const Stats::StatName tag_;
   const Stats::StatName istio_version_;
-};  // namespace
+}; // namespace
 
 using ContextSharedPtr = std::shared_ptr<Context>;
 
@@ -340,19 +308,17 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
   // Initial transformation: metrics dropped.
   absl::flat_hash_set<Stats::StatName> drop_;
   // Second transformation: tags changed.
-  using TagOverrides =
-      absl::flat_hash_map<Stats::StatName, absl::optional<uint32_t>>;
+  using TagOverrides = absl::flat_hash_map<Stats::StatName, absl::optional<uint32_t>>;
   absl::flat_hash_map<Stats::StatName, TagOverrides> tag_overrides_;
   // Third transformation: tags added.
   using TagAdditions = std::vector<std::pair<Stats::StatName, uint32_t>>;
   absl::flat_hash_map<Stats::StatName, TagAdditions> tag_additions_;
 
-  void evaluate(
-      Stats::StatNameDynamicPool& pool, const StreamInfo::StreamInfo& info,
-      const Http::RequestHeaderMap* request_headers,
-      const Http::ResponseHeaderMap* response_headers,
-      const Http::ResponseTrailerMap* response_trailers,
-      std::vector<std::pair<Stats::StatName, uint64_t>>& expr_values) {
+  void evaluate(Stats::StatNameDynamicPool& pool, const StreamInfo::StreamInfo& info,
+                const Http::RequestHeaderMap* request_headers,
+                const Http::ResponseHeaderMap* response_headers,
+                const Http::ResponseTrailerMap* response_trailers,
+                std::vector<std::pair<Stats::StatName, uint64_t>>& expr_values) {
     activation_info_ = &info;
     activation_request_headers_ = request_headers;
     activation_response_headers_ = response_headers;
@@ -364,8 +330,7 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
       if (!eval_status.ok() || eval_status.value().IsError()) {
         expr_values.push_back(std::make_pair(context_->unknown_, 0));
       } else {
-        const auto string_value =
-            Filters::Common::Expr::print(eval_status.value());
+        const auto string_value = Filters::Common::Expr::print(eval_status.value());
         if (compiled_exprs_[id].second) {
           uint64_t amount = 0;
           if (!absl::SimpleAtoi(string_value, &amount)) {
@@ -387,15 +352,12 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
       return obj;
     }
     if (name == "node") {
-      return Filters::Common::Expr::CelProtoWrapper::CreateMessage(
-          &context_->node_, arena);
+      return Filters::Common::Expr::CelProtoWrapper::CreateMessage(&context_->node_, arena);
     }
     if (activation_info_) {
-      const auto* obj =
-          activation_info_->filterState()
-              .getDataReadOnly<
-                  Envoy::Extensions::Filters::Common::Expr::CelState>(
-                  absl::StrCat("wasm.", name));
+      const auto* obj = activation_info_->filterState()
+                            .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
+                                absl::StrCat("wasm.", name));
       if (obj) {
         return obj->exprValue(arena, false);
       }
@@ -403,9 +365,9 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
     return {};
   }
 
-  Stats::StatNameTagVector overrideTags(
-      Stats::StatName metric, const Stats::StatNameTagVector& tags,
-      const std::vector<std::pair<Stats::StatName, uint64_t>>& expr_values) {
+  Stats::StatNameTagVector
+  overrideTags(Stats::StatName metric, const Stats::StatNameTagVector& tags,
+               const std::vector<std::pair<Stats::StatName, uint64_t>>& expr_values) {
     Stats::StatNameTagVector out;
     out.reserve(tags.size());
     const auto& tag_overrides_it = tag_overrides_.find(metric);
@@ -432,8 +394,7 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
     }
     return out;
   }
-  absl::optional<uint32_t> getOrCreateExpression(const std::string& expr,
-                                                 bool int_expr) {
+  absl::optional<uint32_t> getOrCreateExpression(const std::string& expr, bool int_expr) {
     const auto& it = expression_ids_.find(expr);
     if (it != expression_ids_.end()) {
       return {it->second};
@@ -444,30 +405,25 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
     }
     if (expr_builder_ == nullptr) {
       google::api::expr::runtime::InterpreterOptions options;
-      expr_builder_ =
-          google::api::expr::runtime::CreateCelExpressionBuilder(options);
-      auto register_status =
-          google::api::expr::runtime::RegisterBuiltinFunctions(
-              expr_builder_->GetRegistry(), options);
+      expr_builder_ = google::api::expr::runtime::CreateCelExpressionBuilder(options);
+      auto register_status = google::api::expr::runtime::RegisterBuiltinFunctions(
+          expr_builder_->GetRegistry(), options);
       if (!register_status.ok()) {
         throw Extensions::Filters::Common::Expr::CelException(
-            absl::StrCat("failed to register built-in functions: ",
-                         register_status.message()));
+            absl::StrCat("failed to register built-in functions: ", register_status.message()));
       }
     }
     parsed_exprs_.push_back(parse_status.value().expr());
-    compiled_exprs_.push_back(
-        std::make_pair(Extensions::Filters::Common::Expr::createExpression(
-                           *expr_builder_, parsed_exprs_.back()),
-                       int_expr));
+    compiled_exprs_.push_back(std::make_pair(
+        Extensions::Filters::Common::Expr::createExpression(*expr_builder_, parsed_exprs_.back()),
+        int_expr));
     uint32_t id = compiled_exprs_.size() - 1;
     expression_ids_.emplace(expr, id);
     return {id};
   }
   Filters::Common::Expr::BuilderPtr expr_builder_;
   std::vector<google::api::expr::v1alpha1::Expr> parsed_exprs_;
-  std::vector<std::pair<Filters::Common::Expr::ExpressionPtr, bool>>
-      compiled_exprs_;
+  std::vector<std::pair<Filters::Common::Expr::ExpressionPtr, bool>> compiled_exprs_;
   absl::flat_hash_map<std::string, uint32_t> expression_ids_;
 };
 
@@ -477,69 +433,61 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
       : context_(factory_context.singletonManager().getTyped<Context>(
             SINGLETON_MANAGER_REGISTERED_NAME(Context),
             [&factory_context] {
-              return std::make_shared<Context>(
-                  factory_context.serverScope().symbolTable(),
-                  factory_context.localInfo().node());
+              return std::make_shared<Context>(factory_context.serverScope().symbolTable(),
+                                               factory_context.localInfo().node());
             })),
         scope_(factory_context.scope()),
-        disable_host_header_fallback_(
-            proto_config.disable_host_header_fallback()),
-        report_duration_(PROTOBUF_GET_MS_OR_DEFAULT(
-            proto_config, tcp_reporting_duration, /* 5s */ 5000)) {
+        disable_host_header_fallback_(proto_config.disable_host_header_fallback()),
+        report_duration_(
+            PROTOBUF_GET_MS_OR_DEFAULT(proto_config, tcp_reporting_duration, /* 5s */ 5000)) {
     reporter_ = Reporter::ClientSidecar;
     switch (proto_config.reporter()) {
-      case stats::Reporter::UNSPECIFIED:
-        switch (factory_context.direction()) {
-          case envoy::config::core::v3::TrafficDirection::INBOUND:
-            reporter_ = Reporter::ServerSidecar;
-            break;
-          case envoy::config::core::v3::TrafficDirection::OUTBOUND:
-            reporter_ = Reporter::ClientSidecar;
-            break;
-          default:
-            break;
-        }
+    case stats::Reporter::UNSPECIFIED:
+      switch (factory_context.direction()) {
+      case envoy::config::core::v3::TrafficDirection::INBOUND:
+        reporter_ = Reporter::ServerSidecar;
         break;
-      case stats::Reporter::SERVER_GATEWAY:
-        reporter_ = Reporter::ServerGateway;
+      case envoy::config::core::v3::TrafficDirection::OUTBOUND:
+        reporter_ = Reporter::ClientSidecar;
         break;
       default:
         break;
+      }
+      break;
+    case stats::Reporter::SERVER_GATEWAY:
+      reporter_ = Reporter::ServerGateway;
+      break;
+    default:
+      break;
     }
-    if (proto_config.metrics_size() > 0 ||
-        proto_config.definitions_size() > 0) {
-      metric_overrides_ =
-          std::make_unique<MetricOverrides>(context_, scope_.symbolTable());
+    if (proto_config.metrics_size() > 0 || proto_config.definitions_size() > 0) {
+      metric_overrides_ = std::make_unique<MetricOverrides>(context_, scope_.symbolTable());
       for (const auto& definition : proto_config.definitions()) {
         const auto& it = context_->all_metrics_.find(definition.name());
         if (it != context_->all_metrics_.end()) {
-          ENVOY_LOG(info, "Re-defining standard metric not allowed:: {}",
-                    definition.name());
+          ENVOY_LOG(info, "Re-defining standard metric not allowed:: {}", definition.name());
           continue;
         }
-        auto id =
-            metric_overrides_->getOrCreateExpression(definition.value(), true);
+        auto id = metric_overrides_->getOrCreateExpression(definition.value(), true);
         if (!id.has_value()) {
-          ENVOY_LOG(info, "Failed to parse metric value expression: {}",
-                    definition.value());
+          ENVOY_LOG(info, "Failed to parse metric value expression: {}", definition.value());
           continue;
         }
         auto metric_type = MetricOverrides::MetricType::Counter;
         switch (definition.type()) {
-          case stats::MetricType::GAUGE:
-            metric_type = MetricOverrides::MetricType::Gauge;
-            break;
-          case stats::MetricType::HISTOGRAM:
-            metric_type = MetricOverrides::MetricType::Histogram;
-            break;
-          default:
-            break;
+        case stats::MetricType::GAUGE:
+          metric_type = MetricOverrides::MetricType::Gauge;
+          break;
+        case stats::MetricType::HISTOGRAM:
+          metric_type = MetricOverrides::MetricType::Histogram;
+          break;
+        default:
+          break;
         }
         metric_overrides_->custom_metrics_.try_emplace(
             definition.name(),
-            metric_overrides_->pool_.add(
-                absl::StrCat("istio_", definition.name())),
-            id.value(), metric_type);
+            metric_overrides_->pool_.add(absl::StrCat("istio_", definition.name())), id.value(),
+            metric_type);
       }
       for (const auto& metric : proto_config.metrics()) {
         if (metric.drop()) {
@@ -558,8 +506,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
           if (!metric.name().empty()) {
             const auto& it = context_->all_metrics_.find(metric.name());
             if (it != context_->all_metrics_.end()) {
-              metric_overrides_
-                  ->tag_overrides_[it->second][tag_it->second] = {};
+              metric_overrides_->tag_overrides_[it->second][tag_it->second] = {};
             }
           } else
             for (const auto& [_, metric] : context_->all_metrics_) {
@@ -588,24 +535,19 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
             if (!metric.name().empty()) {
               const auto& it = context_->all_metrics_.find(metric.name());
               if (it != context_->all_metrics_.end()) {
-                metric_overrides_->tag_additions_[it->second].push_back(
-                    {tag_name, id.value()});
+                metric_overrides_->tag_additions_[it->second].push_back({tag_name, id.value()});
               }
-              const auto& custom_it =
-                  metric_overrides_->custom_metrics_.find(metric.name());
+              const auto& custom_it = metric_overrides_->custom_metrics_.find(metric.name());
               if (custom_it != metric_overrides_->custom_metrics_.end()) {
-                metric_overrides_->tag_additions_[custom_it->second.name_]
-                    .push_back({tag_name, id.value()});
+                metric_overrides_->tag_additions_[custom_it->second.name_].push_back(
+                    {tag_name, id.value()});
               }
             } else {
               for (const auto& [_, metric] : context_->all_metrics_) {
-                metric_overrides_->tag_additions_[metric].push_back(
-                    {tag_name, id.value()});
+                metric_overrides_->tag_additions_[metric].push_back({tag_name, id.value()});
               }
-              for (const auto& [_, metric] :
-                   metric_overrides_->custom_metrics_) {
-                metric_overrides_->tag_additions_[metric.name_].push_back(
-                    {tag_name, id.value()});
+              for (const auto& [_, metric] : metric_overrides_->custom_metrics_) {
+                metric_overrides_->tag_additions_[metric.name_].push_back({tag_name, id.value()});
               }
             }
           } else {
@@ -615,20 +557,17 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
               if (it != context_->all_metrics_.end()) {
                 metric_overrides_->tag_overrides_[it->second][tag_name] = id;
               }
-              const auto& custom_it =
-                  metric_overrides_->custom_metrics_.find(metric.name());
+              const auto& custom_it = metric_overrides_->custom_metrics_.find(metric.name());
               if (custom_it != metric_overrides_->custom_metrics_.end()) {
-                metric_overrides_->tag_additions_[custom_it->second.name_]
-                    .push_back({tag_name, id.value()});
+                metric_overrides_->tag_additions_[custom_it->second.name_].push_back(
+                    {tag_name, id.value()});
               }
             } else {
               for (const auto& [_, metric] : context_->all_metrics_) {
                 metric_overrides_->tag_overrides_[metric][tag_name] = id;
               }
-              for (const auto& [_, metric] :
-                   metric_overrides_->custom_metrics_) {
-                metric_overrides_->tag_additions_[metric.name_].push_back(
-                    {tag_name, id.value()});
+              for (const auto& [_, metric] : metric_overrides_->custom_metrics_) {
+                metric_overrides_->tag_additions_[metric.name_].push_back({tag_name, id.value()});
               }
             }
           }
@@ -646,28 +585,25 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
                     const Http::ResponseTrailerMap* response_trailers = nullptr)
         : parent_(parent) {
       if (parent_.metric_overrides_) {
-        parent_.metric_overrides_->evaluate(pool, info, request_headers,
-                                            response_headers, response_trailers,
-                                            expr_values_);
+        parent_.metric_overrides_->evaluate(pool, info, request_headers, response_headers,
+                                            response_trailers, expr_values_);
       }
     }
 
-    void addCounter(Stats::StatName metric,
-                    const Stats::StatNameTagVector& tags, uint64_t amount = 1) {
+    void addCounter(Stats::StatName metric, const Stats::StatNameTagVector& tags,
+                    uint64_t amount = 1) {
       if (parent_.metric_overrides_) {
         if (parent_.metric_overrides_->drop_.contains(metric)) {
           return;
         }
-        auto new_tags =
-            parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
-        Stats::Utility::counterFromStatNames(
-            parent_.scope_, {parent_.context_->stat_namespace_, metric},
-            new_tags)
+        auto new_tags = parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
+        Stats::Utility::counterFromStatNames(parent_.scope_,
+                                             {parent_.context_->stat_namespace_, metric}, new_tags)
             .add(amount);
         return;
       }
-      Stats::Utility::counterFromStatNames(
-          parent_.scope_, {parent_.context_->stat_namespace_, metric}, tags)
+      Stats::Utility::counterFromStatNames(parent_.scope_,
+                                           {parent_.context_->stat_namespace_, metric}, tags)
           .add(amount);
     }
 
@@ -677,50 +613,42 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         if (parent_.metric_overrides_->drop_.contains(metric)) {
           return;
         }
-        auto new_tags =
-            parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
+        auto new_tags = parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
         Stats::Utility::histogramFromStatNames(
-            parent_.scope_, {parent_.context_->stat_namespace_, metric}, unit,
-            new_tags)
+            parent_.scope_, {parent_.context_->stat_namespace_, metric}, unit, new_tags)
             .recordValue(value);
         return;
       }
       Stats::Utility::histogramFromStatNames(
-          parent_.scope_, {parent_.context_->stat_namespace_, metric}, unit,
-          tags)
+          parent_.scope_, {parent_.context_->stat_namespace_, metric}, unit, tags)
           .recordValue(value);
     }
 
     void recordCustomMetrics() {
       if (parent_.metric_overrides_) {
-        for (const auto& [_, metric] :
-             parent_.metric_overrides_->custom_metrics_) {
-          const auto tags = parent_.metric_overrides_->overrideTags(
-              metric.name_, {}, expr_values_);
+        for (const auto& [_, metric] : parent_.metric_overrides_->custom_metrics_) {
+          const auto tags = parent_.metric_overrides_->overrideTags(metric.name_, {}, expr_values_);
           uint64_t amount = expr_values_[metric.expr_].second;
           switch (metric.type_) {
-            case MetricOverrides::MetricType::Counter:
-              Stats::Utility::counterFromStatNames(
-                  parent_.scope_,
-                  {parent_.context_->stat_namespace_, metric.name_}, tags)
-                  .add(amount);
-              break;
-            case MetricOverrides::MetricType::Histogram:
-              Stats::Utility::histogramFromStatNames(
-                  parent_.scope_,
-                  {parent_.context_->stat_namespace_, metric.name_},
-                  Stats::Histogram::Unit::Bytes, tags)
-                  .recordValue(amount);
-              break;
-            case MetricOverrides::MetricType::Gauge:
-              Stats::Utility::gaugeFromStatNames(
-                  parent_.scope_,
-                  {parent_.context_->stat_namespace_, metric.name_},
-                  Stats::Gauge::ImportMode::Accumulate, tags)
-                  .set(amount);
-              break;
-            default:
-              break;
+          case MetricOverrides::MetricType::Counter:
+            Stats::Utility::counterFromStatNames(
+                parent_.scope_, {parent_.context_->stat_namespace_, metric.name_}, tags)
+                .add(amount);
+            break;
+          case MetricOverrides::MetricType::Histogram:
+            Stats::Utility::histogramFromStatNames(
+                parent_.scope_, {parent_.context_->stat_namespace_, metric.name_},
+                Stats::Histogram::Unit::Bytes, tags)
+                .recordValue(amount);
+            break;
+          case MetricOverrides::MetricType::Gauge:
+            Stats::Utility::gaugeFromStatNames(parent_.scope_,
+                                               {parent_.context_->stat_namespace_, metric.name_},
+                                               Stats::Gauge::ImportMode::Accumulate, tags)
+                .set(amount);
+            break;
+          default:
+            break;
           }
         }
       }
@@ -733,13 +661,11 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
   void recordVersion() {
     Stats::StatNameTagVector tags;
     tags.push_back({context_->component_, context_->proxy_});
-    tags.push_back({context_->tag_, context_->istio_version_.empty()
-                                        ? context_->unknown_
-                                        : context_->istio_version_});
+    tags.push_back({context_->tag_, context_->istio_version_.empty() ? context_->unknown_
+                                                                     : context_->istio_version_});
 
-    Stats::Utility::gaugeFromStatNames(
-        scope_, {context_->stat_namespace_, context_->istio_build_},
-        Stats::Gauge::ImportMode::Accumulate, tags)
+    Stats::Utility::gaugeFromStatNames(scope_, {context_->stat_namespace_, context_->istio_build_},
+                                       Stats::Gauge::ImportMode::Accumulate, tags)
         .set(1);
   }
 
@@ -760,20 +686,18 @@ class IstioStatsFilter : public Http::PassThroughFilter,
                          public AccessLog::Instance,
                          public Network::ReadFilter,
                          public Network::ConnectionCallbacks {
- public:
+public:
   IstioStatsFilter(ConfigSharedPtr config)
-      : config_(config),
-        context_(*config->context_),
-        pool_(config->scope_.symbolTable()) {
+      : config_(config), context_(*config->context_), pool_(config->scope_.symbolTable()) {
     tags_.reserve(25);
     switch (config_->reporter()) {
-      case Reporter::ServerSidecar:
-      case Reporter::ServerGateway:
-        tags_.push_back({context_.reporter_, context_.destination_});
-        break;
-      case Reporter::ClientSidecar:
-        tags_.push_back({context_.reporter_, context_.source_});
-        break;
+    case Reporter::ServerSidecar:
+    case Reporter::ServerGateway:
+      tags_.push_back({context_.reporter_, context_.destination_});
+      break;
+    case Reporter::ClientSidecar:
+      tags_.push_back({context_.reporter_, context_.source_});
+      break;
     }
   }
   ~IstioStatsFilter() { ASSERT(report_timer_ == nullptr); }
@@ -784,8 +708,7 @@ class IstioStatsFilter : public Http::PassThroughFilter,
            const Http::ResponseTrailerMap* response_trailers,
            const StreamInfo::StreamInfo& info) override {
     populatePeerInfo(info, info.filterState());
-    const bool is_grpc =
-        request_headers && Grpc::Common::isGrpcRequestHeaders(*request_headers);
+    const bool is_grpc = request_headers && Grpc::Common::isGrpcRequestHeaders(*request_headers);
     if (is_grpc) {
       tags_.push_back({context_.request_protocol_, context_.grpc_});
     } else {
@@ -793,42 +716,36 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     }
 
     // TODO: copy Http::CodeStatsImpl version for status codes and flags.
-    tags_.push_back({context_.response_code_,
-                     pool_.add(absl::StrCat(info.responseCode().value_or(0)))});
+    tags_.push_back(
+        {context_.response_code_, pool_.add(absl::StrCat(info.responseCode().value_or(0)))});
     if (is_grpc) {
       auto const& optional_status = Grpc::Common::getGrpcStatus(
-          response_trailers
-              ? *response_trailers
-              : *Http::StaticEmptyHeaders::get().response_trailers,
-          response_headers ? *response_headers
-                           : *Http::StaticEmptyHeaders::get().response_headers,
+          response_trailers ? *response_trailers
+                            : *Http::StaticEmptyHeaders::get().response_trailers,
+          response_headers ? *response_headers : *Http::StaticEmptyHeaders::get().response_headers,
           info);
-      tags_.push_back({context_.grpc_response_status_,
-                       optional_status
-                           ? pool_.add(absl::StrCat(optional_status.value()))
-                           : context_.empty_});
+      tags_.push_back(
+          {context_.grpc_response_status_,
+           optional_status ? pool_.add(absl::StrCat(optional_status.value())) : context_.empty_});
     } else {
       tags_.push_back({context_.grpc_response_status_, context_.empty_});
     }
     populateFlagsAndConnectionSecurity(info);
 
-    Config::StreamOverrides stream(*config_, pool_, info, request_headers,
-                                   response_headers, response_trailers);
+    Config::StreamOverrides stream(*config_, pool_, info, request_headers, response_headers,
+                                   response_trailers);
     stream.addCounter(context_.requests_total_, tags_);
     auto duration = info.requestComplete();
     if (duration.has_value()) {
-      stream.recordHistogram(
-          context_.request_duration_milliseconds_,
-          Stats::Histogram::Unit::Milliseconds, tags_,
-          absl::FromChrono(duration.value()) / absl::Milliseconds(1));
+      stream.recordHistogram(context_.request_duration_milliseconds_,
+                             Stats::Histogram::Unit::Milliseconds, tags_,
+                             absl::FromChrono(duration.value()) / absl::Milliseconds(1));
     }
     auto meter = info.getDownstreamBytesMeter();
     if (meter) {
-      stream.recordHistogram(context_.request_bytes_,
-                             Stats::Histogram::Unit::Bytes, tags_,
+      stream.recordHistogram(context_.request_bytes_, Stats::Histogram::Unit::Bytes, tags_,
                              meter->wireBytesReceived());
-      stream.recordHistogram(context_.response_bytes_,
-                             Stats::Histogram::Unit::Bytes, tags_,
+      stream.recordHistogram(context_.response_bytes_, Stats::Histogram::Unit::Bytes, tags_,
                              meter->wireBytesSent());
     }
     stream.recordCustomMetrics();
@@ -840,37 +757,35 @@ class IstioStatsFilter : public Http::PassThroughFilter,
   }
   Network::FilterStatus onNewConnection() override {
     if (config_->report_duration_ > std::chrono::milliseconds(0)) {
-      report_timer_ =
-          network_read_callbacks_->connection().dispatcher().createTimer(
-              [this] { onReportTimer(); });
+      report_timer_ = network_read_callbacks_->connection().dispatcher().createTimer(
+          [this] { onReportTimer(); });
       report_timer_->enableTimer(config_->report_duration_);
     }
     return Network::FilterStatus::Continue;
   }
-  void initializeReadFilterCallbacks(
-      Network::ReadFilterCallbacks& callbacks) override {
+  void initializeReadFilterCallbacks(Network::ReadFilterCallbacks& callbacks) override {
     network_read_callbacks_ = &callbacks;
     network_read_callbacks_->connection().addConnectionCallbacks(*this);
   }
   // Network::ConnectionCallbacks
   void onEvent(Network::ConnectionEvent event) override {
     switch (event) {
-      case Network::ConnectionEvent::LocalClose:
-      case Network::ConnectionEvent::RemoteClose:
-        reportHelper(true);
-        if (report_timer_) {
-          report_timer_->disableTimer();
-          report_timer_.reset();
-        }
-        break;
-      default:
-        break;
+    case Network::ConnectionEvent::LocalClose:
+    case Network::ConnectionEvent::RemoteClose:
+      reportHelper(true);
+      if (report_timer_) {
+        report_timer_->disableTimer();
+        report_timer_.reset();
+      }
+      break;
+    default:
+      break;
     }
   }
   void onAboveWriteBufferHighWatermark() override {}
   void onBelowWriteBufferLowWatermark() override {}
 
- private:
+private:
   // Invoked periodically for TCP streams.
   void reportHelper(bool end_stream) {
     const auto& info = network_read_callbacks_->connection().streamInfo();
@@ -918,13 +833,11 @@ class IstioStatsFilter : public Http::PassThroughFilter,
 
   void populateFlagsAndConnectionSecurity(const StreamInfo::StreamInfo& info) {
     tags_.push_back(
-        {context_.response_flags_,
-         pool_.add(StreamInfo::ResponseFlagUtils::toShortString(info))});
-    tags_.push_back(
-        {context_.connection_security_policy_,
-         mutual_tls_.has_value()
-             ? (*mutual_tls_ ? context_.mutual_tls_ : context_.none_)
-             : context_.unknown_});
+        {context_.response_flags_, pool_.add(StreamInfo::ResponseFlagUtils::toShortString(info))});
+    tags_.push_back({context_.connection_security_policy_,
+                     mutual_tls_.has_value()
+                         ? (*mutual_tls_ ? context_.mutual_tls_ : context_.none_)
+                         : context_.unknown_});
   }
 
   // Peer metadata is populated after encode/decodeHeaders by MX HTTP filter,
@@ -960,27 +873,23 @@ class IstioStatsFilter : public Http::PassThroughFilter,
       const auto cluster_info = info.upstreamClusterInfo();
       if (cluster_info && cluster_info.value()) {
         const auto& cluster_name = cluster_info.value()->name();
-        if (cluster_name == "BlackHoleCluster" ||
-            cluster_name == "PassthroughCluster" ||
+        if (cluster_name == "BlackHoleCluster" || cluster_name == "PassthroughCluster" ||
             cluster_name == "InboundPassthroughClusterIpv4" ||
             cluster_name == "InboundPassthroughClusterIpv6") {
           service_host_name = cluster_name;
         } else {
-          const auto& filter_metadata =
-              cluster_info.value()->metadata().filter_metadata();
+          const auto& filter_metadata = cluster_info.value()->metadata().filter_metadata();
           const auto& it = filter_metadata.find("istio");
           if (it != filter_metadata.end()) {
             const auto& services_it = it->second.fields().find("services");
             if (services_it != it->second.fields().end()) {
               const auto& services = services_it->second.list_value();
               if (services.values_size() > 0) {
-                const auto& service =
-                    services.values(0).struct_value().fields();
+                const auto& service = services.values(0).struct_value().fields();
                 const auto& host_it = service.find("host");
                 if (host_it != service.end()) {
                   service_host = host_it->second.string_value();
-                  service_host_name =
-                      service_host.substr(0, service_host.find_first_of('.'));
+                  service_host_name = service_host.substr(0, service_host.find_first_of('.'));
                 }
               }
             }
@@ -992,41 +901,39 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     absl::string_view peer_san;
     absl::string_view local_san;
     switch (config_->reporter()) {
-      case Reporter::ServerSidecar:
-      case Reporter::ServerGateway: {
-        auto principals =
-            NetworkFilters::IstioAuthn::getPrincipals(info.filterState());
-        peer_san = principals.peer;
-        local_san = principals.local;
+    case Reporter::ServerSidecar:
+    case Reporter::ServerGateway: {
+      auto principals = NetworkFilters::IstioAuthn::getPrincipals(info.filterState());
+      peer_san = principals.peer;
+      local_san = principals.local;
 
-        // This fallback should be deleted once istio_authn is globally enabled.
-        if (peer_san.empty() && local_san.empty()) {
-          const Ssl::ConnectionInfoConstSharedPtr ssl_info =
-              info.downstreamAddressProvider().sslConnection();
-          if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
-            peer_san = ssl_info->uriSanPeerCertificate()[0];
-          }
-          if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
-            local_san = ssl_info->uriSanLocalCertificate()[0];
-          }
-        }
-
-        // Save the connection security policy for a tag added later.
-        mutual_tls_ = !peer_san.empty() && !local_san.empty();
-        break;
-      }
-      case Reporter::ClientSidecar: {
+      // This fallback should be deleted once istio_authn is globally enabled.
+      if (peer_san.empty() && local_san.empty()) {
         const Ssl::ConnectionInfoConstSharedPtr ssl_info =
-            info.upstreamInfo() ? info.upstreamInfo()->upstreamSslConnection()
-                                : nullptr;
+            info.downstreamAddressProvider().sslConnection();
         if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
           peer_san = ssl_info->uriSanPeerCertificate()[0];
         }
         if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
           local_san = ssl_info->uriSanLocalCertificate()[0];
         }
-        break;
       }
+
+      // Save the connection security policy for a tag added later.
+      mutual_tls_ = !peer_san.empty() && !local_san.empty();
+      break;
+    }
+    case Reporter::ClientSidecar: {
+      const Ssl::ConnectionInfoConstSharedPtr ssl_info =
+          info.upstreamInfo() ? info.upstreamInfo()->upstreamSslConnection() : nullptr;
+      if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
+        peer_san = ssl_info->uriSanPeerCertificate()[0];
+      }
+      if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
+        local_san = ssl_info->uriSanLocalCertificate()[0];
+      }
+      break;
+    }
     }
     // Implements fallback from using the namespace from SAN if available to
     // using peer metadata, otherwise.
@@ -1041,159 +948,122 @@ class IstioStatsFilter : public Http::PassThroughFilter,
       peer_namespace = peer->namespace_name_;
     }
     switch (config_->reporter()) {
-      case Reporter::ServerSidecar:
+    case Reporter::ServerSidecar:
+    case Reporter::ServerGateway: {
+      tags_.push_back({context_.source_workload_, peer && !peer->workload_name_.empty()
+                                                      ? pool_.add(peer->workload_name_)
+                                                      : context_.unknown_});
+      tags_.push_back({context_.source_canonical_service_, peer && !peer->canonical_name_.empty()
+                                                               ? pool_.add(peer->canonical_name_)
+                                                               : context_.unknown_});
+      tags_.push_back(
+          {context_.source_canonical_revision_, peer && !peer->canonical_revision_.empty()
+                                                    ? pool_.add(peer->canonical_revision_)
+                                                    : context_.latest_});
+      tags_.push_back({context_.source_workload_namespace_,
+                       !peer_namespace.empty() ? pool_.add(peer_namespace) : context_.unknown_});
+      tags_.push_back({context_.source_principal_,
+                       !peer_san.empty() ? pool_.add(peer_san) : context_.unknown_});
+      tags_.push_back({context_.source_app_, peer && !peer->app_name_.empty()
+                                                 ? pool_.add(peer->app_name_)
+                                                 : context_.unknown_});
+      tags_.push_back({context_.source_version_, peer && !peer->app_version_.empty()
+                                                     ? pool_.add(peer->app_version_)
+                                                     : context_.unknown_});
+      tags_.push_back({context_.source_cluster_, peer && !peer->cluster_name_.empty()
+                                                     ? pool_.add(peer->cluster_name_)
+                                                     : context_.unknown_});
+      switch (config_->reporter()) {
       case Reporter::ServerGateway: {
+        auto endpoint_peer = extractEndpointMetadata(info);
         tags_.push_back(
-            {context_.source_workload_, peer && !peer->workload_name_.empty()
-                                            ? pool_.add(peer->workload_name_)
-                                            : context_.unknown_});
-        tags_.push_back({context_.source_canonical_service_,
-                         peer && !peer->canonical_name_.empty()
-                             ? pool_.add(peer->canonical_name_)
-                             : context_.unknown_});
-        tags_.push_back({context_.source_canonical_revision_,
-                         peer && !peer->canonical_revision_.empty()
-                             ? pool_.add(peer->canonical_revision_)
-                             : context_.latest_});
-        tags_.push_back({context_.source_workload_namespace_,
-                         !peer_namespace.empty() ? pool_.add(peer_namespace)
-                                                 : context_.unknown_});
-        tags_.push_back({context_.source_principal_, !peer_san.empty()
-                                                         ? pool_.add(peer_san)
-                                                         : context_.unknown_});
-        tags_.push_back({context_.source_app_, peer && !peer->app_name_.empty()
-                                                   ? pool_.add(peer->app_name_)
-                                                   : context_.unknown_});
-        tags_.push_back(
-            {context_.source_version_, peer && !peer->app_version_.empty()
-                                           ? pool_.add(peer->app_version_)
-                                           : context_.unknown_});
-        tags_.push_back(
-            {context_.source_cluster_, peer && !peer->cluster_name_.empty()
-                                           ? pool_.add(peer->cluster_name_)
-                                           : context_.unknown_});
-        switch (config_->reporter()) {
-          case Reporter::ServerGateway: {
-            auto endpoint_peer = extractEndpointMetadata(info);
-            tags_.push_back({context_.destination_workload_,
-                             endpoint_peer
-                                 ? pool_.add(endpoint_peer->workload_name_)
-                                 : context_.unknown_});
-            tags_.push_back({context_.destination_workload_namespace_,
-                             context_.namespace_});
-            tags_.push_back({context_.destination_principal_,
-                             !local_san.empty() ? pool_.add(local_san)
-                                                : context_.unknown_});
-            // Endpoint encoding does not have app and version.
-            tags_.push_back({context_.destination_app_, context_.unknown_});
-            tags_.push_back({context_.destination_version_, context_.unknown_});
-            auto canonical_name =
-                endpoint_peer ? pool_.add(endpoint_peer->canonical_name_)
-                              : context_.unknown_;
-            tags_.push_back({context_.destination_service_,
-                             service_host.empty() ? canonical_name
-                                                  : pool_.add(service_host)});
-            tags_.push_back(
-                {context_.destination_canonical_service_, canonical_name});
-            tags_.push_back({context_.destination_canonical_revision_,
-                             endpoint_peer
-                                 ? pool_.add(endpoint_peer->canonical_revision_)
-                                 : context_.unknown_});
-            tags_.push_back({context_.destination_service_name_,
-                             service_host_name.empty()
-                                 ? canonical_name
-                                 : pool_.add(service_host_name)});
-            break;
-          }
-          default:
-            tags_.push_back(
-                {context_.destination_workload_, context_.workload_name_});
-            tags_.push_back({context_.destination_workload_namespace_,
-                             context_.namespace_});
-            tags_.push_back({context_.destination_principal_,
-                             !local_san.empty() ? pool_.add(local_san)
-                                                : context_.unknown_});
-            tags_.push_back({context_.destination_app_, context_.app_name_});
-            tags_.push_back(
-                {context_.destination_version_, context_.app_version_});
-            tags_.push_back({context_.destination_service_,
-                             service_host.empty() ? context_.canonical_name_
-                                                  : pool_.add(service_host)});
-            tags_.push_back({context_.destination_canonical_service_,
-                             context_.canonical_name_});
-            tags_.push_back({context_.destination_canonical_revision_,
-                             context_.canonical_revision_});
-            tags_.push_back({context_.destination_service_name_,
-                             service_host_name.empty()
-                                 ? context_.canonical_name_
-                                 : pool_.add(service_host_name)});
-            break;
-        }
-        tags_.push_back(
-            {context_.destination_service_namespace_, context_.namespace_});
-        tags_.push_back(
-            {context_.destination_cluster_, context_.cluster_name_});
-
-        break;
-      }
-      case Reporter::ClientSidecar: {
-        tags_.push_back({context_.source_workload_, context_.workload_name_});
-        tags_.push_back(
-            {context_.source_canonical_service_, context_.canonical_name_});
-        tags_.push_back({context_.source_canonical_revision_,
-                         context_.canonical_revision_});
-        tags_.push_back(
-            {context_.source_workload_namespace_, context_.namespace_});
-        tags_.push_back({context_.source_principal_, !local_san.empty()
-                                                         ? pool_.add(local_san)
-                                                         : context_.unknown_});
-        tags_.push_back({context_.source_app_, context_.app_name_});
-        tags_.push_back({context_.source_version_, context_.app_version_});
-        tags_.push_back({context_.source_cluster_, context_.cluster_name_});
-        tags_.push_back({context_.destination_workload_,
-                         peer && !peer->workload_name_.empty()
-                             ? pool_.add(peer->workload_name_)
-                             : context_.unknown_});
-        tags_.push_back({context_.destination_workload_namespace_,
-                         !peer_namespace.empty() ? pool_.add(peer_namespace)
-                                                 : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_principal_,
-             !peer_san.empty() ? pool_.add(peer_san) : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_app_, peer && !peer->app_name_.empty()
-                                            ? pool_.add(peer->app_name_)
-                                            : context_.unknown_});
-        tags_.push_back(
-            {context_.destination_version_, peer && !peer->app_version_.empty()
-                                                ? pool_.add(peer->app_version_)
-                                                : context_.unknown_});
+            {context_.destination_workload_,
+             endpoint_peer ? pool_.add(endpoint_peer->workload_name_) : context_.unknown_});
+        tags_.push_back({context_.destination_workload_namespace_, context_.namespace_});
+        tags_.push_back({context_.destination_principal_,
+                         !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
+        // Endpoint encoding does not have app and version.
+        tags_.push_back({context_.destination_app_, context_.unknown_});
+        tags_.push_back({context_.destination_version_, context_.unknown_});
+        auto canonical_name =
+            endpoint_peer ? pool_.add(endpoint_peer->canonical_name_) : context_.unknown_;
         tags_.push_back({context_.destination_service_,
-                         service_host.empty() ? context_.unknown_
-                                              : pool_.add(service_host)});
-        tags_.push_back({context_.destination_canonical_service_,
-                         peer && !peer->canonical_name_.empty()
-                             ? pool_.add(peer->canonical_name_)
-                             : context_.unknown_});
-        tags_.push_back({context_.destination_canonical_revision_,
-                         peer && !peer->canonical_revision_.empty()
-                             ? pool_.add(peer->canonical_revision_)
-                             : context_.latest_});
-        tags_.push_back({context_.destination_service_name_,
-                         service_host_name.empty()
-                             ? context_.unknown_
-                             : pool_.add(service_host_name)});
-        tags_.push_back({context_.destination_service_namespace_,
-                         !peer_namespace.empty() ? pool_.add(peer_namespace)
-                                                 : context_.unknown_});
+                         service_host.empty() ? canonical_name : pool_.add(service_host)});
+        tags_.push_back({context_.destination_canonical_service_, canonical_name});
         tags_.push_back(
-            {context_.destination_cluster_, peer && !peer->cluster_name_.empty()
-                                                ? pool_.add(peer->cluster_name_)
-                                                : context_.unknown_});
+            {context_.destination_canonical_revision_,
+             endpoint_peer ? pool_.add(endpoint_peer->canonical_revision_) : context_.unknown_});
+        tags_.push_back({context_.destination_service_name_, service_host_name.empty()
+                                                                 ? canonical_name
+                                                                 : pool_.add(service_host_name)});
         break;
       }
       default:
+        tags_.push_back({context_.destination_workload_, context_.workload_name_});
+        tags_.push_back({context_.destination_workload_namespace_, context_.namespace_});
+        tags_.push_back({context_.destination_principal_,
+                         !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
+        tags_.push_back({context_.destination_app_, context_.app_name_});
+        tags_.push_back({context_.destination_version_, context_.app_version_});
+        tags_.push_back({context_.destination_service_, service_host.empty()
+                                                            ? context_.canonical_name_
+                                                            : pool_.add(service_host)});
+        tags_.push_back({context_.destination_canonical_service_, context_.canonical_name_});
+        tags_.push_back({context_.destination_canonical_revision_, context_.canonical_revision_});
+        tags_.push_back({context_.destination_service_name_, service_host_name.empty()
+                                                                 ? context_.canonical_name_
+                                                                 : pool_.add(service_host_name)});
         break;
+      }
+      tags_.push_back({context_.destination_service_namespace_, context_.namespace_});
+      tags_.push_back({context_.destination_cluster_, context_.cluster_name_});
+
+      break;
+    }
+    case Reporter::ClientSidecar: {
+      tags_.push_back({context_.source_workload_, context_.workload_name_});
+      tags_.push_back({context_.source_canonical_service_, context_.canonical_name_});
+      tags_.push_back({context_.source_canonical_revision_, context_.canonical_revision_});
+      tags_.push_back({context_.source_workload_namespace_, context_.namespace_});
+      tags_.push_back({context_.source_principal_,
+                       !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
+      tags_.push_back({context_.source_app_, context_.app_name_});
+      tags_.push_back({context_.source_version_, context_.app_version_});
+      tags_.push_back({context_.source_cluster_, context_.cluster_name_});
+      tags_.push_back({context_.destination_workload_, peer && !peer->workload_name_.empty()
+                                                           ? pool_.add(peer->workload_name_)
+                                                           : context_.unknown_});
+      tags_.push_back({context_.destination_workload_namespace_,
+                       !peer_namespace.empty() ? pool_.add(peer_namespace) : context_.unknown_});
+      tags_.push_back({context_.destination_principal_,
+                       !peer_san.empty() ? pool_.add(peer_san) : context_.unknown_});
+      tags_.push_back({context_.destination_app_, peer && !peer->app_name_.empty()
+                                                      ? pool_.add(peer->app_name_)
+                                                      : context_.unknown_});
+      tags_.push_back({context_.destination_version_, peer && !peer->app_version_.empty()
+                                                          ? pool_.add(peer->app_version_)
+                                                          : context_.unknown_});
+      tags_.push_back({context_.destination_service_,
+                       service_host.empty() ? context_.unknown_ : pool_.add(service_host)});
+      tags_.push_back({context_.destination_canonical_service_,
+                       peer && !peer->canonical_name_.empty() ? pool_.add(peer->canonical_name_)
+                                                              : context_.unknown_});
+      tags_.push_back(
+          {context_.destination_canonical_revision_, peer && !peer->canonical_revision_.empty()
+                                                         ? pool_.add(peer->canonical_revision_)
+                                                         : context_.latest_});
+      tags_.push_back({context_.destination_service_name_, service_host_name.empty()
+                                                               ? context_.unknown_
+                                                               : pool_.add(service_host_name)});
+      tags_.push_back({context_.destination_service_namespace_,
+                       !peer_namespace.empty() ? pool_.add(peer_namespace) : context_.unknown_});
+      tags_.push_back({context_.destination_cluster_, peer && !peer->cluster_name_.empty()
+                                                          ? pool_.add(peer->cluster_name_)
+                                                          : context_.unknown_});
+      break;
+    }
+    default:
+      break;
     }
   }
 
@@ -1209,16 +1079,13 @@ class IstioStatsFilter : public Http::PassThroughFilter,
   absl::optional<bool> mutual_tls_;
 };
 
-}  // namespace
+} // namespace
 
-Http::FilterFactoryCb
-IstioStatsFilterConfigFactory::createFilterFactoryFromProtoTyped(
+Http::FilterFactoryCb IstioStatsFilterConfigFactory::createFilterFactoryFromProtoTyped(
     const stats::PluginConfig& proto_config, const std::string&,
     Server::Configuration::FactoryContext& factory_context) {
-  factory_context.api().customStatNamespaces().registerStatNamespace(
-      CustomStatNamespace);
-  ConfigSharedPtr config =
-      std::make_shared<Config>(proto_config, factory_context);
+  factory_context.api().customStatNamespaces().registerStatNamespace(CustomStatNamespace);
+  ConfigSharedPtr config = std::make_shared<Config>(proto_config, factory_context);
   config->recordVersion();
   return [config](Http::FilterChainFactoryCallbacks& callbacks) {
     auto filter = std::make_shared<IstioStatsFilter>(config);
@@ -1232,14 +1099,11 @@ IstioStatsFilterConfigFactory::createFilterFactoryFromProtoTyped(
 REGISTER_FACTORY(IstioStatsFilterConfigFactory,
                  Server::Configuration::NamedHttpFilterConfigFactory);
 
-Network::FilterFactoryCb
-IstioStatsNetworkFilterConfigFactory::createFilterFactoryFromProtoTyped(
+Network::FilterFactoryCb IstioStatsNetworkFilterConfigFactory::createFilterFactoryFromProtoTyped(
     const stats::PluginConfig& proto_config,
     Server::Configuration::FactoryContext& factory_context) {
-  factory_context.api().customStatNamespaces().registerStatNamespace(
-      CustomStatNamespace);
-  ConfigSharedPtr config =
-      std::make_shared<Config>(proto_config, factory_context);
+  factory_context.api().customStatNamespaces().registerStatNamespace(CustomStatNamespace);
+  ConfigSharedPtr config = std::make_shared<Config>(proto_config, factory_context);
   config->recordVersion();
   return [config](Network::FilterManager& filter_manager) {
     filter_manager.addReadFilter(std::make_shared<IstioStatsFilter>(config));
@@ -1249,7 +1113,7 @@ IstioStatsNetworkFilterConfigFactory::createFilterFactoryFromProtoTyped(
 REGISTER_FACTORY(IstioStatsNetworkFilterConfigFactory,
                  Server::Configuration::NamedNetworkFilterConfigFactory);
 
-}  // namespace IstioStats
-}  // namespace HttpFilters
-}  // namespace Extensions
-}  // namespace Envoy
+} // namespace IstioStats
+} // namespace HttpFilters
+} // namespace Extensions
+} // namespace Envoy

@@ -32,13 +32,12 @@ using proxy_wasm::null_plugin::Extensions::Stackdriver::Log::Exporter;
 
 // Logger records access logs and exports them to Stackdriver.
 class Logger {
- public:
+public:
   // Logger initiate a Stackdriver access logger, which batches log entries and
   // exports to Stackdriver backend with the given exporter.
   // log_request_size_limit is the size limit of a logging request:
   // https://cloud.google.com/logging/quotas.
-  Logger(const ::Wasm::Common::FlatNode& local_node_info,
-         std::unique_ptr<Exporter> exporter,
+  Logger(const ::Wasm::Common::FlatNode& local_node_info, std::unique_ptr<Exporter> exporter,
          const std::unordered_map<std::string, std::string>& extra_labels,
          int log_request_size_limit = 4000000 /* 4 Mb */);
 
@@ -66,27 +65,25 @@ class Logger {
   // - source_workload
   // - source_principal
   //
-  void addLogEntry(
-      const ::Wasm::Common::RequestInfo& request_info,
-      const ::Wasm::Common::FlatNode& peer_node_info,
-      const std::unordered_map<std::string, std::string>& extra_labels,
-      bool outbound, bool audit);
+  void addLogEntry(const ::Wasm::Common::RequestInfo& request_info,
+                   const ::Wasm::Common::FlatNode& peer_node_info,
+                   const std::unordered_map<std::string, std::string>& extra_labels, bool outbound,
+                   bool audit);
 
   // Add a new tcp log entry based on the given request information and peer
   // node information. The type of entry that is added depends on outbound and
   // audit arguments.
-  void addTcpLogEntry(
-      const ::Wasm::Common::RequestInfo& request_info,
-      const ::Wasm::Common::FlatNode& peer_node_info,
-      const std::unordered_map<std::string, std::string>& extra_labels,
-      long int log_time, bool outbound, bool audit);
+  void addTcpLogEntry(const ::Wasm::Common::RequestInfo& request_info,
+                      const ::Wasm::Common::FlatNode& peer_node_info,
+                      const std::unordered_map<std::string, std::string>& extra_labels,
+                      long int log_time, bool outbound, bool audit);
 
   // Export and clean the buffered WriteLogEntriesRequests. Returns true if
   // async call is made to export log entry, otherwise returns false if nothing
   // exported.
   bool exportLogEntry(bool is_on_done);
 
- private:
+private:
   // Stores log entry request and it's size.
   struct WriteLogEntryRequest {
     // Request that the new log entry should be written into.
@@ -105,32 +102,27 @@ class Logger {
   // the entry is an audit entry or not
   void addTCPLabelsToLogEntry(const ::Wasm::Common::RequestInfo& request_info,
                               const ::Wasm::Common::FlatNode& peer_node_info,
-                              google::logging::v2::LogEntry* log_entry,
-                              bool outbound, bool audit);
+                              google::logging::v2::LogEntry* log_entry, bool outbound, bool audit);
 
   // Fill Http_Request entry in LogEntry.
-  void fillHTTPRequestInLogEntry(
-      const ::Wasm::Common::RequestInfo& request_info,
-      google::logging::v2::LogEntry* log_entry);
+  void fillHTTPRequestInLogEntry(const ::Wasm::Common::RequestInfo& request_info,
+                                 google::logging::v2::LogEntry* log_entry);
 
   // Generic method to fill the log entry. The WriteLogEntriesRequest
   // containing the log entry is flushed if the request exceeds the configured
   // maximum size. Which request should be flushed is determined by the outbound
   // and audit arguments.
-  void fillAndFlushLogEntry(
-      const ::Wasm::Common::RequestInfo& request_info,
-      const ::Wasm::Common::FlatNode& peer_node_info,
-      const std::unordered_map<std::string, std::string>& extra_labels,
-      google::logging::v2::LogEntry* new_entry, bool outbound, bool audit);
+  void fillAndFlushLogEntry(const ::Wasm::Common::RequestInfo& request_info,
+                            const ::Wasm::Common::FlatNode& peer_node_info,
+                            const std::unordered_map<std::string, std::string>& extra_labels,
+                            google::logging::v2::LogEntry* new_entry, bool outbound, bool audit);
 
   // Helper method to initialize log entry request. The type of log entry is
   // determined by the oubound and audit arguments.
   void initializeLogEntryRequest(
-      const flatbuffers::Vector<flatbuffers::Offset<Wasm::Common::KeyVal>>*
-          platform_metadata,
+      const flatbuffers::Vector<flatbuffers::Offset<Wasm::Common::KeyVal>>* platform_metadata,
       const ::Wasm::Common::FlatNode& local_node_info,
-      const std::unordered_map<std::string, std::string>& extra_labels,
-      bool outbound, bool audit);
+      const std::unordered_map<std::string, std::string>& extra_labels, bool outbound, bool audit);
 
   // Helper method to get Log Entry Type.
   Logger::LogEntryType GetLogEntryType(bool outbound, bool audit) const {
@@ -149,14 +141,11 @@ class Logger {
   }
 
   // Buffer for WriteLogEntriesRequests that are to be exported.
-  std::vector<
-      std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>
-      request_queue_;
+  std::vector<std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>> request_queue_;
 
   // Stores client/server requests that the new log entry should be written
   // into.
-  std::unordered_map<Logger::LogEntryType,
-                     std::unique_ptr<Logger::WriteLogEntryRequest>>
+  std::unordered_map<Logger::LogEntryType, std::unique_ptr<Logger::WriteLogEntryRequest>>
       log_entries_request_map_;
 
   // Size limit of a WriteLogEntriesRequest. If current WriteLogEntriesRequest
@@ -170,6 +159,6 @@ class Logger {
   std::string project_id_;
 };
 
-}  // namespace Log
-}  // namespace Stackdriver
-}  // namespace Extensions
+} // namespace Log
+} // namespace Stackdriver
+} // namespace Extensions

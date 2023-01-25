@@ -25,37 +25,31 @@ namespace Envoy {
 namespace Tcp {
 namespace TcpClusterRewrite {
 
-Network::FilterFactoryCb
-TcpClusterRewriteFilterConfigFactory::createFilterFactoryFromProto(
+Network::FilterFactoryCb TcpClusterRewriteFilterConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message& config, Server::Configuration::FactoryContext&) {
-  return createFilterFactory(
-      dynamic_cast<const v2alpha1::TcpClusterRewrite&>(config));
+  return createFilterFactory(dynamic_cast<const v2alpha1::TcpClusterRewrite&>(config));
 }
 
-ProtobufTypes::MessagePtr
-TcpClusterRewriteFilterConfigFactory::createEmptyConfigProto() {
+ProtobufTypes::MessagePtr TcpClusterRewriteFilterConfigFactory::createEmptyConfigProto() {
   return ProtobufTypes::MessagePtr{new v2alpha1::TcpClusterRewrite};
 }
 
-Network::FilterFactoryCb
-TcpClusterRewriteFilterConfigFactory::createFilterFactory(
+Network::FilterFactoryCb TcpClusterRewriteFilterConfigFactory::createFilterFactory(
     const v2alpha1::TcpClusterRewrite& config_pb) {
   TcpClusterRewriteFilterConfigSharedPtr config(
       std::make_shared<TcpClusterRewriteFilterConfig>(config_pb));
   return [config](Network::FilterManager& filter_manager) -> void {
-    filter_manager.addReadFilter(
-        std::make_shared<TcpClusterRewriteFilter>(config));
+    filter_manager.addReadFilter(std::make_shared<TcpClusterRewriteFilter>(config));
   };
 }
 
 /**
  * Static registration for the TCP cluster rewrite filter. @see RegisterFactory.
  */
-static Registry::RegisterFactory<
-    TcpClusterRewriteFilterConfigFactory,
-    Server::Configuration::NamedNetworkFilterConfigFactory>
+static Registry::RegisterFactory<TcpClusterRewriteFilterConfigFactory,
+                                 Server::Configuration::NamedNetworkFilterConfigFactory>
     registered_;
 
-}  // namespace TcpClusterRewrite
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace TcpClusterRewrite
+} // namespace Tcp
+} // namespace Envoy

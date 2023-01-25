@@ -26,7 +26,7 @@
 #include "contrib/proxy_expr.h"
 #include "proxy_wasm_intrinsics.h"
 
-#else  // NULL_PLUGIN
+#else // NULL_PLUGIN
 
 #include "include/proxy-wasm/null_plugin.h"
 
@@ -35,13 +35,13 @@ namespace null_plugin {
 
 #include "contrib/proxy_expr.h"
 
-#endif  // NULL_PLUGIN
+#endif // NULL_PLUGIN
 
 // END WASM_PROLOG
 
 namespace Stats {
 
-const uint32_t kDefaultTCPReportDurationMilliseconds = 15000;  // 15s
+const uint32_t kDefaultTCPReportDurationMilliseconds = 15000; // 15s
 
 using ::nlohmann::json;
 using ::Wasm::Common::GetFromFbStringView;
@@ -53,13 +53,11 @@ using ::Wasm::Common::Protocol;
 
 namespace {
 
-void map_node(IstioDimensions& instance, bool is_source,
-              const ::Wasm::Common::FlatNode& node) {
+void map_node(IstioDimensions& instance, bool is_source, const ::Wasm::Common::FlatNode& node) {
   // Ensure all properties are set (and cleared when necessary).
   if (is_source) {
     instance[source_workload] = GetFromFbStringView(node.workload_name());
-    instance[source_workload_namespace] =
-        GetFromFbStringView(node.namespace_());
+    instance[source_workload_namespace] = GetFromFbStringView(node.namespace_());
     instance[source_cluster] = GetFromFbStringView(node.cluster_id());
 
     auto source_labels = node.labels();
@@ -72,14 +70,13 @@ void map_node(IstioDimensions& instance, bool is_source,
       auto version = version_iter ? version_iter->value() : nullptr;
       instance[source_version] = GetFromFbStringView(version);
 
-      auto canonical_name = source_labels->LookupByKey(
-          ::Wasm::Common::kCanonicalServiceLabelName.data());
-      auto name =
-          canonical_name ? canonical_name->value() : node.workload_name();
+      auto canonical_name =
+          source_labels->LookupByKey(::Wasm::Common::kCanonicalServiceLabelName.data());
+      auto name = canonical_name ? canonical_name->value() : node.workload_name();
       instance[source_canonical_service] = GetFromFbStringView(name);
 
-      auto rev = source_labels->LookupByKey(
-          ::Wasm::Common::kCanonicalServiceRevisionLabelName.data());
+      auto rev =
+          source_labels->LookupByKey(::Wasm::Common::kCanonicalServiceRevisionLabelName.data());
       if (rev) {
         instance[source_canonical_revision] = GetFromFbStringView(rev->value());
       } else {
@@ -93,8 +90,7 @@ void map_node(IstioDimensions& instance, bool is_source,
     }
   } else {
     instance[destination_workload] = GetFromFbStringView(node.workload_name());
-    instance[destination_workload_namespace] =
-        GetFromFbStringView(node.namespace_());
+    instance[destination_workload_namespace] = GetFromFbStringView(node.namespace_());
     instance[destination_cluster] = GetFromFbStringView(node.cluster_id());
 
     auto destination_labels = node.labels();
@@ -107,20 +103,17 @@ void map_node(IstioDimensions& instance, bool is_source,
       auto version = version_iter ? version_iter->value() : nullptr;
       instance[destination_version] = GetFromFbStringView(version);
 
-      auto canonical_name = destination_labels->LookupByKey(
-          ::Wasm::Common::kCanonicalServiceLabelName.data());
-      auto name =
-          canonical_name ? canonical_name->value() : node.workload_name();
+      auto canonical_name =
+          destination_labels->LookupByKey(::Wasm::Common::kCanonicalServiceLabelName.data());
+      auto name = canonical_name ? canonical_name->value() : node.workload_name();
       instance[destination_canonical_service] = GetFromFbStringView(name);
 
       auto rev = destination_labels->LookupByKey(
           ::Wasm::Common::kCanonicalServiceRevisionLabelName.data());
       if (rev) {
-        instance[destination_canonical_revision] =
-            GetFromFbStringView(rev->value());
+        instance[destination_canonical_revision] = GetFromFbStringView(rev->value());
       } else {
-        instance[destination_canonical_revision] =
-            ::Wasm::Common::kLatest.data();
+        instance[destination_canonical_revision] = ::Wasm::Common::kLatest.data();
       }
     } else {
       instance[destination_app] = "";
@@ -129,21 +122,19 @@ void map_node(IstioDimensions& instance, bool is_source,
       instance[destination_canonical_revision] = ::Wasm::Common::kLatest.data();
     }
 
-    instance[destination_service_namespace] =
-        GetFromFbStringView(node.namespace_());
+    instance[destination_service_namespace] = GetFromFbStringView(node.namespace_());
   }
 }
 
 // Called during request processing.
-void map_peer(IstioDimensions& instance, bool outbound,
-              const ::Wasm::Common::FlatNode& peer_node) {
+void map_peer(IstioDimensions& instance, bool outbound, const ::Wasm::Common::FlatNode& peer_node) {
   map_node(instance, !outbound, peer_node);
 }
 
 void map_unknown_if_empty(IstioDimensions& instance) {
-#define SET_IF_EMPTY(name)      \
-  if (instance[name].empty()) { \
-    instance[name] = unknown;   \
+#define SET_IF_EMPTY(name)                                                                         \
+  if (instance[name].empty()) {                                                                    \
+    instance[name] = unknown;                                                                      \
   }
   STD_ISTIO_DIMENSIONS(SET_IF_EMPTY)
 #undef SET_IF_EMPTY
@@ -151,23 +142,20 @@ void map_unknown_if_empty(IstioDimensions& instance) {
 
 // maps from request context to dimensions.
 // local node derived dimensions are already filled in.
-void map_request(IstioDimensions& instance,
-                 const ::Wasm::Common::RequestInfo& request) {
+void map_request(IstioDimensions& instance, const ::Wasm::Common::RequestInfo& request) {
   instance[source_principal] = request.source_principal;
   instance[destination_principal] = request.destination_principal;
   instance[destination_service] = request.destination_service_host;
   instance[destination_service_name] = request.destination_service_name;
-  instance[request_protocol] =
-      ::Wasm::Common::ProtocolString(request.request_protocol);
+  instance[request_protocol] = ::Wasm::Common::ProtocolString(request.request_protocol);
   instance[response_code] = std::to_string(request.response_code);
   instance[response_flags] = request.response_flag;
-  instance[connection_security_policy] = absl::AsciiStrToLower(std::string(
-      ::Wasm::Common::AuthenticationPolicyString(request.service_auth_policy)));
+  instance[connection_security_policy] = absl::AsciiStrToLower(
+      std::string(::Wasm::Common::AuthenticationPolicyString(request.service_auth_policy)));
 }
 
 // maps peer_node and request to dimensions.
-void map(IstioDimensions& instance, bool outbound,
-         const ::Wasm::Common::FlatNode& peer_node,
+void map(IstioDimensions& instance, bool outbound, const ::Wasm::Common::FlatNode& peer_node,
          const ::Wasm::Common::RequestInfo& request) {
   map_peer(instance, outbound, peer_node);
   map_request(instance, request);
@@ -179,7 +167,7 @@ void map(IstioDimensions& instance, bool outbound,
   }
 }
 
-}  // namespace
+} // namespace
 
 // Ordered dimension list is used by the metrics API.
 const std::vector<MetricTag>& PluginRootContext::defaultTags() {
@@ -196,30 +184,25 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
       // HTTP, HTTP/2, and GRPC metrics
       MetricFactory{"requests_total", MetricType::Counter,
                     [](::Wasm::Common::RequestInfo&) -> uint64_t { return 1; },
-                    static_cast<uint32_t>(Protocol::HTTP) |
-                        static_cast<uint32_t>(Protocol::GRPC),
+                    static_cast<uint32_t>(Protocol::HTTP) | static_cast<uint32_t>(Protocol::GRPC),
                     count_standard_labels, /* recurrent */ false},
       MetricFactory{"request_duration_milliseconds", MetricType::Histogram,
                     [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
-                      return request_info.duration /* in nanoseconds */ /
-                             1000000;
+                      return request_info.duration /* in nanoseconds */ / 1000000;
                     },
-                    static_cast<uint32_t>(Protocol::HTTP) |
-                        static_cast<uint32_t>(Protocol::GRPC),
+                    static_cast<uint32_t>(Protocol::HTTP) | static_cast<uint32_t>(Protocol::GRPC),
                     count_standard_labels, /* recurrent */ false},
       MetricFactory{"request_bytes", MetricType::Histogram,
                     [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
                       return request_info.request_size;
                     },
-                    static_cast<uint32_t>(Protocol::HTTP) |
-                        static_cast<uint32_t>(Protocol::GRPC),
+                    static_cast<uint32_t>(Protocol::HTTP) | static_cast<uint32_t>(Protocol::GRPC),
                     count_standard_labels, /* recurrent */ false},
       MetricFactory{"response_bytes", MetricType::Histogram,
                     [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
                       return request_info.response_size;
                     },
-                    static_cast<uint32_t>(Protocol::HTTP) |
-                        static_cast<uint32_t>(Protocol::GRPC),
+                    static_cast<uint32_t>(Protocol::HTTP) | static_cast<uint32_t>(Protocol::GRPC),
                     count_standard_labels, /* recurrent */ false},
 
       // GRPC streaming metrics.
@@ -229,8 +212,7 @@ const std::vector<MetricFactory>& PluginRootContext::defaultMetrics() {
                     [](::Wasm::Common::RequestInfo& request_info) -> uint64_t {
                       uint64_t out = request_info.request_message_count -
                                      request_info.last_request_message_count;
-                      request_info.last_request_message_count =
-                          request_info.request_message_count;
+                      request_info.last_request_message_count = request_info.request_message_count;
                       return out;
                     },
                     static_cast<uint32_t>(Protocol::GRPC), count_peer_labels,
@@ -297,8 +279,8 @@ bool PluginRootContext::initializeDimensions(const json& j) {
   const std::vector<MetricTag>& default_tags = defaultTags();
   for (const auto& factory : defaultMetrics()) {
     factories[factory.name] = factory;
-    metric_tags[factory.name] = std::vector<MetricTag>(
-        default_tags.begin(), default_tags.begin() + factory.count_labels);
+    metric_tags[factory.name] =
+        std::vector<MetricTag>(default_tags.begin(), default_tags.begin() + factory.count_labels);
     for (size_t i = 0; i < factory.count_labels; i++) {
       metric_indexes[factory.name][default_tags[i].name] = i;
     }
@@ -307,8 +289,7 @@ bool PluginRootContext::initializeDimensions(const json& j) {
   // Process the metric definitions (overriding existing).
   if (!JsonArrayIterate(j, "definitions", [&](const json& definition) -> bool {
         auto name = JsonGetField<std::string>(definition, "name").value_or("");
-        auto value =
-            JsonGetField<std::string>(definition, "value").value_or("");
+        auto value = JsonGetField<std::string>(definition, "value").value_or("");
         if (name.empty() || value.empty()) {
           LOG_WARN("empty name or value in  'definitions'");
           return false;
@@ -320,21 +301,19 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         }
         auto& factory = factories[name];
         factory.name = name;
-        factory.extractor = [token, name,
-                             value](::Wasm::Common::RequestInfo&) -> uint64_t {
+        factory.extractor = [token, name, value](::Wasm::Common::RequestInfo&) -> uint64_t {
           int64_t result = 0;
           if (!evaluateExpression(token.value(), &result)) {
-            LOG_TRACE(absl::StrCat("Failed to evaluate expression: <", value,
-                                   "> for dimension:<", name, ">"));
+            LOG_TRACE(absl::StrCat("Failed to evaluate expression: <", value, "> for dimension:<",
+                                   name, ">"));
           }
           return result;
         };
         factory.type = MetricType::Counter;
         factory.recurrent = false;
-        factory.protocols = static_cast<uint32_t>(Protocol::HTTP) |
-                            static_cast<uint32_t>(Protocol::GRPC);
-        auto type =
-            JsonGetField<std::string_view>(definition, "type").value_or("");
+        factory.protocols =
+            static_cast<uint32_t>(Protocol::HTTP) | static_cast<uint32_t>(Protocol::GRPC);
+        auto type = JsonGetField<std::string_view>(definition, "type").value_or("");
         if (type == "GAUGE") {
           factory.type = MetricType::Gauge;
         } else if (type == "HISTOGRAM") {
@@ -349,11 +328,10 @@ bool PluginRootContext::initializeDimensions(const json& j) {
   if (!JsonArrayIterate(j, "metrics", [&](const json& metric) -> bool {
         // Sort tag override tags to keep the order of tags deterministic.
         std::vector<std::string> tags;
-        if (!JsonObjectIterate(metric, "dimensions",
-                               [&](std::string dim) -> bool {
-                                 tags.push_back(dim);
-                                 return true;
-                               })) {
+        if (!JsonObjectIterate(metric, "dimensions", [&](std::string dim) -> bool {
+              tags.push_back(dim);
+              return true;
+            })) {
           LOG_WARN("failed to parse 'metric.dimensions'");
           return false;
         }
@@ -376,31 +354,26 @@ bool PluginRootContext::initializeDimensions(const json& j) {
           auto& indexes = metric_indexes[factory_it->first];
 
           // Process tag deletions.
-          if (!JsonArrayIterate(
-                  metric, "tags_to_remove", [&](const json& tag) -> bool {
-                    auto tag_string = JsonValueAs<std::string>(tag);
-                    if (tag_string.second !=
-                        Wasm::Common::JsonParserResultDetail::OK) {
-                      LOG_WARN(
-                          absl::StrCat("unexpected tag to remove", tag.dump()));
-                      return false;
-                    }
-                    auto it = indexes.find(tag_string.first.value());
-                    if (it != indexes.end()) {
-                      it->second = {};
-                    }
-                    return true;
-                  })) {
+          if (!JsonArrayIterate(metric, "tags_to_remove", [&](const json& tag) -> bool {
+                auto tag_string = JsonValueAs<std::string>(tag);
+                if (tag_string.second != Wasm::Common::JsonParserResultDetail::OK) {
+                  LOG_WARN(absl::StrCat("unexpected tag to remove", tag.dump()));
+                  return false;
+                }
+                auto it = indexes.find(tag_string.first.value());
+                if (it != indexes.end()) {
+                  it->second = {};
+                }
+                return true;
+              })) {
             LOG_WARN("failed to parse 'tags_to_remove'");
             return false;
           }
 
           // Process tag overrides.
           for (const auto& tag : tags) {
-            auto expr_string =
-                JsonValueAs<std::string>(metric["dimensions"][tag]);
-            if (expr_string.second !=
-                Wasm::Common::JsonParserResultDetail::OK) {
+            auto expr_string = JsonValueAs<std::string>(metric["dimensions"][tag]);
+            if (expr_string.second != Wasm::Common::JsonParserResultDetail::OK) {
               LOG_WARN("failed to parse 'dimensions' value");
               return false;
             }
@@ -413,8 +386,7 @@ bool PluginRootContext::initializeDimensions(const json& j) {
             if (it != indexes.end()) {
               it->second = value;
             } else {
-              metric_tags[factory_it->first].push_back(
-                  {tag, MetricTag::TagType::String});
+              metric_tags[factory_it->first].push_back({tag, MetricTag::TagType::String});
               indexes[tag] = value;
             }
           }
@@ -429,15 +401,14 @@ bool PluginRootContext::initializeDimensions(const json& j) {
   istio_dimensions_.resize(count_standard_labels + expressions_.size());
   istio_dimensions_[reporter] = outbound_ ? source : destination;
 
-  const auto& local_node =
-      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
+  const auto& local_node = *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
   map_node(istio_dimensions_, outbound_, local_node);
 
   // Instantiate stat factories using the new dimensions
-  auto field_separator = JsonGetField<std::string>(j, "field_separator")
-                             .value_or(default_field_separator);
-  auto value_separator = JsonGetField<std::string>(j, "value_separator")
-                             .value_or(default_value_separator);
+  auto field_separator =
+      JsonGetField<std::string>(j, "field_separator").value_or(default_field_separator);
+  auto value_separator =
+      JsonGetField<std::string>(j, "value_separator").value_or(default_value_separator);
 
   // Note that stat prefix is hard-coded here, because registration must be done
   // in the main thread at start-up.
@@ -459,17 +430,16 @@ bool PluginRootContext::initializeDimensions(const json& j) {
         indexes.push_back(index.value());
       }
     }
-    stats_.emplace_back(stat_prefix, factory_it.second, tags, indexes,
-                        field_separator, value_separator);
+    stats_.emplace_back(stat_prefix, factory_it.second, tags, indexes, field_separator,
+                        value_separator);
   }
 
   Metric build(MetricType::Gauge, absl::StrCat(stat_prefix, "build"),
                {MetricTag{"component", MetricTag::TagType::String},
                 MetricTag{"tag", MetricTag::TagType::String}});
-  std::string istio_version =
-      flatbuffers::GetString(local_node.istio_version());
-  istio_version = (istio_version == "") ? absl::StrCat(unknown, ";")
-                                        : absl::StrCat(istio_version, ";");
+  std::string istio_version = flatbuffers::GetString(local_node.istio_version());
+  istio_version =
+      (istio_version == "") ? absl::StrCat(unknown, ";") : absl::StrCat(istio_version, ";");
   build.record(1, "proxy", istio_version);
   return true;
 }
@@ -482,15 +452,14 @@ bool PluginRootContext::onConfigure(size_t size) {
 }
 
 bool PluginRootContext::configure(size_t configuration_size) {
-  auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
-                                           0, configuration_size);
+  auto configuration_data =
+      getBufferBytes(WasmBufferType::PluginConfiguration, 0, configuration_size);
   local_node_info_ = ::Wasm::Common::extractLocalNodeFlatBuffer();
 
   auto result = ::Wasm::Common::JsonParse(configuration_data->view());
   if (!result.has_value()) {
-    LOG_WARN(absl::StrCat(
-        "cannot parse plugin configuration JSON string: ",
-        ::Wasm::Common::toAbslStringView(configuration_data->view())));
+    LOG_WARN(absl::StrCat("cannot parse plugin configuration JSON string: ",
+                          ::Wasm::Common::toAbslStringView(configuration_data->view())));
     return false;
   }
 
@@ -504,11 +473,9 @@ bool PluginRootContext::configure(size_t configuration_size) {
 
   // TODO: rename to reporting_duration
   uint32_t tcp_report_duration_milis = kDefaultTCPReportDurationMilliseconds;
-  auto tcp_reporting_duration_field =
-      JsonGetField<std::string>(j, "tcp_reporting_duration");
+  auto tcp_reporting_duration_field = JsonGetField<std::string>(j, "tcp_reporting_duration");
   absl::Duration duration;
-  if (tcp_reporting_duration_field.detail() ==
-      ::Wasm::Common::JsonParserResultDetail::OK) {
+  if (tcp_reporting_duration_field.detail() == ::Wasm::Common::JsonParserResultDetail::OK) {
     if (absl::ParseDuration(tcp_reporting_duration_field.value(), &duration)) {
       tcp_report_duration_milis = uint32_t(duration / absl::Milliseconds(1));
     } else {
@@ -533,8 +500,7 @@ void PluginRootContext::cleanupExpressions() {
   int_expressions_.clear();
 }
 
-std::optional<size_t> PluginRootContext::addStringExpression(
-    const std::string& input) {
+std::optional<size_t> PluginRootContext::addStringExpression(const std::string& input) {
   auto it = input_expressions_.find(input);
   if (it == input_expressions_.end()) {
     uint32_t token = 0;
@@ -550,8 +516,7 @@ std::optional<size_t> PluginRootContext::addStringExpression(
   return it->second;
 }
 
-std::optional<uint32_t> PluginRootContext::addIntExpression(
-    const std::string& input) {
+std::optional<uint32_t> PluginRootContext::addIntExpression(const std::string& input) {
   uint32_t token = 0;
   if (createExpression(input, &token) != WasmResult::Ok) {
     LOG_WARN(absl::StrCat("cannot create a value expression: " + input));
@@ -564,8 +529,8 @@ std::optional<uint32_t> PluginRootContext::addIntExpression(
 bool PluginRootContext::onDone() {
   cleanupExpressions();
   if (!request_queue_.empty()) {
-    LOG_CRITICAL(absl::StrCat("Request queue is not empty, dropping requests: ",
-                              request_queue_.size()));
+    LOG_CRITICAL(
+        absl::StrCat("Request queue is not empty, dropping requests: ", request_queue_.size()));
   }
   return true;
 }
@@ -588,8 +553,7 @@ void PluginRootContext::onTick() {
   }
 }
 
-void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
-                               bool end_stream) {
+void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info, bool end_stream) {
   if (!initialized_) {
     LOG_TRACE("stats plugin not initialized properly (wrong json config?)");
     return;
@@ -598,8 +562,7 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   // HTTP peer metadata should be done by the time report is called for a
   // request info. TCP metadata might still be awaiting.
   // Upstream host should be selected for metadata fallback.
-  Wasm::Common::PeerNodeInfo peer_node_info(peer_metadata_id_key_,
-                                            peer_metadata_key_);
+  Wasm::Common::PeerNodeInfo peer_node_info(peer_metadata_id_key_, peer_metadata_key_);
   if (request_info.request_protocol == Protocol::TCP) {
     // For TCP, if peer metadata is not available, peer id is set as not found.
     // Otherwise, we wait for metadata exchange to happen before we report any
@@ -613,11 +576,9 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
     // onTick context has no access to request/response headers but can read
     // from filter state.
     if (end_stream) {
-      ::Wasm::Common::populateHTTPRequestInfo(
-          outbound_, useHostHeaderFallback(), &request_info);
+      ::Wasm::Common::populateHTTPRequestInfo(outbound_, useHostHeaderFallback(), &request_info);
     } else {
-      ::Wasm::Common::populateRequestInfo(outbound_, useHostHeaderFallback(),
-                                          &request_info);
+      ::Wasm::Common::populateRequestInfo(outbound_, useHostHeaderFallback(), &request_info);
       if (request_info.request_protocol == Protocol::GRPC) {
         ::Wasm::Common::populateGRPCInfo(&request_info);
       }
@@ -629,8 +590,7 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   for (size_t i = 0; i < expressions_.size(); i++) {
     if (!evaluateExpression(expressions_[i].token,
                             &istio_dimensions_.at(count_standard_labels + i))) {
-      LOG_TRACE(absl::StrCat("Failed to evaluate expression: <",
-                             expressions_[i].expression, ">"));
+      LOG_TRACE(absl::StrCat("Failed to evaluate expression: <", expressions_[i].expression, ">"));
       istio_dimensions_[count_standard_labels + i] = "unknown";
     }
   }
@@ -641,8 +601,7 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
       if (end_stream || stat.recurrent_) {
         stat.record(request_info);
       }
-      LOG_DEBUG(
-          absl::StrCat("metricKey cache hit ", ", stat=", stat.metric_id_));
+      LOG_DEBUG(absl::StrCat("metricKey cache hit ", ", stat=", stat.metric_id_));
     }
     cache_hits_accumulator_++;
     if (cache_hits_accumulator_ == 100) {
@@ -659,9 +618,8 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
     }
     auto stat = statgen.resolve(istio_dimensions_);
     LOG_DEBUG(absl::StrCat("metricKey cache miss ",
-                           ::Wasm::Common::toAbslStringView(statgen.name()),
-                           " ", ", stat=", stat.metric_id_,
-                           ", recurrent=", stat.recurrent_));
+                           ::Wasm::Common::toAbslStringView(statgen.name()), " ",
+                           ", stat=", stat.metric_id_, ", recurrent=", stat.recurrent_));
     if (end_stream || stat.recurrent_) {
       stat.record(request_info);
     }
@@ -672,8 +630,8 @@ void PluginRootContext::report(::Wasm::Common::RequestInfo& request_info,
   metrics_.try_emplace(istio_dimensions_, stats);
 }
 
-void PluginRootContext::addToRequestQueue(
-    uint32_t context_id, ::Wasm::Common::RequestInfo* request_info) {
+void PluginRootContext::addToRequestQueue(uint32_t context_id,
+                                          ::Wasm::Common::RequestInfo* request_info) {
   request_queue_[context_id] = request_info;
 }
 
@@ -690,10 +648,10 @@ RegisterNullVmPluginFactory register_stats_filter("envoy.wasm.stats", []() {
 
 #endif
 
-}  // namespace Stats
+} // namespace Stats
 
 #ifdef NULL_PLUGIN
 // WASM_EPILOG
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

@@ -25,27 +25,26 @@ namespace HttpFilters {
 namespace ConnectBaggage {
 
 class Filter : public Http::PassThroughFilter {
- public:
+public:
   Filter(bool propagate) : propagate_(propagate) {}
-  Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap&,
-                                          bool) override;
+  Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap&, bool) override;
 
- private:
+private:
   bool propagate_;
 };
 
-class FilterConfigFactory
-    : public Common::FactoryBase<io::istio::http::connect_baggage::Config> {
- public:
+class FilterConfigFactory : public Common::FactoryBase<io::istio::http::connect_baggage::Config> {
+public:
   FilterConfigFactory() : FactoryBase("envoy.filters.http.connect_baggage") {}
 
- private:
-  Http::FilterFactoryCb createFilterFactoryFromProtoTyped(
-      const io::istio::http::connect_baggage::Config&, const std::string&,
-      Server::Configuration::FactoryContext&) override;
+private:
+  Http::FilterFactoryCb
+  createFilterFactoryFromProtoTyped(const io::istio::http::connect_baggage::Config&,
+                                    const std::string&,
+                                    Server::Configuration::FactoryContext&) override;
 };
 
-}  // namespace ConnectBaggage
-}  // namespace HttpFilters
-}  // namespace Extensions
-}  // namespace Envoy
+} // namespace ConnectBaggage
+} // namespace HttpFilters
+} // namespace Extensions
+} // namespace Envoy

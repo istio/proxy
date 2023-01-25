@@ -17,4 +17,5 @@ syntax = "proto3";
 
 package io.istio.tcp.sni_verifier.v1;
 
-message Config {}
+message Config {
+}

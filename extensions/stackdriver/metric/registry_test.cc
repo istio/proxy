@@ -29,29 +29,23 @@ const ::Wasm::Common::FlatNode& nodeInfo(flatbuffers::FlatBufferBuilder& fbb) {
   auto name = fbb.CreateString("test_pod");
   auto namespace_ = fbb.CreateString("test_namespace");
   std::vector<flatbuffers::Offset<::Wasm::Common::KeyVal>> platform_metadata = {
-      ::Wasm::Common::CreateKeyVal(fbb,
-                                   fbb.CreateString(Common::kGCPProjectKey),
+      ::Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(Common::kGCPProjectKey),
                                    fbb.CreateString("test_project")),
-      ::Wasm::Common::CreateKeyVal(fbb,
-                                   fbb.CreateString(Common::kGCPClusterNameKey),
+      ::Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(Common::kGCPClusterNameKey),
                                    fbb.CreateString("test_cluster")),
-      ::Wasm::Common::CreateKeyVal(fbb,
-                                   fbb.CreateString(Common::kGCPLocationKey),
+      ::Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(Common::kGCPLocationKey),
                                    fbb.CreateString("test_location"))};
-  auto platform_metadata_offset =
-      fbb.CreateVectorOfSortedTables(&platform_metadata);
+  auto platform_metadata_offset = fbb.CreateVectorOfSortedTables(&platform_metadata);
   ::Wasm::Common::FlatNodeBuilder node(fbb);
   node.add_name(name);
   node.add_namespace_(namespace_);
   node.add_platform_metadata(platform_metadata_offset);
   auto data = node.Finish();
   fbb.Finish(data);
-  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-      fbb.GetBufferPointer());
+  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(fbb.GetBufferPointer());
 }
 
-const ::Wasm::Common::FlatNode& nodeInfoWithNoPlatform(
-    flatbuffers::FlatBufferBuilder& fbb) {
+const ::Wasm::Common::FlatNode& nodeInfoWithNoPlatform(flatbuffers::FlatBufferBuilder& fbb) {
   auto name = fbb.CreateString("test_pod");
   auto namespace_ = fbb.CreateString("test_namespace");
   ::Wasm::Common::FlatNodeBuilder node(fbb);
@@ -59,38 +53,28 @@ const ::Wasm::Common::FlatNode& nodeInfoWithNoPlatform(
   node.add_namespace_(namespace_);
   auto data = node.Finish();
   fbb.Finish(data);
-  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-      fbb.GetBufferPointer());
+  return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(fbb.GetBufferPointer());
 }
 
 google::api::MonitoredResource serverMonitoredResource() {
   google::api::MonitoredResource monitored_resource;
   monitored_resource.set_type(Common::kContainerMonitoredResource);
-  (*monitored_resource.mutable_labels())[Common::kProjectIDLabel] =
-      "test_project";
-  (*monitored_resource.mutable_labels())[Common::kLocationLabel] =
-      "test_location";
-  (*monitored_resource.mutable_labels())[Common::kClusterNameLabel] =
-      "test_cluster";
-  (*monitored_resource.mutable_labels())[Common::kNamespaceNameLabel] =
-      "test_namespace";
+  (*monitored_resource.mutable_labels())[Common::kProjectIDLabel] = "test_project";
+  (*monitored_resource.mutable_labels())[Common::kLocationLabel] = "test_location";
+  (*monitored_resource.mutable_labels())[Common::kClusterNameLabel] = "test_cluster";
+  (*monitored_resource.mutable_labels())[Common::kNamespaceNameLabel] = "test_namespace";
   (*monitored_resource.mutable_labels())[Common::kPodNameLabel] = "test_pod";
-  (*monitored_resource.mutable_labels())[Common::kContainerNameLabel] =
-      "istio-proxy";
+  (*monitored_resource.mutable_labels())[Common::kContainerNameLabel] = "istio-proxy";
   return monitored_resource;
 }
 
 google::api::MonitoredResource clientMonitoredResource() {
   google::api::MonitoredResource monitored_resource;
   monitored_resource.set_type(Common::kPodMonitoredResource);
-  (*monitored_resource.mutable_labels())[Common::kProjectIDLabel] =
-      "test_project";
-  (*monitored_resource.mutable_labels())[Common::kLocationLabel] =
-      "test_location";
-  (*monitored_resource.mutable_labels())[Common::kClusterNameLabel] =
-      "test_cluster";
-  (*monitored_resource.mutable_labels())[Common::kNamespaceNameLabel] =
-      "test_namespace";
+  (*monitored_resource.mutable_labels())[Common::kProjectIDLabel] = "test_project";
+  (*monitored_resource.mutable_labels())[Common::kLocationLabel] = "test_location";
+  (*monitored_resource.mutable_labels())[Common::kClusterNameLabel] = "test_cluster";
+  (*monitored_resource.mutable_labels())[Common::kNamespaceNameLabel] = "test_namespace";
   (*monitored_resource.mutable_labels())[Common::kPodNameLabel] = "test_pod";
   return monitored_resource;
 }
@@ -126,30 +110,26 @@ TEST(RegistryTest, getStackdriverOptionsMonitoredResource) {
   EXPECT_TRUE(MessageDifferencer::Equals(
       options.per_metric_monitored_resource.at(Common::kServerRequestBytesView),
       expected_server_monitored_resource));
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
-                                     Common::kServerResponseLatenciesView),
-                                 expected_server_monitored_resource));
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
-                                     Common::kServerResponseBytesView),
-                                 expected_server_monitored_resource));
+  EXPECT_TRUE(MessageDifferencer::Equals(
+      options.per_metric_monitored_resource.at(Common::kServerResponseLatenciesView),
+      expected_server_monitored_resource));
+  EXPECT_TRUE(MessageDifferencer::Equals(
+      options.per_metric_monitored_resource.at(Common::kServerResponseBytesView),
+      expected_server_monitored_resource));
   EXPECT_TRUE(MessageDifferencer::Equals(
       options.per_metric_monitored_resource.at(Common::kClientRequestCountView),
       expected_client_monitored_resource));
   EXPECT_TRUE(MessageDifferencer::Equals(
       options.per_metric_monitored_resource.at(Common::kClientRequestBytesView),
       expected_client_monitored_resource));
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
-                                     Common::kClientResponseBytesView),
-                                 expected_client_monitored_resource));
-  EXPECT_TRUE(
-      MessageDifferencer::Equals(options.per_metric_monitored_resource.at(
-                                     Common::kClientRoundtripLatenciesView),
-                                 expected_client_monitored_resource));
+  EXPECT_TRUE(MessageDifferencer::Equals(
+      options.per_metric_monitored_resource.at(Common::kClientResponseBytesView),
+      expected_client_monitored_resource));
+  EXPECT_TRUE(MessageDifferencer::Equals(
+      options.per_metric_monitored_resource.at(Common::kClientRoundtripLatenciesView),
+      expected_client_monitored_resource));
 }
 
-}  // namespace Metric
-}  // namespace Stackdriver
-}  // namespace Extensions
+} // namespace Metric
+} // namespace Stackdriver
+} // namespace Extensions

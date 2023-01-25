@@ -57,7 +57,7 @@ using ::Wasm::Common::TCPConnectionState;
 
 constexpr char kStackdriverExporter[] = "stackdriver_exporter";
 constexpr char kExporterRegistered[] = "registered";
-constexpr int kDefaultTickerMilliseconds = 10000;  // 10s
+constexpr int kDefaultTickerMilliseconds = 10000; // 10s
 
 namespace {
 
@@ -65,21 +65,16 @@ constexpr char kRbacAccessAllowed[] = "AuthzAllowed";
 constexpr char kRbacAccessDenied[] = "AuthzDenied";
 constexpr char kRBACHttpFilterName[] = "envoy.filters.http.rbac";
 constexpr char kRBACNetworkFilterName[] = "envoy.filters.network.rbac";
-constexpr char kDryRunDenyShadowEngineResult[] =
-    "istio_dry_run_deny_shadow_engine_result";
-constexpr char kDryRunAllowShadowEngineResult[] =
-    "istio_dry_run_allow_shadow_engine_result";
-constexpr char kDryRunDenyShadowEffectiveId[] =
-    "istio_dry_run_deny_shadow_effective_policy_id";
-constexpr char kDryRunAllowShadowEffectiveId[] =
-    "istio_dry_run_allow_shadow_effective_policy_id";
+constexpr char kDryRunDenyShadowEngineResult[] = "istio_dry_run_deny_shadow_engine_result";
+constexpr char kDryRunAllowShadowEngineResult[] = "istio_dry_run_allow_shadow_engine_result";
+constexpr char kDryRunDenyShadowEffectiveId[] = "istio_dry_run_deny_shadow_effective_policy_id";
+constexpr char kDryRunAllowShadowEffectiveId[] = "istio_dry_run_allow_shadow_effective_policy_id";
 
 // Get metric export interval from node metadata. Returns 60 seconds if interval
 // is not found in metadata.
 int getMonitoringExportInterval() {
   std::string interval_s = "";
-  if (getValue({"node", "metadata", kMonitoringExportIntervalKey},
-               &interval_s)) {
+  if (getValue({"node", "metadata", kMonitoringExportIntervalKey}, &interval_s)) {
     return std::stoi(interval_s);
   }
   return 60;
@@ -109,8 +104,7 @@ long int getTcpLogEntryTimeoutNanoseconds() {
 // provided or "0" is provided, emtpy will be returned.
 std::string getSTSPort() {
   std::string sts_port;
-  if (getValue({"node", "metadata", kSTSPortKey}, &sts_port) &&
-      sts_port != "0") {
+  if (getValue({"node", "metadata", kSTSPortKey}, &sts_port) && sts_port != "0") {
     return sts_port;
   }
   return "";
@@ -137,8 +131,7 @@ std::string getCACertFile() {
 // Get secure stackdriver endpoint for e2e testing.
 std::string getSecureEndpoint() {
   std::string secure_endpoint;
-  if (!getValue({"node", "metadata", kSecureStackdriverEndpointKey},
-                &secure_endpoint)) {
+  if (!getValue({"node", "metadata", kSecureStackdriverEndpointKey}, &secure_endpoint)) {
     return "";
   }
   return secure_endpoint;
@@ -147,8 +140,7 @@ std::string getSecureEndpoint() {
 // Get insecure stackdriver endpoint for e2e testing.
 std::string getInsecureEndpoint() {
   std::string insecure_endpoint;
-  if (!getValue({"node", "metadata", kInsecureStackdriverEndpointKey},
-                &insecure_endpoint)) {
+  if (!getValue({"node", "metadata", kInsecureStackdriverEndpointKey}, &insecure_endpoint)) {
     return "";
   }
   return insecure_endpoint;
@@ -159,8 +151,7 @@ std::string getInsecureEndpoint() {
 // endpoint.
 std::string getMonitoringEndpoint() {
   std::string monitoring_endpoint;
-  if (!getValue({"node", "metadata", kMonitoringEndpointKey},
-                &monitoring_endpoint)) {
+  if (!getValue({"node", "metadata", kMonitoringEndpointKey}, &monitoring_endpoint)) {
     return "";
   }
   return monitoring_endpoint;
@@ -169,25 +160,22 @@ std::string getMonitoringEndpoint() {
 // Get GCP project number.
 std::string getProjectNumber() {
   std::string project_number;
-  if (!getValue({"node", "metadata", "PLATFORM_METADATA", kGCPProjectNumberKey},
-                &project_number)) {
+  if (!getValue({"node", "metadata", "PLATFORM_METADATA", kGCPProjectNumberKey}, &project_number)) {
     return "";
   }
   return project_number;
 }
 
-absl::Duration getMetricExpiryDuration(
-    const stackdriver::config::v1alpha1::PluginConfig& config) {
+absl::Duration getMetricExpiryDuration(const stackdriver::config::v1alpha1::PluginConfig& config) {
   if (!config.has_metric_expiry_duration()) {
     return absl::ZeroDuration();
   }
   auto& duration = config.metric_expiry_duration();
-  return absl::Seconds(duration.seconds()) +
-         absl::Nanoseconds(duration.nanos());
+  return absl::Seconds(duration.seconds()) + absl::Nanoseconds(duration.nanos());
 }
 
-std::vector<std::string> getDroppedMetrics(
-    const stackdriver::config::v1alpha1::PluginConfig& config) {
+std::vector<std::string>
+getDroppedMetrics(const stackdriver::config::v1alpha1::PluginConfig& config) {
   std::vector<std::string> dropped_metrics;
   for (const auto& override : config.metrics_overrides()) {
     if (override.second.drop()) {
@@ -204,8 +192,7 @@ bool isAllowedOverride(std::string metric, std::string tag) {
     }
   }
 
-  if (absl::StrContains(metric, "connection_") ||
-      absl::StrContains(metric, "bytes_count")) {
+  if (absl::StrContains(metric, "connection_") || absl::StrContains(metric, "bytes_count")) {
     // short-circuit for TCP metrics
     return false;
   }
@@ -230,19 +217,16 @@ flatbuffers::DetachedBuffer getLocalNodeMetadata() {
   google::protobuf::Struct node;
   auto local_node_info = ::Wasm::Common::extractLocalNodeFlatBuffer();
   ::Wasm::Common::extractStructFromNodeFlatBuffer(
-      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info.data()),
-      &node);
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info.data()), &node);
   const auto mesh_id_it = node.fields().find("MESH_ID");
-  if (mesh_id_it != node.fields().end() &&
-      !mesh_id_it->second.string_value().empty() &&
+  if (mesh_id_it != node.fields().end() && !mesh_id_it->second.string_value().empty() &&
       absl::StartsWith(mesh_id_it->second.string_value(), "proj-")) {
     // do nothing
   } else {
     // Insert or update mesh id to default format as it is missing, empty, or
     // not properly set.
     auto project_number = getProjectNumber();
-    auto* mesh_id_field =
-        (*node.mutable_fields())["MESH_ID"].mutable_string_value();
+    auto* mesh_id_field = (*node.mutable_fields())["MESH_ID"].mutable_string_value();
     if (!project_number.empty()) {
       *mesh_id_field = absl::StrCat("proj-", project_number);
     }
@@ -250,9 +234,8 @@ flatbuffers::DetachedBuffer getLocalNodeMetadata() {
   return ::Wasm::Common::extractNodeFlatBufferFromStruct(node);
 }
 
-bool extractAuthzPolicyName(const std::string& policy,
-                            std::string& out_namespace, std::string& out_name,
-                            std::string& out_rule) {
+bool extractAuthzPolicyName(const std::string& policy, std::string& out_namespace,
+                            std::string& out_name, std::string& out_rule) {
   // The policy has format "ns[foo]-policy[httpbin-deny]-rule[0]".
   if (absl::StartsWith(policy, "ns[") && absl::EndsWith(policy, "]")) {
     std::string sepPolicy = "]-policy[";
@@ -279,8 +262,7 @@ bool extractAuthzPolicyName(const std::string& policy,
   return false;
 }
 
-void fillAuthzDryRunInfo(
-    std::unordered_map<std::string, std::string>& extra_labels) {
+void fillAuthzDryRunInfo(std::unordered_map<std::string, std::string>& extra_labels) {
   auto md = getProperty({"metadata", "filter_metadata", kRBACHttpFilterName});
   if (!md.has_value()) {
     md = getProperty({"metadata", "filter_metadata", kRBACNetworkFilterName});
@@ -296,9 +278,8 @@ void fillAuthzDryRunInfo(
   std::string shadow_deny_policy = "";
   std::string shadow_allow_policy = "";
   for (const auto& [key, val] : md.value()->pairs()) {
-    LOG_DEBUG(absl::StrCat(
-        "RBAC metadata found: key=", Wasm::Common::toAbslStringView(key),
-        ", value=", Wasm::Common::toAbslStringView(val)));
+    LOG_DEBUG(absl::StrCat("RBAC metadata found: key=", Wasm::Common::toAbslStringView(key),
+                           ", value=", Wasm::Common::toAbslStringView(val)));
     if (key == kDryRunDenyShadowEngineResult) {
       shadow_deny_result = (val == "allowed");
     } else if (key == kDryRunAllowShadowEngineResult) {
@@ -344,22 +325,19 @@ void fillAuthzDryRunInfo(
     }
   }
 
-  extra_labels["dry_run_result"] =
-      shadow_result ? kRbacAccessAllowed : kRbacAccessDenied;
+  extra_labels["dry_run_result"] = shadow_result ? kRbacAccessAllowed : kRbacAccessDenied;
   std::string policy_namespace = "";
   std::string policy_name = "";
   std::string policy_rule = "";
-  if (extractAuthzPolicyName(shadow_effective_policy, policy_namespace,
-                             policy_name, policy_rule)) {
-    extra_labels["dry_run_policy_name"] =
-        absl::StrCat(policy_namespace, ".", policy_name);
+  if (extractAuthzPolicyName(shadow_effective_policy, policy_namespace, policy_name, policy_rule)) {
+    extra_labels["dry_run_policy_name"] = absl::StrCat(policy_namespace, ".", policy_name);
     extra_labels["dry_run_policy_rule"] = policy_rule;
     LOG_DEBUG(absl::StrCat("RBAC dry-run matched policy: ns=", policy_namespace,
                            ", name=", policy_name, ", rule=", policy_rule));
   }
 }
 
-}  // namespace
+} // namespace
 
 // onConfigure == false makes the proxy crash.
 // Only policy plugins should return false.
@@ -375,8 +353,7 @@ bool StackdriverRootContext::initializeLogFilter() {
     return true;
   }
 
-  if (createExpression(config_.access_logging_filter_expression(), &token) !=
-      WasmResult::Ok) {
+  if (createExpression(config_.access_logging_filter_expression(), &token) != WasmResult::Ok) {
     LOG_TRACE(absl::StrCat("cannot create an filter expression: " +
                            config_.access_logging_filter_expression()));
     return false;
@@ -392,8 +369,8 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   // Parse configuration JSON string.
   std::string configuration = "{}";
   if (configuration_size > 0) {
-    auto configuration_data = getBufferBytes(
-        WasmBufferType::PluginConfiguration, 0, configuration_size);
+    auto configuration_data =
+        getBufferBytes(WasmBufferType::PluginConfiguration, 0, configuration_size);
     configuration = configuration_data->toString();
   }
 
@@ -401,27 +378,24 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   // metadata. Parse configuration JSON string.
   JsonParseOptions json_options;
   json_options.ignore_unknown_fields = true;
-  const auto status =
-      JsonStringToMessage(configuration, &config_, json_options);
+  const auto status = JsonStringToMessage(configuration, &config_, json_options);
   if (!status.ok()) {
-    logWarn("Cannot parse Stackdriver plugin configuration JSON string " +
-            configuration + ", " + status.message().ToString());
+    logWarn("Cannot parse Stackdriver plugin configuration JSON string " + configuration + ", " +
+            status.message().ToString());
     return false;
   }
   local_node_info_ = getLocalNodeMetadata();
 
   if (config_.has_log_report_duration()) {
     log_report_duration_nanos_ =
-        ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
-            config_.log_report_duration());
+        ::google::protobuf::util::TimeUtil::DurationToNanoseconds(config_.log_report_duration());
     long int proxy_tick_ns = proxy_tick_ms * 1000;
     if (log_report_duration_nanos_ < (proxy_tick_ns) ||
         log_report_duration_nanos_ % proxy_tick_ns != 0) {
-      logWarn(absl::StrCat(
-          "The duration set is less than or not a multiple of default timer's "
-          "period. Default Timer MS: ",
-          proxy_tick_ms,
-          " Lod Duration Nanosecond: ", log_report_duration_nanos_));
+      logWarn(absl::StrCat("The duration set is less than or not a multiple of default timer's "
+                           "period. Default Timer MS: ",
+                           proxy_tick_ms,
+                           " Lod Duration Nanosecond: ", log_report_duration_nanos_));
     }
   }
 
@@ -438,8 +412,8 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   stub_option.secure_endpoint = getSecureEndpoint();
   stub_option.insecure_endpoint = getInsecureEndpoint();
   stub_option.monitoring_endpoint = getMonitoringEndpoint();
-  stub_option.enable_log_compression = config_.has_enable_log_compression() &&
-                                       config_.enable_log_compression().value();
+  stub_option.enable_log_compression =
+      config_.has_enable_log_compression() && config_.enable_log_compression().value();
   const auto platform_metadata = local_node.platform_metadata();
   if (platform_metadata) {
     const auto project_iter = platform_metadata->LookupByKey(kGCPProjectKey);
@@ -460,8 +434,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
       for (const auto& dimension : config_.custom_log_config().dimensions()) {
         uint32_t token;
         if (createExpression(dimension.second, &token) != WasmResult::Ok) {
-          LOG_TRACE(absl::StrCat("Could not create expression for ",
-                                 dimension.second));
+          LOG_TRACE(absl::StrCat("Could not create expression for ", dimension.second));
           continue;
         }
         expressions_.push_back({token, dimension.first, dimension.second});
@@ -475,12 +448,10 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
       auto exporter = std::make_unique<ExporterImpl>(this, logging_stub_option);
       // logger takes ownership of exporter.
       if (config_.max_log_batch_size_in_bytes() > 0) {
-        logger_ = std::make_unique<Logger>(
-            local_node, std::move(exporter), extra_labels,
-            config_.max_log_batch_size_in_bytes());
+        logger_ = std::make_unique<Logger>(local_node, std::move(exporter), extra_labels,
+                                           config_.max_log_batch_size_in_bytes());
       } else {
-        logger_ = std::make_unique<Logger>(local_node, std::move(exporter),
-                                           extra_labels);
+        logger_ = std::make_unique<Logger>(local_node, std::move(exporter), extra_labels);
       }
     }
     tcp_log_entry_timeout_ = getTcpLogEntryTimeoutNanoseconds();
@@ -491,20 +462,19 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   for (const auto& override : config_.metrics_overrides()) {
     for (const auto& tag : override.second.tag_overrides()) {
       if (!isAllowedOverride(override.first, tag.first)) {
-        LOG_WARN(absl::StrCat("cannot use tag \"", tag.first, "\" in metric \"",
-                              override.first, "\"; ignoring override"));
+        LOG_WARN(absl::StrCat("cannot use tag \"", tag.first, "\" in metric \"", override.first,
+                              "\"; ignoring override"));
         continue;
       }
       uint32_t token;
       if (createExpression(tag.second, &token) != WasmResult::Ok) {
-        LOG_WARN(absl::StrCat("Could not create expression: \"", tag.second,
-                              "\" for tag \"", tag.first, "\" on metric \"",
-                              override.first, "\"; ignoring override"));
+        LOG_WARN(absl::StrCat("Could not create expression: \"", tag.second, "\" for tag \"",
+                              tag.first, "\" on metric \"", override.first,
+                              "\"; ignoring override"));
         continue;
       }
       const auto& tag_key = ::opencensus::tags::TagKey::Register(tag.first);
-      metrics_expressions_.push_back(
-          {token, override.first, tag_key, tag.second});
+      metrics_expressions_.push_back({token, override.first, tag_key, tag.second});
     }
   }
 
@@ -521,8 +491,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   monitoring_stub_option.default_endpoint = kMonitoringService;
   opencensus::exporters::stats::StackdriverExporter::Register(
       getStackdriverOptions(local_node, monitoring_stub_option));
-  opencensus::stats::StatsExporter::SetInterval(
-      absl::Seconds(getMonitoringExportInterval()));
+  opencensus::stats::StatsExporter::SetInterval(absl::Seconds(getMonitoringExportInterval()));
 
   // Register opencensus measures and views.
   auto dropped = getDroppedMetrics(config_);
@@ -554,8 +523,7 @@ void StackdriverRootContext::onTick() {
     }
   }
 
-  if (enableAccessLog() &&
-      (cur - last_log_report_call_nanos_ > log_report_duration_nanos_)) {
+  if (enableAccessLog() && (cur - last_log_report_call_nanos_ > log_report_duration_nanos_)) {
     logger_->exportLogEntry(/* is_on_done= */ false);
     last_log_report_call_nanos_ = cur;
   }
@@ -567,8 +535,7 @@ bool StackdriverRootContext::onDone() {
   // called, but onConfigure is not triggered. onConfigure is only triggered in
   // thread local VM, which makes it possible that logger_ is empty ptr even
   // when logging is enabled.
-  if (logger_ && enableAccessLog() &&
-      logger_->exportLogEntry(/* is_on_done= */ true)) {
+  if (logger_ && enableAccessLog() && logger_->exportLogEntry(/* is_on_done= */ true)) {
     done = false;
   }
   for (auto const& item : tcp_request_queue_) {
@@ -593,26 +560,24 @@ void StackdriverRootContext::record() {
   const ::Wasm::Common::FlatNode& local_node = getLocalNode();
 
   ::Wasm::Common::RequestInfo request_info;
-  ::Wasm::Common::populateHTTPRequestInfo(outbound, useHostHeaderFallback(),
-                                          &request_info);
+  ::Wasm::Common::populateHTTPRequestInfo(outbound, useHostHeaderFallback(), &request_info);
   override_map overrides;
   evaluateMetricsExpressions(overrides);
-  ::Extensions::Stackdriver::Metric::record(
-      outbound, local_node, peer_node_info.get(), request_info,
-      !config_.disable_http_size_metrics(), overrides);
+  ::Extensions::Stackdriver::Metric::record(outbound, local_node, peer_node_info.get(),
+                                            request_info, !config_.disable_http_size_metrics(),
+                                            overrides);
   bool extended_info_populated = false;
   if ((enableAllAccessLog() ||
-       (enableAccessLogOnError() &&
-        (request_info.response_code >= 400 ||
-         request_info.response_flag != ::Wasm::Common::NONE))) &&
+       (enableAccessLogOnError() && (request_info.response_code >= 400 ||
+                                     request_info.response_flag != ::Wasm::Common::NONE))) &&
       shouldLogThisRequest(request_info) && evaluateLogFilter()) {
     ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     std::unordered_map<std::string, std::string> extra_labels;
     evaluateExpressions(extra_labels);
     extended_info_populated = true;
     fillAuthzDryRunInfo(extra_labels);
-    logger_->addLogEntry(request_info, peer_node_info.get(), extra_labels,
-                         outbound, false /* audit */);
+    logger_->addLogEntry(request_info, peer_node_info.get(), extra_labels, outbound,
+                         false /* audit */);
   }
 
   // TODO(dougreid): should Audits override log filters? I believe so. At this
@@ -621,8 +586,7 @@ void StackdriverRootContext::record() {
     if (!extended_info_populated) {
       ::Wasm::Common::populateExtendedHTTPRequestInfo(&request_info);
     }
-    logger_->addLogEntry(request_info, peer_node_info.get(), {}, outbound,
-                         true /* audit */);
+    logger_->addLogEntry(request_info, peer_node_info.get(), {}, outbound, true /* audit */);
   }
 }
 
@@ -647,13 +611,11 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   // been no error in connection.
   uint64_t response_flags = 0;
   getValue({"response", "flags"}, &response_flags);
-  auto cur = static_cast<long int>(
-      proxy_wasm::null_plugin::getCurrentTimeNanoseconds());
+  auto cur = static_cast<long int>(proxy_wasm::null_plugin::getCurrentTimeNanoseconds());
   bool waiting_for_metadata = peer_node_info.maybeWaiting();
   bool no_error = response_flags == 0;
-  bool log_open_on_timeout =
-      !record_info.tcp_open_entry_logged &&
-      (cur - request_info.start_time) > tcp_log_entry_timeout_;
+  bool log_open_on_timeout = !record_info.tcp_open_entry_logged &&
+                             (cur - request_info.start_time) > tcp_log_entry_timeout_;
   if (waiting_for_metadata && no_error && !log_open_on_timeout) {
     return false;
   }
@@ -663,8 +625,8 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
   // Record TCP Metrics.
   override_map overrides;
   evaluateMetricsExpressions(overrides);
-  ::Extensions::Stackdriver::Metric::recordTCP(
-      outbound, local_node, peer_node_info.get(), request_info, overrides);
+  ::Extensions::Stackdriver::Metric::recordTCP(outbound, local_node, peer_node_info.get(),
+                                               request_info, overrides);
   bool extended_info_populated = false;
   // Add LogEntry to Logger. Log Entries are batched and sent on timer
   // to Stackdriver Logging Service.
@@ -684,20 +646,15 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
     // It's possible that for a short lived TCP connection, we log TCP
     // Connection Open log entry on connection close.
     if (!record_info.tcp_open_entry_logged &&
-        request_info.tcp_connection_state ==
-            ::Wasm::Common::TCPConnectionState::Close) {
-      record_info.request_info->tcp_connection_state =
-          ::Wasm::Common::TCPConnectionState::Open;
+        request_info.tcp_connection_state == ::Wasm::Common::TCPConnectionState::Close) {
+      record_info.request_info->tcp_connection_state = ::Wasm::Common::TCPConnectionState::Open;
       logger_->addTcpLogEntry(*record_info.request_info, peer_node_info.get(),
-                              record_info.extra_log_labels,
-                              record_info.request_info->start_time, outbound,
-                              false /* audit */);
-      record_info.request_info->tcp_connection_state =
-          ::Wasm::Common::TCPConnectionState::Close;
+                              record_info.extra_log_labels, record_info.request_info->start_time,
+                              outbound, false /* audit */);
+      record_info.request_info->tcp_connection_state = ::Wasm::Common::TCPConnectionState::Close;
     }
-    logger_->addTcpLogEntry(
-        request_info, peer_node_info.get(), record_info.extra_log_labels,
-        getCurrentTimeNanoseconds(), outbound, false /* audit */);
+    logger_->addTcpLogEntry(request_info, peer_node_info.get(), record_info.extra_log_labels,
+                            getCurrentTimeNanoseconds(), outbound, false /* audit */);
   }
 
   // TODO(dougreid): confirm that audit should override filtering.
@@ -708,19 +665,14 @@ bool StackdriverRootContext::recordTCP(uint32_t id) {
     // It's possible that for a short lived TCP connection, we audit log TCP
     // Connection Open log entry on connection close.
     if (!record_info.tcp_open_entry_logged &&
-        request_info.tcp_connection_state ==
-            ::Wasm::Common::TCPConnectionState::Close) {
-      record_info.request_info->tcp_connection_state =
-          ::Wasm::Common::TCPConnectionState::Open;
-      logger_->addTcpLogEntry(*record_info.request_info, peer_node_info.get(),
-                              {}, record_info.request_info->start_time,
-                              outbound, true /* audit */);
-      record_info.request_info->tcp_connection_state =
-          ::Wasm::Common::TCPConnectionState::Close;
+        request_info.tcp_connection_state == ::Wasm::Common::TCPConnectionState::Close) {
+      record_info.request_info->tcp_connection_state = ::Wasm::Common::TCPConnectionState::Open;
+      logger_->addTcpLogEntry(*record_info.request_info, peer_node_info.get(), {},
+                              record_info.request_info->start_time, outbound, true /* audit */);
+      record_info.request_info->tcp_connection_state = ::Wasm::Common::TCPConnectionState::Close;
     }
     logger_->addTcpLogEntry(*record_info.request_info, peer_node_info.get(), {},
-                            record_info.request_info->start_time, outbound,
-                            true /* audit */);
+                            record_info.request_info->start_time, outbound, true /* audit */);
   }
 
   if (log_open_on_timeout) {
@@ -746,8 +698,7 @@ inline bool StackdriverRootContext::enableAllAccessLog() {
   // TODO(gargnupur): Remove (!config_.disable_server_access_logging() &&
   // !isOutbound) once disable_server_access_logging config is removed.
   return (!config_.disable_server_access_logging() && !isOutbound()) ||
-         config_.access_logging() ==
-             stackdriver::config::v1alpha1::PluginConfig::FULL;
+         config_.access_logging() == stackdriver::config::v1alpha1::PluginConfig::FULL;
 }
 
 inline bool StackdriverRootContext::evaluateLogFilter() {
@@ -764,16 +715,12 @@ inline bool StackdriverRootContext::evaluateLogFilter() {
 }
 
 inline bool StackdriverRootContext::enableAccessLogOnError() {
-  return config_.access_logging() ==
-         stackdriver::config::v1alpha1::PluginConfig::ERRORS_ONLY;
+  return config_.access_logging() == stackdriver::config::v1alpha1::PluginConfig::ERRORS_ONLY;
 }
 
-inline bool StackdriverRootContext::enableAuditLog() {
-  return config_.enable_audit_log();
-}
+inline bool StackdriverRootContext::enableAuditLog() { return config_.enable_audit_log(); }
 
-bool StackdriverRootContext::shouldLogThisRequest(
-    ::Wasm::Common::RequestInfo& request_info) {
+bool StackdriverRootContext::shouldLogThisRequest(::Wasm::Common::RequestInfo& request_info) {
   std::string shouldLog = "";
   if (!getValue({::Wasm::Common::kAccessLogPolicyKey}, &shouldLog)) {
     LOG_DEBUG("cannot get envoy access log info from filter state.");
@@ -784,16 +731,14 @@ bool StackdriverRootContext::shouldLogThisRequest(
   return request_info.log_sampled;
 }
 
-bool StackdriverRootContext::shouldAuditThisRequest() {
-  return Wasm::Common::getAuditPolicy();
-}
+bool StackdriverRootContext::shouldAuditThisRequest() { return Wasm::Common::getAuditPolicy(); }
 
 void StackdriverRootContext::addToTCPRequestQueue(uint32_t id) {
   std::unique_ptr<::Wasm::Common::RequestInfo> request_info =
       std::make_unique<::Wasm::Common::RequestInfo>();
   request_info->tcp_connections_opened++;
-  request_info->start_time = static_cast<long int>(
-      proxy_wasm::null_plugin::getCurrentTimeNanoseconds());
+  request_info->start_time =
+      static_cast<long int>(proxy_wasm::null_plugin::getCurrentTimeNanoseconds());
   std::unique_ptr<StackdriverRootContext::TcpRecordInfo> record_info =
       std::make_unique<StackdriverRootContext::TcpRecordInfo>();
   record_info->request_info = std::move(request_info);
@@ -819,8 +764,8 @@ void StackdriverRootContext::incrementConnectionClosed(uint32_t id) {
   tcp_request_queue_[id]->request_info->tcp_connections_closed++;
 }
 
-void StackdriverRootContext::setConnectionState(
-    uint32_t id, ::Wasm::Common::TCPConnectionState state) {
+void StackdriverRootContext::setConnectionState(uint32_t id,
+                                                ::Wasm::Common::TCPConnectionState state) {
   tcp_request_queue_[id]->request_info->tcp_connection_state = state;
 }
 
@@ -829,21 +774,18 @@ void StackdriverRootContext::evaluateExpressions(
   for (const auto& expression : expressions_) {
     std::string value;
     if (!evaluateExpression(expression.token, &value)) {
-      LOG_TRACE(absl::StrCat("Could not evaluate expression: ",
-                             expression.expression));
+      LOG_TRACE(absl::StrCat("Could not evaluate expression: ", expression.expression));
       continue;
     }
     extra_labels[expression.tag] = value;
   }
 }
 
-void StackdriverRootContext::evaluateMetricsExpressions(
-    override_map& overrides) {
+void StackdriverRootContext::evaluateMetricsExpressions(override_map& overrides) {
   for (const auto& expression : metrics_expressions_) {
     std::string value;
     if (!evaluateExpression(expression.token, &value)) {
-      LOG_WARN(absl::StrCat("Could not evaluate expression: ",
-                            expression.expression));
+      LOG_WARN(absl::StrCat("Could not evaluate expression: ", expression.expression));
       continue;
     }
     overrides[expression.metric].emplace_back(expression.tag, value);
@@ -883,8 +825,7 @@ void StackdriverContext::onLog() {
   }
   if (is_tcp_) {
     getRootContext()->incrementConnectionClosed(context_id_);
-    getRootContext()->setConnectionState(
-        context_id_, ::Wasm::Common::TCPConnectionState::Close);
+    getRootContext()->setConnectionState(context_id_, ::Wasm::Common::TCPConnectionState::Close);
     getRootContext()->recordTCP(context_id_);
     getRootContext()->deleteFromTCPRequestQueue(context_id_);
     return;
@@ -893,9 +834,9 @@ void StackdriverContext::onLog() {
   getRootContext()->record();
 }
 
-}  // namespace Stackdriver
+} // namespace Stackdriver
 
 #ifdef NULL_PLUGIN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

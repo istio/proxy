@@ -26,21 +26,20 @@ namespace ForwardDownstreamSni {
  * requested server name from the SNI field in the TLS connection.
  */
 class ForwardDownstreamSniFilter : public Network::ReadFilter {
- public:
+public:
   // Network::ReadFilter
   Network::FilterStatus onData(Buffer::Instance&, bool) override {
     return Network::FilterStatus::Continue;
   }
   Network::FilterStatus onNewConnection() override;
-  void initializeReadFilterCallbacks(
-      Network::ReadFilterCallbacks& callbacks) override {
+  void initializeReadFilterCallbacks(Network::ReadFilterCallbacks& callbacks) override {
     read_callbacks_ = &callbacks;
   }
 
- private:
+private:
   Network::ReadFilterCallbacks* read_callbacks_{};
 };
 
-}  // namespace ForwardDownstreamSni
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace ForwardDownstreamSni
+} // namespace Tcp
+} // namespace Envoy

@@ -35,8 +35,7 @@ constexpr std::string_view kDownstreamMetadataKey = "downstream_peer";
 // Sentinel value assigned to peer metadata ID key, indicating that the peer
 // metadata is absent. This is different from a missing peer metadata ID key
 // which could indicate that the metadata is not received yet.
-const std::string kMetadataNotFoundValue =
-    "envoy.wasm.metadata_exchange.peer_unknown";
+const std::string kMetadataNotFoundValue = "envoy.wasm.metadata_exchange.peer_unknown";
 
 constexpr std::string_view kAccessLogPolicyKey = "istio.access_log_policy";
 constexpr std::string_view kRequestOperationKey = "istio_operationId";
@@ -45,22 +44,20 @@ constexpr std::string_view kRequestOperationKey = "istio_operationId";
 constexpr std::string_view kAuthorityHeaderKey = ":authority";
 constexpr std::string_view kMethodHeaderKey = ":method";
 constexpr std::string_view kContentTypeHeaderKey = "content-type";
-constexpr std::string_view kEnvoyOriginalDstHostKey =
-    "x-envoy-original-dst-host";
+constexpr std::string_view kEnvoyOriginalDstHostKey = "x-envoy-original-dst-host";
 constexpr std::string_view kEnvoyOriginalPathKey = "x-envoy-original-path";
 
 constexpr std::string_view kProtocolHTTP = "http";
 constexpr std::string_view kProtocolGRPC = "grpc";
 constexpr std::string_view kProtocolTCP = "tcp";
 
-constexpr std::string_view kCanonicalServiceLabelName =
-    "service.istio.io/canonical-name";
+constexpr std::string_view kCanonicalServiceLabelName = "service.istio.io/canonical-name";
 constexpr std::string_view kCanonicalServiceRevisionLabelName =
     "service.istio.io/canonical-revision";
 constexpr std::string_view kLatest = "latest";
 
-const std::set<std::string> kGrpcContentTypes{
-    "application/grpc", "application/grpc+proto", "application/grpc+json"};
+const std::set<std::string> kGrpcContentTypes{"application/grpc", "application/grpc+proto",
+                                              "application/grpc+json"};
 
 enum class ServiceAuthenticationPolicy : uint8_t {
   Unspecified = 0,
@@ -137,8 +134,7 @@ struct RequestInfo {
   std::string upstream_transport_failure_reason;
 
   // Service authentication policy (NONE, MUTUAL_TLS)
-  ServiceAuthenticationPolicy service_auth_policy =
-      ServiceAuthenticationPolicy::Unspecified;
+  ServiceAuthenticationPolicy service_auth_policy = ServiceAuthenticationPolicy::Unspecified;
 
   // Principal of source and destination workload extracted from TLS
   // certificate.
@@ -225,19 +221,17 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer();
 
 // Extract upstream peer metadata from upstream host metadata.
 // Returns true if the metadata is found in the upstream host metadata.
-bool extractPeerMetadataFromUpstreamHostMetadata(
-    flatbuffers::FlatBufferBuilder& fbb);
+bool extractPeerMetadataFromUpstreamHostMetadata(flatbuffers::FlatBufferBuilder& fbb);
 
 // Extract upstream peer metadata from upstream cluster metadata.
 // Returns true if the metadata is found in the upstream cluster metadata.
-bool extractPeerMetadataFromUpstreamClusterMetadata(
-    flatbuffers::FlatBufferBuilder& fbb);
+bool extractPeerMetadataFromUpstreamClusterMetadata(flatbuffers::FlatBufferBuilder& fbb);
 
 // Returns flatbuffer schema for node info.
 std::string_view nodeInfoSchema();
 
 class PeerNodeInfo {
- public:
+public:
   explicit PeerNodeInfo(const std::string_view peer_metadata_id_key,
                         const std::string_view peer_metadata_key);
   PeerNodeInfo() = delete;
@@ -253,7 +247,7 @@ class PeerNodeInfo {
     return !found_ && peer_id_ != ::Wasm::Common::kMetadataNotFoundValue;
   }
 
- private:
+private:
   bool found_;
   std::string peer_id_;
   std::string peer_node_;
@@ -263,13 +257,11 @@ class PeerNodeInfo {
 // Populate shared information between all protocols.
 // Requires that the connections are established both downstrean and upstream.
 // Caches computation using is_populated field.
-void populateRequestInfo(bool outbound, bool use_host_header_fallback,
-                         RequestInfo* request_info);
+void populateRequestInfo(bool outbound, bool use_host_header_fallback, RequestInfo* request_info);
 
 // populateHTTPRequestInfo populates the RequestInfo struct. It needs access to
 // the request context.
-void populateHTTPRequestInfo(bool outbound, bool use_host_header,
-                             RequestInfo* request_info);
+void populateHTTPRequestInfo(bool outbound, bool use_host_header, RequestInfo* request_info);
 
 // populateExtendedHTTPRequestInfo populates the extra fields in RequestInfo
 // struct, includes trace headers, request id headers, and url.
@@ -295,8 +287,7 @@ bool populateGRPCInfo(RequestInfo* request_info);
 bool getAuditPolicy();
 
 // Returns a string view stored in a flatbuffers string.
-static inline std::string_view GetFromFbStringView(
-    const flatbuffers::String* str) {
+static inline std::string_view GetFromFbStringView(const flatbuffers::String* str) {
   return str ? std::string_view(str->c_str(), str->size()) : std::string_view();
 }
 
@@ -307,5 +298,5 @@ bool sanitizeBytes(std::string* buf);
 
 std::string getServiceNameFallback();
 
-}  // namespace Common
-}  // namespace Wasm
+} // namespace Common
+} // namespace Wasm

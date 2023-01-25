@@ -30,7 +30,7 @@ namespace AuthN {
 
 // AuthnUtils class provides utility functions used for authentication.
 class AuthnUtils : public Logger::Loggable<Logger::Id::filter> {
- public:
+public:
   // Parse JWT payload string (which typically is the output from jwt filter)
   // and populate JwtPayload object. Return true if input string can be parsed
   // successfully. Otherwise, return false.
@@ -40,20 +40,17 @@ class AuthnUtils : public Logger::Loggable<Logger::Id::filter> {
   // Parses the original_payload in an exchanged JWT.
   // Returns true if original_payload can be
   // parsed successfully. Otherwise, returns false.
-  static bool ExtractOriginalPayload(const std::string& token,
-                                     std::string* original_payload);
+  static bool ExtractOriginalPayload(const std::string& token, std::string* original_payload);
 
   // Returns true if str is matched to match.
-  static bool MatchString(absl::string_view str,
-                          const iaapi::StringMatch& match);
+  static bool MatchString(absl::string_view str, const iaapi::StringMatch& match);
 
   // Returns true if the jwt should be validated. It will check if the request
   // path is matched to the trigger rule in the jwt.
-  static bool ShouldValidateJwtPerPath(absl::string_view path,
-                                       const iaapi::Jwt& jwt);
+  static bool ShouldValidateJwtPerPath(absl::string_view path, const iaapi::Jwt& jwt);
 };
 
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

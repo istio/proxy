@@ -46,8 +46,7 @@ PROXY_WASM_NULL_PLUGIN_REGISTRY;
 namespace {
 
 bool setFilterStateValue(bool log) {
-  auto r = setFilterStateStringValue(::Wasm::Common::kAccessLogPolicyKey,
-                                     log ? "yes" : "no");
+  auto r = setFilterStateStringValue(::Wasm::Common::kAccessLogPolicyKey, log ? "yes" : "no");
   if (r != WasmResult::Ok) {
     logWarn(toString(r));
     return false;
@@ -55,10 +54,9 @@ bool setFilterStateValue(bool log) {
   return true;
 }
 
-}  // namespace
+} // namespace
 
-constexpr long long kDefaultLogWindowDurationNanoseconds =
-    43200000000000;  // 12h
+constexpr long long kDefaultLogWindowDurationNanoseconds = 43200000000000; // 12h
 
 constexpr std::string_view kSource = "source";
 constexpr std::string_view kAddress = "address";
@@ -68,8 +66,8 @@ constexpr std::string_view kResponse = "response";
 constexpr std::string_view kCode = "code";
 constexpr std::string_view kGrpcStatus = "grpc_status";
 
-static RegisterContextFactory register_AccessLogPolicy(
-    CONTEXT_FACTORY(PluginContext), ROOT_FACTORY(PluginRootContext));
+static RegisterContextFactory register_AccessLogPolicy(CONTEXT_FACTORY(PluginContext),
+                                                       ROOT_FACTORY(PluginRootContext));
 
 bool PluginRootContext::onConfigure(size_t size) {
   initialized_ = configure(size);
@@ -77,23 +75,21 @@ bool PluginRootContext::onConfigure(size_t size) {
 }
 
 bool PluginRootContext::configure(size_t configuration_size) {
-  auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
-                                           0, configuration_size);
+  auto configuration_data =
+      getBufferBytes(WasmBufferType::PluginConfiguration, 0, configuration_size);
   auto configuration = configuration_data->toString();
   JsonParseOptions json_options;
   json_options.ignore_unknown_fields = true;
-  const auto status =
-      JsonStringToMessage(configuration, &config_, json_options);
+  const auto status = JsonStringToMessage(configuration, &config_, json_options);
   if (!status.ok()) {
-    logWarn("Cannot parse AccessLog plugin configuration JSON string " +
-            configuration + ", " + status.message().ToString());
+    logWarn("Cannot parse AccessLog plugin configuration JSON string " + configuration + ", " +
+            status.message().ToString());
     return false;
   }
 
   if (config_.has_log_window_duration()) {
     log_time_duration_nanos_ =
-        ::google::protobuf::util::TimeUtil::DurationToNanoseconds(
-            config_.log_window_duration());
+        ::google::protobuf::util::TimeUtil::DurationToNanoseconds(config_.log_window_duration());
   } else {
     log_time_duration_nanos_ = kDefaultLogWindowDurationNanoseconds;
   }
@@ -105,8 +101,8 @@ bool PluginRootContext::configure(size_t configuration_size) {
   return true;
 }
 
-void PluginRootContext::updateLastLogTimeNanos(
-    const Wasm::Common::IstioDimensions& key, long long last_log_time_nanos) {
+void PluginRootContext::updateLastLogTimeNanos(const Wasm::Common::IstioDimensions& key,
+                                               long long last_log_time_nanos) {
   if (int32_t(cache_.size()) > max_client_cache_size_) {
     auto it = cache_.begin();
     cache_.erase(cache_.begin(), std::next(it, max_client_cache_size_ / 4));
@@ -139,10 +135,9 @@ void PluginContext::onLog() {
   long long last_log_time_nanos = lastLogTimeNanos();
   auto cur = static_cast<long long>(getCurrentTimeNanoseconds());
   if ((cur - last_log_time_nanos) > logTimeDurationNanos()) {
-    LOG_TRACE(absl::StrCat(
-        "Setting logging to true as its outside of log windown. SourceIp: ",
-        source_ip, " SourcePrincipal: ", source_principal,
-        " Window: ", logTimeDurationNanos()));
+    LOG_TRACE(
+        absl::StrCat("Setting logging to true as its outside of log windown. SourceIp: ", source_ip,
+                     " SourcePrincipal: ", source_principal, " Window: ", logTimeDurationNanos()));
     if (setFilterStateValue(true)) {
       updateLastLogTimeNanos(cur);
     }
@@ -155,8 +150,7 @@ void PluginContext::onLog() {
 bool PluginContext::isRequestFailed() {
   // Check if HTTP request is a failure.
   int64_t http_response_code = 0;
-  if (getValue({kResponse, kCode}, &http_response_code) &&
-      http_response_code >= 400) {
+  if (getValue({kResponse, kCode}, &http_response_code) && http_response_code >= 400) {
     return true;
   }
 
@@ -166,8 +160,7 @@ bool PluginContext::isRequestFailed() {
           getHeaderMapValue(WasmHeaderMapType::RequestHeaders,
                             ::Wasm::Common::kContentTypeHeaderKey)
               ->toString()) != 0 &&
-      getValue({kResponse, kGrpcStatus}, &grpc_response_code) &&
-      grpc_response_code != 0) {
+      getValue({kResponse, kGrpcStatus}, &grpc_response_code) && grpc_response_code != 0) {
     return true;
   }
 
@@ -175,8 +168,8 @@ bool PluginContext::isRequestFailed() {
 }
 
 #ifdef NULL_PLUGIN
-}  // namespace Plugin
-}  // namespace AccessLogPolicy
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace Plugin
+} // namespace AccessLogPolicy
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

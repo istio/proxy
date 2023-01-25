@@ -27,15 +27,15 @@ namespace ForwardDownstreamSni {
  */
 class ForwardDownstreamSniNetworkFilterConfigFactory
     : public Server::Configuration::NamedNetworkFilterConfigFactory {
- public:
+public:
   // NamedNetworkFilterConfigFactory
-  Network::FilterFactoryCb createFilterFactoryFromProto(
-      const Protobuf::Message&,
-      Server::Configuration::FactoryContext&) override;
+  Network::FilterFactoryCb
+  createFilterFactoryFromProto(const Protobuf::Message&,
+                               Server::Configuration::FactoryContext&) override;
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
   std::string name() const override { return "forward_downstream_sni"; }
 };
 
-}  // namespace ForwardDownstreamSni
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace ForwardDownstreamSni
+} // namespace Tcp
+} // namespace Envoy

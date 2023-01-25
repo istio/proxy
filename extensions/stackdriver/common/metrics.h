@@ -34,11 +34,11 @@ namespace Common {
 // could only be logging.
 uint32_t newExportCallMetric(const std::string& type, bool success);
 
-}  // namespace Common
-}  // namespace Stackdriver
-}  // namespace Extensions
+} // namespace Common
+} // namespace Stackdriver
+} // namespace Extensions
 
 #ifdef NULL_PLUGIN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

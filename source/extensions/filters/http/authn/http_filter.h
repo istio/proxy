@@ -29,10 +29,9 @@ namespace AuthN {
 // The authentication filter.
 class AuthenticationFilter : public StreamDecoderFilter,
                              public Logger::Loggable<Logger::Id::filter> {
- public:
+public:
   AuthenticationFilter(
-      const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
-          config);
+      const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig& config);
   ~AuthenticationFilter();
 
   // Http::StreamFilterBase
@@ -42,10 +41,9 @@ class AuthenticationFilter : public StreamDecoderFilter,
   FilterHeadersStatus decodeHeaders(RequestHeaderMap& headers, bool) override;
   FilterDataStatus decodeData(Buffer::Instance&, bool) override;
   FilterTrailersStatus decodeTrailers(RequestTrailerMap&) override;
-  void setDecoderFilterCallbacks(
-      StreamDecoderFilterCallbacks& callbacks) override;
+  void setDecoderFilterCallbacks(StreamDecoderFilterCallbacks& callbacks) override;
 
- protected:
+protected:
   // Convenient function to call decoder_callbacks_ only when stopped_ is true.
   void continueDecoding();
 
@@ -63,10 +61,9 @@ class AuthenticationFilter : public StreamDecoderFilter,
 
   createOriginAuthenticator(Istio::AuthN::FilterContext* filter_context);
 
- private:
+private:
   // Store the config.
-  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
-      filter_config_;
+  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig& filter_config_;
 
   StreamDecoderFilterCallbacks* decoder_callbacks_{};
 
@@ -79,7 +76,7 @@ class AuthenticationFilter : public StreamDecoderFilter,
   std::unique_ptr<Istio::AuthN::FilterContext> filter_context_;
 };
 
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

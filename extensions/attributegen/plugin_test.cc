@@ -62,23 +62,22 @@ using GrpcService = envoy::config::core::v3::GrpcService;
 using WasmFilterConfig = envoy::extensions::filters::http::wasm::v3::Wasm;
 
 class TestFilter : public Envoy::Extensions::Common::Wasm::Context {
- public:
+public:
   TestFilter(Wasm* wasm, uint32_t root_context_id,
              Envoy::Extensions::Common::Wasm::PluginHandleSharedPtr plugin)
-      : Envoy::Extensions::Common::Wasm::Context(wasm, root_context_id,
-                                                 plugin) {}
+      : Envoy::Extensions::Common::Wasm::Context(wasm, root_context_id, plugin) {}
   void log(const Http::RequestHeaderMap* request_headers,
            const Http::ResponseHeaderMap* response_headers,
            const Http::ResponseTrailerMap* response_trailers,
            const StreamInfo::StreamInfo& stream_info) override {
-    Envoy::Extensions::Common::Wasm::Context::log(
-        request_headers, response_headers, response_trailers, stream_info);
+    Envoy::Extensions::Common::Wasm::Context::log(request_headers, response_headers,
+                                                  response_trailers, stream_info);
   }
   // MOCK_CONTEXT_LOG_;
 };
 
 class TestRoot : public Envoy::Extensions::Common::Wasm::Context {
- public:
+public:
   TestRoot(Wasm* wasm, Envoy::Extensions::Common::Wasm::PluginSharedPtr plugin)
       : Context(wasm, plugin) {}
 
@@ -86,8 +85,7 @@ class TestRoot : public Envoy::Extensions::Common::Wasm::Context {
 
   proxy_wasm::WasmResult defineMetric(uint32_t type, std::string_view name,
                                       uint32_t* metric_id_ptr) override {
-    auto rs = Envoy::Extensions::Common::Wasm::Context::defineMetric(
-        type, name, metric_id_ptr);
+    auto rs = Envoy::Extensions::Common::Wasm::Context::defineMetric(type, name, metric_id_ptr);
     metrics_[std::string(name)] = *metric_id_ptr;
     // scriptLog_(spdlog::level::err, absl::StrCat(name, " = ",
     // *metric_id_ptr));
@@ -104,12 +102,12 @@ class TestRoot : public Envoy::Extensions::Common::Wasm::Context {
     return cnt;
   }
 
- private:
+private:
   std::map<std::string, uint32_t> metrics_;
 };
 
 struct TestParams {
-  std::string runtime;  // null, v8, wavm
+  std::string runtime; // null, v8, wavm
   // In order to load wasm files we need to specify base path relative to
   // WORKSPACE.
   std::string testdata_dir;
@@ -118,11 +116,11 @@ struct TestParams {
 // Config params
 // All default values are zero values
 // So name flags accordingly.
-#define CONFIG_PARAMS_STRING_MEMBER(_n)   \
-  ConfigParams& set_##_n(std::string s) { \
-    _n = std::string(s);                  \
-    return *this;                         \
-  }                                       \
+#define CONFIG_PARAMS_STRING_MEMBER(_n)                                                            \
+  ConfigParams& set_##_n(std::string s) {                                                          \
+    _n = std::string(s);                                                                           \
+    return *this;                                                                                  \
+  }                                                                                                \
   std::string _n
 struct ConfigParams {
   CONFIG_PARAMS_STRING_MEMBER(name);
@@ -138,8 +136,7 @@ struct ConfigParams {
 };
 
 std::ostream& operator<<(std::ostream& os, const TestParams& s) {
-  return (os << "{runtime: '" << s.runtime << "', testdata_dir: '"
-             << s.testdata_dir << "' }");
+  return (os << "{runtime: '" << s.runtime << "', testdata_dir: '" << s.testdata_dir << "' }");
 }
 
 std::string readfile(std::string relative_path) {
@@ -148,20 +145,17 @@ std::string readfile(std::string relative_path) {
 }
 
 class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
- public:
+public:
   WasmHttpFilterTest() {}
   ~WasmHttpFilterTest() {}
 
   virtual void setupConfig(ConfigParams c) {
     auto params = GetParam();
     if (!c.plugin_config_file.empty()) {
-      c.plugin_config =
-          readfile(params.testdata_dir + "/" + c.plugin_config_file);
+      c.plugin_config = readfile(params.testdata_dir + "/" + c.plugin_config_file);
     }
 
-    auto code = (params.runtime == "null")
-                    ? c.name
-                    : readfile(params.testdata_dir + "/" + c.name);
+    auto code = (params.runtime == "null") ? c.name : readfile(params.testdata_dir + "/" + c.name);
 
     envoy::extensions::wasm::v3::PluginConfig plugin_config;
     *plugin_config.mutable_root_id() = c.root_id;
@@ -177,25 +171,21 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
     scope_ = Stats::ScopeSharedPtr(stats_store_.createScope("wasm."));
 
     plugin_ = std::make_shared<Extensions::Common::Wasm::Plugin>(
-        plugin_config, TrafficDirection::INBOUND, local_info_,
-        &listener_metadata_);
+        plugin_config, TrafficDirection::INBOUND, local_info_, &listener_metadata_);
     // creates a base VM
     // This is synchronous, even though it happens thru a callback due to null
     // vm.
     Extensions::Common::Wasm::createWasm(
-        plugin_, scope_, cluster_manager_, init_manager_, dispatcher_, *api,
-        lifecycle_notifier_, remote_data_provider_,
-        [this](WasmHandleSharedPtr wasm) { wasm_ = wasm; },
-        [](Wasm* wasm,
-           const std::shared_ptr<Extensions::Common::Wasm::Plugin>& plugin) {
+        plugin_, scope_, cluster_manager_, init_manager_, dispatcher_, *api, lifecycle_notifier_,
+        remote_data_provider_, [this](WasmHandleSharedPtr wasm) { wasm_ = wasm; },
+        [](Wasm* wasm, const std::shared_ptr<Extensions::Common::Wasm::Plugin>& plugin) {
           return new TestRoot(wasm, plugin);
         });
     if (wasm_) {
       plugin_handle_ = getOrCreateThreadLocalPlugin(
           wasm_, plugin_, dispatcher_,
           [root_context = &root_context_](
-              Wasm* wasm,
-              const std::shared_ptr<Extensions::Common::Wasm::Plugin>& plugin) {
+              Wasm* wasm, const std::shared_ptr<Extensions::Common::Wasm::Plugin>& plugin) {
             *root_context = new TestRoot(wasm, plugin);
             return *root_context;
           });
@@ -209,8 +199,7 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
   void setupFilter() {
     auto wasm = wasm_ ? wasm_->wasm().get() : nullptr;
     int root_context_id = wasm ? wasm->getRootContext(plugin_, false)->id() : 0;
-    filter_ =
-        std::make_unique<TestFilter>(wasm, root_context_id, plugin_handle_);
+    filter_ = std::make_unique<TestFilter>(wasm, root_context_id, plugin_handle_);
     filter_->setDecoderFilterCallbacks(decoder_callbacks_);
     filter_->setEncoderFilterCallbacks(encoder_callbacks_);
 
@@ -220,10 +209,9 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
         .WillByDefault(ReturnRef(request_stream_info_.filterState()));
   }
 
-  std::shared_ptr<Envoy::StreamInfo::FilterState> makeTestRequest(
-      Http::TestRequestHeaderMapImpl& request_headers,
-      Http::TestResponseHeaderMapImpl& response_headers,
-      std::string bdata = "data") {
+  std::shared_ptr<Envoy::StreamInfo::FilterState>
+  makeTestRequest(Http::TestRequestHeaderMapImpl& request_headers,
+                  Http::TestResponseHeaderMapImpl& response_headers, std::string bdata = "data") {
     auto fs = request_stream_info_.filterState();
 
     uint32_t response_code = 200;
@@ -235,15 +223,12 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
     ON_CALL(encoder_callbacks_.stream_info_, responseCode())
         .WillByDefault(Invoke([response_code]() { return response_code; }));
 
-    EXPECT_EQ(Http::FilterHeadersStatus::Continue,
-              filter_->decodeHeaders(request_headers, true));
+    EXPECT_EQ(Http::FilterHeadersStatus::Continue, filter_->decodeHeaders(request_headers, true));
 
     Buffer::OwnedImpl data(bdata);
-    EXPECT_EQ(Http::FilterDataStatus::Continue,
-              filter_->decodeData(data, true));
+    EXPECT_EQ(Http::FilterDataStatus::Continue, filter_->decodeData(data, true));
 
-    EXPECT_EQ(Http::FilterHeadersStatus::Continue,
-              filter_->encodeHeaders(response_headers, true));
+    EXPECT_EQ(Http::FilterHeadersStatus::Continue, filter_->encodeHeaders(response_headers, true));
 
     filter_->log(&request_headers, nullptr, nullptr, request_stream_info_);
     return fs;
@@ -273,8 +258,8 @@ class WasmHttpFilterTest : public testing::TestWithParam<TestParams> {
   Config::DataSource::RemoteAsyncDataProviderPtr remote_data_provider_;
 };
 
-}  // namespace Wasm
-}  // namespace HttpFilters
+} // namespace Wasm
+} // namespace HttpFilters
 
 namespace Common {
 namespace Wasm {
@@ -293,20 +278,17 @@ std::vector<TestParams> generateTestParams() {
 }
 
 class AttributeGenFilterTest : public WasmHttpFilterTest {
- public:
+public:
   void verifyRequest(Http::TestRequestHeaderMapImpl& request_headers,
                      Http::TestResponseHeaderMapImpl& response_headers,
-                     const std::string& base_attribute, bool found,
-                     const std::string& value = "") {
+                     const std::string& base_attribute, bool found, const std::string& value = "") {
     auto fs = makeTestRequest(request_headers, response_headers);
     auto attribute = "wasm." + base_attribute;
 
     ASSERT_EQ(fs->hasData<HttpFilters::Wasm::CelState>(attribute), found)
         << absl::StrCat(attribute, "=?", value);
     if (found) {
-      ASSERT_EQ(
-          fs->getDataReadOnly<HttpFilters::Wasm::CelState>(attribute)->value(),
-          value)
+      ASSERT_EQ(fs->getDataReadOnly<HttpFilters::Wasm::CelState>(attribute)->value(), value)
           << absl::StrCat(attribute, "=?", value);
     }
   }
@@ -320,8 +302,7 @@ class AttributeGenFilterTest : public WasmHttpFilterTest {
   }
 };
 
-INSTANTIATE_TEST_SUITE_P(Runtimes, AttributeGenFilterTest,
-                         testing::ValuesIn(generateTestParams()));
+INSTANTIATE_TEST_SUITE_P(Runtimes, AttributeGenFilterTest, testing::ValuesIn(generateTestParams()));
 
 TEST_P(AttributeGenFilterTest, OneMatch) {
   const std::string attribute = "istio.operationId";
@@ -335,8 +316,7 @@ TEST_P(AttributeGenFilterTest, OneMatch) {
   Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
 
-  verifyRequest(request_headers, response_headers, attribute, true,
-                "GetStatus");
+  verifyRequest(request_headers, response_headers, attribute, true, "GetStatus");
 }
 
 TEST_P(AttributeGenFilterTest, ExprEvalError) {
@@ -359,9 +339,7 @@ TEST_P(AttributeGenFilterTest, UnparseableConfig) {
                     attributes = [ output_attribute ];
   )EOF";
   setupConfig(ConfigParams().set_plugin_config(plugin_config));
-  EXPECT_EQ(root_context_->readMetric(
-                "wasm_filter.attributegen.type.config.error_count"),
-            2);
+  EXPECT_EQ(root_context_->readMetric("wasm_filter.attributegen.type.config.error_count"), 2);
 }
 
 TEST_P(AttributeGenFilterTest, BadExpr) {
@@ -372,9 +350,7 @@ TEST_P(AttributeGenFilterTest, BadExpr) {
                             5"}]}]}
   )EOF";
   setupConfig(ConfigParams().set_plugin_config(plugin_config));
-  EXPECT_EQ(root_context_->readMetric(
-                "wasm_filter.attributegen.type.config.error_count"),
-            2);
+  EXPECT_EQ(root_context_->readMetric("wasm_filter.attributegen.type.config.error_count"), 2);
 }
 
 TEST_P(AttributeGenFilterTest, NoMatch) {
@@ -388,8 +364,7 @@ TEST_P(AttributeGenFilterTest, NoMatch) {
   )EOF";
   setupConfig(ConfigParams().set_plugin_config(plugin_config));
 
-  Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"},
-                                                 {":method", "GET"}};
+  Http::TestRequestHeaderMapImpl request_headers{{":path", "/status/207"}, {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
 
   verifyRequest(request_headers, response_headers, attribute, false);
@@ -398,26 +373,21 @@ TEST_P(AttributeGenFilterTest, NoMatch) {
 TEST_P(AttributeGenFilterTest, OperationFileList) {
   const std::string attribute = "istio.operationId";
 
-  setupConfig(ConfigParams().set_plugin_config_file(
-      "operation.json"));  // testdata/operation.json
+  setupConfig(ConfigParams().set_plugin_config_file("operation.json")); // testdata/operation.json
 
-  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
-                                                 {":method", "GET"}};
+  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"}, {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
 
-  verifyRequest(request_headers, response_headers, attribute, true,
-                "ListBooks");
+  verifyRequest(request_headers, response_headers, attribute, true, "ListBooks");
 }
 
 TEST_P(AttributeGenFilterTest, OperationFileListNoMatch) {
   const std::string attribute = "istio.operationId";
 
-  setupConfig(ConfigParams().set_plugin_config_file(
-      "operation.json"));  // testdata/operation.json
+  setupConfig(ConfigParams().set_plugin_config_file("operation.json")); // testdata/operation.json
 
   // needs GET to match
-  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
-                                                 {":method", "POST"}};
+  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"}, {":method", "POST"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
 
   verifyRequest(request_headers, response_headers, attribute, false);
@@ -426,11 +396,10 @@ TEST_P(AttributeGenFilterTest, OperationFileListNoMatch) {
 TEST_P(AttributeGenFilterTest, OperationFileGet) {
   const std::string attribute = "istio.operationId";
 
-  setupConfig(ConfigParams().set_plugin_config_file(
-      "operation.json"));  // testdata/operation.json
+  setupConfig(ConfigParams().set_plugin_config_file("operation.json")); // testdata/operation.json
 
-  Http::TestRequestHeaderMapImpl request_headers{
-      {":path", "/shelves/a101/books/b1122"}, {":method", "GET"}};
+  Http::TestRequestHeaderMapImpl request_headers{{":path", "/shelves/a101/books/b1122"},
+                                                 {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
 
   verifyRequest(request_headers, response_headers, attribute, true, "GetBook");
@@ -439,11 +408,10 @@ TEST_P(AttributeGenFilterTest, OperationFileGet) {
 TEST_P(AttributeGenFilterTest, OperationFileGetNoMatch) {
   const std::string attribute = "istio.operationId";
 
-  setupConfig(ConfigParams().set_plugin_config_file(
-      "operation.json"));  // testdata/operation.json
+  setupConfig(ConfigParams().set_plugin_config_file("operation.json")); // testdata/operation.json
   // match requires alphanumeric ids.
-  Http::TestRequestHeaderMapImpl request_headers{
-      {":path", "/shelves/-----/books/b1122"}, {":method", "GET"}};
+  Http::TestRequestHeaderMapImpl request_headers{{":path", "/shelves/-----/books/b1122"},
+                                                 {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "200"}};
 
   verifyRequest(request_headers, response_headers, attribute, false, "GetBook");
@@ -452,11 +420,10 @@ TEST_P(AttributeGenFilterTest, OperationFileGetNoMatch) {
 TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch1) {
   const std::string attribute = "istio.responseClass";
 
-  setupConfig(ConfigParams().set_plugin_config_file(
-      "responseCode.json"));  // testdata/responseCode.json
+  setupConfig(
+      ConfigParams().set_plugin_config_file("responseCode.json")); // testdata/responseCode.json
 
-  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
-                                                 {":method", "GET"}};
+  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"}, {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "207"}};
 
   verifyRequest(request_headers, response_headers, attribute, true, "2xx");
@@ -465,11 +432,10 @@ TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch1) {
 TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch2) {
   const std::string attribute = "istio.responseClass";
 
-  setupConfig(ConfigParams().set_plugin_config_file(
-      "responseCode.json"));  // testdata/responseCode.json
+  setupConfig(
+      ConfigParams().set_plugin_config_file("responseCode.json")); // testdata/responseCode.json
 
-  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
-                                                 {":method", "GET"}};
+  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"}, {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "404"}};
   // 404 is not classified.
   verifyRequest(request_headers, response_headers, attribute, true, "404");
@@ -478,23 +444,22 @@ TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch2) {
 TEST_P(AttributeGenFilterTest, ResponseCodeFileMatch3) {
   const std::string attribute = "istio.responseClass";
 
-  setupConfig(ConfigParams().set_plugin_config_file(
-      "responseCode.json"));  // testdata/responseCode.json
+  setupConfig(
+      ConfigParams().set_plugin_config_file("responseCode.json")); // testdata/responseCode.json
 
-  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"},
-                                                 {":method", "GET"}};
+  Http::TestRequestHeaderMapImpl request_headers{{":path", "/books"}, {":method", "GET"}};
   Http::TestResponseHeaderMapImpl response_headers{{":status", "504"}};
   verifyRequest(request_headers, response_headers, attribute, true, "5xx");
 }
 
-}  // namespace AttributeGen
+} // namespace AttributeGen
 
 // WASM_EPILOG
 #ifdef NULL_PLUGIN
-}  // namespace Plugin
-}  // namespace Null
-}  // namespace Wasm
-}  // namespace Common
-}  // namespace Extensions
-}  // namespace Envoy
+} // namespace Plugin
+} // namespace Null
+} // namespace Wasm
+} // namespace Common
+} // namespace Extensions
+} // namespace Envoy
 #endif

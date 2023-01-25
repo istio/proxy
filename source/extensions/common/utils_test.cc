@@ -28,9 +28,9 @@ using testing::NiceMock;
 using testing::Return;
 
 class UtilsTest : public testing::TestWithParam<bool> {
- public:
-  void testGetPrincipal(const std::vector<std::string>& sans,
-                        const std::string& want, bool success) {
+public:
+  void testGetPrincipal(const std::vector<std::string>& sans, const std::string& want,
+                        bool success) {
     setMockSan(sans);
     std::string actual;
     if (success) {
@@ -41,8 +41,8 @@ class UtilsTest : public testing::TestWithParam<bool> {
     EXPECT_EQ(actual, want);
   }
 
-  void testGetTrustDomain(const std::vector<std::string>& sans,
-                          const std::string& want, bool success) {
+  void testGetTrustDomain(const std::vector<std::string>& sans, const std::string& want,
+                          bool success) {
     setMockSan(sans);
     std::string actual;
     if (success) {
@@ -55,7 +55,7 @@ class UtilsTest : public testing::TestWithParam<bool> {
 
   void SetUp() override { peer_ = GetParam(); }
 
- protected:
+protected:
   NiceMock<Envoy::Network::MockConnection> connection_{};
   bool peer_;
 
@@ -125,14 +125,13 @@ TEST_P(UtilsTest, GetTrustDomainNoSlash) {
   testGetTrustDomain(sans, "", false);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    UtilsTestPrincipalAndTrustDomain, UtilsTest, testing::Values(true, false),
-    [](const testing::TestParamInfo<UtilsTest::ParamType>& info) {
-      return info.param ? "peer" : "local";
-    });
+INSTANTIATE_TEST_SUITE_P(UtilsTestPrincipalAndTrustDomain, UtilsTest, testing::Values(true, false),
+                         [](const testing::TestParamInfo<UtilsTest::ParamType>& info) {
+                           return info.param ? "peer" : "local";
+                         });
 
 class NamespaceTest : public ::testing::Test {
- protected:
+protected:
   void checkFalse(const std::string& principal) {
     auto out = Envoy::Utils::GetNamespace(principal);
     EXPECT_FALSE(out.has_value());
@@ -173,4 +172,4 @@ TEST_F(NamespaceTest, TestGetNamespace) {
   checkTrue("cluster.local/sa/user_ns/ns/abc_ns/", "abc_ns");
 }
 
-}  // namespace
+} // namespace

@@ -18,14 +18,14 @@
 // WASM_PROLOG
 #ifndef NULL_PLUGIN
 
-#else  // NULL_PLUGIN
+#else // NULL_PLUGIN
 
 #include "include/proxy-wasm/null_plugin.h"
 
 namespace proxy_wasm {
 namespace null_plugin {
 
-#endif  // NULL_PLUGIN
+#endif // NULL_PLUGIN
 
 // END WASM_PROLOG
 
@@ -43,14 +43,13 @@ std::optional<bool> Match::evaluate() const {
   const std::string function = "expr_evaluate";
   char* out = nullptr;
   size_t out_size = 0;
-  auto result = proxy_call_foreign_function(
-      function.data(), function.size(),
-      reinterpret_cast<const char*>(&condition_token_), sizeof(uint32_t), &out,
-      &out_size);
+  auto result = proxy_call_foreign_function(function.data(), function.size(),
+                                            reinterpret_cast<const char*>(&condition_token_),
+                                            sizeof(uint32_t), &out, &out_size);
 
   if (result != WasmResult::Ok) {
-    LOG_TRACE(absl::StrCat("Failed to evaluate expression:[", condition_token_,
-                           "] ", condition_, " result: ", toString(result)));
+    LOG_TRACE(absl::StrCat("Failed to evaluate expression:[", condition_token_, "] ", condition_,
+                           " result: ", toString(result)));
   } else if (out_size != sizeof(bool)) {
     LOG_TRACE(absl::StrCat("Expression:[", condition_token_, "] ", condition_,
                            " did not return a bool, size:", out_size));
@@ -93,8 +92,8 @@ std::optional<bool> AttributeGenerator::evaluate(std::string* val) const {
 // It is the responsibility of the control plane to send valid configuration.
 // AttributeGen plugin will not return `false`.
 bool PluginRootContext::onConfigure(size_t configuration_size) {
-  auto configuration_data = getBufferBytes(WasmBufferType::PluginConfiguration,
-                                           0, configuration_size);
+  auto configuration_data =
+      getBufferBytes(WasmBufferType::PluginConfiguration, 0, configuration_size);
   auto configuration = configuration_data->toString();
   // Parse configuration JSON string.
   JsonParseOptions json_options;
@@ -102,11 +101,10 @@ bool PluginRootContext::onConfigure(size_t configuration_size) {
   istio::attributegen::PluginConfig config;
   const auto status = JsonStringToMessage(configuration, &config, json_options);
   if (!status.ok()) {
-    LOG_WARN(
-        absl::StrCat("Config Error: cannot parse 'attributegen' plugin "
-                     "configuration JSON string [YAML is "
-                     "not supported]: ",
-                     configuration));
+    LOG_WARN(absl::StrCat("Config Error: cannot parse 'attributegen' plugin "
+                          "configuration JSON string [YAML is "
+                          "not supported]: ",
+                          configuration));
     incrementMetric(config_errors_, 1);
     return true;
   }
@@ -118,14 +116,12 @@ bool PluginRootContext::onConfigure(size_t configuration_size) {
   if (!init_status) {
     incrementMetric(config_errors_, 1);
     cleanupAttributeGen();
-    LOG_WARN(
-        "Config Error: attributegen plugin rejected invalid configuration");
+    LOG_WARN("Config Error: attributegen plugin rejected invalid configuration");
   }
   return true;
 }
 
-bool PluginRootContext::initAttributeGen(
-    const istio::attributegen::PluginConfig& config) {
+bool PluginRootContext::initAttributeGen(const istio::attributegen::PluginConfig& config) {
   for (const auto& attribute_gen_config : config.attributes()) {
     EvalPhase phase = OnLog;
     if (attribute_gen_config.phase() == istio::attributegen::ON_REQUEST) {
@@ -142,24 +138,21 @@ bool PluginRootContext::initAttributeGen(
       auto create_status = createExpression(matchconfig.condition(), &token);
 
       if (create_status != WasmResult::Ok) {
-        LOG_WARN(absl::StrCat("Cannot create expression: <",
-                              matchconfig.condition(), "> for ",
+        LOG_WARN(absl::StrCat("Cannot create expression: <", matchconfig.condition(), "> for ",
                               attribute_gen_config.output_attribute(),
                               " result:", toString(create_status)));
         return false;
       }
       if (debug_) {
-        LOG_DEBUG(absl::StrCat(
-            "Added [", token, "] ", attribute_gen_config.output_attribute(),
-            " if (", matchconfig.condition(), ") -> ", matchconfig.value()));
+        LOG_DEBUG(absl::StrCat("Added [", token, "] ", attribute_gen_config.output_attribute(),
+                               " if (", matchconfig.condition(), ") -> ", matchconfig.value()));
       }
 
       tokens_.push_back(token);
-      matches.push_back(
-          Match(matchconfig.condition(), token, matchconfig.value()));
+      matches.push_back(Match(matchconfig.condition(), token, matchconfig.value()));
     }
-    gen_.push_back(AttributeGenerator(
-        phase, attribute_gen_config.output_attribute(), std::move(matches)));
+    gen_.push_back(
+        AttributeGenerator(phase, attribute_gen_config.output_attribute(), std::move(matches)));
     matches.clear();
   }
   return true;
@@ -197,8 +190,7 @@ void PluginRootContext::attributeGen(EvalPhase phase) {
     }
 
     if (debug_) {
-      LOG_DEBUG(absl::StrCat("Setting ", attribute_generator.outputAttribute(),
-                             " --> ", val));
+      LOG_DEBUG(absl::StrCat("Setting ", attribute_generator.outputAttribute(), " --> ", val));
     }
     setFilterState(attribute_generator.outputAttribute(), val);
   }
@@ -207,15 +199,15 @@ void PluginRootContext::attributeGen(EvalPhase phase) {
 #ifdef NULL_PLUGIN
 NullPluginRegistry* context_registry_{};
 
-RegisterNullVmPluginFactory register_attribute_gen_filter(
-    "envoy.wasm.attributegen",
-    []() { return std::make_unique<NullPlugin>(context_registry_); });
+RegisterNullVmPluginFactory register_attribute_gen_filter("envoy.wasm.attributegen", []() {
+  return std::make_unique<NullPlugin>(context_registry_);
+});
 #endif
 
-}  // namespace AttributeGen
+} // namespace AttributeGen
 
 #ifdef NULL_PLUGIN
 // WASM_EPILOG
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

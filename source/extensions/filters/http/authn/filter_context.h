@@ -32,15 +32,12 @@ namespace AuthN {
 // FilterContext holds inputs, such as request dynamic metadata and connection
 // and result data for authentication process.
 class FilterContext : public Logger::Loggable<Logger::Id::filter> {
- public:
+public:
   FilterContext(
-      const envoy::config::core::v3::Metadata& dynamic_metadata,
-      const RequestHeaderMap& header_map, const Network::Connection* connection,
-      const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
-          filter_config)
-      : dynamic_metadata_(dynamic_metadata),
-        header_map_(header_map),
-        connection_(connection),
+      const envoy::config::core::v3::Metadata& dynamic_metadata, const RequestHeaderMap& header_map,
+      const Network::Connection* connection,
+      const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig& filter_config)
+      : dynamic_metadata_(dynamic_metadata), header_map_(header_map), connection_(connection),
         filter_config_(filter_config) {}
   virtual ~FilterContext() {}
 
@@ -54,8 +51,7 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
 
   // Sets principal based on binding rule, and the existing peer and origin
   // result.
-  void setPrincipal(
-      const istio::authentication::v1alpha1::PrincipalBinding& binding);
+  void setPrincipal(const istio::authentication::v1alpha1::PrincipalBinding& binding);
 
   // Returns the authentication result.
   const istio::authn::Result& authenticationResult() { return result_; }
@@ -63,8 +59,7 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   // Accessor to connection
   const Network::Connection* connection() { return connection_; }
   // Accessor to the filter config
-  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
-  filter_config() const {
+  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig& filter_config() const {
     return filter_config_;
   }
 
@@ -75,15 +70,13 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
 
   const RequestHeaderMap& headerMap() const { return header_map_; }
 
- private:
+private:
   // Helper function for getJwtPayload(). It gets the jwt payload from Envoy jwt
   // filter metadata and write to |payload|.
-  bool getJwtPayloadFromEnvoyJwtFilter(const std::string& issuer,
-                                       std::string* payload) const;
+  bool getJwtPayloadFromEnvoyJwtFilter(const std::string& issuer, std::string* payload) const;
   // Helper function for getJwtPayload(). It gets the jwt payload from Istio jwt
   // filter metadata and write to |payload|.
-  bool getJwtPayloadFromIstioJwtFilter(const std::string& issuer,
-                                       std::string* payload) const;
+  bool getJwtPayloadFromIstioJwtFilter(const std::string& issuer, std::string* payload) const;
 
   // Const reference to request info dynamic metadata. This provides data that
   // output from other filters, e.g JWT.
@@ -100,11 +93,10 @@ class FilterContext : public Logger::Loggable<Logger::Id::filter> {
   istio::authn::Result result_;
 
   // Store the Istio authn filter config.
-  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig&
-      filter_config_;
+  const istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig& filter_config_;
 };
 
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

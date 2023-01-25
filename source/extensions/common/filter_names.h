@@ -29,5 +29,5 @@ struct IstioFilterName {
   static const char kAlpn[];
 };
 
-}  // namespace Utils
-}  // namespace Envoy
+} // namespace Utils
+} // namespace Envoy

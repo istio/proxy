@@ -61,8 +61,7 @@ constexpr char kTokenWithoutOriginalClaims[] =
     "nwJc6oMGMVzdjmJYMadg5GEor5XhgYz3TThPzLlEsxa0loD9eJDBGgdwjA1cLuAGgM7_HgRfg7"
     "8ameSmQgSCsNlFB4k3ODeC-YC62KYdZ5Jdrg2A";
 
-constexpr char kExpectedPrincipal[] =
-    "https://accounts.example.com/example-subject";
+constexpr char kExpectedPrincipal[] = "https://accounts.example.com/example-subject";
 constexpr char kDestinationNamespace[] = "pod";
 constexpr char kDestinationUID[] = "kubernetes://dest.pod";
 const std::string kHeaderForExchangedToken = "ingress-authorization";
@@ -127,10 +126,8 @@ std::string MakeJwtFilterConfig() {
       "4WTiULmmHSGZHOjzwa8WtrtOQGsAFjIbno85jp6MnGGGZPYZbDAa_b3y5u-"
       "YpW7ypZrvD8BgtKVjgtQgZhLAGezMt0ua3DRrWnKqTZ0BJ_EyxOGuHJrLsn00fnMQ\"}]}";
 
-  return fmt::sprintf(kJwtFilterTemplate,
-                      Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn,
-                      StringUtil::escape(kJwksInline),
-                      StringUtil::escape(kJwksInline));
+  return fmt::sprintf(kJwtFilterTemplate, Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn,
+                      StringUtil::escape(kJwksInline), StringUtil::escape(kJwksInline));
 }
 
 std::string MakeAuthFilterConfig() {
@@ -148,8 +145,7 @@ std::string MakeAuthFilterConfig() {
                 - ingress-authorization
           principalBinding: USE_ORIGIN
 )";
-  return fmt::sprintf(kAuthnFilterWithJwtTemplate,
-                      Utils::IstioFilterName::kAuthentication);
+  return fmt::sprintf(kAuthnFilterWithJwtTemplate, Utils::IstioFilterName::kAuthentication);
 }
 
 std::string MakeRbacFilterConfig() {
@@ -173,13 +169,12 @@ std::string MakeRbacFilterConfig() {
                     string_match:
                       exact: %s
 )";
-  return fmt::sprintf(
-      kRbacFilterTemplate, Utils::IstioFilterName::kAuthentication,
-      istio::utils::AttributeName::kRequestAuthPrincipal, kExpectedPrincipal);
+  return fmt::sprintf(kRbacFilterTemplate, Utils::IstioFilterName::kAuthentication,
+                      istio::utils::AttributeName::kRequestAuthPrincipal, kExpectedPrincipal);
 }
 
 class ExchangedTokenIntegrationTest : public HttpProtocolIntegrationTest {
- public:
+public:
   void SetUp() override {
     config_helper_.addConfigModifier(addNodeMetadata());
 
@@ -195,14 +190,13 @@ class ExchangedTokenIntegrationTest : public HttpProtocolIntegrationTest {
   ConfigHelper::ConfigModifierFunction addNodeMetadata() {
     return [](envoy::config::bootstrap::v3::Bootstrap& bootstrap) {
       ::google::protobuf::Struct meta;
-      MessageUtil::loadFromJson(
-          fmt::sprintf(R"({
+      MessageUtil::loadFromJson(fmt::sprintf(R"({
         "ISTIO_VERSION": "1.0.1",
         "NODE_UID": "%s",
         "NODE_NAMESPACE": "%s"
       })",
-                       kDestinationUID, kDestinationNamespace),
-          meta);
+                                             kDestinationUID, kDestinationNamespace),
+                                meta);
       bootstrap.mutable_node()->mutable_metadata()->MergeFrom(meta);
     };
   }
@@ -226,14 +220,12 @@ class ExchangedTokenIntegrationTest : public HttpProtocolIntegrationTest {
   }
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Protocols, ExchangedTokenIntegrationTest,
-    testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
-    HttpProtocolIntegrationTest::protocolTestParamsToString);
+INSTANTIATE_TEST_SUITE_P(Protocols, ExchangedTokenIntegrationTest,
+                         testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
+                         HttpProtocolIntegrationTest::protocolTestParamsToString);
 
 TEST_P(ExchangedTokenIntegrationTest, ValidExchangeToken) {
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
 
   // A valid exchanged token in the header for an exchanged token
   auto response = codec_client_->makeHeaderOnlyRequest(
@@ -241,8 +233,7 @@ TEST_P(ExchangedTokenIntegrationTest, ValidExchangeToken) {
 
   waitForNextUpstreamRequest(0);
   // Send backend response.
-  upstream_request_->encodeHeaders(
-      Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
+  upstream_request_->encodeHeaders(Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
   ASSERT_TRUE(response->waitForEndStream());
 
   EXPECT_TRUE(response->complete());
@@ -250,13 +241,12 @@ TEST_P(ExchangedTokenIntegrationTest, ValidExchangeToken) {
 }
 
 TEST_P(ExchangedTokenIntegrationTest, ValidExchangeTokenAtWrongHeader) {
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
 
   // When a token is not in the header for an exchanged token,
   // it will not be regarded as an exchanged token.
-  auto response = codec_client_->makeHeaderOnlyRequest(
-      HeadersWithToken("wrong-header", kExchangedToken));
+  auto response =
+      codec_client_->makeHeaderOnlyRequest(HeadersWithToken("wrong-header", kExchangedToken));
 
   ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
@@ -264,8 +254,7 @@ TEST_P(ExchangedTokenIntegrationTest, ValidExchangeTokenAtWrongHeader) {
 }
 
 TEST_P(ExchangedTokenIntegrationTest, TokenWithoutOriginalClaims) {
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
 
   // When a token does not contain original_claims,
   // it will be regarded as an invalid exchanged token.
@@ -278,8 +267,7 @@ TEST_P(ExchangedTokenIntegrationTest, TokenWithoutOriginalClaims) {
 }
 
 TEST_P(ExchangedTokenIntegrationTest, InvalidExchangeToken) {
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
 
   // When an invalid exchanged token is in the header for an exchanged token,
   // the request will be rejected.
@@ -291,5 +279,5 @@ TEST_P(ExchangedTokenIntegrationTest, InvalidExchangeToken) {
   EXPECT_EQ("401", response->headers().Status()->value().getStringView());
 }
 
-}  // namespace
-}  // namespace Envoy
+} // namespace
+} // namespace Envoy

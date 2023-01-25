@@ -33,24 +33,22 @@ absl::optional<uint64_t> Principal::hash() const {
 
 PrincipalInfo getPrincipals(const StreamInfo::FilterState& filter_state) {
   const auto* peer = filter_state.getDataReadOnly<Principal>(PeerPrincipalKey);
-  const auto* local =
-      filter_state.getDataReadOnly<Principal>(LocalPrincipalKey);
+  const auto* local = filter_state.getDataReadOnly<Principal>(LocalPrincipalKey);
   return {peer ? peer->principal() : absl::string_view(),
           local ? local->principal() : absl::string_view()};
 }
 
 void IstioAuthnFilter::onEvent(Network::ConnectionEvent event) {
   switch (event) {
-    case Network::ConnectionEvent::Connected:
-      // TLS handshake success triggers this event.
-      populate();
-      break;
-    default:
-      break;
+  case Network::ConnectionEvent::Connected:
+    // TLS handshake success triggers this event.
+    populate();
+    break;
+  default:
+    break;
   }
 }
-void IstioAuthnFilter::initializeReadFilterCallbacks(
-    Network::ReadFilterCallbacks& callbacks) {
+void IstioAuthnFilter::initializeReadFilterCallbacks(Network::ReadFilterCallbacks& callbacks) {
   read_callbacks_ = &callbacks;
   read_callbacks_->connection().addConnectionCallbacks(*this);
 }
@@ -65,8 +63,7 @@ void IstioAuthnFilter::populate() const {
             PeerPrincipalKey, std::make_shared<Principal>(san),
             StreamInfo::FilterState::StateType::ReadOnly,
             StreamInfo::FilterState::LifeSpan::Connection,
-            StreamInfo::FilterState::StreamSharing::
-                SharedWithUpstreamConnection);
+            StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
         break;
       }
     }
@@ -76,33 +73,30 @@ void IstioAuthnFilter::populate() const {
             LocalPrincipalKey, std::make_shared<Principal>(san),
             StreamInfo::FilterState::StateType::ReadOnly,
             StreamInfo::FilterState::LifeSpan::Connection,
-            StreamInfo::FilterState::StreamSharing::
-                SharedWithUpstreamConnection);
+            StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
         break;
       }
     }
   }
 }
 
-class IstioAuthnConfigFactory
-    : public Common::FactoryBase<io::istio::network::authn::Config> {
- public:
+class IstioAuthnConfigFactory : public Common::FactoryBase<io::istio::network::authn::Config> {
+public:
   IstioAuthnConfigFactory() : FactoryBase("io.istio.network.authn") {}
 
- private:
-  Network::FilterFactoryCb createFilterFactoryFromProtoTyped(
-      const io::istio::network::authn::Config&,
-      Server::Configuration::FactoryContext&) override {
+private:
+  Network::FilterFactoryCb
+  createFilterFactoryFromProtoTyped(const io::istio::network::authn::Config&,
+                                    Server::Configuration::FactoryContext&) override {
     return [](Network::FilterManager& filter_manager) -> void {
       filter_manager.addReadFilter(std::make_shared<IstioAuthnFilter>());
     };
   }
 };
 
-REGISTER_FACTORY(IstioAuthnConfigFactory,
-                 Server::Configuration::NamedNetworkFilterConfigFactory);
+REGISTER_FACTORY(IstioAuthnConfigFactory, Server::Configuration::NamedNetworkFilterConfigFactory);
 
-}  // namespace IstioAuthn
-}  // namespace NetworkFilters
-}  // namespace Extensions
-}  // namespace Envoy
+} // namespace IstioAuthn
+} // namespace NetworkFilters
+} // namespace Extensions
+} // namespace Envoy

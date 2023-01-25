@@ -36,32 +36,30 @@ namespace Log {
 
 // Log exporter interface.
 class Exporter {
- public:
+public:
   virtual ~Exporter() {}
 
-  virtual void exportLogs(
-      const std::vector<
-          std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&,
-      bool is_on_done) = 0;
+  virtual void
+  exportLogs(const std::vector<std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>&,
+             bool is_on_done) = 0;
 };
 
 // Exporter writes Stackdriver access log to the backend. It uses WebAssembly
 // gRPC API.
 class ExporterImpl : public Exporter {
- public:
+public:
   // root_context is the wasm runtime context that this instance runs with.
   // logging_service_endpoint is an optional param which should be used for test
   // only.
   ExporterImpl(RootContext* root_context,
-               const ::Extensions::Stackdriver::Common::StackdriverStubOption&
-                   stub_option);
+               const ::Extensions::Stackdriver::Common::StackdriverStubOption& stub_option);
 
   // exportLogs exports the given log request to Stackdriver.
-  void exportLogs(const std::vector<std::unique_ptr<
-                      const google::logging::v2::WriteLogEntriesRequest>>& req,
-                  bool is_on_done) override;
+  void exportLogs(
+      const std::vector<std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>& req,
+      bool is_on_done) override;
 
- private:
+private:
   // Wasm context that outbound calls are attached to.
   RootContext* context_ = nullptr;
 
@@ -82,11 +80,11 @@ class ExporterImpl : public Exporter {
   int in_flight_export_call_ = 0;
 };
 
-}  // namespace Log
-}  // namespace Stackdriver
-}  // namespace Extensions
+} // namespace Log
+} // namespace Stackdriver
+} // namespace Extensions
 
 #ifdef NULL_PLUGIN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

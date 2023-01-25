@@ -33,5 +33,5 @@ const std::set<std::string> TracingHeaderSet = {
     kSampled,
 };
 
-}  // namespace Utils
-}  // namespace Envoy
+} // namespace Utils
+} // namespace Envoy

@@ -23,23 +23,22 @@ namespace SniVerifier {
  * Config registration for the  SNI verifier filter. @see
  * NamedNetworkFilterConfigFactory.
  */
-class SniVerifierConfigFactory
-    : public Server::Configuration::NamedNetworkFilterConfigFactory {
- public:
+class SniVerifierConfigFactory : public Server::Configuration::NamedNetworkFilterConfigFactory {
+public:
   // NamedNetworkFilterConfigFactory
-  Network::FilterFactoryCb createFilterFactoryFromProto(
-      const Protobuf::Message&,
-      Server::Configuration::FactoryContext& context) override;
+  Network::FilterFactoryCb
+  createFilterFactoryFromProto(const Protobuf::Message&,
+                               Server::Configuration::FactoryContext& context) override;
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
 
   std::string name() const override { return "sni_verifier"; }
 
- private:
-  Network::FilterFactoryCb createFilterFactoryFromContext(
-      Server::Configuration::FactoryContext& context);
+private:
+  Network::FilterFactoryCb
+  createFilterFactoryFromContext(Server::Configuration::FactoryContext& context);
 };
 
-}  // namespace SniVerifier
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace SniVerifier
+} // namespace Tcp
+} // namespace Envoy

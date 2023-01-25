@@ -150,9 +150,8 @@ const char kMultipleOriginMethodWithTriggerRulePolicy[] = R"(
 )";
 
 class MockOriginAuthenticator : public OriginAuthenticator {
- public:
-  MockOriginAuthenticator(FilterContext* filter_context,
-                          const iaapi::Policy& policy)
+public:
+  MockOriginAuthenticator(FilterContext* filter_context, const iaapi::Policy& policy)
       : OriginAuthenticator(filter_context, policy) {}
 
   MOCK_CONST_METHOD2(validateX509, bool(const iaapi::MutualTls&, Payload*));
@@ -160,7 +159,7 @@ class MockOriginAuthenticator : public OriginAuthenticator {
 };
 
 class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
- public:
+public:
   OriginAuthenticatorTest() {}
   virtual ~OriginAuthenticatorTest() {}
 
@@ -185,26 +184,23 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
   void TearDown() override { delete (payload_); }
 
   void createAuthenticator() {
-    authenticator_.reset(
-        new StrictMock<MockOriginAuthenticator>(&filter_context_, policy_));
+    authenticator_.reset(new StrictMock<MockOriginAuthenticator>(&filter_context_, policy_));
   }
 
- protected:
+protected:
   std::unique_ptr<StrictMock<MockOriginAuthenticator>> authenticator_;
   // envoy::config::core::v3::Metadata metadata_;
   Envoy::Http::TestRequestHeaderMapImpl header_{};
   FilterContext filter_context_{
       envoy::config::core::v3::Metadata::default_instance(), header_, nullptr,
-      istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::
-          default_instance()};
+      istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::default_instance()};
   iaapi::Policy policy_;
 
   Payload* payload_;
 
   // Mock response payload.
   Payload jwt_payload_{TestUtilities::CreateJwtPayload("foo", "istio.io")};
-  Payload jwt_extra_payload_{
-      TestUtilities::CreateJwtPayload("bar", "istio.io")};
+  Payload jwt_extra_payload_{TestUtilities::CreateJwtPayload("bar", "istio.io")};
 
   // Expected result (when authentication pass with mock payload above)
   Result expected_result_when_pass_;
@@ -221,9 +217,7 @@ class OriginAuthenticatorTest : public testing::TestWithParam<bool> {
     header_.addCopy(":path", path);
   }
 
-  void addHeader(const std::string& key, const std::string& value) {
-    header_.addCopy(key, value);
-  }
+  void addHeader(const std::string& key, const std::string& value) { header_.addCopy(key, value); }
 };
 
 TEST_P(OriginAuthenticatorTest, Empty) {
@@ -232,22 +226,19 @@ TEST_P(OriginAuthenticatorTest, Empty) {
   if (set_peer_) {
     initial_result_.set_principal("bar");
   }
-  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_, filter_context_.authenticationResult()));
 }
 
 // It should fail if the binding is USE_ORIGIN but origin methods are empty.
 TEST_P(OriginAuthenticatorTest, ZeroMethodFail) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-      kZeroOriginMethodPolicyBindOrigin, &policy_));
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kZeroOriginMethodPolicyBindOrigin, &policy_));
   createAuthenticator();
   EXPECT_FALSE(authenticator_->run(payload_));
 }
 
 // It should pass if the binding is USE_PEER and origin methods are empty.
 TEST_P(OriginAuthenticatorTest, ZeroMethodPass) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-      kZeroOriginMethodPolicyBindPeer, &policy_));
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kZeroOriginMethodPolicyBindPeer, &policy_));
   createAuthenticator();
 
   Result expected_result = TestUtilities::AuthNResultFromString(R"(
@@ -262,13 +253,11 @@ TEST_P(OriginAuthenticatorTest, ZeroMethodPass) {
   }
 
   EXPECT_TRUE(authenticator_->run(&jwt_extra_payload_));
-  EXPECT_TRUE(TestUtility::protoEqual(expected_result,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(expected_result, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, SingleMethodPass) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kSingleOriginMethodPolicy,
-                                                    &policy_));
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kSingleOriginMethodPolicy, &policy_));
 
   createAuthenticator();
 
@@ -277,13 +266,12 @@ TEST_P(OriginAuthenticatorTest, SingleMethodPass) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      TestUtility::protoEqual(expected_result_when_pass_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, SingleMethodFail) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kSingleOriginMethodPolicy,
-                                                    &policy_));
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kSingleOriginMethodPolicy, &policy_));
 
   createAuthenticator();
 
@@ -292,13 +280,11 @@ TEST_P(OriginAuthenticatorTest, SingleMethodFail) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(false)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, CORSPreflight) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kSingleOriginMethodPolicy,
-                                                    &policy_));
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kSingleOriginMethodPolicy, &policy_));
 
   createAuthenticator();
 
@@ -311,8 +297,8 @@ TEST_P(OriginAuthenticatorTest, CORSPreflight) {
 }
 
 TEST_P(OriginAuthenticatorTest, TriggeredWithNullPath) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-      kSingleOriginMethodWithTriggerRulePolicy, &policy_));
+  ASSERT_TRUE(
+      Protobuf::TextFormat::ParseFromString(kSingleOriginMethodWithTriggerRulePolicy, &policy_));
 
   createAuthenticator();
 
@@ -321,13 +307,13 @@ TEST_P(OriginAuthenticatorTest, TriggeredWithNullPath) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
 
   EXPECT_TRUE(authenticator_->run(payload_));
-  EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      TestUtility::protoEqual(expected_result_when_pass_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, SingleRuleTriggered) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-      kSingleOriginMethodWithTriggerRulePolicy, &policy_));
+  ASSERT_TRUE(
+      Protobuf::TextFormat::ParseFromString(kSingleOriginMethodWithTriggerRulePolicy, &policy_));
 
   createAuthenticator();
 
@@ -337,8 +323,8 @@ TEST_P(OriginAuthenticatorTest, SingleRuleTriggered) {
 
   setPath("/allow");
   EXPECT_TRUE(authenticator_->run(payload_));
-  EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      TestUtility::protoEqual(expected_result_when_pass_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, SingleRuleTriggeredWithComponents) {
@@ -353,8 +339,8 @@ TEST_P(OriginAuthenticatorTest, SingleRuleTriggeredWithComponents) {
                                              "/allow?a=b#c",
                                              "/allow#a?b=c"};
   for (const auto& path : input_paths) {
-    ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-        kSingleOriginMethodWithTriggerRulePolicy, &policy_));
+    ASSERT_TRUE(
+        Protobuf::TextFormat::ParseFromString(kSingleOriginMethodWithTriggerRulePolicy, &policy_));
 
     createAuthenticator();
 
@@ -364,16 +350,16 @@ TEST_P(OriginAuthenticatorTest, SingleRuleTriggeredWithComponents) {
 
     setPath(path);
     EXPECT_TRUE(authenticator_->run(payload_));
-    EXPECT_TRUE(TestUtility::protoEqual(
-        expected_result_when_pass_, filter_context_.authenticationResult()));
+    EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
+                                        filter_context_.authenticationResult()));
   }
 }
 
 TEST_P(OriginAuthenticatorTest, SingleRuleNotTriggered) {
   const std::vector<std::string> input_paths{"/bad", "/allow$?", "/allow$#"};
   for (const auto& path : input_paths) {
-    ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-        kSingleOriginMethodWithTriggerRulePolicy, &policy_));
+    ASSERT_TRUE(
+        Protobuf::TextFormat::ParseFromString(kSingleOriginMethodWithTriggerRulePolicy, &policy_));
 
     createAuthenticator();
 
@@ -381,14 +367,13 @@ TEST_P(OriginAuthenticatorTest, SingleRuleNotTriggered) {
 
     setPath(path);
     EXPECT_TRUE(authenticator_->run(payload_));
-    EXPECT_TRUE(TestUtility::protoEqual(
-        initial_result_, filter_context_.authenticationResult()));
+    EXPECT_TRUE(TestUtility::protoEqual(initial_result_, filter_context_.authenticationResult()));
   }
 }
 
 TEST_P(OriginAuthenticatorTest, SingleExcludeRuleTriggeredWithQueryParam) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-      kSingleOriginMethodWithExcludeTriggerRulePolicy, &policy_));
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kSingleOriginMethodWithExcludeTriggerRulePolicy,
+                                                    &policy_));
 
   createAuthenticator();
 
@@ -396,13 +381,11 @@ TEST_P(OriginAuthenticatorTest, SingleExcludeRuleTriggeredWithQueryParam) {
 
   setPath("/login?a=b&c=d");
   EXPECT_TRUE(authenticator_->run(payload_));
-  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, Multiple) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-      kMultipleOriginMethodsPolicy, &policy_));
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kMultipleOriginMethodsPolicy, &policy_));
 
   createAuthenticator();
 
@@ -413,30 +396,27 @@ TEST_P(OriginAuthenticatorTest, Multiple) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      TestUtility::protoEqual(expected_result_when_pass_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, MultipleFail) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-      kMultipleOriginMethodsPolicy, &policy_));
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(kMultipleOriginMethodsPolicy, &policy_));
 
   createAuthenticator();
 
   // All fail.
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(3)
-      .WillRepeatedly(
-          DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
+      .WillRepeatedly(DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, MultipleRuleTriggeredValidationSucceeded) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-      kMultipleOriginMethodWithTriggerRulePolicy, &policy_));
+  ASSERT_TRUE(
+      Protobuf::TextFormat::ParseFromString(kMultipleOriginMethodWithTriggerRulePolicy, &policy_));
 
   createAuthenticator();
   // First method triggered but failed, second method not triggered, third
@@ -448,38 +428,35 @@ TEST_P(OriginAuthenticatorTest, MultipleRuleTriggeredValidationSucceeded) {
 
   setPath("/allow");
   EXPECT_TRUE(authenticator_->run(payload_));
-  EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      TestUtility::protoEqual(expected_result_when_pass_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, MultipleRuleTriggeredValidationFailed) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-      kMultipleOriginMethodWithTriggerRulePolicy, &policy_));
+  ASSERT_TRUE(
+      Protobuf::TextFormat::ParseFromString(kMultipleOriginMethodWithTriggerRulePolicy, &policy_));
 
   createAuthenticator();
   // Triggered on first and second method but all failed.
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(2)
-      .WillRepeatedly(
-          DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
+      .WillRepeatedly(DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
 
   setPath("/two");
   EXPECT_FALSE(authenticator_->run(payload_));
-  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, MultipleRuleNotTriggered) {
-  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(
-      kMultipleOriginMethodWithTriggerRulePolicy, &policy_));
+  ASSERT_TRUE(
+      Protobuf::TextFormat::ParseFromString(kMultipleOriginMethodWithTriggerRulePolicy, &policy_));
 
   createAuthenticator();
   EXPECT_CALL(*authenticator_, validateJwt(_, _)).Times(0);
 
   setPath("/bad");
   EXPECT_TRUE(authenticator_->run(payload_));
-  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, PeerBindingPass) {
@@ -494,8 +471,8 @@ TEST_P(OriginAuthenticatorTest, PeerBindingPass) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(expected_result_when_pass_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(
+      TestUtility::protoEqual(expected_result_when_pass_, filter_context_.authenticationResult()));
 }
 
 TEST_P(OriginAuthenticatorTest, PeerBindingFail) {
@@ -508,15 +485,13 @@ TEST_P(OriginAuthenticatorTest, PeerBindingFail) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(false)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(initial_result_,
-                                      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(initial_result_, filter_context_.authenticationResult()));
 }
 
-INSTANTIATE_TEST_SUITE_P(OriginAuthenticatorTests, OriginAuthenticatorTest,
-                         testing::Bool());
+INSTANTIATE_TEST_SUITE_P(OriginAuthenticatorTests, OriginAuthenticatorTest, testing::Bool());
 
-}  // namespace
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

@@ -36,6 +36,6 @@ Network::FilterStatus ForwardDownstreamSniFilter::onNewConnection() {
   return Network::FilterStatus::Continue;
 }
 
-}  // namespace ForwardDownstreamSni
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace ForwardDownstreamSni
+} // namespace Tcp
+} // namespace Envoy
