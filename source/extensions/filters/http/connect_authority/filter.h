@@ -25,10 +25,12 @@ namespace HttpFilters {
 namespace ConnectAuthority {
 
 class FilterConfig : public Router::RouteSpecificFilterConfig {
-public:
-  FilterConfig(const io::istio::http::connect_authority::Config& config) : enabled_(config.enabled()) {}
+ public:
+  FilterConfig(const io::istio::http::connect_authority::Config& config)
+      : enabled_(config.enabled()) {}
   bool enabled() const { return enabled_; }
-private:
+
+ private:
   const bool enabled_;
 };
 
@@ -45,16 +47,17 @@ class FilterConfigFactory
 
  private:
   Http::FilterFactoryCb createFilterFactoryFromProtoTyped(
-      const io::istio::http::connect_authority::Config& , const std::string&,
+      const io::istio::http::connect_authority::Config&, const std::string&,
       Server::Configuration::FactoryContext&) override {
     return [](Http::FilterChainFactoryCallbacks& callbacks) {
       auto filter = std::make_shared<Filter>();
       callbacks.addStreamFilter(filter);
     };
   }
-  Router::RouteSpecificFilterConfigConstSharedPtr createRouteSpecificFilterConfigTyped(
+  Router::RouteSpecificFilterConfigConstSharedPtr
+  createRouteSpecificFilterConfigTyped(
       const io::istio::http::connect_authority::Config& config,
-      Envoy::Server::Configuration::ServerFactoryContext& ,
+      Envoy::Server::Configuration::ServerFactoryContext&,
       ProtobufMessage::ValidationVisitor&) override {
     return std::make_shared<FilterConfig>(config);
   }

@@ -16,8 +16,8 @@
 
 #include "envoy/registry/registry.h"
 #include "envoy/server/factory_context.h"
-#include "source/extensions/filters/listener/set_internal_dst_address/filter.h"
 #include "source/common/http/utility.h"
+#include "source/extensions/filters/listener/set_internal_dst_address/filter.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -27,11 +27,13 @@ namespace ConnectAuthority {
 Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
                                                 bool) {
   const FilterConfig* per_route_settings =
-          Http::Utility::resolveMostSpecificPerFilterConfig<FilterConfig>(decoder_callbacks_);
+      Http::Utility::resolveMostSpecificPerFilterConfig<FilterConfig>(
+          decoder_callbacks_);
   if (per_route_settings && per_route_settings->enabled()) {
     decoder_callbacks_->streamInfo().filterState()->setData(
-        Istio::SetInternalDstAddress::FilterStateKey, 
-        std::make_shared<Istio::SetInternalDstAddress::Authority>(headers.authority()),
+        Istio::SetInternalDstAddress::FilterStateKey,
+        std::make_shared<Istio::SetInternalDstAddress::Authority>(
+            headers.authority()),
         StreamInfo::FilterState::StateType::Mutable,
         StreamInfo::FilterState::LifeSpan::FilterChain,
         StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
