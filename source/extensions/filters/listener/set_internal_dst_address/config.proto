@@ -16,4 +16,5 @@ syntax = "proto3";
 
 package istio.set_internal_dst_address.v1;
 
+// Set local address from the filter state or the dynamic metadata.
 message Config {};

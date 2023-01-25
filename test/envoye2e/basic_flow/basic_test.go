@@ -15,6 +15,7 @@
 package client_test
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -142,6 +143,20 @@ func TestBasicHTTPGateway(t *testing.T) {
 	}
 }
 
+var ConnectServer = &driver.Update{
+	Node: "server", Version: "{{ .N }}",
+	Clusters: []string{
+		driver.LoadTestData("testdata/cluster/internal_inbound.yaml.tmpl"),
+	},
+	Listeners: []string{
+		driver.LoadTestData("testdata/listener/terminate_connect.yaml.tmpl"),
+		driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
+	},
+	Secrets: []string{
+		driver.LoadTestData("testdata/secret/server.yaml.tmpl"),
+	},
+}
+
 func TestBasicCONNECT(t *testing.T) {
 	for _, options := range ProtocolOptions {
 		t.Run(options.Name, func(t *testing.T) {
@@ -149,6 +164,7 @@ func TestBasicCONNECT(t *testing.T) {
 			params.Vars["ServerClusterName"] = "internal_outbound"
 			params.Vars["ServerInternalAddress"] = "internal_inbound"
 			params.Vars["quic"] = strconv.FormatBool(options.Quic)
+			params.Vars["EnableTunnelEndpointMetadata"] = "true"
 
 			updateClient := &driver.Update{
 				Node: "client", Version: "{{ .N }}",
@@ -165,24 +181,10 @@ func TestBasicCONNECT(t *testing.T) {
 				},
 			}
 
-			updateServer := &driver.Update{
-				Node: "server", Version: "{{ .N }}",
-				Clusters: []string{
-					driver.LoadTestData("testdata/cluster/internal_inbound.yaml.tmpl"),
-				},
-				Listeners: []string{
-					driver.LoadTestData("testdata/listener/terminate_connect.yaml.tmpl"),
-					driver.LoadTestData("testdata/listener/server.yaml.tmpl"),
-				},
-				Secrets: []string{
-					driver.LoadTestData("testdata/secret/server.yaml.tmpl"),
-				},
-			}
-
 			if err := (&driver.Scenario{
 				Steps: []driver.Step{
 					&driver.XDS{},
-					updateClient, updateServer,
+					updateClient, ConnectServer,
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 					&driver.Sleep{Duration: 1 * time.Second},
@@ -198,6 +200,48 @@ func TestBasicCONNECT(t *testing.T) {
 					// 		},
 					// 	},
 					// },
+				},
+			}).Run(params); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
+func TestPassthroughCONNECT(t *testing.T) {
+	for _, options := range ProtocolOptions {
+		t.Run(options.Name, func(t *testing.T) {
+			params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
+			params.Vars["ServerClusterName"] = "internal_outbound"
+			params.Vars["ServerInternalAddress"] = "internal_inbound"
+			params.Vars["quic"] = strconv.FormatBool(options.Quic)
+
+			updateClient := &driver.Update{
+				Node: "client", Version: "{{ .N }}",
+				Clusters: []string{
+					driver.LoadTestData("testdata/cluster/internal_outbound.yaml.tmpl"),
+					driver.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
+				},
+				Listeners: []string{
+					driver.LoadTestData("testdata/listener/client_passthrough.yaml.tmpl"),
+					driver.LoadTestData("testdata/listener/internal_outbound.yaml.tmpl"),
+				},
+				Secrets: []string{
+					driver.LoadTestData("testdata/secret/client.yaml.tmpl"),
+				},
+			}
+
+			req := driver.Get(params.Ports.ClientPort, "hello, world!")
+			req.Authority = fmt.Sprintf("127.0.0.1:%d", params.Ports.ServerPort)
+
+			if err := (&driver.Scenario{
+				Steps: []driver.Step{
+					&driver.XDS{},
+					updateClient, ConnectServer,
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+					&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+					&driver.Sleep{Duration: 1 * time.Second},
+					req,
 				},
 			}).Run(params); err != nil {
 				t.Fatal(err)

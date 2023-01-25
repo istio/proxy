@@ -42,9 +42,10 @@ envoy_cc_binary(
         "//extensions/stats:stats_plugin",
         "//source/extensions/filters/http/alpn:config_lib",
         "//source/extensions/filters/http/authn:filter_lib",
-        "//source/extensions/filters/http/connect_baggage",
+        "//source/extensions/filters/http/connect_authority",  # Experimental: ambient
+        "//source/extensions/filters/http/connect_baggage",  # Experimental: ambient
         "//source/extensions/filters/http/istio_stats",
-        "//source/extensions/filters/listener/set_internal_dst_address:filter_lib",
+        "//source/extensions/filters/listener/set_internal_dst_address:filter_lib",  # Experimental: ambient
         "//source/extensions/filters/network/forward_downstream_sni:config_lib",
         "//source/extensions/filters/network/istio_authn:config_lib",
         "//source/extensions/filters/network/metadata_exchange:config_lib",

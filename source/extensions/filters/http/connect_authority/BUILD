@@ -1,4 +1,4 @@
-# Copyright Istio Authors. All Rights Reserved.
+# Copyright 2018 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,33 +13,29 @@
 # limitations under the License.
 #
 ################################################################################
+#
 
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_extension",
-    "envoy_cc_library",
-    "envoy_cc_test",
     "envoy_extension_package",
     "envoy_proto_library",
 )
 
-licenses(["notice"])  # Apache 2
-
 envoy_extension_package()
 
-envoy_cc_library(
-    name = "filter_lib",
+envoy_cc_extension(
+    name = "connect_authority",
     srcs = ["filter.cc"],
     hdrs = ["filter.h"],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
     deps = [
         ":config_cc_proto",
-        "@envoy//envoy/network:filter_interface",
+        "//source/extensions/filters/listener/set_internal_dst_address:filter_lib",
         "@envoy//envoy/registry",
-        "@envoy//envoy/server:filter_config_interface",
-        "@envoy//source/common/network:filter_state_dst_address_lib",
-        "@envoy//source/common/network:utility_lib",
+        "@envoy//source/common/http:utility_lib",
+        "@envoy//source/extensions/filters/http/common:factory_base_lib",
+        "@envoy//source/extensions/filters/http/common:pass_through_filter_lib",
     ],
 )
 

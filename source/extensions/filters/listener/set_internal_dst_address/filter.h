@@ -15,9 +15,20 @@
 #pragma once
 
 #include "envoy/network/filter.h"
+#include "envoy/stream_info/filter_state.h"
 
 namespace Istio {
 namespace SetInternalDstAddress {
+
+const absl::string_view FilterStateKey = "istio.set_internal_dst_address";
+
+struct Authority : public Envoy::StreamInfo::FilterState::Object {
+  Authority(absl::string_view value) : value_(value) {}
+  absl::optional<std::string> serializeAsString() const override {
+    return value_;
+  }
+  const std::string value_;
+};
 
 class Filter : public Envoy::Network::ListenerFilter,
                public Envoy::Logger::Loggable<Envoy::Logger::Id::filter> {
