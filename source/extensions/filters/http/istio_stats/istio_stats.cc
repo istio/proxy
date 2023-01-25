@@ -292,12 +292,25 @@ using google::api::expr::runtime::CelValue;
 // This is not the "hot path" of the metrics system and thus, fairly
 // unoptimized.
 struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
-                         public google::api::expr::runtime::BaseActivation {
+                         public Filters::Common::Expr::StreamActivation {
   MetricOverrides(ContextSharedPtr& context, Stats::SymbolTable& symbol_table)
       : context_(context), pool_(symbol_table) {}
   ContextSharedPtr context_;
   Stats::StatNameDynamicPool pool_;
 
+  enum class MetricType {
+    Counter,
+    Gauge,
+    Histogram,
+  };
+  struct CustomMetric {
+    Stats::StatName name_;
+    uint32_t expr_;
+    MetricType type_;
+    explicit CustomMetric(Stats::StatName name, uint32_t expr, MetricType type)
+        : name_(name), expr_(expr), type_(type) {}
+  };
+  absl::flat_hash_map<std::string, CustomMetric> custom_metrics_;
   // Initial transformation: metrics dropped.
   absl::flat_hash_set<Stats::StatName> drop_;
   // Second transformation: tags changed.
@@ -308,81 +321,52 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
   using TagAdditions = std::vector<std::pair<Stats::StatName, uint32_t>>;
   absl::flat_hash_map<Stats::StatName, TagAdditions> tag_additions_;
 
-  const StreamInfo::StreamInfo* info_;
+  void evaluate(
+      Stats::StatNameDynamicPool& pool, const StreamInfo::StreamInfo& info,
+      const Http::RequestHeaderMap* request_headers,
+      const Http::ResponseHeaderMap* response_headers,
+      const Http::ResponseTrailerMap* response_trailers,
+      std::vector<std::pair<Stats::StatName, uint64_t>>& expr_values) {
+    activation_info_ = &info;
+    activation_request_headers_ = request_headers;
+    activation_response_headers_ = response_headers;
+    activation_response_trailers_ = response_trailers;
+    expr_values.reserve(compiled_exprs_.size());
+    for (size_t id = 0; id < compiled_exprs_.size(); id++) {
+      Protobuf::Arena arena;
+      auto eval_status = compiled_exprs_[id].first->Evaluate(*this, &arena);
+      if (!eval_status.ok() || eval_status.value().IsError()) {
+        expr_values.push_back(std::make_pair(context_->unknown_, 0));
+      } else {
+        const auto string_value =
+            Filters::Common::Expr::print(eval_status.value());
+        if (compiled_exprs_[id].second) {
+          uint64_t amount = 0;
+          if (!absl::SimpleAtoi(string_value, &amount)) {
+            ENVOY_LOG(trace, "Failed to get metric value: {}", string_value);
+          }
+          expr_values.push_back(std::make_pair(Stats::StatName(), amount));
+        } else {
+          expr_values.push_back(std::make_pair(pool.add(string_value), 0));
+        }
+      }
+    }
+    resetActivation();
+  }
+
   absl::optional<CelValue> FindValue(absl::string_view name,
                                      Protobuf::Arena* arena) const override {
-    if (name == Filters::Common::Expr::Request) {
-      if (info_) {
-        return CelValue::CreateMap(
-            Protobuf::Arena::Create<Filters::Common::Expr::RequestWrapper>(
-                arena, *arena, nullptr, *info_));
-      }
-    } else if (name == Filters::Common::Expr::Connection) {
-      if (info_) {
-        return CelValue::CreateMap(
-            Protobuf::Arena::Create<Filters::Common::Expr::ConnectionWrapper>(
-                arena, *info_));
-      }
-    } else if (name == Filters::Common::Expr::Source) {
-      if (info_) {
-        return CelValue::CreateMap(
-            Protobuf::Arena::Create<Filters::Common::Expr::PeerWrapper>(
-                arena, *info_, false));
-      }
-    } else if (name == Filters::Common::Expr::Destination) {
-      if (info_) {
-        return CelValue::CreateMap(
-            Protobuf::Arena::Create<Filters::Common::Expr::PeerWrapper>(
-                arena, *info_, true));
-      }
-    } else if (name == Filters::Common::Expr::Upstream) {
-      if (info_) {
-        return CelValue::CreateMap(
-            Protobuf::Arena::Create<Filters::Common::Expr::UpstreamWrapper>(
-                arena, *info_));
-      }
-    } else if (name == Filters::Common::Expr::Metadata) {
-      if (info_) {
-        return Filters::Common::Expr::CelProtoWrapper::CreateMessage(
-            &info_->dynamicMetadata(), arena);
-      }
-    } else if (name == Filters::Common::Expr::FilterState) {
-      if (info_) {
-        return Protobuf::Arena::Create<
-                   Filters::Common::Expr::FilterStateWrapper>(
-                   arena, info_->filterState())
-            ->Produce(arena);
-      }
-    } else if (name == "node") {
+    auto obj = StreamActivation::FindValue(name, arena);
+    if (obj) {
+      return obj;
+    }
+    if (name == "node") {
       return Filters::Common::Expr::CelProtoWrapper::CreateMessage(
           &context_->node_, arena);
-    } else if (name == "route_name") {
-      if (info_) {
-        return Filters::Common::Expr::CelValue::CreateString(
-            &info_->getRouteName());
-      }
-    } else if (name == "cluster_name") {
-      if (info_) {
-        const auto cluster_info = info_->upstreamClusterInfo();
-        if (cluster_info && cluster_info.value()) {
-          return Filters::Common::Expr::CelValue::CreateString(
-              &cluster_info.value()->name());
-        }
-      }
-      return {};
-    } else if (name == "cluster_metadata") {
-      if (info_) {
-        const auto cluster_info = info_->upstreamClusterInfo();
-        if (cluster_info && cluster_info.value()) {
-          return Filters::Common::Expr::CelProtoWrapper::CreateMessage(
-              &cluster_info.value()->metadata(), arena);
-        }
-      }
-      return {};
     }
-    if (info_) {
+    if (activation_info_) {
       const auto* obj =
-          info_->filterState()
+          activation_info_->filterState()
               .getDataReadOnly<
                   Envoy::Extensions::Filters::Common::Expr::CelState>(
                   absl::StrCat("wasm.", name));
@@ -392,26 +376,10 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
     }
     return {};
   }
-  std::vector<const google::api::expr::runtime::CelFunction*>
-  FindFunctionOverloads(absl::string_view) const override {
-    return {};
-  }
-  Stats::StatName evaluate(const StreamInfo::StreamInfo& info, uint32_t id,
-                           Stats::StatNameDynamicPool& pool) {
-    Protobuf::Arena arena;
-    info_ = &info;
-    auto eval_status = compiled_exprs_[id]->Evaluate(*this, &arena);
-    info_ = nullptr;
-    if (!eval_status.ok() || eval_status.value().IsError()) {
-      return context_->unknown_;
-    }
-    return pool.add(Filters::Common::Expr::print(eval_status.value()));
-  }
 
-  Stats::StatNameTagVector overrideTags(Stats::StatName metric,
-                                        const Stats::StatNameTagVector& tags,
-                                        const StreamInfo::StreamInfo& info,
-                                        Stats::StatNameDynamicPool& pool) {
+  Stats::StatNameTagVector overrideTags(
+      Stats::StatName metric, const Stats::StatNameTagVector& tags,
+      const std::vector<std::pair<Stats::StatName, uint64_t>>& expr_values) {
     Stats::StatNameTagVector out;
     out.reserve(tags.size());
     const auto& tag_overrides_it = tag_overrides_.find(metric);
@@ -422,7 +390,7 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
         const auto& it = tag_overrides_it->second.find(key);
         if (it != tag_overrides_it->second.end()) {
           if (it->second.has_value()) {
-            out.push_back({key, evaluate(info, it->second.value(), pool)});
+            out.push_back({key, expr_values[it->second.value()].first});
           } else {
             // Skip dropped tags.
           }
@@ -433,12 +401,13 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
     const auto& tag_additions_it = tag_additions_.find(metric);
     if (tag_additions_it != tag_additions_.end()) {
       for (const auto& [tag, id] : tag_additions_it->second) {
-        out.push_back({tag, evaluate(info, id, pool)});
+        out.push_back({tag, expr_values[id].first});
       }
     }
     return out;
   }
-  absl::optional<uint32_t> getOrCreateExpression(const std::string& expr) {
+  absl::optional<uint32_t> getOrCreateExpression(const std::string& expr,
+                                                 bool int_expr) {
     const auto& it = expression_ids_.find(expr);
     if (it != expression_ids_.end()) {
       return {it->second};
@@ -462,15 +431,17 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
     }
     parsed_exprs_.push_back(parse_status.value().expr());
     compiled_exprs_.push_back(
-        Extensions::Filters::Common::Expr::createExpression(
-            *expr_builder_, parsed_exprs_.back()));
+        std::make_pair(Extensions::Filters::Common::Expr::createExpression(
+                           *expr_builder_, parsed_exprs_.back()),
+                       int_expr));
     uint32_t id = compiled_exprs_.size() - 1;
     expression_ids_.emplace(expr, id);
     return {id};
   }
   Filters::Common::Expr::BuilderPtr expr_builder_;
   std::vector<google::api::expr::v1alpha1::Expr> parsed_exprs_;
-  std::vector<Filters::Common::Expr::ExpressionPtr> compiled_exprs_;
+  std::vector<std::pair<Filters::Common::Expr::ExpressionPtr, bool>>
+      compiled_exprs_;
   absl::flat_hash_map<std::string, uint32_t> expression_ids_;
 };
 
@@ -503,6 +474,37 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         proto_config.definitions_size() > 0) {
       metric_overrides_ =
           std::make_unique<MetricOverrides>(context_, scope_.symbolTable());
+      for (const auto& definition : proto_config.definitions()) {
+        const auto& it = context_->all_metrics_.find(definition.name());
+        if (it != context_->all_metrics_.end()) {
+          ENVOY_LOG(info, "Re-defining standard metric not allowed:: {}",
+                    definition.name());
+          continue;
+        }
+        auto id =
+            metric_overrides_->getOrCreateExpression(definition.value(), true);
+        if (!id.has_value()) {
+          ENVOY_LOG(info, "Failed to parse metric value expression: {}",
+                    definition.value());
+          continue;
+        }
+        auto metric_type = MetricOverrides::MetricType::Counter;
+        switch (definition.type()) {
+          case stats::MetricType::GAUGE:
+            metric_type = MetricOverrides::MetricType::Gauge;
+            break;
+          case stats::MetricType::HISTOGRAM:
+            metric_type = MetricOverrides::MetricType::Histogram;
+            break;
+          default:
+            break;
+        }
+        metric_overrides_->custom_metrics_.try_emplace(
+            definition.name(),
+            metric_overrides_->pool_.add(
+                absl::StrCat("istio_", definition.name())),
+            id.value(), metric_type);
+      }
       for (const auto& metric : proto_config.metrics()) {
         if (metric.drop()) {
           const auto& it = context_->all_metrics_.find(metric.name());
@@ -537,7 +539,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         std::sort(tags.begin(), tags.end());
         for (const auto& tag : tags) {
           const std::string& expr = metric.dimensions().at(tag);
-          auto id = metric_overrides_->getOrCreateExpression(expr);
+          auto id = metric_overrides_->getOrCreateExpression(expr, false);
           if (!id.has_value()) {
             ENVOY_LOG(info, "Failed to parse expression: {}", expr);
           }
@@ -546,70 +548,151 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
             if (!id.has_value()) {
               continue;
             }
+            const auto tag_name = metric_overrides_->pool_.add(tag);
             if (!metric.name().empty()) {
               const auto& it = context_->all_metrics_.find(metric.name());
               if (it != context_->all_metrics_.end()) {
                 metric_overrides_->tag_additions_[it->second].push_back(
-                    {metric_overrides_->pool_.add(tag), id.value()});
+                    {tag_name, id.value()});
               }
-            } else
+              const auto& custom_it =
+                  metric_overrides_->custom_metrics_.find(metric.name());
+              if (custom_it != metric_overrides_->custom_metrics_.end()) {
+                metric_overrides_->tag_additions_[custom_it->second.name_]
+                    .push_back({tag_name, id.value()});
+              }
+            } else {
               for (const auto& [_, metric] : context_->all_metrics_) {
                 metric_overrides_->tag_additions_[metric].push_back(
-                    {metric_overrides_->pool_.add(tag), id.value()});
+                    {tag_name, id.value()});
               }
+              for (const auto& [_, metric] :
+                   metric_overrides_->custom_metrics_) {
+                metric_overrides_->tag_additions_[metric.name_].push_back(
+                    {tag_name, id.value()});
+              }
+            }
           } else {
+            const auto tag_name = tag_it->second;
             if (!metric.name().empty()) {
               const auto& it = context_->all_metrics_.find(metric.name());
               if (it != context_->all_metrics_.end()) {
-                metric_overrides_->tag_overrides_[it->second][tag_it->second] =
-                    id;
+                metric_overrides_->tag_overrides_[it->second][tag_name] = id;
               }
-            } else
+              const auto& custom_it =
+                  metric_overrides_->custom_metrics_.find(metric.name());
+              if (custom_it != metric_overrides_->custom_metrics_.end()) {
+                metric_overrides_->tag_additions_[custom_it->second.name_]
+                    .push_back({tag_name, id.value()});
+              }
+            } else {
               for (const auto& [_, metric] : context_->all_metrics_) {
-                metric_overrides_->tag_overrides_[metric][tag_it->second] = id;
+                metric_overrides_->tag_overrides_[metric][tag_name] = id;
               }
+              for (const auto& [_, metric] :
+                   metric_overrides_->custom_metrics_) {
+                metric_overrides_->tag_additions_[metric.name_].push_back(
+                    {tag_name, id.value()});
+              }
+            }
           }
         }
       }
     }
   }
 
-  void addCounter(Stats::StatName metric, const Stats::StatNameTagVector& tags,
-                  const StreamInfo::StreamInfo& info,
-                  Stats::StatNameDynamicPool& pool, uint64_t amount = 1) {
-    if (metric_overrides_) {
-      if (metric_overrides_->drop_.contains(metric)) {
-        return;
+  // RAII for stream context propagation.
+  struct StreamOverrides {
+    StreamOverrides(Config& parent, Stats::StatNameDynamicPool& pool,
+                    const StreamInfo::StreamInfo& info,
+                    const Http::RequestHeaderMap* request_headers = nullptr,
+                    const Http::ResponseHeaderMap* response_headers = nullptr,
+                    const Http::ResponseTrailerMap* response_trailers = nullptr)
+        : parent_(parent) {
+      if (parent_.metric_overrides_) {
+        parent_.metric_overrides_->evaluate(pool, info, request_headers,
+                                            response_headers, response_trailers,
+                                            expr_values_);
       }
-      auto new_tags = metric_overrides_->overrideTags(metric, tags, info, pool);
-      Stats::Utility::counterFromStatNames(
-          scope_, {context_->stat_namespace_, metric}, new_tags)
-          .add(amount);
-      return;
     }
-    Stats::Utility::counterFromStatNames(
-        scope_, {context_->stat_namespace_, metric}, tags)
-        .add(amount);
-  }
 
-  void recordHistogram(Stats::StatName metric, Stats::Histogram::Unit unit,
-                       const Stats::StatNameTagVector& tags,
-                       const StreamInfo::StreamInfo& info,
-                       Stats::StatNameDynamicPool& pool, uint64_t value) {
-    if (metric_overrides_) {
-      if (metric_overrides_->drop_.contains(metric)) {
+    void addCounter(Stats::StatName metric,
+                    const Stats::StatNameTagVector& tags, uint64_t amount = 1) {
+      if (parent_.metric_overrides_) {
+        if (parent_.metric_overrides_->drop_.contains(metric)) {
+          return;
+        }
+        auto new_tags =
+            parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
+        Stats::Utility::counterFromStatNames(
+            parent_.scope_, {parent_.context_->stat_namespace_, metric},
+            new_tags)
+            .add(amount);
         return;
       }
-      auto new_tags = metric_overrides_->overrideTags(metric, tags, info, pool);
-      Stats::Utility::histogramFromStatNames(
-          scope_, {context_->stat_namespace_, metric}, unit, new_tags)
-          .recordValue(value);
-      return;
+      Stats::Utility::counterFromStatNames(
+          parent_.scope_, {parent_.context_->stat_namespace_, metric}, tags)
+          .add(amount);
     }
-    Stats::Utility::histogramFromStatNames(
-        scope_, {context_->stat_namespace_, metric}, unit, tags)
-        .recordValue(value);
-  }
+
+    void recordHistogram(Stats::StatName metric, Stats::Histogram::Unit unit,
+                         const Stats::StatNameTagVector& tags, uint64_t value) {
+      if (parent_.metric_overrides_) {
+        if (parent_.metric_overrides_->drop_.contains(metric)) {
+          return;
+        }
+        auto new_tags =
+            parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
+        Stats::Utility::histogramFromStatNames(
+            parent_.scope_, {parent_.context_->stat_namespace_, metric}, unit,
+            new_tags)
+            .recordValue(value);
+        return;
+      }
+      Stats::Utility::histogramFromStatNames(
+          parent_.scope_, {parent_.context_->stat_namespace_, metric}, unit,
+          tags)
+          .recordValue(value);
+    }
+
+    void recordCustomMetrics() {
+      if (parent_.metric_overrides_) {
+        for (const auto& [_, metric] :
+             parent_.metric_overrides_->custom_metrics_) {
+          const auto tags = parent_.metric_overrides_->overrideTags(
+              metric.name_, {}, expr_values_);
+          uint64_t amount = expr_values_[metric.expr_].second;
+          switch (metric.type_) {
+            case MetricOverrides::MetricType::Counter:
+              Stats::Utility::counterFromStatNames(
+                  parent_.scope_,
+                  {parent_.context_->stat_namespace_, metric.name_}, tags)
+                  .add(amount);
+              break;
+            case MetricOverrides::MetricType::Histogram:
+              Stats::Utility::histogramFromStatNames(
+                  parent_.scope_,
+                  {parent_.context_->stat_namespace_, metric.name_},
+                  Stats::Histogram::Unit::Bytes, tags)
+                  .recordValue(amount);
+              break;
+            case MetricOverrides::MetricType::Gauge:
+              Stats::Utility::gaugeFromStatNames(
+                  parent_.scope_,
+                  {parent_.context_->stat_namespace_, metric.name_},
+                  Stats::Gauge::ImportMode::Accumulate, tags)
+                  .set(amount);
+              break;
+            default:
+              break;
+          }
+        }
+      }
+    }
+
+    Config& parent_;
+    std::vector<std::pair<Stats::StatName, uint64_t>> expr_values_;
+  };
 
   void recordVersion() {
     Stats::StatNameTagVector tags;
@@ -659,14 +742,13 @@ class IstioStatsFilter : public Http::PassThroughFilter,
   ~IstioStatsFilter() { ASSERT(report_timer_ == nullptr); }
 
   // AccessLog::Instance
-  void log(const Http::RequestHeaderMap*,
+  void log(const Http::RequestHeaderMap* request_headers,
            const Http::ResponseHeaderMap* response_headers,
            const Http::ResponseTrailerMap* response_trailers,
            const StreamInfo::StreamInfo& info) override {
     populatePeerInfo(info, info.filterState());
-    const auto* headers = info.getRequestHeaders();
     const bool is_grpc =
-        headers && Grpc::Common::isGrpcRequestHeaders(*headers);
+        request_headers && Grpc::Common::isGrpcRequestHeaders(*request_headers);
     if (is_grpc) {
       tags_.push_back({context_.request_protocol_, context_.grpc_});
     } else {
@@ -693,23 +775,26 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     }
     populateFlagsAndConnectionSecurity(info);
 
-    config_->addCounter(context_.requests_total_, tags_, info, pool_);
+    Config::StreamOverrides stream(*config_, pool_, info, request_headers,
+                                   response_headers, response_trailers);
+    stream.addCounter(context_.requests_total_, tags_);
     auto duration = info.requestComplete();
     if (duration.has_value()) {
-      config_->recordHistogram(
+      stream.recordHistogram(
           context_.request_duration_milliseconds_,
-          Stats::Histogram::Unit::Milliseconds, tags_, info, pool_,
+          Stats::Histogram::Unit::Milliseconds, tags_,
           absl::FromChrono(duration.value()) / absl::Milliseconds(1));
     }
     auto meter = info.getDownstreamBytesMeter();
     if (meter) {
-      config_->recordHistogram(context_.request_bytes_,
-                               Stats::Histogram::Unit::Bytes, tags_, info,
-                               pool_, meter->wireBytesReceived());
-      config_->recordHistogram(context_.response_bytes_,
-                               Stats::Histogram::Unit::Bytes, tags_, info,
-                               pool_, meter->wireBytesSent());
+      stream.recordHistogram(context_.request_bytes_,
+                             Stats::Histogram::Unit::Bytes, tags_,
+                             meter->wireBytesReceived());
+      stream.recordHistogram(context_.response_bytes_,
+                             Stats::Histogram::Unit::Bytes, tags_,
+                             meter->wireBytesSent());
     }
+    stream.recordCustomMetrics();
   }
 
   // Network::ReadFilter
@@ -762,6 +847,7 @@ class IstioStatsFilter : public Http::PassThroughFilter,
             ? *upstream_info->upstreamFilterState()
             : info.filterState();
 
+    Config::StreamOverrides stream(*config_, pool_, info);
     if (!network_peer_read_) {
       network_peer_read_ = peerInfoRead(config_->reporter(), filter_state);
       // Report connection open once peer info is read or connection is closed.
@@ -769,25 +855,23 @@ class IstioStatsFilter : public Http::PassThroughFilter,
         populatePeerInfo(info, filter_state);
         tags_.push_back({context_.request_protocol_, context_.tcp_});
         populateFlagsAndConnectionSecurity(info);
-        config_->addCounter(context_.tcp_connections_opened_total_, tags_, info,
-                            pool_);
+        stream.addCounter(context_.tcp_connections_opened_total_, tags_);
       }
     }
     if (network_peer_read_ || end_stream) {
       auto meter = info.getDownstreamBytesMeter();
       if (meter) {
-        config_->addCounter(context_.tcp_sent_bytes_total_, tags_, info, pool_,
-                            meter->wireBytesSent() - bytes_sent_);
+        stream.addCounter(context_.tcp_sent_bytes_total_, tags_,
+                          meter->wireBytesSent() - bytes_sent_);
         bytes_sent_ = meter->wireBytesSent();
-        config_->addCounter(context_.tcp_received_bytes_total_, tags_, info,
-                            pool_,
-                            meter->wireBytesReceived() - bytes_received_);
+        stream.addCounter(context_.tcp_received_bytes_total_, tags_,
+                          meter->wireBytesReceived() - bytes_received_);
         bytes_received_ = meter->wireBytesReceived();
       }
     }
     if (end_stream) {
-      config_->addCounter(context_.tcp_connections_closed_total_, tags_, info,
-                          pool_);
+      stream.addCounter(context_.tcp_connections_closed_total_, tags_);
+      stream.recordCustomMetrics();
     }
   }
   void onReportTimer() {
