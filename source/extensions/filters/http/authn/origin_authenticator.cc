@@ -30,25 +30,19 @@ namespace Http {
 namespace Istio {
 namespace AuthN {
 
-Http::RegisterCustomInlineHeader<
-    Http::CustomInlineHeaderRegistry::Type::RequestHeaders>
-    access_control_request_method_handle(
-        Http::CustomHeaders::get().AccessControlRequestMethod);
-Http::RegisterCustomInlineHeader<
-    Http::CustomInlineHeaderRegistry::Type::RequestHeaders>
+Http::RegisterCustomInlineHeader<Http::CustomInlineHeaderRegistry::Type::RequestHeaders>
+    access_control_request_method_handle(Http::CustomHeaders::get().AccessControlRequestMethod);
+Http::RegisterCustomInlineHeader<Http::CustomInlineHeaderRegistry::Type::RequestHeaders>
     origin_handle(Http::CustomHeaders::get().Origin);
 
 bool isCORSPreflightRequest(const Http::RequestHeaderMap& headers) {
   return headers.Method() &&
-         headers.Method()->value().getStringView() ==
-             Http::Headers::get().MethodValues.Options &&
+         headers.Method()->value().getStringView() == Http::Headers::get().MethodValues.Options &&
          !headers.getInlineValue(origin_handle.handle()).empty() &&
-         !headers.getInlineValue(access_control_request_method_handle.handle())
-              .empty();
+         !headers.getInlineValue(access_control_request_method_handle.handle()).empty();
 }
 
-OriginAuthenticator::OriginAuthenticator(FilterContext* filter_context,
-                                         const iaapi::Policy& policy)
+OriginAuthenticator::OriginAuthenticator(FilterContext* filter_context, const iaapi::Policy& policy)
     : AuthenticatorBase(filter_context), policy_(policy) {}
 
 bool OriginAuthenticator::run(Payload* payload) {
@@ -84,9 +78,8 @@ bool OriginAuthenticator::run(Payload* payload) {
     }
     ENVOY_LOG(trace, "Got request path {}", path);
   } else {
-    ENVOY_LOG(error,
-              "Failed to get request path, JWT will always be used for "
-              "validation");
+    ENVOY_LOG(error, "Failed to get request path, JWT will always be used for "
+                     "validation");
   }
 
   bool triggered = false;
@@ -95,8 +88,7 @@ bool OriginAuthenticator::run(Payload* payload) {
     const auto& jwt = method.jwt();
 
     if (AuthnUtils::ShouldValidateJwtPerPath(path, jwt)) {
-      ENVOY_LOG(debug, "Validating request path {} for jwt {}", path,
-                jwt.DebugString());
+      ENVOY_LOG(debug, "Validating request path {} for jwt {}", path, jwt.DebugString());
       // set triggered to true if any of the jwt trigger rule matched.
       triggered = true;
       if (validateJwt(jwt, payload)) {
@@ -119,7 +111,7 @@ bool OriginAuthenticator::run(Payload* payload) {
   return false;
 }
 
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

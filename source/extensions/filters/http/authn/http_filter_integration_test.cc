@@ -28,8 +28,7 @@ using istio::authn::Result;
 namespace Envoy {
 namespace {
 
-static const Envoy::Http::LowerCaseString kSecIstioAuthnPayloadHeaderKey(
-    "sec-istio-authn-payload");
+static const Envoy::Http::LowerCaseString kSecIstioAuthnPayloadHeaderKey("sec-istio-authn-payload");
 
 // Default request for testing.
 Http::TestRequestHeaderMapImpl SimpleRequestHeaders() {
@@ -57,10 +56,9 @@ static const char kAuthnFilterWithJwt[] = R"(
 
 // Payload data to inject. Note the iss claim intentionally set different from
 // kJwtIssuer.
-static const char kMockJwtPayload[] =
-    "{\"iss\":\"https://example.com\","
-    "\"sub\":\"test@example.com\",\"exp\":2001001001,"
-    "\"aud\":\"example_service\"}";
+static const char kMockJwtPayload[] = "{\"iss\":\"https://example.com\","
+                                      "\"sub\":\"test@example.com\",\"exp\":2001001001,"
+                                      "\"aud\":\"example_service\"}";
 // Returns a simple header-to-metadata filter config that can be used to inject
 // data into request info dynamic metadata for testing.
 std::string MakeHeaderToMetadataConfig() {
@@ -79,29 +77,25 @@ std::string MakeHeaderToMetadataConfig() {
             value: "%s"
             type: STRING)",
       Extensions::HttpFilters::HttpFilterNames::get().HeaderToMetadata,
-      Utils::IstioFilterName::kJwt, kJwtIssuer,
-      StringUtil::escape(kMockJwtPayload));
+      Utils::IstioFilterName::kJwt, kJwtIssuer, StringUtil::escape(kMockJwtPayload));
 }
 
 typedef HttpProtocolIntegrationTest AuthenticationFilterIntegrationTest;
 
-INSTANTIATE_TEST_SUITE_P(
-    Protocols, AuthenticationFilterIntegrationTest,
-    testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
-    HttpProtocolIntegrationTest::protocolTestParamsToString);
+INSTANTIATE_TEST_SUITE_P(Protocols, AuthenticationFilterIntegrationTest,
+                         testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
+                         HttpProtocolIntegrationTest::protocolTestParamsToString);
 
 TEST_P(AuthenticationFilterIntegrationTest, EmptyPolicy) {
   config_helper_.addFilter("name: istio_authn");
   initialize();
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
   auto response = codec_client_->makeHeaderOnlyRequest(SimpleRequestHeaders());
   // Wait for request to upstream (backend)
   waitForNextUpstreamRequest();
 
   // Send backend response.
-  upstream_request_->encodeHeaders(
-      Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
+  upstream_request_->encodeHeaders(Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
 
   ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
@@ -122,8 +116,7 @@ TEST_P(AuthenticationFilterIntegrationTest, SourceMTlsFail) {
 
   // AuthN filter use MTls, but request doesn't have certificate, request
   // would be rejected.
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
   auto response = codec_client_->makeHeaderOnlyRequest(SimpleRequestHeaders());
 
   // Request is rejected, there will be no upstream request (thus no
@@ -141,8 +134,7 @@ TEST_P(AuthenticationFilterIntegrationTest, OriginJwtRequiredHeaderNoJwtFail) {
 
   // The AuthN filter requires JWT, but request doesn't have JWT, request
   // would be rejected.
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
   auto response = codec_client_->makeHeaderOnlyRequest(SimpleRequestHeaders());
 
   // Request is rejected, there will be no upstream request (thus no
@@ -159,15 +151,13 @@ TEST_P(AuthenticationFilterIntegrationTest, CheckValidJwtPassAuthentication) {
 
   // The AuthN filter requires JWT. The http request contains validated JWT and
   // the authentication should succeed.
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
   auto response = codec_client_->makeHeaderOnlyRequest(SimpleRequestHeaders());
 
   // Wait for request to upstream (backend)
   waitForNextUpstreamRequest();
   // Send backend response.
-  upstream_request_->encodeHeaders(
-      Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
+  upstream_request_->encodeHeaders(Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
 
   ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
@@ -180,8 +170,7 @@ TEST_P(AuthenticationFilterIntegrationTest, CORSPreflight) {
 
   // The AuthN filter requires JWT but should bypass CORS preflight request even
   // it doesn't have JWT token.
-  codec_client_ =
-      makeHttpConnection(makeClientConnection((lookupPort("http"))));
+  codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
   auto headers = Http::TestRequestHeaderMapImpl{
       {":method", "OPTIONS"},
       {":path", "/"},
@@ -196,13 +185,12 @@ TEST_P(AuthenticationFilterIntegrationTest, CORSPreflight) {
   // Wait for request to upstream (backend)
   waitForNextUpstreamRequest();
   // Send backend response.
-  upstream_request_->encodeHeaders(
-      Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
+  upstream_request_->encodeHeaders(Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
 
   ASSERT_TRUE(response->waitForEndStream());
   EXPECT_TRUE(response->complete());
   EXPECT_EQ("200", response->headers().Status()->value().getStringView());
 }
 
-}  // namespace
-}  // namespace Envoy
+} // namespace
+} // namespace Envoy

@@ -22,10 +22,10 @@ namespace Stackdriver {
 
 NullPluginRegistry* context_registry_{};
 
-RegisterNullVmPluginFactory register_stackdriver_filter(
-    "envoy.wasm.null.stackdriver",
-    []() { return std::make_unique<NullPlugin>(context_registry_); });
+RegisterNullVmPluginFactory register_stackdriver_filter("envoy.wasm.null.stackdriver", []() {
+  return std::make_unique<NullPlugin>(context_registry_);
+});
 
-}  // namespace Stackdriver
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace Stackdriver
+} // namespace null_plugin
+} // namespace proxy_wasm

@@ -42,7 +42,7 @@ namespace AuthN {
 namespace {
 
 class MockPeerAuthenticator : public PeerAuthenticator {
- public:
+public:
   MockPeerAuthenticator(FilterContext* filter_context,
                         const istio::authentication::v1alpha1::Policy& policy)
       : PeerAuthenticator(filter_context, policy) {}
@@ -52,34 +52,31 @@ class MockPeerAuthenticator : public PeerAuthenticator {
 };
 
 class PeerAuthenticatorTest : public testing::Test {
- public:
+public:
   PeerAuthenticatorTest() {}
   virtual ~PeerAuthenticatorTest() {}
 
   void createAuthenticator() {
-    authenticator_.reset(
-        new StrictMock<MockPeerAuthenticator>(&filter_context_, policy_));
+    authenticator_.reset(new StrictMock<MockPeerAuthenticator>(&filter_context_, policy_));
   }
 
   void SetUp() override { payload_ = new Payload(); }
 
   void TearDown() override { delete (payload_); }
 
- protected:
+protected:
   std::unique_ptr<StrictMock<MockPeerAuthenticator>> authenticator_;
   Envoy::Http::TestRequestHeaderMapImpl header_;
   FilterContext filter_context_{
       envoy::config::core::v3::Metadata::default_instance(), header_, nullptr,
-      istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::
-          default_instance()};
+      istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::default_instance()};
 
   iaapi::Policy policy_;
   Payload* payload_;
 
   Payload x509_payload_{TestUtilities::CreateX509Payload("foo")};
   Payload jwt_payload_{TestUtilities::CreateJwtPayload("foo", "istio.io")};
-  Payload jwt_extra_payload_{
-      TestUtilities::CreateJwtPayload("bar", "istio.io")};
+  Payload jwt_extra_payload_{TestUtilities::CreateJwtPayload("bar", "istio.io")};
 };
 
 TEST_F(PeerAuthenticatorTest, EmptyPolicy) {
@@ -104,9 +101,8 @@ TEST_F(PeerAuthenticatorTest, MTlsOnlyPass) {
       .WillOnce(DoAll(SetArgPointee<1>(x509_payload_), Return(true)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(
-      TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
-      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
+                                      filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, TlsOnlyPass) {
@@ -127,9 +123,8 @@ TEST_F(PeerAuthenticatorTest, TlsOnlyPass) {
   authenticator_->run(payload_);
   // When client certificate is present on TLS, authenticated attribute
   // should be extracted.
-  EXPECT_TRUE(TestUtility::protoEqual(
-      TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
-      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
+                                      filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, MTlsOnlyFail) {
@@ -187,9 +182,8 @@ TEST_F(PeerAuthenticatorTest, JwtOnlyPass) {
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<1>(x509_payload_), Return(true)));
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(
-      TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
-      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
+                                      filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, JwtOnlyFail) {
@@ -239,9 +233,8 @@ TEST_F(PeerAuthenticatorTest, Multiple) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_payload_), Return(true)));
 
   authenticator_->run(payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(
-      TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
-      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
+                                      filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, TlsFailAndJwtSucceed) {
@@ -272,9 +265,8 @@ TEST_F(PeerAuthenticatorTest, TlsFailAndJwtSucceed) {
   authenticator_->run(payload_);
   // validateX509 fail and validateJwt succeeds,
   // result should be "foo", as expected as in jwt_payload.
-  EXPECT_TRUE(TestUtility::protoEqual(
-      TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
-      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(R"(peer_user: "foo")"),
+                                      filter_context_.authenticationResult()));
 }
 
 TEST_F(PeerAuthenticatorTest, MultipleAllFail) {
@@ -301,8 +293,7 @@ TEST_F(PeerAuthenticatorTest, MultipleAllFail) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(2)
-      .WillRepeatedly(
-          DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
+      .WillRepeatedly(DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
   authenticator_->run(payload_);
   EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
                                       filter_context_.authenticationResult()));
@@ -332,16 +323,15 @@ TEST_F(PeerAuthenticatorTest, TlsFailJwtFail) {
       .WillOnce(DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
   EXPECT_CALL(*authenticator_, validateJwt(_, _))
       .Times(2)
-      .WillRepeatedly(
-          DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
+      .WillRepeatedly(DoAll(SetArgPointee<1>(jwt_extra_payload_), Return(false)));
   authenticator_->run(payload_);
   // validateX509 and validateJwt fail, result should be empty.
   EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString(""),
                                       filter_context_.authenticationResult()));
 }
 
-}  // namespace
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

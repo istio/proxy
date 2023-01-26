@@ -26,31 +26,28 @@ namespace Extensions {
 namespace HttpFilters {
 namespace IstioStats {
 
-class IstioStatsFilterConfigFactory
-    : public Common::FactoryBase<stats::PluginConfig> {
- public:
-  IstioStatsFilterConfigFactory()
-      : FactoryBase("envoy.filters.http.istio_stats") {}
+class IstioStatsFilterConfigFactory : public Common::FactoryBase<stats::PluginConfig> {
+public:
+  IstioStatsFilterConfigFactory() : FactoryBase("envoy.filters.http.istio_stats") {}
 
- private:
-  Http::FilterFactoryCb createFilterFactoryFromProtoTyped(
-      const stats::PluginConfig& proto_config, const std::string&,
-      Server::Configuration::FactoryContext&) override;
+private:
+  Http::FilterFactoryCb
+  createFilterFactoryFromProtoTyped(const stats::PluginConfig& proto_config, const std::string&,
+                                    Server::Configuration::FactoryContext&) override;
 };
 
 class IstioStatsNetworkFilterConfigFactory
     : public NetworkFilters::Common::FactoryBase<stats::PluginConfig> {
- public:
-  IstioStatsNetworkFilterConfigFactory()
-      : FactoryBase("envoy.filters.network.istio_stats") {}
+public:
+  IstioStatsNetworkFilterConfigFactory() : FactoryBase("envoy.filters.network.istio_stats") {}
 
- private:
+private:
   Network::FilterFactoryCb createFilterFactoryFromProtoTyped(
       const stats::PluginConfig& proto_config,
       Server::Configuration::FactoryContext& factory_context) override;
 };
 
-}  // namespace IstioStats
-}  // namespace HttpFilters
-}  // namespace Extensions
-}  // namespace Envoy
+} // namespace IstioStats
+} // namespace HttpFilters
+} // namespace Extensions
+} // namespace Envoy

@@ -39,8 +39,7 @@ namespace Log {
 
 ExporterImpl::ExporterImpl(
     RootContext* root_context,
-    const ::Extensions::Stackdriver::Common::StackdriverStubOption&
-        stub_option) {
+    const ::Extensions::Stackdriver::Common::StackdriverStubOption& stub_option) {
   context_ = root_context;
   auto success_counter = Common::newExportCallMetric("logging", true);
   auto failure_counter = Common::newExportCallMetric("logging", false);
@@ -59,8 +58,7 @@ ExporterImpl::ExporterImpl(
   failure_callback_ = [this, failure_counter](GrpcStatus status) {
     // TODO(bianpengyuan): add retry.
     incrementMetric(failure_counter, 1);
-    LOG_WARN("Stackdriver logging api call error: " +
-             std::to_string(static_cast<int>(status)) +
+    LOG_WARN("Stackdriver logging api call error: " + std::to_string(static_cast<int>(status)) +
              getStatus().second->toString());
     in_flight_export_call_ -= 1;
     if (in_flight_export_call_ < 0) {
@@ -85,16 +83,14 @@ ExporterImpl::ExporterImpl(
 }
 
 void ExporterImpl::exportLogs(
-    const std::vector<std::unique_ptr<
-        const google::logging::v2::WriteLogEntriesRequest>>& requests,
+    const std::vector<std::unique_ptr<const google::logging::v2::WriteLogEntriesRequest>>& requests,
     bool is_on_done) {
   is_on_done_ = is_on_done;
   HeaderStringPairs initial_metadata;
   for (const auto& req : requests) {
     auto result = context_->grpcSimpleCall(
-        grpc_service_string_, kGoogleLoggingService,
-        kGoogleWriteLogEntriesMethod, initial_metadata, *req,
-        kDefaultTimeoutMillisecond, success_callback_, failure_callback_);
+        grpc_service_string_, kGoogleLoggingService, kGoogleWriteLogEntriesMethod, initial_metadata,
+        *req, kDefaultTimeoutMillisecond, success_callback_, failure_callback_);
     if (result != WasmResult::Ok) {
       LOG_WARN("failed to make stackdriver logging export call");
       break;
@@ -103,11 +99,11 @@ void ExporterImpl::exportLogs(
   }
 }
 
-}  // namespace Log
-}  // namespace Stackdriver
-}  // namespace Extensions
+} // namespace Log
+} // namespace Stackdriver
+} // namespace Extensions
 
 #ifdef NULL_PLUGIN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

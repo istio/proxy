@@ -26,44 +26,38 @@ namespace Envoy {
 namespace Utils {
 
 // Extract HTTP headers into a string map
-void ExtractHeaders(const Http::HeaderMap& header_map,
-                    const std::set<std::string>& exclusives,
+void ExtractHeaders(const Http::HeaderMap& header_map, const std::set<std::string>& exclusives,
                     std::map<std::string, std::string>& headers);
 
 // Find the given headers from the header map and extract them out to the string
 // map.
-void FindHeaders(const Http::HeaderMap& header_map,
-                 const std::set<std::string>& inclusives,
+void FindHeaders(const Http::HeaderMap& header_map, const std::set<std::string>& inclusives,
                  std::map<std::string, std::string>& headers);
 
 // Get ip and port from Envoy ip.
 bool GetIpPort(const Network::Address::Ip* ip, std::string* str_ip, int* port);
 
 // Get destination.uid attribute value from metadata.
-bool GetDestinationUID(const envoy::config::core::v3::Metadata& metadata,
-                       std::string* uid);
+bool GetDestinationUID(const envoy::config::core::v3::Metadata& metadata, std::string* uid);
 
 // Get peer or local principal URI.
-bool GetPrincipal(const Network::Connection* connection, bool peer,
-                  std::string* principal);
+bool GetPrincipal(const Network::Connection* connection, bool peer, std::string* principal);
 
 // Get peer or local trust domain.
-bool GetTrustDomain(const Network::Connection* connection, bool peer,
-                    std::string* trust_domain);
+bool GetTrustDomain(const Network::Connection* connection, bool peer, std::string* trust_domain);
 
 // Returns true if connection is mutual TLS enabled.
 bool IsMutualTLS(const Network::Connection* connection);
 
 // Get requested server name, SNI in case of TLS
-bool GetRequestedServerName(const Network::Connection* connection,
-                            std::string* name);
+bool GetRequestedServerName(const Network::Connection* connection, std::string* name);
 
 // Parse JSON string into message.
-::google::protobuf::util::Status ParseJsonMessage(
-    const std::string& json, ::google::protobuf::Message* output);
+::google::protobuf::util::Status ParseJsonMessage(const std::string& json,
+                                                  ::google::protobuf::Message* output);
 
 // Get the namespace part of Istio certificate URI.
 absl::optional<absl::string_view> GetNamespace(absl::string_view principal);
 
-}  // namespace Utils
-}  // namespace Envoy
+} // namespace Utils
+} // namespace Envoy

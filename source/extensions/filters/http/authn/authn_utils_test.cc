@@ -133,8 +133,7 @@ TEST(AuthnUtilsTest, GetJwtPayloadFromHeaderTest) {
       &expected_payload));
   // The payload returned from ProcessJwtPayload() should be the same as
   // the expected.
-  bool ret =
-      AuthnUtils::ProcessJwtPayload(kSecIstioAuthUserinfoHeaderValue, &payload);
+  bool ret = AuthnUtils::ProcessJwtPayload(kSecIstioAuthUserinfoHeaderValue, &payload);
   EXPECT_TRUE(ret);
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
 }
@@ -192,14 +191,12 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudListTest) {
         }
       }
       raw_claims: ")" +
-          StringUtil::escape(kSecIstioAuthUserInfoHeaderWithAudValueList) +
-          R"(")",
+          StringUtil::escape(kSecIstioAuthUserInfoHeaderWithAudValueList) + R"(")",
       &expected_payload));
   // The payload returned from ProcessJwtPayload() should be the same as
   // the expected. When there is no aud,  the aud is not saved in the payload
   // and claims.
-  bool ret = AuthnUtils::ProcessJwtPayload(
-      kSecIstioAuthUserInfoHeaderWithAudValueList, &payload);
+  bool ret = AuthnUtils::ProcessJwtPayload(kSecIstioAuthUserInfoHeaderWithAudValueList, &payload);
   EXPECT_TRUE(ret);
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
 }
@@ -257,14 +254,12 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithAudArrayTest) {
         }
       }
       raw_claims: ")" +
-          StringUtil::escape(kSecIstioAuthUserInfoHeaderWithAudValueArray) +
-          R"(")",
+          StringUtil::escape(kSecIstioAuthUserInfoHeaderWithAudValueArray) + R"(")",
       &expected_payload));
   // The payload returned from ProcessJwtPayload() should be the same as
   // the expected. When the aud is a string array, the aud is not saved in the
   // claims.
-  bool ret = AuthnUtils::ProcessJwtPayload(
-      kSecIstioAuthUserInfoHeaderWithAudValueArray, &payload);
+  bool ret = AuthnUtils::ProcessJwtPayload(kSecIstioAuthUserInfoHeaderWithAudValueArray, &payload);
 
   EXPECT_TRUE(ret);
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
@@ -394,12 +389,10 @@ TEST(AuthnUtilsTest, ProcessJwtPayloadWithNestedClaimsTest) {
         }
       }
       raw_claims: ")" +
-          StringUtil::escape(kSecIstioAuthUserInfoHeaderWithNestedClaims) +
-          R"(")",
+          StringUtil::escape(kSecIstioAuthUserInfoHeaderWithNestedClaims) + R"(")",
       &expected_payload));
 
-  EXPECT_TRUE(AuthnUtils::ProcessJwtPayload(
-      kSecIstioAuthUserInfoHeaderWithNestedClaims, &payload));
+  EXPECT_TRUE(AuthnUtils::ProcessJwtPayload(kSecIstioAuthUserInfoHeaderWithNestedClaims, &payload));
   EXPECT_TRUE(MessageDifferencer::Equals(expected_payload, payload));
 }
 
@@ -498,8 +491,8 @@ TEST(AuthnUtilsTest, ShouldValidateJwtPerPathDefault) {
   EXPECT_TRUE(AuthnUtils::ShouldValidateJwtPerPath("/other", jwt));
 }
 
-}  // namespace
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

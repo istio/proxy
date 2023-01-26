@@ -24,13 +24,13 @@
 #ifndef NULL_PLUGIN
 #include "api/wasm/cpp/proxy_wasm_intrinsics.h"
 
-#else  // NULL_PLUGIN
+#else // NULL_PLUGIN
 
 #include "include/proxy-wasm/null_plugin.h"
 
 namespace proxy_wasm {
 namespace null_plugin {
-#endif  // NULL_PLUGIN
+#endif // NULL_PLUGIN
 
 // END WASM_PROLOG
 
@@ -55,8 +55,7 @@ TEST(IstioDimensions, Hash) {
   d6[source_app] = "app_source";
   d6[source_version] = "v2";
   IstioDimensions d7(count_standard_labels);
-  d7[request_protocol] = "grpc", d7[source_app] = "app_source",
-  d7[source_version] = "v2";
+  d7[request_protocol] = "grpc", d7[source_app] = "app_source", d7[source_version] = "v2";
   IstioDimensions d7_duplicate(count_standard_labels);
   d7_duplicate[request_protocol] = "grpc";
   d7_duplicate[source_app] = "app_source";
@@ -81,10 +80,10 @@ TEST(IstioDimensions, Hash) {
   EXPECT_EQ(hashes.size(), 8);
 }
 
-}  // namespace Stats
+} // namespace Stats
 
 // WASM_EPILOG
 #ifdef NULL_PLUGIN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

@@ -24,31 +24,31 @@
 namespace Wasm {
 namespace Common {
 
-#define STD_ISTIO_DIMENSIONS(FIELD_FUNC)     \
-  FIELD_FUNC(downstream_ip)                  \
-  FIELD_FUNC(reporter)                       \
-  FIELD_FUNC(source_workload)                \
-  FIELD_FUNC(source_workload_namespace)      \
-  FIELD_FUNC(source_principal)               \
-  FIELD_FUNC(source_app)                     \
-  FIELD_FUNC(source_version)                 \
-  FIELD_FUNC(source_canonical_service)       \
-  FIELD_FUNC(source_canonical_revision)      \
-  FIELD_FUNC(destination_workload)           \
-  FIELD_FUNC(destination_workload_namespace) \
-  FIELD_FUNC(destination_principal)          \
-  FIELD_FUNC(destination_app)                \
-  FIELD_FUNC(destination_version)            \
-  FIELD_FUNC(destination_service)            \
-  FIELD_FUNC(destination_service_name)       \
-  FIELD_FUNC(destination_service_namespace)  \
-  FIELD_FUNC(destination_canonical_service)  \
-  FIELD_FUNC(destination_canonical_revision) \
-  FIELD_FUNC(destination_port)               \
-  FIELD_FUNC(request_protocol)               \
-  FIELD_FUNC(response_code)                  \
-  FIELD_FUNC(grpc_response_status)           \
-  FIELD_FUNC(response_flags)                 \
+#define STD_ISTIO_DIMENSIONS(FIELD_FUNC)                                                           \
+  FIELD_FUNC(downstream_ip)                                                                        \
+  FIELD_FUNC(reporter)                                                                             \
+  FIELD_FUNC(source_workload)                                                                      \
+  FIELD_FUNC(source_workload_namespace)                                                            \
+  FIELD_FUNC(source_principal)                                                                     \
+  FIELD_FUNC(source_app)                                                                           \
+  FIELD_FUNC(source_version)                                                                       \
+  FIELD_FUNC(source_canonical_service)                                                             \
+  FIELD_FUNC(source_canonical_revision)                                                            \
+  FIELD_FUNC(destination_workload)                                                                 \
+  FIELD_FUNC(destination_workload_namespace)                                                       \
+  FIELD_FUNC(destination_principal)                                                                \
+  FIELD_FUNC(destination_app)                                                                      \
+  FIELD_FUNC(destination_version)                                                                  \
+  FIELD_FUNC(destination_service)                                                                  \
+  FIELD_FUNC(destination_service_name)                                                             \
+  FIELD_FUNC(destination_service_namespace)                                                        \
+  FIELD_FUNC(destination_canonical_service)                                                        \
+  FIELD_FUNC(destination_canonical_revision)                                                       \
+  FIELD_FUNC(destination_port)                                                                     \
+  FIELD_FUNC(request_protocol)                                                                     \
+  FIELD_FUNC(response_code)                                                                        \
+  FIELD_FUNC(grpc_response_status)                                                                 \
+  FIELD_FUNC(response_flags)                                                                       \
   FIELD_FUNC(connection_security_policy)
 
 // A structure that can hold multiple Istio dimensions(metadata variables).
@@ -63,10 +63,10 @@ struct IstioDimensions {
 
   bool outbound = false;
 
-#define SET_FIELD(name)                            \
-  IstioDimensions& set_##name(std::string value) { \
-    name = value;                                  \
-    return *this;                                  \
+#define SET_FIELD(name)                                                                            \
+  IstioDimensions& set_##name(std::string value) {                                                 \
+    name = value;                                                                                  \
+    return *this;                                                                                  \
   }
 
   STD_ISTIO_DIMENSIONS(SET_FIELD)
@@ -79,23 +79,19 @@ struct IstioDimensions {
 
   std::string to_string() const {
 #define TO_STRING(name) "\"", #name, "\":\"", name, "\" ,",
-    return absl::StrCat(
-        "{" STD_ISTIO_DIMENSIONS(TO_STRING) "\"outbound\": ", outbound, "}");
+    return absl::StrCat("{" STD_ISTIO_DIMENSIONS(TO_STRING) "\"outbound\": ", outbound, "}");
 #undef TO_STRING
   }
 
   // This function is required to make IstioDimensions type hashable.
-  template <typename H>
-  friend H AbslHashValue(H h, IstioDimensions d) {
+  template <typename H> friend H AbslHashValue(H h, IstioDimensions d) {
 #define TO_HASH_VALUE(name) , d.name
-    return H::combine(std::move(h) STD_ISTIO_DIMENSIONS(TO_HASH_VALUE),
-                      d.outbound);
+    return H::combine(std::move(h) STD_ISTIO_DIMENSIONS(TO_HASH_VALUE), d.outbound);
 #undef TO_HASH_VALUE
   }
 
   // This function is required to make IstioDimensions type hashable.
-  friend bool operator==(const IstioDimensions& lhs,
-                         const IstioDimensions& rhs) {
+  friend bool operator==(const IstioDimensions& lhs, const IstioDimensions& rhs) {
     return (
 #define COMPARE(name) lhs.name == rhs.name&&
         STD_ISTIO_DIMENSIONS(COMPARE) lhs.outbound == rhs.outbound);
@@ -103,5 +99,5 @@ struct IstioDimensions {
   }
 };
 
-}  // namespace Common
-}  // namespace Wasm
+} // namespace Common
+} // namespace Wasm

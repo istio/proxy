@@ -40,8 +40,8 @@ TEST(ForwardDownstreamSni, ConfigTest) {
   NiceMock<Server::Configuration::MockFactoryContext> context;
   ForwardDownstreamSniNetworkFilterConfigFactory factory;
 
-  Network::FilterFactoryCb cb = factory.createFilterFactoryFromProto(
-      *factory.createEmptyConfigProto(), context);
+  Network::FilterFactoryCb cb =
+      factory.createFilterFactoryFromProto(*factory.createEmptyConfigProto(), context);
   Network::MockConnection connection;
   EXPECT_CALL(connection, addReadFilter(_));
   cb(connection);
@@ -52,10 +52,8 @@ TEST(ForwardDownstreamSni, SetUpstreamServerNameOnlyIfSniIsPresent) {
   NiceMock<Network::MockReadFilterCallbacks> filter_callbacks;
 
   NiceMock<StreamInfo::MockStreamInfo> stream_info;
-  ON_CALL(filter_callbacks.connection_, streamInfo())
-      .WillByDefault(ReturnRef(stream_info));
-  ON_CALL(Const(filter_callbacks.connection_), streamInfo())
-      .WillByDefault(ReturnRef(stream_info));
+  ON_CALL(filter_callbacks.connection_, streamInfo()).WillByDefault(ReturnRef(stream_info));
+  ON_CALL(Const(filter_callbacks.connection_), streamInfo()).WillByDefault(ReturnRef(stream_info));
 
   ForwardDownstreamSniFilter filter;
   filter.initializeReadFilterCallbacks(filter_callbacks);
@@ -66,8 +64,7 @@ TEST(ForwardDownstreamSni, SetUpstreamServerNameOnlyIfSniIsPresent) {
         .WillByDefault(Return(EMPTY_STRING));
     filter.onNewConnection();
 
-    EXPECT_FALSE(stream_info.filterState()->hasData<UpstreamServerName>(
-        UpstreamServerName::key()));
+    EXPECT_FALSE(stream_info.filterState()->hasData<UpstreamServerName>(UpstreamServerName::key()));
   }
 
   // with sni
@@ -76,16 +73,14 @@ TEST(ForwardDownstreamSni, SetUpstreamServerNameOnlyIfSniIsPresent) {
         .WillByDefault(Return("www.example.com"));
     filter.onNewConnection();
 
-    EXPECT_TRUE(stream_info.filterState()->hasData<UpstreamServerName>(
-        UpstreamServerName::key()));
+    EXPECT_TRUE(stream_info.filterState()->hasData<UpstreamServerName>(UpstreamServerName::key()));
 
     auto forward_requested_server_name =
-        stream_info.filterState()->getDataReadOnly<UpstreamServerName>(
-            UpstreamServerName::key());
+        stream_info.filterState()->getDataReadOnly<UpstreamServerName>(UpstreamServerName::key());
     EXPECT_EQ(forward_requested_server_name->value(), "www.example.com");
   }
 }
 
-}  // namespace ForwardDownstreamSni
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace ForwardDownstreamSni
+} // namespace Tcp
+} // namespace Envoy

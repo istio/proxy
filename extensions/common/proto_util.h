@@ -26,16 +26,15 @@ namespace Wasm {
 namespace Common {
 
 // Extract node info into a flatbuffer from a struct.
-flatbuffers::DetachedBuffer extractNodeFlatBufferFromStruct(
-    const google::protobuf::Struct& metadata);
+flatbuffers::DetachedBuffer
+extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata);
 
 // Extract struct from a flatbuffer. This is an inverse of the above function.
-void extractStructFromNodeFlatBuffer(const FlatNode& node,
-                                     google::protobuf::Struct* metadata);
+void extractStructFromNodeFlatBuffer(const FlatNode& node, google::protobuf::Struct* metadata);
 
 // Serialize deterministically a protobuf to a string.
 bool serializeToStringDeterministic(const google::protobuf::Message& metadata,
                                     std::string* metadata_bytes);
 
-}  // namespace Common
-}  // namespace Wasm
+} // namespace Common
+} // namespace Wasm

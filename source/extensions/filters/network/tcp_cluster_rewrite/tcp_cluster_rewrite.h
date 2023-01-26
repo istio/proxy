@@ -31,32 +31,28 @@ namespace TcpClusterRewrite {
  * Configuration for the TCP cluster rewrite filter.
  */
 class TcpClusterRewriteFilterConfig {
- public:
-  TcpClusterRewriteFilterConfig(
-      const v2alpha1::TcpClusterRewrite& proto_config);
+public:
+  TcpClusterRewriteFilterConfig(const v2alpha1::TcpClusterRewrite& proto_config);
 
   bool shouldRewriteCluster() const { return should_rewrite_cluster_; }
   std::regex clusterPattern() const { return cluster_pattern_; }
   std::string clusterReplacement() const { return cluster_replacement_; }
 
- private:
+private:
   bool should_rewrite_cluster_;
   std::regex cluster_pattern_;
   std::string cluster_replacement_;
 };
 
-typedef std::shared_ptr<TcpClusterRewriteFilterConfig>
-    TcpClusterRewriteFilterConfigSharedPtr;
+typedef std::shared_ptr<TcpClusterRewriteFilterConfig> TcpClusterRewriteFilterConfigSharedPtr;
 
 /**
  * Implementation of the TCP cluster rewrite filter that sets the upstream
  * cluster name from the SNI field in the TLS connection.
  */
-class TcpClusterRewriteFilter : public Network::ReadFilter,
-                                Logger::Loggable<Logger::Id::filter> {
- public:
-  TcpClusterRewriteFilter(TcpClusterRewriteFilterConfigSharedPtr config)
-      : config_(config) {}
+class TcpClusterRewriteFilter : public Network::ReadFilter, Logger::Loggable<Logger::Id::filter> {
+public:
+  TcpClusterRewriteFilter(TcpClusterRewriteFilterConfigSharedPtr config) : config_(config) {}
 
   // Network::ReadFilter
   Network::FilterStatus onData(Buffer::Instance&, bool) override {
@@ -65,16 +61,15 @@ class TcpClusterRewriteFilter : public Network::ReadFilter,
 
   Network::FilterStatus onNewConnection() override;
 
-  void initializeReadFilterCallbacks(
-      Network::ReadFilterCallbacks& callbacks) override {
+  void initializeReadFilterCallbacks(Network::ReadFilterCallbacks& callbacks) override {
     read_callbacks_ = &callbacks;
   }
 
- private:
+private:
   TcpClusterRewriteFilterConfigSharedPtr config_;
   Network::ReadFilterCallbacks* read_callbacks_{};
 };
 
-}  // namespace TcpClusterRewrite
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace TcpClusterRewrite
+} // namespace Tcp
+} // namespace Envoy

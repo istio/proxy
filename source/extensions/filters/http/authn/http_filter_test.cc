@@ -55,27 +55,24 @@ const char ingoreBothPolicy[] = R"(
 
 // Create a fake authenticator for test. This authenticator do nothing except
 // making the authentication fail.
-std::unique_ptr<AuthenticatorBase> createAlwaysFailAuthenticator(
-    FilterContext *filter_context) {
+std::unique_ptr<AuthenticatorBase> createAlwaysFailAuthenticator(FilterContext* filter_context) {
   class _local : public AuthenticatorBase {
-   public:
-    _local(FilterContext *filter_context) : AuthenticatorBase(filter_context) {}
-    bool run(Payload *) override { return false; }
+  public:
+    _local(FilterContext* filter_context) : AuthenticatorBase(filter_context) {}
+    bool run(Payload*) override { return false; }
   };
   return std::make_unique<_local>(filter_context);
 }
 
 // Create a fake authenticator for test. This authenticator do nothing except
 // making the authentication successful.
-std::unique_ptr<AuthenticatorBase> createAlwaysPassAuthenticator(
-    FilterContext *filter_context) {
+std::unique_ptr<AuthenticatorBase> createAlwaysPassAuthenticator(FilterContext* filter_context) {
   class _local : public AuthenticatorBase {
-   public:
-    _local(FilterContext *filter_context) : AuthenticatorBase(filter_context) {}
-    bool run(Payload *) override {
+  public:
+    _local(FilterContext* filter_context) : AuthenticatorBase(filter_context) {}
+    bool run(Payload*) override {
       // Set some data to verify authentication result later.
-      auto payload = TestUtilities::CreateX509Payload(
-          "cluster.local/sa/test_user/ns/test_ns/");
+      auto payload = TestUtilities::CreateX509Payload("cluster.local/sa/test_user/ns/test_ns/");
       filter_context()->setPeerResult(&payload);
       return true;
     }
@@ -84,31 +81,26 @@ std::unique_ptr<AuthenticatorBase> createAlwaysPassAuthenticator(
 }
 
 class MockAuthenticationFilter : public AuthenticationFilter {
- public:
+public:
   // We'll use fake authenticator for test, so policy is not really needed. Use
   // default config for simplicity.
-  MockAuthenticationFilter(const FilterConfig &filter_config)
+  MockAuthenticationFilter(const FilterConfig& filter_config)
       : AuthenticationFilter(filter_config) {}
 
   ~MockAuthenticationFilter(){};
 
-  MOCK_METHOD1(createPeerAuthenticator,
-               std::unique_ptr<AuthenticatorBase>(FilterContext *));
-  MOCK_METHOD1(createOriginAuthenticator,
-               std::unique_ptr<AuthenticatorBase>(FilterContext *));
+  MOCK_METHOD1(createPeerAuthenticator, std::unique_ptr<AuthenticatorBase>(FilterContext*));
+  MOCK_METHOD1(createOriginAuthenticator, std::unique_ptr<AuthenticatorBase>(FilterContext*));
 };
 
 class AuthenticationFilterTest : public testing::Test {
- public:
-  AuthenticationFilterTest()
-      : request_headers_{{":method", "GET"}, {":path", "/"}} {}
+public:
+  AuthenticationFilterTest() : request_headers_{{":method", "GET"}, {":path", "/"}} {}
   ~AuthenticationFilterTest() {}
 
-  void SetUp() override {
-    filter_.setDecoderFilterCallbacks(decoder_callbacks_);
-  }
+  void SetUp() override { filter_.setDecoderFilterCallbacks(decoder_callbacks_); }
 
- protected:
+protected:
   FilterConfig filter_config_ = FilterConfig::default_instance();
 
   Http::TestRequestHeaderMapImpl request_headers_;
@@ -123,20 +115,18 @@ TEST_F(AuthenticationFilterTest, PeerFail) {
       .Times(1)
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
   Envoy::Event::SimulatedTimeSystem test_time;
-  StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
-                                         test_time.timeSystem(), nullptr);
+  StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2, test_time.timeSystem(), nullptr);
   EXPECT_CALL(decoder_callbacks_, streamInfo())
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(stream_info));
   EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
       .Times(1)
-      .WillOnce(testing::Invoke([](Http::ResponseHeaderMap &headers, bool) {
+      .WillOnce(testing::Invoke([](Http::ResponseHeaderMap& headers, bool) {
         EXPECT_EQ("401", headers.Status()->value().getStringView());
       }));
   EXPECT_EQ(Http::FilterHeadersStatus::StopIteration,
             filter_.decodeHeaders(request_headers_, true));
-  EXPECT_FALSE(Utils::Authentication::GetResultFromMetadata(
-      stream_info.dynamicMetadata()));
+  EXPECT_FALSE(Utils::Authentication::GetResultFromMetadata(stream_info.dynamicMetadata()));
 }
 
 TEST_F(AuthenticationFilterTest, PeerPassOriginFail) {
@@ -149,20 +139,18 @@ TEST_F(AuthenticationFilterTest, PeerPassOriginFail) {
       .Times(1)
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
   Envoy::Event::SimulatedTimeSystem test_time;
-  StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
-                                         test_time.timeSystem(), nullptr);
+  StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2, test_time.timeSystem(), nullptr);
   EXPECT_CALL(decoder_callbacks_, streamInfo())
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(stream_info));
   EXPECT_CALL(decoder_callbacks_, encodeHeaders_(_, _))
       .Times(1)
-      .WillOnce(testing::Invoke([](Http::ResponseHeaderMap &headers, bool) {
+      .WillOnce(testing::Invoke([](Http::ResponseHeaderMap& headers, bool) {
         EXPECT_EQ("401", headers.Status()->value().getStringView());
       }));
   EXPECT_EQ(Http::FilterHeadersStatus::StopIteration,
             filter_.decodeHeaders(request_headers_, true));
-  EXPECT_FALSE(Utils::Authentication::GetResultFromMetadata(
-      stream_info.dynamicMetadata()));
+  EXPECT_FALSE(Utils::Authentication::GetResultFromMetadata(stream_info.dynamicMetadata()));
 }
 
 TEST_F(AuthenticationFilterTest, AllPass) {
@@ -173,18 +161,15 @@ TEST_F(AuthenticationFilterTest, AllPass) {
       .Times(1)
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
   Envoy::Event::SimulatedTimeSystem test_time;
-  StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
-                                         test_time.timeSystem(), nullptr);
+  StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2, test_time.timeSystem(), nullptr);
   EXPECT_CALL(decoder_callbacks_, streamInfo())
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(stream_info));
 
-  EXPECT_EQ(Http::FilterHeadersStatus::Continue,
-            filter_.decodeHeaders(request_headers_, true));
+  EXPECT_EQ(Http::FilterHeadersStatus::Continue, filter_.decodeHeaders(request_headers_, true));
 
   EXPECT_EQ(1, stream_info.dynamicMetadata().filter_metadata_size());
-  const auto *data = Utils::Authentication::GetResultFromMetadata(
-      stream_info.dynamicMetadata());
+  const auto* data = Utils::Authentication::GetResultFromMetadata(stream_info.dynamicMetadata());
   ASSERT_TRUE(data);
 
   ProtobufWkt::Struct expected_data;
@@ -213,8 +198,7 @@ TEST_F(AuthenticationFilterTest, AllPass) {
 
 TEST_F(AuthenticationFilterTest, IgnoreBothFail) {
   iaapi::Policy policy_;
-  ASSERT_TRUE(
-      Protobuf::TextFormat::ParseFromString(ingoreBothPolicy, &policy_));
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(ingoreBothPolicy, &policy_));
   *filter_config_.mutable_policy() = policy_;
   StrictMock<MockAuthenticationFilter> filter(filter_config_);
   filter.setDecoderFilterCallbacks(decoder_callbacks_);
@@ -225,14 +209,12 @@ TEST_F(AuthenticationFilterTest, IgnoreBothFail) {
   EXPECT_CALL(filter, createOriginAuthenticator(_))
       .Times(1)
       .WillOnce(Invoke(createAlwaysFailAuthenticator));
-  EXPECT_EQ(Http::FilterHeadersStatus::Continue,
-            filter.decodeHeaders(request_headers_, true));
+  EXPECT_EQ(Http::FilterHeadersStatus::Continue, filter.decodeHeaders(request_headers_, true));
 }
 
 TEST_F(AuthenticationFilterTest, IgnoreBothPass) {
   iaapi::Policy policy_;
-  ASSERT_TRUE(
-      Protobuf::TextFormat::ParseFromString(ingoreBothPolicy, &policy_));
+  ASSERT_TRUE(Protobuf::TextFormat::ParseFromString(ingoreBothPolicy, &policy_));
   *filter_config_.mutable_policy() = policy_;
   StrictMock<MockAuthenticationFilter> filter(filter_config_);
   filter.setDecoderFilterCallbacks(decoder_callbacks_);
@@ -244,18 +226,15 @@ TEST_F(AuthenticationFilterTest, IgnoreBothPass) {
       .Times(1)
       .WillOnce(Invoke(createAlwaysPassAuthenticator));
   Envoy::Event::SimulatedTimeSystem test_time;
-  StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2,
-                                         test_time.timeSystem(), nullptr);
+  StreamInfo::StreamInfoImpl stream_info(Http::Protocol::Http2, test_time.timeSystem(), nullptr);
   EXPECT_CALL(decoder_callbacks_, streamInfo())
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(stream_info));
 
-  EXPECT_EQ(Http::FilterHeadersStatus::Continue,
-            filter.decodeHeaders(request_headers_, true));
+  EXPECT_EQ(Http::FilterHeadersStatus::Continue, filter.decodeHeaders(request_headers_, true));
 
   EXPECT_EQ(1, stream_info.dynamicMetadata().filter_metadata_size());
-  const auto *data = Utils::Authentication::GetResultFromMetadata(
-      stream_info.dynamicMetadata());
+  const auto* data = Utils::Authentication::GetResultFromMetadata(stream_info.dynamicMetadata());
   ASSERT_TRUE(data);
 
   ProtobufWkt::Struct expected_data;
@@ -282,8 +261,8 @@ TEST_F(AuthenticationFilterTest, IgnoreBothPass) {
   EXPECT_TRUE(TestUtility::protoEqual(expected_data, *data));
 }
 
-}  // namespace
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

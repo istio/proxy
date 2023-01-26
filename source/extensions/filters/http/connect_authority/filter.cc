@@ -24,11 +24,9 @@ namespace Extensions {
 namespace HttpFilters {
 namespace ConnectAuthority {
 
-Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
-                                                bool) {
+Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers, bool) {
   const FilterConfig* per_route_settings =
-      Http::Utility::resolveMostSpecificPerFilterConfig<FilterConfig>(
-          decoder_callbacks_);
+      Http::Utility::resolveMostSpecificPerFilterConfig<FilterConfig>(decoder_callbacks_);
   if (per_route_settings && per_route_settings->enabled()) {
     decoder_callbacks_->streamInfo().filterState()->setData(
         Istio::SetInternalDstAddress::FilterStateKey,
@@ -41,10 +39,9 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
   return Http::FilterHeadersStatus::Continue;
 }
 
-REGISTER_FACTORY(FilterConfigFactory,
-                 Server::Configuration::NamedHttpFilterConfigFactory);
+REGISTER_FACTORY(FilterConfigFactory, Server::Configuration::NamedHttpFilterConfigFactory);
 
-}  // namespace ConnectAuthority
-}  // namespace HttpFilters
-}  // namespace Extensions
-}  // namespace Envoy
+} // namespace ConnectAuthority
+} // namespace HttpFilters
+} // namespace Extensions
+} // namespace Envoy

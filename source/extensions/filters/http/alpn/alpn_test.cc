@@ -21,8 +21,7 @@
 #include "test/mocks/upstream/mocks.h"
 
 using istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig;
-using istio::envoy::config::filter::http::alpn::v2alpha1::
-    FilterConfig_AlpnOverride;
+using istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig_AlpnOverride;
 using testing::NiceMock;
 using testing::Return;
 using testing::ReturnRef;
@@ -33,38 +32,36 @@ namespace Alpn {
 namespace {
 
 class AlpnFilterTest : public testing::Test {
- public:
-  std::unique_ptr<AlpnFilter> makeAlpnOverrideFilter(
-      const AlpnOverrides &alpn) {
+public:
+  std::unique_ptr<AlpnFilter> makeAlpnOverrideFilter(const AlpnOverrides& alpn) {
     FilterConfig proto_config;
 
-    for (const auto &p : alpn) {
+    for (const auto& p : alpn) {
       FilterConfig_AlpnOverride entry;
       entry.set_upstream_protocol(getProtocol(p.first));
-      for (const auto &v : p.second) {
+      for (const auto& v : p.second) {
         entry.add_alpn_override(v);
       }
       proto_config.mutable_alpn_override()->Add(std::move(entry));
     }
 
-    auto config =
-        std::make_shared<AlpnFilterConfig>(proto_config, cluster_manager_);
+    auto config = std::make_shared<AlpnFilterConfig>(proto_config, cluster_manager_);
     auto filter = std::make_unique<AlpnFilter>(config);
     filter->setDecoderFilterCallbacks(callbacks_);
     return filter;
   }
 
- protected:
+protected:
   FilterConfig::Protocol getProtocol(Http::Protocol protocol) {
     switch (protocol) {
-      case Http::Protocol::Http10:
-        return FilterConfig::Protocol::FilterConfig_Protocol_HTTP10;
-      case Http::Protocol::Http11:
-        return FilterConfig::Protocol::FilterConfig_Protocol_HTTP11;
-      case Http::Protocol::Http2:
-        return FilterConfig::Protocol::FilterConfig_Protocol_HTTP2;
-      default:
-        PANIC("not implemented");
+    case Http::Protocol::Http10:
+      return FilterConfig::Protocol::FilterConfig_Protocol_HTTP10;
+    case Http::Protocol::Http11:
+      return FilterConfig::Protocol::FilterConfig_Protocol_HTTP11;
+    case Http::Protocol::Http2:
+      return FilterConfig::Protocol::FilterConfig_Protocol_HTTP2;
+    default:
+      PANIC("not implemented");
     }
   }
 
@@ -85,30 +82,27 @@ TEST_F(AlpnFilterTest, OverrideAlpnUseDownstreamProtocol) {
                               {Http::Protocol::Http2, {"qux"}}};
   auto filter = makeAlpnOverrideFilter(alpn);
 
-  ON_CALL(cluster_manager_, getThreadLocalCluster(_))
-      .WillByDefault(Return(fake_cluster_.get()));
+  ON_CALL(cluster_manager_, getThreadLocalCluster(_)).WillByDefault(Return(fake_cluster_.get()));
   ON_CALL(*fake_cluster_, info()).WillByDefault(Return(cluster_info_));
   ON_CALL(*cluster_info_, upstreamHttpProtocol(_))
-      .WillByDefault(
-          [](absl::optional<Http::Protocol> protocol)
-              -> std::vector<Http::Protocol> { return {protocol.value()}; });
+      .WillByDefault([](absl::optional<Http::Protocol> protocol) -> std::vector<Http::Protocol> {
+        return {protocol.value()};
+      });
 
-  auto protocols = {Http::Protocol::Http10, Http::Protocol::Http11,
-                    Http::Protocol::Http2};
+  auto protocols = {Http::Protocol::Http10, Http::Protocol::Http11, Http::Protocol::Http2};
   for (const auto p : protocols) {
     EXPECT_CALL(stream_info, protocol()).WillOnce(Return(p));
     Envoy::StreamInfo::FilterStateSharedPtr filter_state(
         std::make_shared<Envoy::StreamInfo::FilterStateImpl>(
             Envoy::StreamInfo::FilterState::LifeSpan::FilterChain));
     EXPECT_CALL(stream_info, filterState()).WillOnce(ReturnRef(filter_state));
-    EXPECT_EQ(filter->decodeHeaders(headers_, false),
-              Http::FilterHeadersStatus::Continue);
-    EXPECT_TRUE(filter_state->hasData<Network::ApplicationProtocols>(
-        Network::ApplicationProtocols::key()));
-    auto alpn_override = filter_state
-                             ->getDataReadOnly<Network::ApplicationProtocols>(
-                                 Network::ApplicationProtocols::key())
-                             ->value();
+    EXPECT_EQ(filter->decodeHeaders(headers_, false), Http::FilterHeadersStatus::Continue);
+    EXPECT_TRUE(
+        filter_state->hasData<Network::ApplicationProtocols>(Network::ApplicationProtocols::key()));
+    auto alpn_override =
+        filter_state
+            ->getDataReadOnly<Network::ApplicationProtocols>(Network::ApplicationProtocols::key())
+            ->value();
 
     EXPECT_EQ(alpn_override, alpn.at(p));
   }
@@ -122,31 +116,27 @@ TEST_F(AlpnFilterTest, OverrideAlpn) {
                               {Http::Protocol::Http2, {"qux"}}};
   auto filter = makeAlpnOverrideFilter(alpn);
 
-  ON_CALL(cluster_manager_, getThreadLocalCluster(_))
-      .WillByDefault(Return(fake_cluster_.get()));
+  ON_CALL(cluster_manager_, getThreadLocalCluster(_)).WillByDefault(Return(fake_cluster_.get()));
   ON_CALL(*fake_cluster_, info()).WillByDefault(Return(cluster_info_));
   ON_CALL(*cluster_info_, upstreamHttpProtocol(_))
-      .WillByDefault(
-          [](absl::optional<Http::Protocol>) -> std::vector<Http::Protocol> {
-            return {Http::Protocol::Http2};
-          });
+      .WillByDefault([](absl::optional<Http::Protocol>) -> std::vector<Http::Protocol> {
+        return {Http::Protocol::Http2};
+      });
 
-  auto protocols = {Http::Protocol::Http10, Http::Protocol::Http11,
-                    Http::Protocol::Http2};
+  auto protocols = {Http::Protocol::Http10, Http::Protocol::Http11, Http::Protocol::Http2};
   for (const auto p : protocols) {
     EXPECT_CALL(stream_info, protocol()).WillOnce(Return(p));
     Envoy::StreamInfo::FilterStateSharedPtr filter_state(
         std::make_shared<Envoy::StreamInfo::FilterStateImpl>(
             Envoy::StreamInfo::FilterState::LifeSpan::FilterChain));
     EXPECT_CALL(stream_info, filterState()).WillOnce(ReturnRef(filter_state));
-    EXPECT_EQ(filter->decodeHeaders(headers_, false),
-              Http::FilterHeadersStatus::Continue);
-    EXPECT_TRUE(filter_state->hasData<Network::ApplicationProtocols>(
-        Network::ApplicationProtocols::key()));
-    auto alpn_override = filter_state
-                             ->getDataReadOnly<Network::ApplicationProtocols>(
-                                 Network::ApplicationProtocols::key())
-                             ->value();
+    EXPECT_EQ(filter->decodeHeaders(headers_, false), Http::FilterHeadersStatus::Continue);
+    EXPECT_TRUE(
+        filter_state->hasData<Network::ApplicationProtocols>(Network::ApplicationProtocols::key()));
+    auto alpn_override =
+        filter_state
+            ->getDataReadOnly<Network::ApplicationProtocols>(Network::ApplicationProtocols::key())
+            ->value();
 
     EXPECT_EQ(alpn_override, alpn.at(Http::Protocol::Http2));
   }
@@ -159,30 +149,25 @@ TEST_F(AlpnFilterTest, EmptyOverrideAlpn) {
                               {Http::Protocol::Http11, {"baz"}}};
   auto filter = makeAlpnOverrideFilter(alpn);
 
-  ON_CALL(cluster_manager_, getThreadLocalCluster(_))
-      .WillByDefault(Return(fake_cluster_.get()));
+  ON_CALL(cluster_manager_, getThreadLocalCluster(_)).WillByDefault(Return(fake_cluster_.get()));
   ON_CALL(*fake_cluster_, info()).WillByDefault(Return(cluster_info_));
   ON_CALL(*cluster_info_, upstreamHttpProtocol(_))
-      .WillByDefault(
-          [](absl::optional<Http::Protocol>) -> std::vector<Http::Protocol> {
-            return {Http::Protocol::Http2};
-          });
+      .WillByDefault([](absl::optional<Http::Protocol>) -> std::vector<Http::Protocol> {
+        return {Http::Protocol::Http2};
+      });
 
-  auto protocols = {Http::Protocol::Http10, Http::Protocol::Http11,
-                    Http::Protocol::Http2};
+  auto protocols = {Http::Protocol::Http10, Http::Protocol::Http11, Http::Protocol::Http2};
   for (const auto p : protocols) {
     EXPECT_CALL(stream_info, protocol()).WillOnce(Return(p));
-    Envoy::StreamInfo::FilterStateImpl filter_state{
-        Envoy::StreamInfo::FilterState::FilterChain};
+    Envoy::StreamInfo::FilterStateImpl filter_state{Envoy::StreamInfo::FilterState::FilterChain};
     EXPECT_CALL(stream_info, filterState()).Times(0);
-    EXPECT_EQ(filter->decodeHeaders(headers_, false),
-              Http::FilterHeadersStatus::Continue);
-    EXPECT_FALSE(filter_state.hasData<Network::ApplicationProtocols>(
-        Network::ApplicationProtocols::key()));
+    EXPECT_EQ(filter->decodeHeaders(headers_, false), Http::FilterHeadersStatus::Continue);
+    EXPECT_FALSE(
+        filter_state.hasData<Network::ApplicationProtocols>(Network::ApplicationProtocols::key()));
   }
 }
 
-}  // namespace
-}  // namespace Alpn
-}  // namespace Http
-}  // namespace Envoy
+} // namespace
+} // namespace Alpn
+} // namespace Http
+} // namespace Envoy

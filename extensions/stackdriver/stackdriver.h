@@ -39,8 +39,8 @@ namespace null_plugin {
 
 namespace Stackdriver {
 // 10m
-constexpr long int kDefaultTcpLogEntryTimeoutNanoseconds = 60000000000;  // 1m
-constexpr long int kDefaultLogExportNanoseconds = 10000000000;           // 10s
+constexpr long int kDefaultTcpLogEntryTimeoutNanoseconds = 60000000000; // 1m
+constexpr long int kDefaultLogExportNanoseconds = 10000000000;          // 10s
 
 #ifdef NULL_PLUGIN
 PROXY_WASM_NULL_PLUGIN_REGISTRY;
@@ -50,9 +50,8 @@ PROXY_WASM_NULL_PLUGIN_REGISTRY;
 // thread. It has the same lifetime as the worker thread and acts as target for
 // interactions that outlives individual stream, e.g. timer, async calls.
 class StackdriverRootContext : public RootContext {
- public:
-  StackdriverRootContext(uint32_t id, std::string_view root_id)
-      : RootContext(id, root_id) {
+public:
+  StackdriverRootContext(uint32_t id, std::string_view root_id) : RootContext(id, root_id) {
     empty_node_info_ = ::Wasm::Common::extractEmptyNodeFlatBuffer();
   }
   ~StackdriverRootContext() = default;
@@ -79,17 +78,15 @@ class StackdriverRootContext : public RootContext {
   void incrementReceivedBytes(uint32_t id, size_t size);
   void incrementSentBytes(uint32_t id, size_t size);
   void incrementConnectionClosed(uint32_t id);
-  void setConnectionState(uint32_t id,
-                          ::Wasm::Common::TCPConnectionState state);
+  void setConnectionState(uint32_t id, ::Wasm::Common::TCPConnectionState state);
 
   const ::Wasm::Common::FlatNode& getLocalNode() {
-    return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(
-        local_node_info_.data());
+    return *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
   }
 
   bool initialized() const { return initialized_; };
 
- private:
+private:
   // Stores information about TCP request.
   struct TcpRecordInfo {
     std::unique_ptr<::Wasm::Common::RequestInfo> request_info;
@@ -125,12 +122,10 @@ class StackdriverRootContext : public RootContext {
   bool enableTCPServerAccessLog();
 
   // Evaluate Expressions in expressions_ vector and add it in extra_labels.
-  void evaluateExpressions(
-      std::unordered_map<std::string, std::string>& extra_labels);
+  void evaluateExpressions(std::unordered_map<std::string, std::string>& extra_labels);
 
   // Evaluate Expressions in metrics_expressions_ vector.
-  void evaluateMetricsExpressions(
-      ::Extensions::Stackdriver::Metric::override_map& overrides);
+  void evaluateMetricsExpressions(::Extensions::Stackdriver::Metric::override_map& overrides);
 
   // Evaluates a logging filter. If the returned value is `false`, no log
   // entry will be added for the request/connection.
@@ -156,8 +151,7 @@ class StackdriverRootContext : public RootContext {
   flatbuffers::DetachedBuffer empty_node_info_;
 
   // Indicates the traffic direction relative to this proxy.
-  ::Wasm::Common::TrafficDirection direction_{
-      ::Wasm::Common::TrafficDirection::Unspecified};
+  ::Wasm::Common::TrafficDirection direction_{::Wasm::Common::TrafficDirection::Unspecified};
 
   // Logger records and exports log entries to Stackdriver backend.
   std::unique_ptr<::Extensions::Stackdriver::Log::Logger> logger_;
@@ -171,8 +165,7 @@ class StackdriverRootContext : public RootContext {
   bool use_host_header_fallback_;
   bool initialized_ = false;
 
-  std::unordered_map<uint32_t,
-                     std::unique_ptr<StackdriverRootContext::TcpRecordInfo>>
+  std::unordered_map<uint32_t, std::unique_ptr<StackdriverRootContext::TcpRecordInfo>>
       tcp_request_queue_;
 
   // Stores expressions for evaluation for custom access logs.
@@ -200,11 +193,9 @@ class StackdriverRootContext : public RootContext {
 // StackdriverContext is per stream context. It has the same lifetime as
 // the request stream itself.
 class StackdriverContext : public Context {
- public:
+public:
   StackdriverContext(uint32_t id, RootContext* root)
-      : Context(id, root),
-        is_tcp_(false),
-        context_id_(id),
+      : Context(id, root), is_tcp_(false), context_id_(id),
         is_initialized_(getRootContext()->initialized()) {}
   void onLog() override;
 
@@ -215,8 +206,7 @@ class StackdriverContext : public Context {
 
     is_tcp_ = true;
     getRootContext()->addToTCPRequestQueue(context_id_);
-    getRootContext()->setConnectionState(
-        context_id_, ::Wasm::Common::TCPConnectionState::Open);
+    getRootContext()->setConnectionState(context_id_, ::Wasm::Common::TCPConnectionState::Open);
     return FilterStatus::Continue;
   }
 
@@ -226,8 +216,8 @@ class StackdriverContext : public Context {
       return FilterStatus::Continue;
     }
     getRootContext()->incrementReceivedBytes(context_id_, size);
-    getRootContext()->setConnectionState(
-        context_id_, ::Wasm::Common::TCPConnectionState::Connected);
+    getRootContext()->setConnectionState(context_id_,
+                                         ::Wasm::Common::TCPConnectionState::Connected);
     return FilterStatus::Continue;
   }
   // Called on onWrite call, so counting the data that is sent.
@@ -236,12 +226,12 @@ class StackdriverContext : public Context {
       return FilterStatus::Continue;
     }
     getRootContext()->incrementSentBytes(context_id_, size);
-    getRootContext()->setConnectionState(
-        context_id_, ::Wasm::Common::TCPConnectionState::Connected);
+    getRootContext()->setConnectionState(context_id_,
+                                         ::Wasm::Common::TCPConnectionState::Connected);
     return FilterStatus::Continue;
   }
 
- private:
+private:
   // Gets root Stackdriver context that this stream Stackdriver context
   // associated with.
   StackdriverRootContext* getRootContext();
@@ -252,29 +242,29 @@ class StackdriverContext : public Context {
 };
 
 class StackdriverOutboundRootContext : public StackdriverRootContext {
- public:
+public:
   StackdriverOutboundRootContext(uint32_t id, std::string_view root_id)
       : StackdriverRootContext(id, root_id) {}
 };
 
 class StackdriverInboundRootContext : public StackdriverRootContext {
- public:
+public:
   StackdriverInboundRootContext(uint32_t id, std::string_view root_id)
       : StackdriverRootContext(id, root_id) {}
 };
 
-static RegisterContextFactory register_OutboundStackdriverContext(
-    CONTEXT_FACTORY(StackdriverContext),
-    ROOT_FACTORY(StackdriverOutboundRootContext),
-    ::Extensions::Stackdriver::Common::kOutboundRootContextId);
-static RegisterContextFactory register_InboundStackdriverContext(
-    CONTEXT_FACTORY(StackdriverContext),
-    ROOT_FACTORY(StackdriverInboundRootContext),
-    ::Extensions::Stackdriver::Common::kInboundRootContextId);
+static RegisterContextFactory
+    register_OutboundStackdriverContext(CONTEXT_FACTORY(StackdriverContext),
+                                        ROOT_FACTORY(StackdriverOutboundRootContext),
+                                        ::Extensions::Stackdriver::Common::kOutboundRootContextId);
+static RegisterContextFactory
+    register_InboundStackdriverContext(CONTEXT_FACTORY(StackdriverContext),
+                                       ROOT_FACTORY(StackdriverInboundRootContext),
+                                       ::Extensions::Stackdriver::Common::kInboundRootContextId);
 
-}  // namespace Stackdriver
+} // namespace Stackdriver
 
 #ifdef NULL_PLUGIN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

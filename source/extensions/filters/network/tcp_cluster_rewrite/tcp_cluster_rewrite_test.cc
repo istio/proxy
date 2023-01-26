@@ -35,10 +35,9 @@ namespace Tcp {
 namespace TcpClusterRewrite {
 
 class TcpClusterRewriteFilterTest : public testing::Test {
- public:
+public:
   TcpClusterRewriteFilterTest() {
-    ON_CALL(filter_callbacks_.connection_, streamInfo())
-        .WillByDefault(ReturnRef(stream_info_));
+    ON_CALL(filter_callbacks_.connection_, streamInfo()).WillByDefault(ReturnRef(stream_info_));
     ON_CALL(Const(filter_callbacks_.connection_), streamInfo())
         .WillByDefault(ReturnRef(stream_info_));
     configure(v2alpha1::TcpClusterRewrite());
@@ -61,20 +60,16 @@ TEST_F(TcpClusterRewriteFilterTest, ClusterRewrite) {
   {
     stream_info_.filterState()->setData(
         TcpProxy::PerConnectionCluster::key(),
-        std::make_unique<TcpProxy::PerConnectionCluster>(
-            "hello.ns1.svc.cluster.local"),
-        StreamInfo::FilterState::StateType::Mutable,
-        StreamInfo::FilterState::LifeSpan::Connection);
+        std::make_unique<TcpProxy::PerConnectionCluster>("hello.ns1.svc.cluster.local"),
+        StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::Connection);
     filter_->onNewConnection();
 
-    EXPECT_TRUE(
-        stream_info_.filterState()->hasData<TcpProxy::PerConnectionCluster>(
-            TcpProxy::PerConnectionCluster::key()));
+    EXPECT_TRUE(stream_info_.filterState()->hasData<TcpProxy::PerConnectionCluster>(
+        TcpProxy::PerConnectionCluster::key()));
 
     auto per_connection_cluster =
-        stream_info_.filterState()
-            ->getDataReadOnly<TcpProxy::PerConnectionCluster>(
-                TcpProxy::PerConnectionCluster::key());
+        stream_info_.filterState()->getDataReadOnly<TcpProxy::PerConnectionCluster>(
+            TcpProxy::PerConnectionCluster::key());
     EXPECT_EQ(per_connection_cluster->value(), "hello.ns1.svc.cluster.local");
   }
 
@@ -88,18 +83,15 @@ TEST_F(TcpClusterRewriteFilterTest, ClusterRewrite) {
     stream_info_.filterState()->setData(
         TcpProxy::PerConnectionCluster::key(),
         std::make_unique<TcpProxy::PerConnectionCluster>("hello.ns1.global"),
-        StreamInfo::FilterState::StateType::Mutable,
-        StreamInfo::FilterState::LifeSpan::Connection);
+        StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::Connection);
     filter_->onNewConnection();
 
-    EXPECT_TRUE(
-        stream_info_.filterState()->hasData<TcpProxy::PerConnectionCluster>(
-            TcpProxy::PerConnectionCluster::key()));
+    EXPECT_TRUE(stream_info_.filterState()->hasData<TcpProxy::PerConnectionCluster>(
+        TcpProxy::PerConnectionCluster::key()));
 
     auto per_connection_cluster =
-        stream_info_.filterState()
-            ->getDataReadOnly<TcpProxy::PerConnectionCluster>(
-                TcpProxy::PerConnectionCluster::key());
+        stream_info_.filterState()->getDataReadOnly<TcpProxy::PerConnectionCluster>(
+            TcpProxy::PerConnectionCluster::key());
     EXPECT_EQ(per_connection_cluster->value(), "hello.ns1.svc.cluster.local");
   }
 
@@ -113,22 +105,19 @@ TEST_F(TcpClusterRewriteFilterTest, ClusterRewrite) {
     stream_info_.filterState()->setData(
         TcpProxy::PerConnectionCluster::key(),
         std::make_unique<TcpProxy::PerConnectionCluster>("hello.ns1.global"),
-        StreamInfo::FilterState::StateType::Mutable,
-        StreamInfo::FilterState::LifeSpan::Connection);
+        StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::Connection);
     filter_->onNewConnection();
 
-    EXPECT_TRUE(
-        stream_info_.filterState()->hasData<TcpProxy::PerConnectionCluster>(
-            TcpProxy::PerConnectionCluster::key()));
+    EXPECT_TRUE(stream_info_.filterState()->hasData<TcpProxy::PerConnectionCluster>(
+        TcpProxy::PerConnectionCluster::key()));
 
     auto per_connection_cluster =
-        stream_info_.filterState()
-            ->getDataReadOnly<TcpProxy::PerConnectionCluster>(
-                TcpProxy::PerConnectionCluster::key());
+        stream_info_.filterState()->getDataReadOnly<TcpProxy::PerConnectionCluster>(
+            TcpProxy::PerConnectionCluster::key());
     EXPECT_EQ(per_connection_cluster->value(), "another.svc.cluster.local");
   }
 }
 
-}  // namespace TcpClusterRewrite
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace TcpClusterRewrite
+} // namespace Tcp
+} // namespace Envoy

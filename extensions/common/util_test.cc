@@ -23,15 +23,12 @@ namespace {
 
 TEST(WasmCommonUtilsTest, ParseResponseFlag) {
   std::vector<std::pair<uint64_t, std::string>> expected = {
-      std::make_pair(0x1, "LH"),      std::make_pair(0x2, "UH"),
-      std::make_pair(0x4, "UT"),      std::make_pair(0x8, "LR"),
-      std::make_pair(0x10, "UR"),     std::make_pair(0x20, "UF"),
-      std::make_pair(0x40, "UC"),     std::make_pair(0x80, "UO"),
-      std::make_pair(0x100, "NR"),    std::make_pair(0x200, "DI"),
-      std::make_pair(0x400, "FI"),    std::make_pair(0x800, "RL"),
-      std::make_pair(0x1000, "UAEX"), std::make_pair(0x2000, "RLSE"),
-      std::make_pair(0x4000, "DC"),   std::make_pair(0x8000, "URX"),
-      std::make_pair(0x10000, "SI"),  std::make_pair(0x20000, "IH"),
+      std::make_pair(0x1, "LH"),      std::make_pair(0x2, "UH"),      std::make_pair(0x4, "UT"),
+      std::make_pair(0x8, "LR"),      std::make_pair(0x10, "UR"),     std::make_pair(0x20, "UF"),
+      std::make_pair(0x40, "UC"),     std::make_pair(0x80, "UO"),     std::make_pair(0x100, "NR"),
+      std::make_pair(0x200, "DI"),    std::make_pair(0x400, "FI"),    std::make_pair(0x800, "RL"),
+      std::make_pair(0x1000, "UAEX"), std::make_pair(0x2000, "RLSE"), std::make_pair(0x4000, "DC"),
+      std::make_pair(0x8000, "URX"),  std::make_pair(0x10000, "SI"),  std::make_pair(0x20000, "IH"),
       std::make_pair(0x40000, "DPE"),
   };
 
@@ -51,6 +48,6 @@ TEST(WasmCommonUtilsTest, ParseResponseFlag) {
   { EXPECT_EQ("DPE,134479872", parseResponseFlag(0x8040000)); }
 }
 
-}  // namespace
-}  // namespace Common
-}  // namespace Wasm
+} // namespace
+} // namespace Common
+} // namespace Wasm

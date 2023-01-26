@@ -31,8 +31,7 @@ istio::authn::Payload CreateX509Payload(const std::string& user) {
   return payload;
 }
 
-istio::authn::Payload CreateJwtPayload(const std::string& user,
-                                       const std::string& presenter) {
+istio::authn::Payload CreateJwtPayload(const std::string& user, const std::string& presenter) {
   istio::authn::Payload payload;
   payload.mutable_jwt()->set_user(user);
   if (!presenter.empty()) {
@@ -47,8 +46,8 @@ istio::authn::Result AuthNResultFromString(const std::string& text) {
   return result;
 }
 
-}  // namespace TestUtilities
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace TestUtilities
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

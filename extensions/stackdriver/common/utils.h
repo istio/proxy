@@ -46,45 +46,42 @@ struct StackdriverStubOption {
 };
 
 // Build Envoy GrpcService proto based on the given stub option.
-void buildEnvoyGrpcService(const StackdriverStubOption &option,
-                           GrpcService *grpc_service);
+void buildEnvoyGrpcService(const StackdriverStubOption& option, GrpcService* grpc_service);
 
 // Determines if the proxy is running directly on GCE instance (VM).
 // If the proxy is running on GKE-managed VM, this will return false.
 // The determination is made based on available `platform_metadata`
 // for the node.
-bool isRawGCEInstance(const ::Wasm::Common::FlatNode &node);
+bool isRawGCEInstance(const ::Wasm::Common::FlatNode& node);
 
 // Returns the unique identifier for a Raw GCE Instance. If the node
 // is not a GCE Instance, the empty string will be returned.
-std::string getGCEInstanceUID(const ::Wasm::Common::FlatNode &node);
+std::string getGCEInstanceUID(const ::Wasm::Common::FlatNode& node);
 
 // Returns "owner" information for a node. If that information
 // has been directly set, that value is returned. If not, and the owner
 // can be entirely derived from platform metadata, this will derive the
 // owner. Currently, this is only supported for GCE Instances. For
 // anything else, this will return the empty string.
-std::string getOwner(const ::Wasm::Common::FlatNode &node);
+std::string getOwner(const ::Wasm::Common::FlatNode& node);
 
 // Gets monitored resource proto based on the type and node metadata info.
 // Only two types of monitored resource could be returned: k8s_container or
 // k8s_pod.
-void getMonitoredResource(const std::string &monitored_resource_type,
-                          const ::Wasm::Common::FlatNode &local_node_info,
-                          google::api::MonitoredResource *monitored_resource);
+void getMonitoredResource(const std::string& monitored_resource_type,
+                          const ::Wasm::Common::FlatNode& local_node_info,
+                          google::api::MonitoredResource* monitored_resource);
 
 // Set secure exchange service gRPC call credential.
 void setSTSCallCredentialOptions(
-    ::envoy::config::core::v3::GrpcService_GoogleGrpc_CallCredentials_StsService
-        *sts_service,
-    const std::string &sts_port, const std::string &token_path);
-void setSTSCallCredentialOptions(
-    ::grpc::experimental::StsCredentialsOptions *sts_options,
-    const std::string &sts_port, const std::string &token_path);
+    ::envoy::config::core::v3::GrpcService_GoogleGrpc_CallCredentials_StsService* sts_service,
+    const std::string& sts_port, const std::string& token_path);
+void setSTSCallCredentialOptions(::grpc::experimental::StsCredentialsOptions* sts_options,
+                                 const std::string& sts_port, const std::string& token_path);
 
 // Return unknown if the given value is empty string.
-const std::string &unknownIfEmpty(const std::string &val);
+const std::string& unknownIfEmpty(const std::string& val);
 
-}  // namespace Common
-}  // namespace Stackdriver
-}  // namespace Extensions
+} // namespace Common
+} // namespace Stackdriver
+} // namespace Extensions

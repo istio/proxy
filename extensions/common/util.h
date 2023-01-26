@@ -40,5 +40,5 @@ inline std::string_view toStdStringView(absl::string_view view) {
   return std::string_view(view.data(), view.size());
 }
 
-}  // namespace Common
-}  // namespace Wasm
+} // namespace Common
+} // namespace Wasm

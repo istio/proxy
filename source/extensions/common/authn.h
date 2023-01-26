@@ -23,7 +23,7 @@ namespace Envoy {
 namespace Utils {
 
 class Authentication : public Logger::Loggable<Logger::Id::filter> {
- public:
+public:
   // Save authentication attributes into the data Struct.
   static void SaveAuthAttributesToStruct(const istio::authn::Result& result,
                                          ::google::protobuf::Struct& data);
@@ -32,9 +32,9 @@ class Authentication : public Logger::Loggable<Logger::Id::filter> {
   // the input metadata is the request info's dynamic metadata. Authentication
   // result, if available, is stored under authentication filter metdata.
   // Returns nullptr if there is no data for that filter.
-  static const ProtobufWkt::Struct* GetResultFromMetadata(
-      const envoy::config::core::v3::Metadata& metadata);
+  static const ProtobufWkt::Struct*
+  GetResultFromMetadata(const envoy::config::core::v3::Metadata& metadata);
 };
 
-}  // namespace Utils
-}  // namespace Envoy
+} // namespace Utils
+} // namespace Envoy

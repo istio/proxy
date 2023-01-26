@@ -30,18 +30,14 @@ constexpr absl::string_view PeerPrincipalKey = "io.istio.peer_principal";
 constexpr absl::string_view LocalPrincipalKey = "io.istio.local_principal";
 
 class Principal : public StreamInfo::FilterState::Object, public Hashable {
- public:
-  Principal(const std::string& principal) : principal_(principal) {
-    ASSERT(principal.size() > 0);
-  }
-  absl::optional<std::string> serializeAsString() const override {
-    return principal_;
-  }
+public:
+  Principal(const std::string& principal) : principal_(principal) { ASSERT(principal.size() > 0); }
+  absl::optional<std::string> serializeAsString() const override { return principal_; }
   absl::string_view principal() const { return principal_; }
   // Envoy::Hashable
   absl::optional<uint64_t> hash() const override;
 
- private:
+private:
   const std::string principal_;
 };
 
@@ -60,9 +56,8 @@ PrincipalInfo getPrincipals(const StreamInfo::FilterState& filter_state);
 // onData(), but any filter using onNewConnection() will not have access to the
 // principals. For example, tcp_proxy cannot use the principals as a transport
 // socket option at the moment.
-class IstioAuthnFilter : public Network::ReadFilter,
-                         public Network::ConnectionCallbacks {
- public:
+class IstioAuthnFilter : public Network::ReadFilter, public Network::ConnectionCallbacks {
+public:
   // Network::ConnectionCallbacks
   void onEvent(Network::ConnectionEvent event) override;
   void onAboveWriteBufferHighWatermark() override {}
@@ -72,18 +67,15 @@ class IstioAuthnFilter : public Network::ReadFilter,
   Network::FilterStatus onData(Buffer::Instance&, bool) override {
     return Network::FilterStatus::Continue;
   }
-  Network::FilterStatus onNewConnection() override {
-    return Network::FilterStatus::Continue;
-  }
-  void initializeReadFilterCallbacks(
-      Network::ReadFilterCallbacks& callbacks) override;
+  Network::FilterStatus onNewConnection() override { return Network::FilterStatus::Continue; }
+  void initializeReadFilterCallbacks(Network::ReadFilterCallbacks& callbacks) override;
 
- private:
+private:
   void populate() const;
   Network::ReadFilterCallbacks* read_callbacks_{nullptr};
 };
 
-}  // namespace IstioAuthn
-}  // namespace NetworkFilters
-}  // namespace Extensions
-}  // namespace Envoy
+} // namespace IstioAuthn
+} // namespace NetworkFilters
+} // namespace Extensions
+} // namespace Envoy

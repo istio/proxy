@@ -22,4 +22,5 @@ package io.istio.network.authn;
 // respectively. The principal is the first element in the certificate URI SAN
 // list with the "spiffe://" prefix. The principals are populated downstream
 // only if the peer certificate is presented.
-message Config {}
+message Config {
+}

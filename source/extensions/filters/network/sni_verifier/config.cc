@@ -32,8 +32,7 @@ ProtobufTypes::MessagePtr SniVerifierConfigFactory::createEmptyConfigProto() {
   return std::make_unique<io::istio::tcp::sni_verifier::v1::Config>();
 }
 
-Network::FilterFactoryCb
-SniVerifierConfigFactory::createFilterFactoryFromContext(
+Network::FilterFactoryCb SniVerifierConfigFactory::createFilterFactoryFromContext(
     Server::Configuration::FactoryContext& context) {
   ConfigSharedPtr filter_config(new Config(context.scope()));
   return [filter_config](Network::FilterManager& filter_manager) -> void {
@@ -44,11 +43,10 @@ SniVerifierConfigFactory::createFilterFactoryFromContext(
 /**
  * Static registration for the echo filter. @see RegisterFactory.
  */
-static Registry::RegisterFactory<
-    SniVerifierConfigFactory,
-    Server::Configuration::NamedNetworkFilterConfigFactory>
+static Registry::RegisterFactory<SniVerifierConfigFactory,
+                                 Server::Configuration::NamedNetworkFilterConfigFactory>
     registered_;
 
-}  // namespace SniVerifier
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace SniVerifier
+} // namespace Tcp
+} // namespace Envoy

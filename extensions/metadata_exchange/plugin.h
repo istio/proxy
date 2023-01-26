@@ -38,26 +38,23 @@ namespace Plugin {
 #endif
 
 constexpr std::string_view ExchangeMetadataHeader = "x-envoy-peer-metadata";
-constexpr std::string_view ExchangeMetadataHeaderId =
-    "x-envoy-peer-metadata-id";
+constexpr std::string_view ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
 const size_t DefaultNodeCacheMaxSize = 500;
 
 // PluginRootContext is the root context for all streams processed by the
 // thread. It has the same lifetime as the worker thread and acts as target for
 // interactions that outlives individual stream, e.g. timer, async calls.
 class PluginRootContext : public RootContext {
- public:
-  PluginRootContext(uint32_t id, std::string_view root_id)
-      : RootContext(id, root_id) {}
+public:
+  PluginRootContext(uint32_t id, std::string_view root_id) : RootContext(id, root_id) {}
   bool onConfigure(size_t) override;
   bool configure(size_t);
 
   std::string_view metadataValue() { return metadata_value_; };
   std::string_view nodeId() { return node_id_; };
-  bool updatePeer(std::string_view key, std::string_view peer_id,
-                  std::string_view peer_header);
+  bool updatePeer(std::string_view key, std::string_view peer_id, std::string_view peer_header);
 
- private:
+private:
   void updateMetadataValue();
   std::string metadata_value_;
   std::string node_id_;
@@ -69,7 +66,7 @@ class PluginRootContext : public RootContext {
 
 // Per-stream context.
 class PluginContext : public Context {
- public:
+public:
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {
     direction_ = ::Wasm::Common::getTrafficDirection();
   }
@@ -77,13 +74,11 @@ class PluginContext : public Context {
   FilterHeadersStatus onRequestHeaders(uint32_t, bool) override;
   FilterHeadersStatus onResponseHeaders(uint32_t, bool) override;
 
- private:
+private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
-  inline std::string_view metadataValue() {
-    return rootContext()->metadataValue();
-  };
+  inline std::string_view metadataValue() { return rootContext()->metadataValue(); };
   inline std::string_view nodeId() { return rootContext()->nodeId(); }
 
   ::Wasm::Common::TrafficDirection direction_;
@@ -92,8 +87,8 @@ class PluginContext : public Context {
 };
 
 #ifdef NULL_PLUGIN
-}  // namespace Plugin
-}  // namespace MetadataExchange
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace Plugin
+} // namespace MetadataExchange
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

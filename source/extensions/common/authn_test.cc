@@ -26,7 +26,7 @@ namespace Envoy {
 namespace Utils {
 
 class AuthenticationTest : public testing::Test {
- protected:
+protected:
   void SetUp() override {
     test_result_.set_principal("foo");
     test_result_.set_peer_user("bar");
@@ -60,52 +60,27 @@ TEST_F(AuthenticationTest, SaveAuthAttributesToStruct) {
   Authentication::SaveAuthAttributesToStruct(result, data);
   EXPECT_FALSE(data.mutable_fields()->empty());
 
-  EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kRequestAuthPrincipal)
-                .string_value(),
+  EXPECT_EQ(data.fields().at(istio::utils::AttributeName::kRequestAuthPrincipal).string_value(),
             "principal");
-  EXPECT_EQ(
-      data.fields().at(istio::utils::AttributeName::kSourceUser).string_value(),
-      "cluster.local/sa/peeruser/ns/abc/");
-  EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kSourcePrincipal)
-                .string_value(),
+  EXPECT_EQ(data.fields().at(istio::utils::AttributeName::kSourceUser).string_value(),
             "cluster.local/sa/peeruser/ns/abc/");
-  EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kSourceNamespace)
-                .string_value(),
-            "abc");
-  EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kRequestAuthAudiences)
-                .string_value(),
+  EXPECT_EQ(data.fields().at(istio::utils::AttributeName::kSourcePrincipal).string_value(),
+            "cluster.local/sa/peeruser/ns/abc/");
+  EXPECT_EQ(data.fields().at(istio::utils::AttributeName::kSourceNamespace).string_value(), "abc");
+  EXPECT_EQ(data.fields().at(istio::utils::AttributeName::kRequestAuthAudiences).string_value(),
             "audiences0");
-  EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kRequestAuthPresenter)
-                .string_value(),
+  EXPECT_EQ(data.fields().at(istio::utils::AttributeName::kRequestAuthPresenter).string_value(),
             "presenter");
 
-  auto auth_claims =
-      data.fields().at(istio::utils::AttributeName::kRequestAuthClaims);
-  EXPECT_EQ(auth_claims.struct_value()
-                .fields()
-                .at("groups")
-                .list_value()
-                .values(0)
-                .string_value(),
+  auto auth_claims = data.fields().at(istio::utils::AttributeName::kRequestAuthClaims);
+  EXPECT_EQ(auth_claims.struct_value().fields().at("groups").list_value().values(0).string_value(),
             "group1");
-  EXPECT_EQ(auth_claims.struct_value()
-                .fields()
-                .at("groups")
-                .list_value()
-                .values(1)
-                .string_value(),
+  EXPECT_EQ(auth_claims.struct_value().fields().at("groups").list_value().values(1).string_value(),
             "group2");
 
-  EXPECT_EQ(data.fields()
-                .at(istio::utils::AttributeName::kRequestAuthRawClaims)
-                .string_value(),
+  EXPECT_EQ(data.fields().at(istio::utils::AttributeName::kRequestAuthRawClaims).string_value(),
             "rawclaim");
 }
 
-}  // namespace Utils
-}  // namespace Envoy
+} // namespace Utils
+} // namespace Envoy

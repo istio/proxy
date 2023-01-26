@@ -28,7 +28,7 @@
 // Do not reorder.
 #include "contrib/proxy_expr.h"
 
-#else  // NULL_PLUGIN
+#else // NULL_PLUGIN
 
 #include "include/proxy-wasm/null_plugin.h"
 
@@ -37,7 +37,7 @@ namespace null_plugin {
 
 #include "contrib/proxy_expr.h"
 
-#endif  // NULL_PLUGIN
+#endif // NULL_PLUGIN
 
 // END WASM_PROLOG
 
@@ -47,17 +47,14 @@ using google::protobuf::util::JsonParseOptions;
 using google::protobuf::util::Status;
 
 class Match {
- public:
-  explicit Match(const std::string& condition, uint32_t condition_token,
-                 const std::string& value)
-      : condition_(condition),
-        condition_token_(condition_token),
-        value_(value){};
+public:
+  explicit Match(const std::string& condition, uint32_t condition_token, const std::string& value)
+      : condition_(condition), condition_token_(condition_token), value_(value){};
 
   std::optional<bool> evaluate() const;
   const std::string& value() const { return value_; };
 
- private:
+private:
   const std::string condition_;
   // Expression token associated with the condition.
   const uint32_t condition_token_;
@@ -67,20 +64,17 @@ class Match {
 enum EvalPhase { OnLog, OnRequest };
 
 class AttributeGenerator {
- public:
-  explicit AttributeGenerator(EvalPhase phase,
-                              const std::string& output_attribute,
+public:
+  explicit AttributeGenerator(EvalPhase phase, const std::string& output_attribute,
                               const std::vector<Match>& matches)
-      : phase_(phase),
-        output_attribute_(output_attribute),
-        matches_(std::move(matches)) {}
+      : phase_(phase), output_attribute_(output_attribute), matches_(std::move(matches)) {}
 
   // If evaluation is successful returns true and sets result.
   std::optional<bool> evaluate(std::string* val) const;
   EvalPhase phase() const { return phase_; }
   const std::string& outputAttribute() const { return output_attribute_; }
 
- private:
+private:
   EvalPhase phase_;
   const std::string output_attribute_;
   const std::vector<Match> matches_;
@@ -90,9 +84,8 @@ class AttributeGenerator {
 // thread. It has the same lifetime as the worker thread and acts as target
 // for interactions that outlives individual stream, e.g. timer, async calls.
 class PluginRootContext : public RootContext {
- public:
-  PluginRootContext(uint32_t id, std::string_view root_id)
-      : RootContext(id, root_id) {
+public:
+  PluginRootContext(uint32_t id, std::string_view root_id) : RootContext(id, root_id) {
     Metric error_count(MetricType::Counter, "error_count",
                        {MetricTag{"wasm_filter", MetricTag::TagType::String},
                         MetricTag{"type", MetricTag::TagType::String}});
@@ -104,7 +97,7 @@ class PluginRootContext : public RootContext {
   bool onDone() override;
   void attributeGen(EvalPhase);
 
- private:
+private:
   // Destroy host resources for the allocated expressions.
   void cleanupAttributeGen();
   bool initAttributeGen(const istio::attributegen::PluginConfig& config);
@@ -123,7 +116,7 @@ class PluginRootContext : public RootContext {
 
 // Per-stream context.
 class PluginContext : public Context {
- public:
+public:
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
   void onLog() override { rootContext()->attributeGen(OnLog); };
@@ -133,7 +126,7 @@ class PluginContext : public Context {
     return FilterHeadersStatus::Continue;
   }
 
- private:
+private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
@@ -143,14 +136,13 @@ class PluginContext : public Context {
 PROXY_WASM_NULL_PLUGIN_REGISTRY;
 #endif
 
-static RegisterContextFactory register_AttributeGen(
-    CONTEXT_FACTORY(AttributeGen::PluginContext),
-    ROOT_FACTORY(AttributeGen::PluginRootContext));
+static RegisterContextFactory register_AttributeGen(CONTEXT_FACTORY(AttributeGen::PluginContext),
+                                                    ROOT_FACTORY(AttributeGen::PluginRootContext));
 
-}  // namespace AttributeGen
+} // namespace AttributeGen
 
 // WASM_EPILOG
 #ifdef NULL_PLUGIN
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

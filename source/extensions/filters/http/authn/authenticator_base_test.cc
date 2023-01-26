@@ -77,24 +77,21 @@ const std::string kExchangedTokenPayloadNoOriginalClaims =
    )";
 
 class MockAuthenticatorBase : public AuthenticatorBase {
- public:
-  MockAuthenticatorBase(FilterContext* filter_context)
-      : AuthenticatorBase(filter_context) {}
+public:
+  MockAuthenticatorBase(FilterContext* filter_context) : AuthenticatorBase(filter_context) {}
   MOCK_METHOD1(run, bool(Payload*));
 };
 
 class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
                          public Logger::Loggable<Logger::Id::filter> {
- public:
+public:
   virtual ~ValidateX509Test() {}
 
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  Http::RequestHeaderMapPtr header_ =
-      Envoy::Http::RequestHeaderMapImpl::create();
+  Http::RequestHeaderMapPtr header_ = Envoy::Http::RequestHeaderMapImpl::create();
   FilterConfig filter_config_{};
-  FilterContext filter_context_{
-      envoy::config::core::v3::Metadata::default_instance(), *header_,
-      &connection_, filter_config_};
+  FilterContext filter_context_{envoy::config::core::v3::Metadata::default_instance(), *header_,
+                                &connection_, filter_config_};
 
   MockAuthenticatorBase authenticator_{&filter_context_};
 
@@ -105,7 +102,7 @@ class ValidateX509Test : public testing::TestWithParam<iaapi::MutualTls::Mode>,
 
   void TearDown() override { delete (payload_); }
 
- protected:
+protected:
   iaapi::MutualTls mtls_params_;
   iaapi::Jwt jwt_;
   Payload* payload_;
@@ -139,8 +136,7 @@ TEST_P(ValidateX509Test, SslConnectionWithNoPeerCert) {
 TEST_P(ValidateX509Test, SslConnectionWithPeerCert) {
   auto ssl = std::make_shared<NiceMock<Ssl::MockConnectionInfo>>();
   ON_CALL(*ssl, peerCertificatePresented()).WillByDefault(Return(true));
-  ON_CALL(*ssl, uriSanPeerCertificate())
-      .WillByDefault(Return(std::vector<std::string>{"foo"}));
+  ON_CALL(*ssl, uriSanPeerCertificate()).WillByDefault(Return(std::vector<std::string>{"foo"}));
   EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(ssl));
 
   // Should return false due to unable to extract trust domain from principal.
@@ -153,13 +149,11 @@ TEST_P(ValidateX509Test, SslConnectionWithPeerCert) {
 TEST_P(ValidateX509Test, SslConnectionWithCertsSkipTrustDomainValidation) {
   // skip trust domain validation.
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage("{ skip_validate_trust_domain: true }", &filter_config_,
-                      options);
+  JsonStringToMessage("{ skip_validate_trust_domain: true }", &filter_config_, options);
 
   auto ssl = std::make_shared<NiceMock<Ssl::MockConnectionInfo>>();
   ON_CALL(*ssl, peerCertificatePresented()).WillByDefault(Return(true));
-  ON_CALL(*ssl, uriSanPeerCertificate())
-      .WillByDefault(Return(std::vector<std::string>{"foo"}));
+  ON_CALL(*ssl, uriSanPeerCertificate()).WillByDefault(Return(std::vector<std::string>{"foo"}));
   EXPECT_CALL(Const(connection_), ssl()).WillRepeatedly(Return(ssl));
 
   // Should return true due to trust domain validation skipped.
@@ -201,8 +195,7 @@ TEST_P(ValidateX509Test, SslConnectionWithSpiffeCertsDifferentTrustDomain) {
 TEST_P(ValidateX509Test, SslConnectionWithPeerMalformedSpiffeCert) {
   // skip trust domain validation.
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage("{ skip_validate_trust_domain: true }", &filter_config_,
-                      options);
+  JsonStringToMessage("{ skip_validate_trust_domain: true }", &filter_config_, options);
 
   auto ssl = std::make_shared<NiceMock<Ssl::MockConnectionInfo>>();
   ON_CALL(*ssl, peerCertificatePresented()).WillByDefault(Return(true));
@@ -221,29 +214,25 @@ TEST_P(ValidateX509Test, SslConnectionWithPeerMalformedSpiffeCert) {
 }
 
 INSTANTIATE_TEST_SUITE_P(ValidateX509Tests, ValidateX509Test,
-                         testing::Values(iaapi::MutualTls::STRICT,
-                                         iaapi::MutualTls::PERMISSIVE));
+                         testing::Values(iaapi::MutualTls::STRICT, iaapi::MutualTls::PERMISSIVE));
 
-class ValidateJwtTest : public testing::Test,
-                        public Logger::Loggable<Logger::Id::filter> {
- public:
+class ValidateJwtTest : public testing::Test, public Logger::Loggable<Logger::Id::filter> {
+public:
   virtual ~ValidateJwtTest() {}
 
   // StrictMock<Envoy::RequestInfo::MockRequestInfo> request_info_{};
   envoy::config::core::v3::Metadata dynamic_metadata_;
   NiceMock<Envoy::Network::MockConnection> connection_{};
-  Http::RequestHeaderMapPtr header_ =
-      Envoy::Http::RequestHeaderMapImpl::create();
+  Http::RequestHeaderMapPtr header_ = Envoy::Http::RequestHeaderMapImpl::create();
   FilterConfig filter_config_{};
-  FilterContext filter_context_{dynamic_metadata_, *header_, &connection_,
-                                filter_config_};
+  FilterContext filter_context_{dynamic_metadata_, *header_, &connection_, filter_config_};
   MockAuthenticatorBase authenticator_{&filter_context_};
 
   void SetUp() override { payload_ = new Payload(); }
 
   void TearDown() override { delete (payload_); }
 
- protected:
+protected:
   iaapi::MutualTls mtls_params_;
   iaapi::Jwt jwt_;
   Payload* payload_;
@@ -309,9 +298,9 @@ TEST_F(ValidateJwtTest, NoJwtPayloadOutput) {
 TEST_F(ValidateJwtTest, HasJwtPayloadOutputButNoDataForKey) {
   jwt_.set_issuer("issuer@foo.com");
 
-  (*dynamic_metadata_.mutable_filter_metadata())
-      [Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
-          .MergeFrom(MessageUtil::keyValueStruct("foo", "bar"));
+  (*dynamic_metadata_
+        .mutable_filter_metadata())[Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
+      .MergeFrom(MessageUtil::keyValueStruct("foo", "bar"));
 
   // When there is no JWT payload for given issuer in request info dynamic
   // metadata, validateJwt() should return nullptr and failure.
@@ -321,9 +310,9 @@ TEST_F(ValidateJwtTest, HasJwtPayloadOutputButNoDataForKey) {
 
 TEST_F(ValidateJwtTest, JwtPayloadAvailableWithBadData) {
   jwt_.set_issuer("issuer@foo.com");
-  (*dynamic_metadata_.mutable_filter_metadata())
-      [Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
-          .MergeFrom(MessageUtil::keyValueStruct("issuer@foo.com", "bad-data"));
+  (*dynamic_metadata_
+        .mutable_filter_metadata())[Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
+      .MergeFrom(MessageUtil::keyValueStruct("issuer@foo.com", "bad-data"));
   // EXPECT_CALL(request_info_, dynamicMetadata());
 
   EXPECT_FALSE(authenticator_.validateJwt(jwt_, payload_));
@@ -336,12 +325,10 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
   JsonStringToMessage(kSecIstioAuthUserinfoHeaderValue, &header_payload,
                       google::protobuf::util::JsonParseOptions{});
   google::protobuf::Struct payload;
-  (*payload.mutable_fields())["issuer@foo.com"]
-      .mutable_struct_value()
-      ->CopyFrom(header_payload);
-  (*dynamic_metadata_.mutable_filter_metadata())
-      [Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
-          .MergeFrom(payload);
+  (*payload.mutable_fields())["issuer@foo.com"].mutable_struct_value()->CopyFrom(header_payload);
+  (*dynamic_metadata_
+        .mutable_filter_metadata())[Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
+      .MergeFrom(payload);
 
   Payload expected_payload;
   JsonStringToMessage(
@@ -380,9 +367,9 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedToken) {
   google::protobuf::Struct payload;
   (*payload.mutable_fields())["token-service"].mutable_struct_value()->CopyFrom(
       exchange_token_payload);
-  (*dynamic_metadata_.mutable_filter_metadata())
-      [Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
-          .MergeFrom(payload);
+  (*dynamic_metadata_
+        .mutable_filter_metadata())[Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
+      .MergeFrom(payload);
 
   Payload expected_payload;
   JsonStringToMessage(
@@ -418,15 +405,14 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenMissing) {
   jwt_.add_jwt_headers(kExchangedTokenHeaderName);
 
   google::protobuf::Struct exchange_token_payload;
-  JsonStringToMessage(kExchangedTokenPayloadNoOriginalClaims,
-                      &exchange_token_payload,
+  JsonStringToMessage(kExchangedTokenPayloadNoOriginalClaims, &exchange_token_payload,
                       google::protobuf::util::JsonParseOptions{});
   google::protobuf::Struct payload;
   (*payload.mutable_fields())["token-service"].mutable_struct_value()->CopyFrom(
       exchange_token_payload);
-  (*dynamic_metadata_.mutable_filter_metadata())
-      [Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
-          .MergeFrom(payload);
+  (*dynamic_metadata_
+        .mutable_filter_metadata())[Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
+      .MergeFrom(payload);
 
   // When no original_claims in an exchanged token, the token
   // is treated as invalid.
@@ -442,9 +428,9 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenNotInIntendedHeader) {
   google::protobuf::Struct payload;
   (*payload.mutable_fields())["token-service"].mutable_struct_value()->CopyFrom(
       exchange_token_payload);
-  (*dynamic_metadata_.mutable_filter_metadata())
-      [Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
-          .MergeFrom(payload);
+  (*dynamic_metadata_
+        .mutable_filter_metadata())[Extensions::HttpFilters::HttpFilterNames::get().JwtAuthn]
+      .MergeFrom(payload);
 
   Payload expected_payload;
   JsonStringToMessage(
@@ -478,8 +464,8 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenNotInIntendedHeader) {
   EXPECT_TRUE(diff.Compare(expected_payload, *payload_));
 }
 
-}  // namespace
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

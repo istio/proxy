@@ -46,9 +46,8 @@ const size_t DefaultClientCacheMaxSize = 500;
 // thread. It has the same lifetime as the filter instance and acts as target
 // for interactions that outlives individual stream, e.g. timer, async calls.
 class PluginRootContext : public RootContext {
- public:
-  PluginRootContext(uint32_t id, std::string_view root_id)
-      : RootContext(id, root_id) {}
+public:
+  PluginRootContext(uint32_t id, std::string_view root_id) : RootContext(id, root_id) {}
   ~PluginRootContext() = default;
 
   bool onConfigure(size_t) override;
@@ -66,7 +65,7 @@ class PluginRootContext : public RootContext {
   long long logTimeDurationNanos() { return log_time_duration_nanos_; };
   bool initialized() const { return initialized_; };
 
- private:
+private:
   accesslogpolicy::config::v1alpha1::AccessLogPolicyConfig config_;
   // Cache storing last log time by a client.
   absl::flat_hash_map<Wasm::Common::IstioDimensions, long long> cache_;
@@ -78,12 +77,12 @@ class PluginRootContext : public RootContext {
 
 // Per-stream context.
 class PluginContext : public Context {
- public:
+public:
   explicit PluginContext(uint32_t id, RootContext* root) : Context(id, root) {}
 
   void onLog() override;
 
- private:
+private:
   inline PluginRootContext* rootContext() {
     return dynamic_cast<PluginRootContext*>(this->root());
   };
@@ -91,20 +90,17 @@ class PluginContext : public Context {
     return rootContext()->lastLogTimeNanos(istio_dimensions_);
   };
   inline void updateLastLogTimeNanos(long long last_log_time_nanos) {
-    rootContext()->updateLastLogTimeNanos(istio_dimensions_,
-                                          last_log_time_nanos);
+    rootContext()->updateLastLogTimeNanos(istio_dimensions_, last_log_time_nanos);
   };
-  inline long long logTimeDurationNanos() {
-    return rootContext()->logTimeDurationNanos();
-  };
+  inline long long logTimeDurationNanos() { return rootContext()->logTimeDurationNanos(); };
   bool isRequestFailed();
 
   Wasm::Common::IstioDimensions istio_dimensions_;
 };
 
 #ifdef NULL_PLUGIN
-}  // namespace Plugin
-}  // namespace AccessLogPolicy
-}  // namespace null_plugin
-}  // namespace proxy_wasm
+} // namespace Plugin
+} // namespace AccessLogPolicy
+} // namespace null_plugin
+} // namespace proxy_wasm
 #endif

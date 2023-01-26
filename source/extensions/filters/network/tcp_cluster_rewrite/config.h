@@ -33,22 +33,19 @@ namespace TcpClusterRewrite {
  */
 class TcpClusterRewriteFilterConfigFactory
     : public Server::Configuration::NamedNetworkFilterConfigFactory {
- public:
-  Network::FilterFactoryCb createFilterFactoryFromProto(
-      const Protobuf::Message&,
-      Server::Configuration::FactoryContext&) override;
+public:
+  Network::FilterFactoryCb
+  createFilterFactoryFromProto(const Protobuf::Message&,
+                               Server::Configuration::FactoryContext&) override;
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
 
-  std::string name() const override {
-    return "envoy.filters.network.tcp_cluster_rewrite";
-  }
+  std::string name() const override { return "envoy.filters.network.tcp_cluster_rewrite"; }
 
- private:
-  Network::FilterFactoryCb createFilterFactory(
-      const v2alpha1::TcpClusterRewrite& config_pb);
+private:
+  Network::FilterFactoryCb createFilterFactory(const v2alpha1::TcpClusterRewrite& config_pb);
 };
 
-}  // namespace TcpClusterRewrite
-}  // namespace Tcp
-}  // namespace Envoy
+} // namespace TcpClusterRewrite
+} // namespace Tcp
+} // namespace Envoy

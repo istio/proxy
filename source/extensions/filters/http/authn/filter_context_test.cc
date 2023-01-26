@@ -31,15 +31,15 @@ namespace AuthN {
 namespace {
 
 class FilterContextTest : public testing::Test {
- public:
+public:
   virtual ~FilterContextTest() {}
 
   envoy::config::core::v3::Metadata metadata_;
   Envoy::Http::TestRequestHeaderMapImpl header_{};
   // This test suit does not use connection, so ok to use null for it.
-  FilterContext filter_context_{metadata_, header_, nullptr,
-                                istio::envoy::config::filter::http::authn::
-                                    v2alpha1::FilterConfig::default_instance()};
+  FilterContext filter_context_{
+      metadata_, header_, nullptr,
+      istio::envoy::config::filter::http::authn::v2alpha1::FilterConfig::default_instance()};
 
   Payload x509_payload_{TestUtilities::CreateX509Payload("foo")};
   Payload jwt_payload_{TestUtilities::CreateJwtPayload("bar", "istio.io")};
@@ -47,9 +47,8 @@ class FilterContextTest : public testing::Test {
 
 TEST_F(FilterContextTest, SetPeerResult) {
   filter_context_.setPeerResult(&x509_payload_);
-  EXPECT_TRUE(TestUtility::protoEqual(
-      TestUtilities::AuthNResultFromString("peer_user: \"foo\""),
-      filter_context_.authenticationResult()));
+  EXPECT_TRUE(TestUtility::protoEqual(TestUtilities::AuthNResultFromString("peer_user: \"foo\""),
+                                      filter_context_.authenticationResult()));
 }
 
 TEST_F(FilterContextTest, SetOriginResult) {
@@ -122,8 +121,8 @@ TEST_F(FilterContextTest, PrincipalUsePeerOnEmptyPeer) {
                                       filter_context_.authenticationResult()));
 }
 
-}  // namespace
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

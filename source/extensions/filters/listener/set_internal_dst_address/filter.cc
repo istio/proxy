@@ -27,12 +27,10 @@ constexpr std::string_view MetadataKey = "tunnel";
 constexpr std::string_view DestinationAddressField = "destination";
 constexpr std::string_view TunnelAddressField = "address";
 
-Envoy::Network::FilterStatus Filter::onAccept(
-    Envoy::Network::ListenerFilterCallbacks& cb) {
+Envoy::Network::FilterStatus Filter::onAccept(Envoy::Network::ListenerFilterCallbacks& cb) {
   auto& socket = cb.socket();
   // First, check the filter state;
-  const auto* object =
-      cb.filterState().getDataReadOnly<Authority>(FilterStateKey);
+  const auto* object = cb.filterState().getDataReadOnly<Authority>(FilterStateKey);
   if (object) {
     const auto local_address =
         Envoy::Network::Utility::parseInternetAddressAndPortNoThrow(
@@ -48,8 +46,7 @@ Envoy::Network::FilterStatus Filter::onAccept(
           std::make_shared<Envoy::Network::DestinationAddress>(tunnel_address),
           Envoy::StreamInfo::FilterState::StateType::ReadOnly);
     } else {
-      ENVOY_LOG_MISC(trace, "Failed to parse filter state address: {}",
-                     object->value_);
+      ENVOY_LOG_MISC(trace, "Failed to parse filter state address: {}", object->value_);
     }
     return Envoy::Network::FilterStatus::Continue;
   }
@@ -63,17 +60,14 @@ Envoy::Network::FilterStatus Filter::onAccept(
           Envoy::Network::Utility::parseInternetAddressAndPortNoThrow(
               address_it->second.string_value(), /*v6only=*/false);
       if (local_address) {
-        ENVOY_LOG_MISC(trace, "Restore local address: {}",
-                       local_address->asString());
+        ENVOY_LOG_MISC(trace, "Restore local address: {}", local_address->asString());
         socket.connectionInfoProvider().restoreLocalAddress(local_address);
       } else {
-        ENVOY_LOG_MISC(trace, "Failed to parse {} address: {}",
-                       DestinationAddressField,
+        ENVOY_LOG_MISC(trace, "Failed to parse {} address: {}", DestinationAddressField,
                        address_it->second.string_value());
       }
     } else {
-      ENVOY_LOG_MISC(trace, "Missing metadata field '{}'",
-                     DestinationAddressField);
+      ENVOY_LOG_MISC(trace, "Missing metadata field '{}'", DestinationAddressField);
     }
     address_it = iter->second.fields().find(TunnelAddressField);
     if (address_it != iter->second.fields().end() &&
@@ -103,20 +97,17 @@ Envoy::Network::FilterStatus Filter::onAccept(
   return Envoy::Network::FilterStatus::Continue;
 }
 
-class FilterFactory
-    : public Envoy::Server::Configuration::NamedListenerFilterConfigFactory {
- public:
+class FilterFactory : public Envoy::Server::Configuration::NamedListenerFilterConfigFactory {
+public:
   // NamedListenerFilterConfigFactory
   Envoy::Network::ListenerFilterFactoryCb createListenerFilterFactoryFromProto(
       const Envoy::Protobuf::Message&,
-      const Envoy::Network::ListenerFilterMatcherSharedPtr&
-          listener_filter_matcher,
+      const Envoy::Network::ListenerFilterMatcherSharedPtr& listener_filter_matcher,
       Envoy::Server::Configuration::ListenerFactoryContext&) override {
-    return [listener_filter_matcher](
-               Envoy::Network::ListenerFilterManager& filter_manager) -> void {
-      filter_manager.addAcceptFilter(listener_filter_matcher,
-                                     std::make_unique<Filter>());
-    };
+    return
+        [listener_filter_matcher](Envoy::Network::ListenerFilterManager& filter_manager) -> void {
+          filter_manager.addAcceptFilter(listener_filter_matcher, std::make_unique<Filter>());
+        };
   }
 
   Envoy::ProtobufTypes::MessagePtr createEmptyConfigProto() override {
@@ -126,9 +117,7 @@ class FilterFactory
   std::string name() const override { return "istio.set_internal_dst_address"; }
 };
 
-REGISTER_FACTORY(
-    FilterFactory,
-    Envoy::Server::Configuration::NamedListenerFilterConfigFactory);
+REGISTER_FACTORY(FilterFactory, Envoy::Server::Configuration::NamedListenerFilterConfigFactory);
 
-}  // namespace SetInternalDstAddress
-}  // namespace Istio
+} // namespace SetInternalDstAddress
+} // namespace Istio

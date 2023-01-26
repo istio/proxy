@@ -25,7 +25,7 @@
 // WASM_PROLOG
 #ifdef NULL_PLUGIN
 namespace Wasm {
-#endif  // NULL_PLUGIN
+#endif // NULL_PLUGIN
 
 // END WASM_PROLOG
 
@@ -82,19 +82,17 @@ constexpr std::string_view node_metadata_json_with_missing_lists = R"###(
 TEST(ProtoUtilTest, extractNodeMetadata) {
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  EXPECT_TRUE(JsonStringToMessage(std::string(node_metadata_json),
-                                  &metadata_struct, json_parse_options)
-                  .ok());
+  EXPECT_TRUE(
+      JsonStringToMessage(std::string(node_metadata_json), &metadata_struct, json_parse_options)
+          .ok());
   auto out = extractNodeFlatBufferFromStruct(metadata_struct);
   auto peer = flatbuffers::GetRoot<FlatNode>(out.data());
   EXPECT_EQ(peer->name()->string_view(), "test_pod");
   EXPECT_EQ(peer->namespace_()->string_view(), "test_namespace");
   EXPECT_EQ(peer->owner()->string_view(), "test_owner");
   EXPECT_EQ(peer->workload_name()->string_view(), "test_workload");
-  EXPECT_EQ(peer->platform_metadata()->Get(2)->key()->string_view(),
-            "gcp_project");
-  EXPECT_EQ(peer->platform_metadata()->Get(2)->value()->string_view(),
-            "test_project");
+  EXPECT_EQ(peer->platform_metadata()->Get(2)->key()->string_view(), "gcp_project");
+  EXPECT_EQ(peer->platform_metadata()->Get(2)->value()->string_view(), "test_project");
   EXPECT_EQ(peer->app_containers()->size(), 2);
   EXPECT_EQ(peer->instance_ips()->size(), 3);
   EXPECT_EQ(peer->cluster_id()->string_view(), "test-cluster");
@@ -104,20 +102,17 @@ TEST(ProtoUtilTest, extractNodeMetadata) {
 TEST(ProtoUtilTest, extractNodeMetadataWithMissingLists) {
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  EXPECT_TRUE(
-      JsonStringToMessage(std::string(node_metadata_json_with_missing_lists),
-                          &metadata_struct, json_parse_options)
-          .ok());
+  EXPECT_TRUE(JsonStringToMessage(std::string(node_metadata_json_with_missing_lists),
+                                  &metadata_struct, json_parse_options)
+                  .ok());
   auto out = extractNodeFlatBufferFromStruct(metadata_struct);
   auto peer = flatbuffers::GetRoot<FlatNode>(out.data());
   EXPECT_EQ(peer->name()->string_view(), "test_pod");
   EXPECT_EQ(peer->namespace_()->string_view(), "test_namespace");
   EXPECT_EQ(peer->owner()->string_view(), "test_owner");
   EXPECT_EQ(peer->workload_name()->string_view(), "test_workload");
-  EXPECT_EQ(peer->platform_metadata()->Get(2)->key()->string_view(),
-            "gcp_project");
-  EXPECT_EQ(peer->platform_metadata()->Get(2)->value()->string_view(),
-            "test_project");
+  EXPECT_EQ(peer->platform_metadata()->Get(2)->key()->string_view(), "gcp_project");
+  EXPECT_EQ(peer->platform_metadata()->Get(2)->value()->string_view(), "test_project");
   EXPECT_EQ(peer->app_containers(), nullptr);
   EXPECT_EQ(peer->instance_ips(), nullptr);
   EXPECT_EQ(peer->cluster_id()->string_view(), "test-cluster");
@@ -127,9 +122,9 @@ TEST(ProtoUtilTest, extractNodeMetadataWithMissingLists) {
 TEST(ProtoUtilTest, Rountrip) {
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  EXPECT_TRUE(JsonStringToMessage(std::string(node_metadata_json),
-                                  &metadata_struct, json_parse_options)
-                  .ok());
+  EXPECT_TRUE(
+      JsonStringToMessage(std::string(node_metadata_json), &metadata_struct, json_parse_options)
+          .ok());
   auto out = extractNodeFlatBufferFromStruct(metadata_struct);
   auto peer = flatbuffers::GetRoot<FlatNode>(out.data());
 
@@ -155,9 +150,9 @@ TEST(ProtoUtilTest, RountripEmpty) {
   EXPECT_EQ(0, output_struct.fields().size());
 }
 
-}  // namespace Common
+} // namespace Common
 
 // WASM_EPILOG
 #ifdef NULL_PLUGIN
-}  // namespace Wasm
+} // namespace Wasm
 #endif

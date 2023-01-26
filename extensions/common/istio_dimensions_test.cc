@@ -28,9 +28,7 @@ TEST(WasmCommonIstioDimensionsTest, VerifyHashing) {
       IstioDimensions().set_request_protocol("wrpc"),
       IstioDimensions().set_request_protocol("grpc").set_response_code("200"),
       IstioDimensions().set_request_protocol("grpc").set_response_code("400"),
-      IstioDimensions()
-          .set_source_app("app_source")
-          .set_request_protocol("grpc"),
+      IstioDimensions().set_source_app("app_source").set_request_protocol("grpc"),
       IstioDimensions()
           .set_source_app("app_source")
           .set_source_version("v2")
@@ -54,6 +52,6 @@ TEST(WasmCommonIstioDimensionsTest, VerifyHashing) {
   }));
 }
 
-}  // namespace
-}  // namespace Common
-}  // namespace Wasm
+} // namespace
+} // namespace Common
+} // namespace Wasm

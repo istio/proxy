@@ -37,32 +37,28 @@ static const std::string kExchangedTokenHeaderName = "ingress-authorization";
 // Returns whether the header for an exchanged token is found
 bool FindHeaderOfExchangedToken(const iaapi::Jwt& jwt) {
   return (jwt.jwt_headers_size() == 1 &&
-          LowerCaseString(kExchangedTokenHeaderName) ==
-              LowerCaseString(jwt.jwt_headers(0)));
+          LowerCaseString(kExchangedTokenHeaderName) == LowerCaseString(jwt.jwt_headers(0)));
 }
 
-}  // namespace
+} // namespace
 
 AuthenticatorBase::AuthenticatorBase(FilterContext* filter_context)
     : filter_context_(*filter_context) {}
 
 AuthenticatorBase::~AuthenticatorBase() {}
 
-bool AuthenticatorBase::validateTrustDomain(
-    const Network::Connection* connection) const {
+bool AuthenticatorBase::validateTrustDomain(const Network::Connection* connection) const {
   std::string peer_trust_domain;
   if (!Utils::GetTrustDomain(connection, true, &peer_trust_domain)) {
-    ENVOY_CONN_LOG(
-        error, "trust domain validation failed: cannot get peer trust domain",
-        *connection);
+    ENVOY_CONN_LOG(error, "trust domain validation failed: cannot get peer trust domain",
+                   *connection);
     return false;
   }
 
   std::string local_trust_domain;
   if (!Utils::GetTrustDomain(connection, false, &local_trust_domain)) {
-    ENVOY_CONN_LOG(
-        error, "trust domain validation failed: cannot get local trust domain",
-        *connection);
+    ENVOY_CONN_LOG(error, "trust domain validation failed: cannot get local trust domain",
+                   *connection);
     return false;
   }
 
@@ -78,8 +74,7 @@ bool AuthenticatorBase::validateTrustDomain(
   return true;
 }
 
-bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
-                                     Payload* payload) const {
+bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls, Payload* payload) const {
   const Network::Connection* connection = filter_context_.connection();
   if (connection == nullptr) {
     // It's wrong if connection does not exist.
@@ -88,26 +83,23 @@ bool AuthenticatorBase::validateX509(const iaapi::MutualTls& mtls,
   }
   // Always try to get principal and set to output if available.
   const bool has_user =
-      connection->ssl() != nullptr &&
-      connection->ssl()->peerCertificatePresented() &&
-      Utils::GetPrincipal(connection, true,
-                          payload->mutable_x509()->mutable_user());
+      connection->ssl() != nullptr && connection->ssl()->peerCertificatePresented() &&
+      Utils::GetPrincipal(connection, true, payload->mutable_x509()->mutable_user());
 
-  ENVOY_CONN_LOG(debug, "validateX509 mode {}: ssl={}, has_user={}",
-                 *connection, iaapi::MutualTls::Mode_Name(mtls.mode()),
-                 connection->ssl() != nullptr, has_user);
+  ENVOY_CONN_LOG(debug, "validateX509 mode {}: ssl={}, has_user={}", *connection,
+                 iaapi::MutualTls::Mode_Name(mtls.mode()), connection->ssl() != nullptr, has_user);
 
   if (!has_user) {
     // For plaintext connection, return value depend on mode:
     // - PERMISSIVE: always true.
     // - STRICT: always false.
     switch (mtls.mode()) {
-      case iaapi::MutualTls::PERMISSIVE:
-        return true;
-      case iaapi::MutualTls::STRICT:
-        return false;
-      default:
-        PANIC("not reached");
+    case iaapi::MutualTls::PERMISSIVE:
+      return true;
+    case iaapi::MutualTls::STRICT:
+      return false;
+    default:
+      PANIC("not reached");
     }
   }
 
@@ -136,20 +128,17 @@ bool AuthenticatorBase::validateJwt(const iaapi::Jwt& jwt, Payload* payload) {
         // When the header of an exchanged token is found but the token
         // does not contain the claim of the original payload, it
         // is regarded as an invalid exchanged token.
-        ENVOY_LOG(
-            error,
-            "Expect exchanged-token with original payload claim. Received: {}",
-            jwt_payload);
+        ENVOY_LOG(error, "Expect exchanged-token with original payload claim. Received: {}",
+                  jwt_payload);
         return false;
       }
     }
-    return AuthnUtils::ProcessJwtPayload(payload_to_process,
-                                         payload->mutable_jwt());
+    return AuthnUtils::ProcessJwtPayload(payload_to_process, payload->mutable_jwt());
   }
   return false;
 }
 
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

@@ -33,10 +33,9 @@ namespace Stackdriver {
 namespace Metric {
 
 // Returns Stackdriver exporter config option based on node metadata.
-opencensus::exporters::stats::StackdriverOptions getStackdriverOptions(
-    const Wasm::Common::FlatNode& local_node_info,
-    const ::Extensions::Stackdriver::Common::StackdriverStubOption&
-        stub_option);
+opencensus::exporters::stats::StackdriverOptions
+getStackdriverOptions(const Wasm::Common::FlatNode& local_node_info,
+                      const ::Extensions::Stackdriver::Common::StackdriverStubOption& stub_option);
 
 // registers Opencensus views
 void registerViews(absl::Duration, const std::vector<std::string>&);
@@ -88,6 +87,6 @@ opencensus::stats::MeasureInt64 clientConnectionsCloseCountMeasure();
 opencensus::stats::MeasureInt64 clientReceivedBytesCountMeasure();
 opencensus::stats::MeasureInt64 clientSentBytesCountMeasure();
 
-}  // namespace Metric
-}  // namespace Stackdriver
-}  // namespace Extensions
+} // namespace Metric
+} // namespace Stackdriver
+} // namespace Extensions

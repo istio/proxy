@@ -34,10 +34,9 @@ static const std::string kJwtIssuerKey = "iss";
 // The key name for the original claims in an exchanged token
 static const std::string kExchangedTokenOriginalPayload = "original_claims";
 
-};  // namespace
+}; // namespace
 
-void process(const Wasm::Common::JsonObject& json_obj,
-             google::protobuf::Struct& claims) {
+void process(const Wasm::Common::JsonObject& json_obj, google::protobuf::Struct& claims) {
   for (const auto& claim : json_obj.items()) {
     auto json_key = Wasm::Common::JsonValueAs<std::string>(claim.key());
     if (json_key.second != Wasm::Common::JsonParserResultDetail::OK) {
@@ -46,34 +45,26 @@ void process(const Wasm::Common::JsonObject& json_obj,
     const std::string& key = json_key.first.value();
 
     // 1. Try to parse as string.
-    auto value_string =
-        Wasm::Common::JsonGetField<std::string_view>(json_obj, key);
+    auto value_string = Wasm::Common::JsonGetField<std::string_view>(json_obj, key);
     if (value_string.detail() == Wasm::Common::JsonParserResultDetail::OK) {
-      const auto list =
-          absl::StrSplit(value_string.value().data(), ' ', absl::SkipEmpty());
+      const auto list = absl::StrSplit(value_string.value().data(), ' ', absl::SkipEmpty());
       for (const auto& s : list) {
-        (*claims.mutable_fields())[key]
-            .mutable_list_value()
-            ->add_values()
-            ->set_string_value(std::string(s));
+        (*claims.mutable_fields())[key].mutable_list_value()->add_values()->set_string_value(
+            std::string(s));
       }
       continue;
     }
     // 2. If not a string, try to parse as list of string.
-    auto value_list = Wasm::Common::JsonGetField<std::vector<std::string_view>>(
-        json_obj, key);
+    auto value_list = Wasm::Common::JsonGetField<std::vector<std::string_view>>(json_obj, key);
     if (value_list.detail() == Wasm::Common::JsonParserResultDetail::OK) {
       for (const auto& s : value_list.value()) {
-        (*claims.mutable_fields())[key]
-            .mutable_list_value()
-            ->add_values()
-            ->set_string_value(std::string(s));
+        (*claims.mutable_fields())[key].mutable_list_value()->add_values()->set_string_value(
+            std::string(s));
       }
       continue;
     }
     // 3. If not list of string, try to parse as struct (nested claims).
-    auto value_struct =
-        Wasm::Common::JsonGetField<Wasm::Common::JsonObject>(json_obj, key);
+    auto value_struct = Wasm::Common::JsonGetField<Wasm::Common::JsonObject>(json_obj, key);
     if (value_struct.detail() == Wasm::Common::JsonParserResultDetail::OK) {
       auto* nested = (*claims.mutable_fields())[key].mutable_struct_value();
       process(value_struct.value(), *nested);
@@ -103,23 +94,19 @@ bool AuthnUtils::ProcessJwtPayload(const std::string& payload_str,
   }
 
   // Build user
-  if (claims->find("iss") != claims->end() &&
-      claims->find("sub") != claims->end()) {
-    payload->set_user(
-        (*claims)["iss"].list_value().values().Get(0).string_value() + "/" +
-        (*claims)["sub"].list_value().values().Get(0).string_value());
+  if (claims->find("iss") != claims->end() && claims->find("sub") != claims->end()) {
+    payload->set_user((*claims)["iss"].list_value().values().Get(0).string_value() + "/" +
+                      (*claims)["sub"].list_value().values().Get(0).string_value());
   }
   // Build authorized presenter (azp)
   if (claims->find("azp") != claims->end()) {
-    payload->set_presenter(
-        (*claims)["azp"].list_value().values().Get(0).string_value());
+    payload->set_presenter((*claims)["azp"].list_value().values().Get(0).string_value());
   }
 
   return true;
 }
 
-bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
-                                        std::string* original_payload) {
+bool AuthnUtils::ExtractOriginalPayload(const std::string& token, std::string* original_payload) {
   auto result = Wasm::Common::JsonParse(token);
   if (!result.has_value()) {
     return false;
@@ -130,14 +117,10 @@ bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
     return false;
   }
 
-  auto original_payload_obj =
-      Wasm::Common::JsonGetField<Wasm::Common::JsonObject>(
-          json_obj, kExchangedTokenOriginalPayload);
-  if (original_payload_obj.detail() !=
-      Wasm::Common::JsonParserResultDetail::OK) {
-    ENVOY_LOG(debug,
-              "{}: original_payload in exchanged token is of invalid format.",
-              __FUNCTION__);
+  auto original_payload_obj = Wasm::Common::JsonGetField<Wasm::Common::JsonObject>(
+      json_obj, kExchangedTokenOriginalPayload);
+  if (original_payload_obj.detail() != Wasm::Common::JsonParserResultDetail::OK) {
+    ENVOY_LOG(debug, "{}: original_payload in exchanged token is of invalid format.", __FUNCTION__);
     return false;
   }
   *original_payload = original_payload_obj.value().dump();
@@ -145,28 +128,26 @@ bool AuthnUtils::ExtractOriginalPayload(const std::string& token,
   return true;
 }
 
-bool AuthnUtils::MatchString(absl::string_view str,
-                             const iaapi::StringMatch& match) {
+bool AuthnUtils::MatchString(absl::string_view str, const iaapi::StringMatch& match) {
   switch (match.match_type_case()) {
-    case iaapi::StringMatch::kExact: {
-      return match.exact() == str;
-    }
-    case iaapi::StringMatch::kPrefix: {
-      return absl::StartsWith(str, match.prefix());
-    }
-    case iaapi::StringMatch::kSuffix: {
-      return absl::EndsWith(str, match.suffix());
-    }
-    case iaapi::StringMatch::kRegex: {
-      return std::regex_match(std::string(str), std::regex(match.regex()));
-    }
-    default:
-      return false;
+  case iaapi::StringMatch::kExact: {
+    return match.exact() == str;
+  }
+  case iaapi::StringMatch::kPrefix: {
+    return absl::StartsWith(str, match.prefix());
+  }
+  case iaapi::StringMatch::kSuffix: {
+    return absl::EndsWith(str, match.suffix());
+  }
+  case iaapi::StringMatch::kRegex: {
+    return std::regex_match(std::string(str), std::regex(match.regex()));
+  }
+  default:
+    return false;
   }
 }
 
-static bool matchRule(absl::string_view path,
-                      const iaapi::Jwt_TriggerRule& rule) {
+static bool matchRule(absl::string_view path, const iaapi::Jwt_TriggerRule& rule) {
   for (const auto& excluded : rule.excluded_paths()) {
     if (AuthnUtils::MatchString(path, excluded)) {
       // The rule is not matched if any of excluded_paths matched.
@@ -192,8 +173,7 @@ static bool matchRule(absl::string_view path,
   return true;
 }
 
-bool AuthnUtils::ShouldValidateJwtPerPath(absl::string_view path,
-                                          const iaapi::Jwt& jwt) {
+bool AuthnUtils::ShouldValidateJwtPerPath(absl::string_view path, const iaapi::Jwt& jwt) {
   // If the path is empty which shouldn't happen for a HTTP request or if
   // there are no trigger rules at all, then simply return true as if there're
   // no per-path jwt support.
@@ -208,7 +188,7 @@ bool AuthnUtils::ShouldValidateJwtPerPath(absl::string_view path,
   return false;
 }
 
-}  // namespace AuthN
-}  // namespace Istio
-}  // namespace Http
-}  // namespace Envoy
+} // namespace AuthN
+} // namespace Istio
+} // namespace Http
+} // namespace Envoy

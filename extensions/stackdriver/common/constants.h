@@ -24,30 +24,20 @@ namespace Common {
 constexpr char kServerRequestCountMeasure[] = "server/request_count_measure";
 constexpr char kServerRequestBytesMeasure[] = "server/request_bytes_measure";
 constexpr char kServerResponseBytesMeasure[] = "server/response_bytes_measure";
-constexpr char kServerResponseLatenciesMeasure[] =
-    "server/response_latencies_measure";
+constexpr char kServerResponseLatenciesMeasure[] = "server/response_latencies_measure";
 constexpr char kClientRequestCountMeasure[] = "client/request_count_measure";
 constexpr char kClientRequestBytesMeasure[] = "client/request_bytes_measure";
 constexpr char kClientResponseBytesMeasure[] = "client/response_bytes_measure";
-constexpr char kClientRoundtripLatenciesMeasure[] =
-    "client/roundtrip_latencies_measure";
+constexpr char kClientRoundtripLatenciesMeasure[] = "client/roundtrip_latencies_measure";
 
-constexpr char kServerConnectionsOpenCountMeasure[] =
-    "server/connection_open_count_measure";
-constexpr char kServerConnectionsCloseCountMeasure[] =
-    "server/connection_close_count_measure";
-constexpr char kServerReceivedBytesCountMeasure[] =
-    "server/received_bytes_count_measure";
-constexpr char kServerSentBytesCountMeasure[] =
-    "server/sent_bytes_count_measure";
-constexpr char kClientConnectionsOpenCountMeasure[] =
-    "client/connection_open_count_measure";
-constexpr char kClientConnectionsCloseCountMeasure[] =
-    "client/connection_close_count_measure";
-constexpr char kClientReceivedBytesCountMeasure[] =
-    "client/received_bytes_count_measure";
-constexpr char kClientSentBytesCountMeasure[] =
-    "client/sent_bytes_count_measure";
+constexpr char kServerConnectionsOpenCountMeasure[] = "server/connection_open_count_measure";
+constexpr char kServerConnectionsCloseCountMeasure[] = "server/connection_close_count_measure";
+constexpr char kServerReceivedBytesCountMeasure[] = "server/received_bytes_count_measure";
+constexpr char kServerSentBytesCountMeasure[] = "server/sent_bytes_count_measure";
+constexpr char kClientConnectionsOpenCountMeasure[] = "client/connection_open_count_measure";
+constexpr char kClientConnectionsCloseCountMeasure[] = "client/connection_close_count_measure";
+constexpr char kClientReceivedBytesCountMeasure[] = "client/received_bytes_count_measure";
+constexpr char kClientSentBytesCountMeasure[] = "client/sent_bytes_count_measure";
 
 // View names of metrics.
 constexpr char kServerRequestCountView[] = "server/request_count";
@@ -59,16 +49,12 @@ constexpr char kClientRequestBytesView[] = "client/request_bytes";
 constexpr char kClientResponseBytesView[] = "client/response_bytes";
 constexpr char kClientRoundtripLatenciesView[] = "client/roundtrip_latencies";
 
-constexpr char kServerConnectionsOpenCountView[] =
-    "server/connection_open_count";
-constexpr char kServerConnectionsCloseCountView[] =
-    "server/connection_close_count";
+constexpr char kServerConnectionsOpenCountView[] = "server/connection_open_count";
+constexpr char kServerConnectionsCloseCountView[] = "server/connection_close_count";
 constexpr char kServerReceivedBytesCountView[] = "server/received_bytes_count";
 constexpr char kServerSentBytesCountView[] = "server/sent_bytes_count";
-constexpr char kClientConnectionsOpenCountView[] =
-    "client/connection_open_count";
-constexpr char kClientConnectionsCloseCountView[] =
-    "client/connection_close_count";
+constexpr char kClientConnectionsOpenCountView[] = "client/connection_open_count";
+constexpr char kClientConnectionsCloseCountView[] = "client/connection_close_count";
 constexpr char kClientReceivedBytesCountView[] = "client/received_bytes_count";
 constexpr char kClientSentBytesCountView[] = "client/sent_bytes_count";
 
@@ -118,8 +104,8 @@ constexpr char kPodNameLabel[] = "pod_name";
 constexpr char kContainerNameLabel[] = "container_name";
 constexpr char kGCEInstanceIDLabel[] = "instance_id";
 constexpr char kZoneLabel[] = "zone";
-constexpr char kNamespaceLabel[] = "namespace";  // used for generic_node
-constexpr char kNodeIDLabel[] = "node_id";       // used for generic_node
+constexpr char kNamespaceLabel[] = "namespace"; // used for generic_node
+constexpr char kNodeIDLabel[] = "node_id";      // used for generic_node
 
 // GCP node metadata key
 constexpr char kGCPLocationKey[] = "gcp_location";
@@ -139,17 +125,12 @@ constexpr char kInboundRootContextId[] = "stackdriver_inbound";
 
 // Stackdriver service endpoint node metadata key.
 constexpr char kSecureStackdriverEndpointKey[] = "SECURE_STACKDRIVER_ENDPOINT";
-constexpr char kInsecureStackdriverEndpointKey[] =
-    "INSECURE_STACKDRIVER_ENDPOINT";
+constexpr char kInsecureStackdriverEndpointKey[] = "INSECURE_STACKDRIVER_ENDPOINT";
 constexpr char kMonitoringEndpointKey[] = "STACKDRIVER_MONITORING_ENDPOINT";
-constexpr char kMonitoringExportIntervalKey[] =
-    "STACKDRIVER_MONITORING_EXPORT_INTERVAL_SECS";
-constexpr char kLoggingExportIntervalKey[] =
-    "STACKDRIVER_LOGGING_EXPORT_INTERVAL_SECS";
-constexpr char kTcpLogEntryTimeoutKey[] =
-    "STACKDRIVER_TCP_LOG_ENTRY_TIMEOUT_SECS";
-constexpr char kProxyTickerIntervalKey[] =
-    "STACKDRIVER_PROXY_TICKER_INTERVAL_SECS";
+constexpr char kMonitoringExportIntervalKey[] = "STACKDRIVER_MONITORING_EXPORT_INTERVAL_SECS";
+constexpr char kLoggingExportIntervalKey[] = "STACKDRIVER_LOGGING_EXPORT_INTERVAL_SECS";
+constexpr char kTcpLogEntryTimeoutKey[] = "STACKDRIVER_TCP_LOG_ENTRY_TIMEOUT_SECS";
+constexpr char kProxyTickerIntervalKey[] = "STACKDRIVER_PROXY_TICKER_INTERVAL_SECS";
 constexpr char kTokenFile[] = "STACKDRIVER_TOKEN_FILE";
 constexpr char kCACertFile[] = "STACKDRIVER_ROOT_CA_FILE";
 
@@ -168,6 +149,6 @@ constexpr char kMeshTelemetryService[] = "meshtelemetry.googleapis.com";
 
 const std::string kUnknownLabel = "unknown";
 
-}  // namespace Common
-}  // namespace Stackdriver
-}  // namespace Extensions
+} // namespace Common
+} // namespace Stackdriver
+} // namespace Extensions
