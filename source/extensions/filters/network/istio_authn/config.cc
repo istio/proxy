@@ -63,7 +63,7 @@ void IstioAuthnFilter::populate() const {
             PeerPrincipalKey, std::make_shared<Principal>(san),
             StreamInfo::FilterState::StateType::ReadOnly,
             StreamInfo::FilterState::LifeSpan::Connection,
-            StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
+            StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
         break;
       }
     }
@@ -73,7 +73,7 @@ void IstioAuthnFilter::populate() const {
             LocalPrincipalKey, std::make_shared<Principal>(san),
             StreamInfo::FilterState::StateType::ReadOnly,
             StreamInfo::FilterState::LifeSpan::Connection,
-            StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
+            StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
         break;
       }
     }

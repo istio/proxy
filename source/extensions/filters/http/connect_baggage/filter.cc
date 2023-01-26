@@ -27,20 +27,8 @@ namespace HttpFilters {
 namespace ConnectBaggage {
 
 constexpr absl::string_view Baggage = "baggage";
-constexpr absl::string_view DownstreamPeerKey = "wasm.downstream_peer";
 
 Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers, bool) {
-  if (propagate_) {
-    const auto* object = decoder_callbacks_->streamInfo()
-                             .filterState()
-                             ->getDataReadOnly<Filters::Common::Expr::CelState>(DownstreamPeerKey);
-    if (object) {
-      const auto peer = Istio::Common::convertFlatNodeToWorkloadMetadata(
-          *flatbuffers::GetRoot<Wasm::Common::FlatNode>(object->value().data()));
-      headers.addCopy(Http::LowerCaseString(Baggage), peer.baggage());
-    }
-    return Http::FilterHeadersStatus::Continue;
-  }
   const auto header_string =
       Http::HeaderUtility::getAllOfHeaderAsString(headers, Http::LowerCaseString(Baggage));
   const auto result = header_string.result();
@@ -57,7 +45,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
       decoder_callbacks_->streamInfo().filterState()->setData(
           "wasm.downstream_peer", std::move(state), StreamInfo::FilterState::StateType::Mutable,
           StreamInfo::FilterState::LifeSpan::FilterChain,
-          StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
+          StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
     }
     {
       Filters::Common::Expr::CelStatePrototype prototype(
@@ -68,17 +56,17 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
       decoder_callbacks_->streamInfo().filterState()->setData(
           "wasm.downstream_peer_id", std::move(state), StreamInfo::FilterState::StateType::Mutable,
           StreamInfo::FilterState::LifeSpan::FilterChain,
-          StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
+          StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
     }
   }
   return Http::FilterHeadersStatus::Continue;
 }
 
 Http::FilterFactoryCb FilterConfigFactory::createFilterFactoryFromProtoTyped(
-    const io::istio::http::connect_baggage::Config& config, const std::string&,
+    const io::istio::http::connect_baggage::Config&, const std::string&,
     Server::Configuration::FactoryContext&) {
-  return [config](Http::FilterChainFactoryCallbacks& callbacks) {
-    auto filter = std::make_shared<Filter>(config.propagate());
+  return [](Http::FilterChainFactoryCallbacks& callbacks) {
+    auto filter = std::make_shared<Filter>();
     callbacks.addStreamFilter(filter);
   };
 }
