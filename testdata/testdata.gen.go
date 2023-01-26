@@ -4,6 +4,7 @@
 // bootstrap/server.yaml.tmpl
 // bootstrap/stats.yaml.tmpl
 // listener/client.yaml.tmpl
+// listener/client_passthrough.yaml.tmpl
 // listener/internal_outbound.yaml.tmpl
 // listener/server.yaml.tmpl
 // listener/tcp_client.yaml.tmpl
@@ -421,6 +422,62 @@ func listenerClientYamlTmpl() (*asset, error) {
 	return a, nil
 }
 
+var _listenerClient_passthroughYamlTmpl = []byte(`name: client
+traffic_direction: OUTBOUND
+address:
+  socket_address:
+    address: 127.0.0.1
+    port_value: {{ .Ports.ClientPort }}
+filter_chains:
+- filters:
+  - name: http
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+      codec_type: AUTO
+      stat_prefix: client
+      http_filters:
+      - name: connect_authority
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: type.googleapis.com/io.istio.http.connect_authority.Config
+      - name: envoy.filters.http.router
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+      route_config:
+        name: client
+        virtual_hosts:
+        - name: client
+          domains: ["*"]
+          routes:
+          - name: client_route
+            match: { prefix: / }
+            typed_per_filter_config:
+              connect_authority:
+                "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+                type_url: type.googleapis.com/io.istio.http.connect_authority.Config
+                value:
+                  enabled: true
+                  port: {{ .Ports.ServerTunnelPort }}
+            route:
+              cluster: internal_outbound
+              timeout: 0s
+`)
+
+func listenerClient_passthroughYamlTmplBytes() ([]byte, error) {
+	return _listenerClient_passthroughYamlTmpl, nil
+}
+
+func listenerClient_passthroughYamlTmpl() (*asset, error) {
+	bytes, err := listenerClient_passthroughYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "listener/client_passthrough.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var _listenerInternal_outboundYamlTmpl = []byte(`name: internal_outbound
 internal_listener: {}
 listener_filters:
@@ -435,7 +492,7 @@ filter_chains:
       "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
       cluster: original_dst
       tunneling_config:
-        hostname: host.com:443
+        hostname: "%DOWNSTREAM_LOCAL_ADDRESS%"
         headers_to_add:
         - header:
             key: baggage
@@ -774,15 +831,16 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"bootstrap/client.yaml.tmpl":           bootstrapClientYamlTmpl,
-	"bootstrap/server.yaml.tmpl":           bootstrapServerYamlTmpl,
-	"bootstrap/stats.yaml.tmpl":            bootstrapStatsYamlTmpl,
-	"listener/client.yaml.tmpl":            listenerClientYamlTmpl,
-	"listener/internal_outbound.yaml.tmpl": listenerInternal_outboundYamlTmpl,
-	"listener/server.yaml.tmpl":            listenerServerYamlTmpl,
-	"listener/tcp_client.yaml.tmpl":        listenerTcp_clientYamlTmpl,
-	"listener/tcp_server.yaml.tmpl":        listenerTcp_serverYamlTmpl,
-	"listener/terminate_connect.yaml.tmpl": listenerTerminate_connectYamlTmpl,
+	"bootstrap/client.yaml.tmpl":            bootstrapClientYamlTmpl,
+	"bootstrap/server.yaml.tmpl":            bootstrapServerYamlTmpl,
+	"bootstrap/stats.yaml.tmpl":             bootstrapStatsYamlTmpl,
+	"listener/client.yaml.tmpl":             listenerClientYamlTmpl,
+	"listener/client_passthrough.yaml.tmpl": listenerClient_passthroughYamlTmpl,
+	"listener/internal_outbound.yaml.tmpl":  listenerInternal_outboundYamlTmpl,
+	"listener/server.yaml.tmpl":             listenerServerYamlTmpl,
+	"listener/tcp_client.yaml.tmpl":         listenerTcp_clientYamlTmpl,
+	"listener/tcp_server.yaml.tmpl":         listenerTcp_serverYamlTmpl,
+	"listener/terminate_connect.yaml.tmpl":  listenerTerminate_connectYamlTmpl,
 }
 
 // AssetDir returns the file names below a certain
@@ -832,12 +890,13 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"stats.yaml.tmpl":  &bintree{bootstrapStatsYamlTmpl, map[string]*bintree{}},
 	}},
 	"listener": &bintree{nil, map[string]*bintree{
-		"client.yaml.tmpl":            &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
-		"internal_outbound.yaml.tmpl": &bintree{listenerInternal_outboundYamlTmpl, map[string]*bintree{}},
-		"server.yaml.tmpl":            &bintree{listenerServerYamlTmpl, map[string]*bintree{}},
-		"tcp_client.yaml.tmpl":        &bintree{listenerTcp_clientYamlTmpl, map[string]*bintree{}},
-		"tcp_server.yaml.tmpl":        &bintree{listenerTcp_serverYamlTmpl, map[string]*bintree{}},
-		"terminate_connect.yaml.tmpl": &bintree{listenerTerminate_connectYamlTmpl, map[string]*bintree{}},
+		"client.yaml.tmpl":             &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
+		"client_passthrough.yaml.tmpl": &bintree{listenerClient_passthroughYamlTmpl, map[string]*bintree{}},
+		"internal_outbound.yaml.tmpl":  &bintree{listenerInternal_outboundYamlTmpl, map[string]*bintree{}},
+		"server.yaml.tmpl":             &bintree{listenerServerYamlTmpl, map[string]*bintree{}},
+		"tcp_client.yaml.tmpl":         &bintree{listenerTcp_clientYamlTmpl, map[string]*bintree{}},
+		"tcp_server.yaml.tmpl":         &bintree{listenerTcp_serverYamlTmpl, map[string]*bintree{}},
+		"terminate_connect.yaml.tmpl":  &bintree{listenerTerminate_connectYamlTmpl, map[string]*bintree{}},
 	}},
 }}
 
