@@ -30,10 +30,9 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
   if (per_route_settings && per_route_settings->enabled()) {
     decoder_callbacks_->streamInfo().filterState()->setData(
         Istio::SetInternalDstAddress::FilterStateKey,
-        std::make_shared<Istio::SetInternalDstAddress::Authority>(
-            headers.authority(), per_route_settings->port()),
-        StreamInfo::FilterState::StateType::Mutable,
-        StreamInfo::FilterState::LifeSpan::FilterChain,
+        std::make_shared<Istio::SetInternalDstAddress::Authority>(headers.authority(),
+                                                                  per_route_settings->port()),
+        StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::FilterChain,
         StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
   }
   return Http::FilterHeadersStatus::Continue;

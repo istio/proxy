@@ -32,19 +32,17 @@ Envoy::Network::FilterStatus Filter::onAccept(Envoy::Network::ListenerFilterCall
   // First, check the filter state;
   const auto* object = cb.filterState().getDataReadOnly<Authority>(FilterStateKey);
   if (object) {
-    const auto local_address =
-        Envoy::Network::Utility::parseInternetAddressAndPortNoThrow(
-            object->value_, /*v6only=*/false);
+    const auto local_address = Envoy::Network::Utility::parseInternetAddressAndPortNoThrow(
+        object->value_, /*v6only=*/false);
     if (local_address) {
       ENVOY_LOG_MISC(trace, "Restore local address from filter state: {}",
                      local_address->asString());
       socket.connectionInfoProvider().restoreLocalAddress(local_address);
-      const auto tunnel_address = Envoy::Network::Utility::getAddressWithPort(
-          *local_address, object->port_);
-      cb.filterState().setData(
-          Envoy::Network::DestinationAddress::key(),
-          std::make_shared<Envoy::Network::DestinationAddress>(tunnel_address),
-          Envoy::StreamInfo::FilterState::StateType::ReadOnly);
+      const auto tunnel_address =
+          Envoy::Network::Utility::getAddressWithPort(*local_address, object->port_);
+      cb.filterState().setData(Envoy::Network::DestinationAddress::key(),
+                               std::make_shared<Envoy::Network::DestinationAddress>(tunnel_address),
+                               Envoy::StreamInfo::FilterState::StateType::ReadOnly);
     } else {
       ENVOY_LOG_MISC(trace, "Failed to parse filter state address: {}", object->value_);
     }
@@ -54,11 +52,9 @@ Envoy::Network::FilterStatus Filter::onAccept(Envoy::Network::ListenerFilterCall
   const auto iter = cb.dynamicMetadata().filter_metadata().find(MetadataKey);
   if (iter != cb.dynamicMetadata().filter_metadata().end()) {
     auto address_it = iter->second.fields().find(DestinationAddressField);
-    if (address_it != iter->second.fields().end() &&
-        address_it->second.has_string_value()) {
-      const auto local_address =
-          Envoy::Network::Utility::parseInternetAddressAndPortNoThrow(
-              address_it->second.string_value(), /*v6only=*/false);
+    if (address_it != iter->second.fields().end() && address_it->second.has_string_value()) {
+      const auto local_address = Envoy::Network::Utility::parseInternetAddressAndPortNoThrow(
+          address_it->second.string_value(), /*v6only=*/false);
       if (local_address) {
         ENVOY_LOG_MISC(trace, "Restore local address: {}", local_address->asString());
         socket.connectionInfoProvider().restoreLocalAddress(local_address);
@@ -70,23 +66,19 @@ Envoy::Network::FilterStatus Filter::onAccept(Envoy::Network::ListenerFilterCall
       ENVOY_LOG_MISC(trace, "Missing metadata field '{}'", DestinationAddressField);
     }
     address_it = iter->second.fields().find(TunnelAddressField);
-    if (address_it != iter->second.fields().end() &&
-        address_it->second.has_string_value()) {
-      const auto tunnel_address =
-          Envoy::Network::Utility::parseInternetAddressAndPortNoThrow(
-              address_it->second.string_value(), /*v6only=*/false);
+    if (address_it != iter->second.fields().end() && address_it->second.has_string_value()) {
+      const auto tunnel_address = Envoy::Network::Utility::parseInternetAddressAndPortNoThrow(
+          address_it->second.string_value(), /*v6only=*/false);
       if (tunnel_address) {
-        ENVOY_LOG_MISC(trace, "Restore ORIGINAL_DST address: {}",
-                       tunnel_address->asString());
+        ENVOY_LOG_MISC(trace, "Restore ORIGINAL_DST address: {}", tunnel_address->asString());
         // Should never throw as the stream info is initialized as empty.
         cb.filterState().setData(
             Envoy::Network::DestinationAddress::key(),
-            std::make_shared<Envoy::Network::DestinationAddress>(
-                tunnel_address),
+            std::make_shared<Envoy::Network::DestinationAddress>(tunnel_address),
             Envoy::StreamInfo::FilterState::StateType::ReadOnly);
       } else {
-        ENVOY_LOG_MISC(trace, "Failed to parse {} address: {}",
-                       TunnelAddressField, address_it->second.string_value());
+        ENVOY_LOG_MISC(trace, "Failed to parse {} address: {}", TunnelAddressField,
+                       address_it->second.string_value());
       }
     } else {
       ENVOY_LOG_MISC(trace, "Missing metadata field '{}'", TunnelAddressField);
