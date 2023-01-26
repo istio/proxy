@@ -27,11 +27,13 @@ namespace ConnectAuthority {
 class FilterConfig : public Router::RouteSpecificFilterConfig {
 public:
   FilterConfig(const io::istio::http::connect_authority::Config& config)
-      : enabled_(config.enabled()) {}
+      : enabled_(config.enabled()), port_(config.port()) {}
   bool enabled() const { return enabled_; }
+  uint32_t port() const { return port_; }
 
 private:
   const bool enabled_;
+  const uint32_t port_;
 };
 
 class Filter : public Http::PassThroughFilter {
