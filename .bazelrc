@@ -41,7 +41,8 @@ build:release-symbol -c opt
 build:debug -c dbg
 
 # Add compile option for all C++ files
-build --cxxopt -Wnon-virtual-dtor
+# TODO(kuat) re-enable after fixing upstream dd/tracing-lib.
+# build --cxxopt -Wnon-virtual-dtor
 build --cxxopt -Wformat
 build --cxxopt -Wformat-security
 
