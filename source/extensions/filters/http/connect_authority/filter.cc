@@ -33,7 +33,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
         std::make_shared<Istio::SetInternalDstAddress::Authority>(headers.getHostValue(),
                                                                   per_route_settings->port()),
         StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::FilterChain,
-        StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
+        StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
   }
   return Http::FilterHeadersStatus::Continue;
 }
