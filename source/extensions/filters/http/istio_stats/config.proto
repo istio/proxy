@@ -111,4 +111,12 @@ message PluginConfig {
 
   // Proxy deployment type.
   Reporter reporter = 10;
+
+  // Optional. Allows configuration of the time between rotating scopes.
+  // The default duration is `24h`.
+  google.protobuf.Duration rescoping_duration = 11;
+
+  // Optional. Allows configuration of the time until the expired scope got cleaned up.
+  // The default duration is `15s`.
+  google.protobuf.Duration scope_grace_period_duration = 12;
 }

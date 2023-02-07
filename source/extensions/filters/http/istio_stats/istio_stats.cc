@@ -459,12 +459,16 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
               return std::make_shared<Context>(factory_context.serverScope().symbolTable(),
                                                factory_context.localInfo().node());
             })),
-        scope_(factory_context.scope()),
+        scope_(factory_context.scope().getShared()),
         disable_host_header_fallback_(proto_config.disable_host_header_fallback()),
         report_duration_(
             PROTOBUF_GET_MS_OR_DEFAULT(proto_config, tcp_reporting_duration, /* 5s */ 5000)),
         metadata_provider_(Extensions::Common::WorkloadDiscovery::GetProvider(
-            factory_context.getServerFactoryContext())) {
+            factory_context.getServerFactoryContext())),
+        rescope_duration_(
+            PROTOBUF_GET_MS_OR_DEFAULT(proto_config, rescoping_duration, /* 24h */ 86400000)),
+        scope_grace_period_duration_(PROTOBUF_GET_MS_OR_DEFAULT(
+            proto_config, scope_grace_period_duration, /* 15s */ 15000)) {
     reporter_ = Reporter::ClientSidecar;
     switch (proto_config.reporter()) {
     case stats::Reporter::UNSPECIFIED:
@@ -486,7 +490,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
       break;
     }
     if (proto_config.metrics_size() > 0 || proto_config.definitions_size() > 0) {
-      metric_overrides_ = std::make_unique<MetricOverrides>(context_, scope_.symbolTable());
+      metric_overrides_ = std::make_unique<MetricOverrides>(context_, scope_->symbolTable());
       for (const auto& definition : proto_config.definitions()) {
         const auto& it = context_->all_metrics_.find(definition.name());
         if (it != context_->all_metrics_.end()) {
@@ -599,6 +603,20 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         }
       }
     }
+    if (rescope_duration_ > std::chrono::milliseconds(0)) {
+      rescope_timer_ = factory_context.mainThreadDispatcher().createTimer([this] {
+        scope_ = scope_->scopeFromStatName(scope_->prefix());
+        rescope_timer_->enableTimer(rescope_duration_);
+      });
+      rescope_timer_->enableTimer(rescope_duration_);
+    }
+  }
+  ~Config() {
+    ASSERT(rescope_timer_ == nullptr);
+    if (rescope_timer_) {
+      rescope_timer_->disableTimer();
+      rescope_timer_.reset();
+    }
   }
 
   // RAII for stream context propagation.
@@ -622,12 +640,12 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
           return;
         }
         auto new_tags = parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
-        Stats::Utility::counterFromStatNames(parent_.scope_,
+        Stats::Utility::counterFromStatNames(*(parent_.scope_),
                                              {parent_.context_->stat_namespace_, metric}, new_tags)
             .add(amount);
         return;
       }
-      Stats::Utility::counterFromStatNames(parent_.scope_,
+      Stats::Utility::counterFromStatNames(*(parent_.scope_),
                                            {parent_.context_->stat_namespace_, metric}, tags)
           .add(amount);
     }
@@ -640,12 +658,12 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         }
         auto new_tags = parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
         Stats::Utility::histogramFromStatNames(
-            parent_.scope_, {parent_.context_->stat_namespace_, metric}, unit, new_tags)
+            *(parent_.scope_), {parent_.context_->stat_namespace_, metric}, unit, new_tags)
             .recordValue(value);
         return;
       }
       Stats::Utility::histogramFromStatNames(
-          parent_.scope_, {parent_.context_->stat_namespace_, metric}, unit, tags)
+          *(parent_.scope_), {parent_.context_->stat_namespace_, metric}, unit, tags)
           .recordValue(value);
     }
 
@@ -657,17 +675,17 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
           switch (metric.type_) {
           case MetricOverrides::MetricType::Counter:
             Stats::Utility::counterFromStatNames(
-                parent_.scope_, {parent_.context_->stat_namespace_, metric.name_}, tags)
+                *(parent_.scope_), {parent_.context_->stat_namespace_, metric.name_}, tags)
                 .add(amount);
             break;
           case MetricOverrides::MetricType::Histogram:
             Stats::Utility::histogramFromStatNames(
-                parent_.scope_, {parent_.context_->stat_namespace_, metric.name_},
+                *(parent_.scope_), {parent_.context_->stat_namespace_, metric.name_},
                 Stats::Histogram::Unit::Bytes, tags)
                 .recordValue(amount);
             break;
           case MetricOverrides::MetricType::Gauge:
-            Stats::Utility::gaugeFromStatNames(parent_.scope_,
+            Stats::Utility::gaugeFromStatNames(*(parent_.scope_),
                                                {parent_.context_->stat_namespace_, metric.name_},
                                                Stats::Gauge::ImportMode::Accumulate, tags)
                 .set(amount);
@@ -689,7 +707,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
     tags.push_back({context_->tag_, context_->istio_version_.empty() ? context_->unknown_
                                                                      : context_->istio_version_});
 
-    Stats::Utility::gaugeFromStatNames(scope_, {context_->stat_namespace_, context_->istio_build_},
+    Stats::Utility::gaugeFromStatNames(*scope_, {context_->stat_namespace_, context_->istio_build_},
                                        Stats::Gauge::ImportMode::Accumulate, tags)
         .set(1);
   }
@@ -697,16 +715,33 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
   Reporter reporter() const { return reporter_; }
 
   ContextSharedPtr context_;
-  Stats::Scope& scope_;
+  Stats::ScopeSharedPtr scope_;
   Reporter reporter_;
 
   const bool disable_host_header_fallback_;
   const std::chrono::milliseconds report_duration_;
   Extensions::Common::WorkloadDiscovery::WorkloadMetadataProviderSharedPtr metadata_provider_;
+  const std::chrono::milliseconds rescope_duration_;
+  const std::chrono::milliseconds scope_grace_period_duration_;
+  Event::TimerPtr rescope_timer_{nullptr};
   std::unique_ptr<MetricOverrides> metric_overrides_;
 };
 
 using ConfigSharedPtr = std::shared_ptr<Config>;
+
+struct ScopeHolder {
+  ScopeHolder(ConfigSharedPtr config, Stats::ScopeSharedPtr scope)
+      : config_(config), scope_(scope) {}
+  ~ScopeHolder() {
+    if (clean_stale_scope_timer_) {
+      clean_stale_scope_timer_->enableTimer(config_->scope_grace_period_duration_);
+    }
+  }
+
+  ConfigSharedPtr config_;
+  Event::TimerPtr clean_stale_scope_timer_;
+  Stats::ScopeSharedPtr scope_;
+};
 
 class IstioStatsFilter : public Http::PassThroughFilter,
                          public AccessLog::Instance,
@@ -714,7 +749,7 @@ class IstioStatsFilter : public Http::PassThroughFilter,
                          public Network::ConnectionCallbacks {
 public:
   IstioStatsFilter(ConfigSharedPtr config)
-      : config_(config), context_(*config->context_), pool_(config->scope_.symbolTable()) {
+      : config_(config), context_(*config->context_), pool_(config->scope_->symbolTable()) {
     tags_.reserve(25);
     switch (config_->reporter()) {
     case Reporter::ServerSidecar:
@@ -725,6 +760,8 @@ public:
       tags_.push_back({context_.reporter_, context_.source_});
       break;
     }
+
+    scope_holder_ = std::make_unique<ScopeHolder>(config_, config->scope_);
   }
   ~IstioStatsFilter() { ASSERT(report_timer_ == nullptr); }
 
@@ -787,6 +824,10 @@ public:
           [this] { onReportTimer(); });
       report_timer_->enableTimer(config_->report_duration_);
     }
+    if (config_->scope_grace_period_duration_ > std::chrono::milliseconds(0)) {
+      clean_stale_scope_timer_ = network_read_callbacks_->connection().dispatcher().createTimer(
+          [this] { scope_holder_->scope_.reset(); });
+    }
     return Network::FilterStatus::Continue;
   }
   void initializeReadFilterCallbacks(Network::ReadFilterCallbacks& callbacks) override {
@@ -802,6 +843,10 @@ public:
       if (report_timer_) {
         report_timer_->disableTimer();
         report_timer_.reset();
+      }
+      if (clean_stale_scope_timer_) {
+        clean_stale_scope_timer_->disableTimer();
+        clean_stale_scope_timer_.reset();
       }
       break;
     default:
@@ -1101,7 +1146,9 @@ private:
   Stats::StatNameDynamicPool pool_;
   Stats::StatNameTagVector tags_;
   Event::TimerPtr report_timer_{nullptr};
+  Event::TimerPtr clean_stale_scope_timer_{nullptr};
   Network::ReadFilterCallbacks* network_read_callbacks_;
+  std::unique_ptr<ScopeHolder> scope_holder_;
   bool network_peer_read_{false};
   uint64_t bytes_sent_{0};
   uint64_t bytes_received_{0};
