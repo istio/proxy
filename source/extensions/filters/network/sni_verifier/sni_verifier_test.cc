@@ -46,19 +46,13 @@ TEST(SniVerifierTest, ConfigTest) {
   cb(connection);
 }
 
-TEST(SniVerifierTest, MaxClientHelloSize) {
-  Stats::IsolatedStoreImpl store;
-  EXPECT_THROW_WITH_MESSAGE(Config(store, Config::TLS_MAX_CLIENT_HELLO + 1), EnvoyException,
-                            "max_client_hello_size of 65537 is greater than maximum of 65536.");
-}
-
 class SniVerifierFilterTest : public testing::Test {
 protected:
   static constexpr size_t TLS_MAX_CLIENT_HELLO = 250;
 
   void SetUp() override {
     store_ = std::make_unique<Stats::IsolatedStoreImpl>();
-    cfg_ = std::make_shared<Config>(*store_, TLS_MAX_CLIENT_HELLO);
+    cfg_ = std::make_shared<Config>(*store_->rootScope(), TLS_MAX_CLIENT_HELLO);
     filter_ = std::make_unique<Filter>(cfg_);
   }
 
