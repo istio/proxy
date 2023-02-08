@@ -56,8 +56,8 @@ public:
   MetadataExchangeFilterTest() { ENVOY_LOG_MISC(info, "test"); }
 
   void initialize() {
-    config_ = std::make_shared<MetadataExchangeConfig>(stat_prefix_, "istio2",
-                                                       FilterDirection::Downstream, scope_);
+    config_ = std::make_shared<MetadataExchangeConfig>(
+        stat_prefix_, "istio2", FilterDirection::Downstream, *scope_.rootScope());
     filter_ = std::make_unique<MetadataExchangeFilter>(config_, local_info_);
     filter_->initializeReadFilterCallbacks(read_filter_callbacks_);
     filter_->initializeWriteFilterCallbacks(write_filter_callbacks_);
