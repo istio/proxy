@@ -16,6 +16,7 @@
 
 #include "envoy/registry/registry.h"
 #include "envoy/server/filter_config.h"
+#include "source/common/common/hash.h"
 #include "source/common/network/filter_state_dst_address.h"
 #include "source/common/network/utility.h"
 #include "source/extensions/filters/listener/set_internal_dst_address/config.pb.h"
@@ -26,6 +27,8 @@ namespace SetInternalDstAddress {
 constexpr std::string_view MetadataKey = "tunnel";
 constexpr std::string_view DestinationAddressField = "destination";
 constexpr std::string_view TunnelAddressField = "address";
+
+absl::optional<uint64_t> Authority::hash() const { return Envoy::HashUtil::xxHash64(value_); }
 
 Envoy::Network::FilterStatus Filter::onAccept(Envoy::Network::ListenerFilterCallbacks& cb) {
   auto& socket = cb.socket();
@@ -78,7 +81,9 @@ Envoy::Network::FilterStatus Filter::onAccept(Envoy::Network::ListenerFilterCall
                      local_address->asString());
       socket.connectionInfoProvider().restoreLocalAddress(local_address);
       const auto tunnel_address =
-          Envoy::Network::Utility::getAddressWithPort(*local_address, object->port_);
+          object->port_ > 0
+              ? Envoy::Network::Utility::getAddressWithPort(*local_address, object->port_)
+              : local_address;
       cb.filterState().setData(Envoy::Network::DestinationAddress::key(),
                                std::make_shared<Envoy::Network::DestinationAddress>(tunnel_address),
                                Envoy::StreamInfo::FilterState::StateType::ReadOnly);

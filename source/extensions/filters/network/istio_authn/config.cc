@@ -28,7 +28,7 @@ namespace IstioAuthn {
 
 absl::optional<uint64_t> Principal::hash() const {
   // XXX: This should really be a cryptographic hash to avoid SAN collision.
-  return Envoy::HashUtil::xxHash64(principal_);
+  return HashUtil::xxHash64(principal_);
 }
 
 PrincipalInfo getPrincipals(const StreamInfo::FilterState& filter_state) {

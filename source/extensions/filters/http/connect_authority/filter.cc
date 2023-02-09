@@ -33,12 +33,29 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
         std::make_shared<Istio::SetInternalDstAddress::Authority>(headers.getHostValue(),
                                                                   per_route_settings->port()),
         StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::FilterChain,
-        StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnection);
+        StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
   }
   return Http::FilterHeadersStatus::Continue;
 }
 
+Network::FilterStatus NetworkFilter::onNewConnection() {
+  // Re-shares the object with the upstream.
+  StreamInfo::StreamInfo& info = network_read_callbacks_->connection().streamInfo();
+  std::shared_ptr<StreamInfo::FilterState::Object> object =
+      info.filterState()->getDataSharedMutableGeneric(Istio::SetInternalDstAddress::FilterStateKey);
+  if (object) {
+    info.filterState()->setData(
+        Istio::SetInternalDstAddress::FilterStateKey, object,
+        StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::Connection,
+        StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
+    ENVOY_LOG_MISC(trace, "Re-shared authority object");
+  }
+  return Network::FilterStatus::Continue;
+}
+
 REGISTER_FACTORY(FilterConfigFactory, Server::Configuration::NamedHttpFilterConfigFactory);
+REGISTER_FACTORY(NetworkFilterConfigFactory,
+                 Server::Configuration::NamedNetworkFilterConfigFactory);
 
 } // namespace ConnectAuthority
 } // namespace HttpFilters

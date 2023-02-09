@@ -36,6 +36,7 @@ envoy_cc_extension(
         "@envoy//source/common/http:utility_lib",
         "@envoy//source/extensions/filters/http/common:factory_base_lib",
         "@envoy//source/extensions/filters/http/common:pass_through_filter_lib",
+        "@envoy//source/extensions/filters/network/common:factory_base_lib",
     ],
 )
 

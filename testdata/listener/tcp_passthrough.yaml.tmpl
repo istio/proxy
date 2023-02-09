@@ -1,0 +1,18 @@
+name: tcp_passthrough
+internal_listener: {}
+listener_filters:
+- name: set_dst_address
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/istio.set_internal_dst_address.v1.Config
+filter_chains:
+- filters:
+  - name: connect_authority
+    typed_config:
+      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: type.googleapis.com/io.istio.http.connect_authority.Config
+  - name: tcp_proxy
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+      cluster: internal_outbound
+      stat_prefix: tcp_passthrough
