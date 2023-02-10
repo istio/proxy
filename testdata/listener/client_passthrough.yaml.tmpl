@@ -35,5 +35,5 @@ filter_chains:
                   enabled: true
                   port: {{ .Ports.ServerTunnelPort }}
             route:
-              cluster: internal_outbound
+              cluster: tcp_passthrough
               timeout: 0s

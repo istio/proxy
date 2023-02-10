@@ -16,6 +16,7 @@
 
 #include "source/extensions/filters/http/common/factory_base.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
+#include "source/extensions/filters/network/common/factory_base.h"
 #include "source/extensions/filters/http/connect_authority/config.pb.h"
 #include "source/extensions/filters/http/connect_authority/config.pb.validate.h"
 
@@ -60,6 +61,35 @@ private:
                                        Envoy::Server::Configuration::ServerFactoryContext&,
                                        ProtobufMessage::ValidationVisitor&) override {
     return std::make_shared<FilterConfig>(config);
+  }
+};
+
+class NetworkFilter : public Network::ReadFilter {
+public:
+  Network::FilterStatus onNewConnection() override;
+  Network::FilterStatus onData(Buffer::Instance&, bool) override {
+    return Network::FilterStatus::Continue;
+  }
+  void initializeReadFilterCallbacks(Network::ReadFilterCallbacks& callbacks) override {
+    network_read_callbacks_ = &callbacks;
+  }
+
+private:
+  Network::ReadFilterCallbacks* network_read_callbacks_;
+};
+
+class NetworkFilterConfigFactory
+    : public NetworkFilters::Common::FactoryBase<io::istio::http::connect_authority::Config> {
+public:
+  NetworkFilterConfigFactory() : FactoryBase("envoy.filters.network.connect_authority") {}
+
+private:
+  Network::FilterFactoryCb
+  createFilterFactoryFromProtoTyped(const io::istio::http::connect_authority::Config&,
+                                    Server::Configuration::FactoryContext&) override {
+    return [](Network::FilterManager& filter_manager) {
+      filter_manager.addReadFilter(std::make_shared<NetworkFilter>());
+    };
   }
 };
 

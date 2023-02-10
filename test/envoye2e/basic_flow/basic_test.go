@@ -219,11 +219,13 @@ func TestPassthroughCONNECT(t *testing.T) {
 			updateClient := &driver.Update{
 				Node: "client", Version: "{{ .N }}",
 				Clusters: []string{
+					driver.LoadTestData("testdata/cluster/tcp_passthrough.yaml.tmpl"),
 					driver.LoadTestData("testdata/cluster/internal_outbound.yaml.tmpl"),
 					driver.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
 				},
 				Listeners: []string{
 					driver.LoadTestData("testdata/listener/client_passthrough.yaml.tmpl"),
+					driver.LoadTestData("testdata/listener/tcp_passthrough.yaml.tmpl"),
 					driver.LoadTestData("testdata/listener/internal_outbound.yaml.tmpl"),
 				},
 				Secrets: []string{

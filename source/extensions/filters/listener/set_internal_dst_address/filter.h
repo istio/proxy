@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "envoy/common/hashable.h"
 #include "envoy/network/filter.h"
 #include "envoy/stream_info/filter_state.h"
 
@@ -22,10 +23,13 @@ namespace SetInternalDstAddress {
 
 const absl::string_view FilterStateKey = "istio.set_internal_dst_address";
 
-struct Authority : public Envoy::StreamInfo::FilterState::Object {
+struct Authority : public Envoy::StreamInfo::FilterState::Object, public Envoy::Hashable {
   Authority(absl::string_view value, uint32_t port) : value_(value), port_(port) {}
   absl::optional<std::string> serializeAsString() const override { return value_; }
+  absl::optional<uint64_t> hash() const override;
+
   const std::string value_;
+  // Default value 0 implies no port is overriden from the authority.
   const uint32_t port_;
 };
 

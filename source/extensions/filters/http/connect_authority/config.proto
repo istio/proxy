@@ -22,5 +22,6 @@ message Config {
   // To support per-route overrides.
   bool enabled = 1;
   // Tunnel port for the override.
+  // Default value 0 implies the port is obtained from the authority.
   uint32 port = 2;
 }
