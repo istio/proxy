@@ -8,6 +8,7 @@
 // listener/internal_outbound.yaml.tmpl
 // listener/server.yaml.tmpl
 // listener/tcp_client.yaml.tmpl
+// listener/tcp_passthrough.yaml.tmpl
 // listener/tcp_server.yaml.tmpl
 // listener/terminate_connect.yaml.tmpl
 package testdata
@@ -459,7 +460,7 @@ filter_chains:
                   enabled: true
                   port: {{ .Ports.ServerTunnelPort }}
             route:
-              cluster: internal_outbound
+              cluster: tcp_passthrough
               timeout: 0s
 `)
 
@@ -612,6 +613,41 @@ func listenerTcp_clientYamlTmpl() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "listener/tcp_client.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _listenerTcp_passthroughYamlTmpl = []byte(`name: tcp_passthrough
+internal_listener: {}
+listener_filters:
+- name: set_dst_address
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/istio.set_internal_dst_address.v1.Config
+filter_chains:
+- filters:
+  - name: connect_authority
+    typed_config:
+      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: type.googleapis.com/io.istio.http.connect_authority.Config
+  - name: tcp_proxy
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+      cluster: internal_outbound
+      stat_prefix: tcp_passthrough
+`)
+
+func listenerTcp_passthroughYamlTmplBytes() ([]byte, error) {
+	return _listenerTcp_passthroughYamlTmpl, nil
+}
+
+func listenerTcp_passthroughYamlTmpl() (*asset, error) {
+	bytes, err := listenerTcp_passthroughYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "listener/tcp_passthrough.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -839,6 +875,7 @@ var _bindata = map[string]func() (*asset, error){
 	"listener/internal_outbound.yaml.tmpl":  listenerInternal_outboundYamlTmpl,
 	"listener/server.yaml.tmpl":             listenerServerYamlTmpl,
 	"listener/tcp_client.yaml.tmpl":         listenerTcp_clientYamlTmpl,
+	"listener/tcp_passthrough.yaml.tmpl":    listenerTcp_passthroughYamlTmpl,
 	"listener/tcp_server.yaml.tmpl":         listenerTcp_serverYamlTmpl,
 	"listener/terminate_connect.yaml.tmpl":  listenerTerminate_connectYamlTmpl,
 }
@@ -895,6 +932,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"internal_outbound.yaml.tmpl":  &bintree{listenerInternal_outboundYamlTmpl, map[string]*bintree{}},
 		"server.yaml.tmpl":             &bintree{listenerServerYamlTmpl, map[string]*bintree{}},
 		"tcp_client.yaml.tmpl":         &bintree{listenerTcp_clientYamlTmpl, map[string]*bintree{}},
+		"tcp_passthrough.yaml.tmpl":    &bintree{listenerTcp_passthroughYamlTmpl, map[string]*bintree{}},
 		"tcp_server.yaml.tmpl":         &bintree{listenerTcp_serverYamlTmpl, map[string]*bintree{}},
 		"terminate_connect.yaml.tmpl":  &bintree{listenerTerminate_connectYamlTmpl, map[string]*bintree{}},
 	}},
