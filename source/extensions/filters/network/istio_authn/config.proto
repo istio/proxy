@@ -23,4 +23,7 @@ package io.istio.network.authn;
 // list with the "spiffe://" prefix. The principals are populated downstream
 // only if the peer certificate is presented.
 message Config {
+  // Share the filter state with the upstream connections. This is meant to be
+  // used in the tunnel listeners.
+  bool shared = 1;
 }
