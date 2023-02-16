@@ -68,24 +68,29 @@ TEST(Principal, GetPrincipals) {
   }
 }
 
-TEST(IstioAuthnFilter, CallbacksNoSsl) {
-  IstioAuthnFilter filter;
+class IstioAuthnFilterTest : public testing::TestWithParam<bool> {
+public:
+  IstioAuthnFilterTest() : filter_(GetParam()) {}
 
+protected:
+  IstioAuthnFilter filter_;
+};
+
+TEST_P(IstioAuthnFilterTest, CallbacksNoSsl) {
   // Validate stubs.
-  EXPECT_EQ(filter.onNewConnection(), Network::FilterStatus::Continue);
+  EXPECT_EQ(filter_.onNewConnection(), Network::FilterStatus::Continue);
   Buffer::OwnedImpl buffer("hello");
-  EXPECT_EQ(filter.onData(buffer, true), Network::FilterStatus::Continue);
+  EXPECT_EQ(filter_.onData(buffer, true), Network::FilterStatus::Continue);
 
   testing::NiceMock<Network::MockReadFilterCallbacks> callbacks;
-  filter.initializeReadFilterCallbacks(callbacks);
+  filter_.initializeReadFilterCallbacks(callbacks);
   EXPECT_CALL(callbacks.connection_, ssl()).WillOnce(Return(nullptr));
   callbacks.connection_.raiseEvent(Network::ConnectionEvent::Connected);
 }
 
-TEST(IstioAuthnFilter, CallbacksWithSsl) {
-  IstioAuthnFilter filter;
+TEST_P(IstioAuthnFilterTest, CallbacksWithSsl) {
   testing::NiceMock<Network::MockReadFilterCallbacks> callbacks;
-  filter.initializeReadFilterCallbacks(callbacks);
+  filter_.initializeReadFilterCallbacks(callbacks);
 
   auto ssl = std::make_shared<Ssl::MockConnectionInfo>();
   const std::string peer = "spiffe://cluster.local/ns/my-namespace/sa/my-account1";
@@ -102,10 +107,9 @@ TEST(IstioAuthnFilter, CallbacksWithSsl) {
   EXPECT_EQ(info.local, local);
 }
 
-TEST(IstioAuthnFilter, CallbacksWithSslMultipleSAN) {
-  IstioAuthnFilter filter;
+TEST_P(IstioAuthnFilterTest, CallbacksWithSslMultipleSAN) {
   testing::NiceMock<Network::MockReadFilterCallbacks> callbacks;
-  filter.initializeReadFilterCallbacks(callbacks);
+  filter_.initializeReadFilterCallbacks(callbacks);
 
   auto ssl = std::make_shared<Ssl::MockConnectionInfo>();
   const std::string spiffe1 = "spiffe://cluster.local/ns/my-namespace/sa/my-account1";
@@ -121,6 +125,9 @@ TEST(IstioAuthnFilter, CallbacksWithSslMultipleSAN) {
   EXPECT_EQ(info.peer, spiffe1);
   EXPECT_EQ(info.local, "");
 }
+
+INSTANTIATE_TEST_SUITE_P(IstioAuthnFilterTestShared, IstioAuthnFilterTest,
+                         testing::Values(true, false));
 
 } // namespace IstioAuthn
 } // namespace NetworkFilters
