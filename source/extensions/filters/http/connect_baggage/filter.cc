@@ -18,6 +18,7 @@
 #include "envoy/server/factory_context.h"
 #include "extensions/common/context.h"
 #include "extensions/common/metadata_object.h"
+#include "source/common/common/hash.h"
 #include "source/common/http/header_utility.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
 
@@ -27,6 +28,13 @@ namespace HttpFilters {
 namespace ConnectBaggage {
 
 constexpr absl::string_view Baggage = "baggage";
+
+class CelStateHashable : public Filters::Common::Expr::CelState, public Hashable {
+public:
+  explicit CelStateHashable(const Filters::Common::Expr::CelStatePrototype& proto)
+      : CelState(proto) {}
+  absl::optional<uint64_t> hash() const override { return HashUtil::xxHash64(value()); }
+};
 
 Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers, bool) {
   const auto header_string =
@@ -40,7 +48,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
           true, Filters::Common::Expr::CelStateType::FlatBuffers,
           toAbslStringView(Wasm::Common::nodeInfoSchema()),
           StreamInfo::FilterState::LifeSpan::FilterChain);
-      auto state = std::make_unique<Filters::Common::Expr::CelState>(prototype);
+      auto state = std::make_unique<CelStateHashable>(prototype);
       state->setValue(absl::string_view(reinterpret_cast<const char*>(fb.data()), fb.size()));
       decoder_callbacks_->streamInfo().filterState()->setData(
           "wasm.downstream_peer", std::move(state), StreamInfo::FilterState::StateType::Mutable,
@@ -48,6 +56,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
           StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
     }
     {
+      // This is needed because TCP stats filter awaits for TCP prefix.
       Filters::Common::Expr::CelStatePrototype prototype(
           true, Filters::Common::Expr::CelStateType::String, absl::string_view(),
           StreamInfo::FilterState::LifeSpan::FilterChain);
