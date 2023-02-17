@@ -59,11 +59,10 @@ void IstioAuthnFilter::populate() const {
   if (ssl && ssl->peerCertificatePresented()) {
     for (const std::string& san : ssl->uriSanPeerCertificate()) {
       if (absl::StartsWith(san, SpiffePrefix)) {
-        conn.streamInfo().filterState()->setData(
-            PeerPrincipalKey, std::make_shared<Principal>(san),
-            StreamInfo::FilterState::StateType::ReadOnly,
-            StreamInfo::FilterState::LifeSpan::Connection,
-            StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
+        conn.streamInfo().filterState()->setData(PeerPrincipalKey, std::make_shared<Principal>(san),
+                                                 StreamInfo::FilterState::StateType::ReadOnly,
+                                                 StreamInfo::FilterState::LifeSpan::Connection,
+                                                 shared_);
         break;
       }
     }
@@ -72,8 +71,7 @@ void IstioAuthnFilter::populate() const {
         conn.streamInfo().filterState()->setData(
             LocalPrincipalKey, std::make_shared<Principal>(san),
             StreamInfo::FilterState::StateType::ReadOnly,
-            StreamInfo::FilterState::LifeSpan::Connection,
-            StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
+            StreamInfo::FilterState::LifeSpan::Connection, shared_);
         break;
       }
     }
@@ -86,10 +84,10 @@ public:
 
 private:
   Network::FilterFactoryCb
-  createFilterFactoryFromProtoTyped(const io::istio::network::authn::Config&,
+  createFilterFactoryFromProtoTyped(const io::istio::network::authn::Config& config,
                                     Server::Configuration::FactoryContext&) override {
-    return [](Network::FilterManager& filter_manager) -> void {
-      filter_manager.addReadFilter(std::make_shared<IstioAuthnFilter>());
+    return [shared = config.shared()](Network::FilterManager& filter_manager) -> void {
+      filter_manager.addReadFilter(std::make_shared<IstioAuthnFilter>(shared));
     };
   }
 };
