@@ -64,9 +64,7 @@ void IstioAuthnFilter::populate() const {
         conn.streamInfo().filterState()->setData(
             PeerPrincipalKey, std::make_shared<Principal>(san),
             StreamInfo::FilterState::StateType::ReadOnly,
-            StreamInfo::FilterState::LifeSpan::Connection,
-            StreamInfo::FilterState::StreamSharing::
-                SharedWithUpstreamConnection);
+            StreamInfo::FilterState::LifeSpan::Connection, shared_);
         break;
       }
     }
@@ -75,9 +73,7 @@ void IstioAuthnFilter::populate() const {
         conn.streamInfo().filterState()->setData(
             LocalPrincipalKey, std::make_shared<Principal>(san),
             StreamInfo::FilterState::StateType::ReadOnly,
-            StreamInfo::FilterState::LifeSpan::Connection,
-            StreamInfo::FilterState::StreamSharing::
-                SharedWithUpstreamConnection);
+            StreamInfo::FilterState::LifeSpan::Connection, shared_);
         break;
       }
     }
@@ -91,10 +87,11 @@ class IstioAuthnConfigFactory
 
  private:
   Network::FilterFactoryCb createFilterFactoryFromProtoTyped(
-      const io::istio::network::authn::Config&,
+      const io::istio::network::authn::Config& config,
       Server::Configuration::FactoryContext&) override {
-    return [](Network::FilterManager& filter_manager) -> void {
-      filter_manager.addReadFilter(std::make_shared<IstioAuthnFilter>());
+    return [shared = config.shared()](
+               Network::FilterManager& filter_manager) -> void {
+      filter_manager.addReadFilter(std::make_shared<IstioAuthnFilter>(shared));
     };
   }
 };
