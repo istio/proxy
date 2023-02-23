@@ -81,6 +81,12 @@ func SkipTSanASan(t *testing.T) {
 	}
 }
 
+func SkipTSan(t *testing.T) {
+	if os.Getenv("TSAN") != " {
+		t.Skip("https://github.com/istio/istio/issues/21273")
+	}
+}
+
 func IsTSanASan() bool {
 	return os.Getenv("TSAN") != "" || os.Getenv("ASAN") != ""
 }

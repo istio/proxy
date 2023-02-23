@@ -720,6 +720,7 @@ func TestStackdriverAuditLog(t *testing.T) {
 func TestStackdriverAttributeGen(t *testing.T) {
 	t.Parallel()
 	env.EnsureWasmFiles(t)
+	env.SkipTSan(t)
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
 		"SDLogStatusCode":             "200",

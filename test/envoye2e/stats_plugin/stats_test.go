@@ -264,6 +264,7 @@ func TestStatsParallel(t *testing.T) {
 
 func TestStatsGrpc(t *testing.T) {
 	env.EnsureWasmFiles(t)
+	env.SkipTSan(t)
 	for _, runtime := range Runtimes {
 		t.Run(runtime.WasmRuntime, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
@@ -317,6 +318,7 @@ func TestStatsGrpc(t *testing.T) {
 
 func TestStatsGrpcStream(t *testing.T) {
 	env.EnsureWasmFiles(t)
+	env.SkipTSan(t)
 	params := driver.NewTestParams(t, map[string]string{
 		"MetadataExchangeFilterCode": "filename: " + env.GetBazelWorkspaceOrDie() + "/extensions/metadata_exchange.wasm",
 		"StatsFilterCode":            "filename: " + env.GetBazelWorkspaceOrDie() + "/extensions/stats.wasm",
@@ -395,6 +397,7 @@ func TestStatsGrpcStream(t *testing.T) {
 
 func TestAttributeGen(t *testing.T) {
 	env.EnsureWasmFiles(t)
+	env.SkipTSan(t)
 	params := driver.NewTestParams(t, map[string]string{
 		"RequestCount":             "10",
 		"AttributeGenFilterConfig": "filename: " + env.GetBazelWorkspaceOrDie() + "/extensions/attributegen.wasm",
@@ -433,6 +436,7 @@ func TestAttributeGen(t *testing.T) {
 
 func TestStatsParserRegression(t *testing.T) {
 	env.EnsureWasmFiles(t)
+	env.SkipTSan(t)
 	// This is a regression test for https://github.com/envoyproxy/envoy-wasm/issues/497
 	params := driver.NewTestParams(t, map[string]string{
 		"StatsFilterCode":         "filename: " + env.GetBazelWorkspaceOrDie() + "/extensions/stats.wasm",
@@ -470,6 +474,7 @@ func TestStatsParserRegression(t *testing.T) {
 
 func TestStats403Failure(t *testing.T) {
 	env.EnsureWasmFiles(t)
+	env.SkipTSan(t)
 	for _, runtime := range Runtimes {
 		t.Run(runtime.WasmRuntime, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
@@ -517,6 +522,7 @@ func TestStats403Failure(t *testing.T) {
 
 func TestStatsECDS(t *testing.T) {
 	env.EnsureWasmFiles(t)
+	env.SkipTSan(t)
 	for _, runtime := range Runtimes {
 		t.Run(runtime.WasmRuntime, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
@@ -578,6 +584,7 @@ func TestStatsECDS(t *testing.T) {
 
 func TestStatsEndpointLabels(t *testing.T) {
 	env.EnsureWasmFiles(t)
+	env.SkipTSan(t)
 	for _, runtime := range Runtimes {
 		t.Run(runtime.WasmRuntime, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
