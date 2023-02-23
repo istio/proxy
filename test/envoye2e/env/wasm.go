@@ -16,7 +16,7 @@ package env
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -46,7 +46,7 @@ func EnsureWasmFiles(t *testing.T) {
 		if err != nil || resp.StatusCode != http.StatusOK {
 			t.Fatal(err)
 		}
-		content, err := ioutil.ReadAll(resp.Body)
+		content, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatal(err)
 		}
