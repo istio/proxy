@@ -36,10 +36,8 @@ envoy_cc_binary(
     visibility = ["//visibility:public"],
     deps = [
         "//extensions/access_log_policy:access_log_policy_lib",
-        "//extensions/attributegen:attributegen_plugin",
         "//extensions/metadata_exchange:metadata_exchange_lib",
         "//extensions/stackdriver:stackdriver_plugin",
-        "//extensions/stats:stats_plugin",
         "//source/extensions/filters/http/alpn:config_lib",
         "//source/extensions/filters/http/authn:filter_lib",
         "//source/extensions/filters/http/connect_authority",  # Experimental: ambient
