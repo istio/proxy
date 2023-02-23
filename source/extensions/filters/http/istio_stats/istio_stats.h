@@ -16,8 +16,8 @@
 
 #include "envoy/server/filter_config.h"
 #include "envoy/stream_info/filter_state.h"
-#include "extensions/stats/config.pb.h"
-#include "extensions/stats/config.pb.validate.h"
+#include "source/extensions/filters/http/istio_stats/config.pb.h"
+#include "source/extensions/filters/http/istio_stats/config.pb.validate.h"
 #include "source/extensions/filters/http/common/factory_base.h"
 #include "source/extensions/filters/network/common/factory_base.h"
 

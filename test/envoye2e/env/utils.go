@@ -22,7 +22,7 @@ import (
 	"testing"
 )
 
-func GetBazelBin() (string, error) {
+func GetBazelWorkspace() (string, error) {
 	// Get bazel args if any
 	buildArgs := os.Getenv("BAZEL_BUILD_ARGS")
 
@@ -36,7 +36,23 @@ func GetBazelBin() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(strings.TrimSuffix(string(workspace), "\n"), "bazel-bin/"), nil
+	return strings.TrimSuffix(string(workspace), "\n"), nil
+}
+
+func GetBazelWorkspaceOrDie() string {
+	bin, err := GetBazelWorkspace()
+	if err != nil {
+		panic(err)
+	}
+	return bin
+}
+
+func GetBazelBin() (string, error) {
+	workspace, err := GetBazelWorkspace()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(workspace, "bazel-bin/"), nil
 }
 
 func GetBazelBinOrDie() string {
@@ -65,13 +81,9 @@ func SkipTSanASan(t *testing.T) {
 	}
 }
 
-func SkipWasm(t *testing.T, runtime string) {
-	if os.Getenv("WASM") != "" {
-		if runtime != "envoy.wasm.runtime.v8" {
-			t.Skip("Skip test since runtime is not v8")
-		}
-	} else if runtime == "envoy.wasm.runtime.v8" {
-		t.Skip("Skip v8 runtime test since wasm module is not generated")
+func SkipTSan(t *testing.T) {
+	if os.Getenv("TSAN") != "" {
+		t.Skip("https://github.com/istio/istio/issues/21273")
 	}
 }
 

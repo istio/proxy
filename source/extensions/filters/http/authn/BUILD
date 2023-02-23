@@ -42,6 +42,7 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
+        "//extensions/common:json_util",
         "//external:authentication_policy_config_cc_proto",
         "//source/extensions/common:filter_names_lib",
         "//source/extensions/common:utils_lib",

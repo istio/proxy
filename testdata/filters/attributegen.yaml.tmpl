@@ -6,7 +6,7 @@
       config:
         vm_config:
           vm_id: attributegen{{ .N }}
-          runtime: {{ .Vars.AttributeGenWasmRuntime }}
+          runtime: envoy.wasm.runtime.v8
           code:
             local: { {{ .Vars.AttributeGenFilterConfig }} }
         configuration:
