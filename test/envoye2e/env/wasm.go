@@ -50,7 +50,7 @@ func EnsureWasmFiles(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = ioutil.WriteFile(file, content, 0666)
+		err = os.WriteFile(file, content, 0666)
 		if err != nil {
 			t.Fatal(err)
 		}
