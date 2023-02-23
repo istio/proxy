@@ -184,7 +184,7 @@ if [ "${BUILD_ENVOY_BINARY_ONLY}" -eq 1 ]; then
 fi
 
 # Build and publish Wasm plugins
-extensions=(stats metadata_exchange attributegen)
+extensions=(metadata_exchange)
 TMP_WASM=$(mktemp -d -t wasm-plugins-XXXXXXXXXX)
 trap 'rm -rf ${TMP_WASM}' EXIT
 make build_wasm
