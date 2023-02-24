@@ -30,8 +30,8 @@ envoy_cc_extension(
     hdrs = ["istio_stats.h"],
     repository = "@envoy",
     deps = [
+        ":config_cc_proto",
         "//extensions/common:metadata_object_lib",
-        "//extensions/stats:config_cc_proto",
         "//source/extensions/common:utils_lib",
         "//source/extensions/filters/network/istio_authn:config_lib",
         "@com_google_cel_cpp//eval/public:builtin_func_registrar",
@@ -49,4 +49,9 @@ envoy_cc_extension(
         "@envoy//source/extensions/filters/http/common:factory_base_lib",
         "@envoy//source/extensions/filters/http/common:pass_through_filter_lib",
     ],
+)
+
+envoy_proto_library(
+    name = "config",
+    srcs = ["config.proto"],
 )

@@ -32,27 +32,6 @@ WASM_LINKOPTS = [
 ]
 
 envoy_wasm_cc_binary(
-    name = "stats.wasm",
-    srcs = [
-        "//extensions/common:context.cc",
-        "//extensions/common:context.h",
-        "//extensions/common:util.cc",
-        "//extensions/common:util.h",
-        "//extensions/stats:plugin.cc",
-        "//extensions/stats:plugin.h",
-    ],
-    copts = ["-UNULL_PLUGIN"],
-    linkopts = WASM_LINKOPTS,
-    deps = [
-        "//extensions/common:node_info_fb_cc",
-        "//extensions/common/wasm:json_util",
-        "//external:abseil_strings",
-        "//external:abseil_time",
-        "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
-    ],
-)
-
-envoy_wasm_cc_binary(
     name = "metadata_exchange.wasm",
     srcs = [
         "//extensions/common:context.cc",
@@ -78,49 +57,10 @@ envoy_wasm_cc_binary(
     ],
 )
 
-envoy_wasm_cc_binary(
-    name = "attributegen.wasm",
-    srcs = [
-        "//extensions/attributegen:plugin.cc",
-        "//extensions/attributegen:plugin.h",
-        "//extensions/common:context.cc",
-        "//extensions/common:context.h",
-        "//extensions/common:util.cc",
-        "//extensions/common:util.h",
-    ],
-    copts = ["-UNULL_PLUGIN"],
-    linkopts = WASM_LINKOPTS,
-    deps = [
-        "//extensions/attributegen:config_cc_proto",
-        "//extensions/common:node_info_fb_cc",
-        "//extensions/common/wasm:json_util",
-        "//external:abseil_strings",
-        "//external:abseil_time",
-        "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics_full",
-        "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
-    ],
-)
-
-declare_wasm_image_targets(
-    name = "stats",
-    docker_registry = "{WASM_REPOSITORY}",
-    pkg = "//extensions",
-    tag = "{BUILD_SCM_REVISION}",
-    wasm_file = ":stats.wasm",
-)
-
 declare_wasm_image_targets(
     name = "metadata_exchange",
     docker_registry = "{WASM_REPOSITORY}",
     pkg = "//extensions",
     tag = "{BUILD_SCM_REVISION}",
     wasm_file = ":metadata_exchange.wasm",
-)
-
-declare_wasm_image_targets(
-    name = "attributegen",
-    docker_registry = "{WASM_REPOSITORY}",
-    pkg = "//extensions",
-    tag = "{BUILD_SCM_REVISION}",
-    wasm_file = ":attributegen.wasm",
 )

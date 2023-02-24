@@ -719,14 +719,15 @@ func TestStackdriverAuditLog(t *testing.T) {
 
 func TestStackdriverAttributeGen(t *testing.T) {
 	t.Parallel()
+	env.EnsureWasmFiles(t)
+	env.SkipTSan(t)
 	params := driver.NewTestParams(t, map[string]string{
 		"ServiceAuthenticationPolicy": "NONE",
 		"SDLogStatusCode":             "200",
 		"StackdriverRootCAFile":       driver.TestPath("testdata/certs/stackdriver.pem"),
 		"StackdriverTokenFile":        driver.TestPath("testdata/certs/access-token"),
 		"StatsConfig":                 driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-		"AttributeGenWasmRuntime":     "envoy.wasm.runtime.null",
-		"AttributeGenFilterConfig":    "inline_string: \"envoy.wasm.attributegen\"",
+		"AttributeGenFilterConfig":    "filename: " + env.GetBazelWorkspaceOrDie() + "/extensions/attributegen.wasm",
 		"RequestOperation":            "GetMethod",
 	}, envoye2e.ProxyE2ETests)
 	sdPort := params.Ports.Max + 1

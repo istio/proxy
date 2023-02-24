@@ -717,6 +717,8 @@ filter_chains:
     typed_config:
       "@type": type.googleapis.com/udpa.type.v1.TypedStruct
       type_url: type.googleapis.com/io.istio.network.authn.Config
+      value:
+        shared: true
 {{ end }}
   - name: envoy.filters.network.http_connection_manager
     typed_config:

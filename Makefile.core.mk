@@ -73,10 +73,10 @@ CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE
 # WASM is not build on CentOS, skip it
 # TODO can we do some sort of regex?
 CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} \
-                             -extensions:stats.wasm -extensions:metadata_exchange.wasm -extensions:attributegen.wasm \
-                             -extensions:push_wasm_image_attributegen -extensions:push_wasm_image_metadata_exchange -extensions:push_wasm_image_stats \
-                             -extensions:wasm_image_attributegen -extensions:wasm_image_metadata_exchange -extensions:wasm_image_stats \
-                             -extensions:copy_original_file_attributegen -extensions:copy_original_file_metadata_exchange -extensions:copy_original_file_stats
+                             -extensions:metadata_exchange.wasm \
+                             -extensions:push_wasm_image_metadata_exchange \
+                             -extensions:wasm_image_metadata_exchange \
+                             -extensions:copy_original_file_metadata_exchange
 
 build:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
@@ -95,18 +95,14 @@ build_envoy_asan: BAZEL_TARGETS = //:envoy
 build_envoy_asan: build
 
 build_wasm:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:stats.wasm
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:metadata_exchange.wasm
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:attributegen.wasm
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) @envoy//test/tools/wee8_compile:wee8_compile_tool
-	bazel-bin/external/envoy/test/tools/wee8_compile/wee8_compile_tool bazel-bin/extensions/stats.wasm bazel-bin/extensions/stats.compiled.wasm
 	bazel-bin/external/envoy/test/tools/wee8_compile/wee8_compile_tool bazel-bin/extensions/metadata_exchange.wasm bazel-bin/extensions/metadata_exchange.compiled.wasm
-	bazel-bin/external/envoy/test/tools/wee8_compile/wee8_compile_tool bazel-bin/extensions/attributegen.wasm bazel-bin/extensions/attributegen.compiled.wasm
 
 # NOTE: build_wasm has to happen before build_envoy, since the integration test references bazel-bin symbol link for envoy binary,
 # which will be overwritten if wasm build happens after envoy.
 check_wasm: build_wasm build_envoy
-	env GO111MODULE=on WASM=true go test -timeout 30m ./test/envoye2e/stats_plugin/...
+	@true
 
 clean:
 	@bazel clean
@@ -160,23 +156,11 @@ lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts
 protoc = protoc -I common-protos -I extensions
 protoc_gen_docs_plugin := --docs_out=camel_case_fields=false,warnings=true,per_file=true,mode=html_fragment_with_front_matter:$(repo_dir)/
 
-attributegen_path := extensions/attributegen
-attributegen_protos := $(wildcard $(attributegen_path)/*.proto)
-attributegen_docs := $(attributegen_protos:.proto=.pb.html)
-$(attributegen_docs): $(attributegen_protos)
-	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(attributegen_path) $^
-
 metadata_exchange_path := extensions/metadata_exchange
 metadata_exchange_protos := $(wildcard $(metadata_exchange_path)/*.proto)
 metadata_exchange_docs := $(metadata_exchange_protos:.proto=.pb.html)
 $(metadata_exchange_docs): $(metadata_exchange_protos)
 	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(metadata_exchange_path) $^
-
-stats_path := extensions/stats
-stats_protos := $(wildcard $(stats_path)/*.proto)
-stats_docs := $(stats_protos:.proto=.pb.html)
-$(stats_docs): $(stats_protos)
-	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(stats_path) $^
 
 stackdriver_path := extensions/stackdriver/config/v1alpha1
 stackdriver_protos := $(wildcard $(stackdriver_path)/*.proto)
@@ -190,7 +174,7 @@ accesslog_policy_docs := $(accesslog_policy_protos:.proto=.pb.html)
 $(accesslog_policy_docs): $(accesslog_policy_protos)
 	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(accesslog_policy_path) $^
 
-extensions-docs:  $(attributegen_docs) $(metadata_exchange_docs) $(stats_docs) $(stackdriver_docs) $(accesslog_policy_docs)
+extensions-docs:  $(metadata_exchange_docs) $(stackdriver_docs) $(accesslog_policy_docs)
 
 test_release:
 ifeq "$(shell uname -m)" "x86_64"
