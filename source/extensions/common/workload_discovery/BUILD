@@ -37,6 +37,7 @@ envoy_cc_extension(
         "@envoy//envoy/server:bootstrap_extension_config_interface",
         "@envoy//envoy/server:factory_context_interface",
         "@envoy//envoy/singleton:manager_interface",
+        "@envoy//envoy/stats:stats_macros",
         "@envoy//envoy/thread_local:thread_local_interface",
         "@envoy//source/common/common:non_copyable",
         "@envoy//source/common/config:subscription_base_interface",
@@ -47,7 +48,10 @@ envoy_cc_extension(
 
 envoy_proto_library(
     name = "discovery",
-    srcs = ["discovery.proto"],
+    srcs = [
+        "discovery.proto",
+        "extension.proto",
+    ],
     deps = [
         "@envoy_api//envoy/config/core/v3:pkg",
     ],

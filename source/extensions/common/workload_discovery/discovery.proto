@@ -1,4 +1,4 @@
-// Copyright Istio Authors. All Rights Reserved.
+// Copyright Istio Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,34 +14,55 @@
 
 syntax = "proto3";
 
-package istio.workload_discovery.v1;
+package istio.workload;
+option go_package = "test/envoye2e/workloadapi";
 
-import "envoy/config/core/v3/config_source.proto";
+/**
+ * Warning: Derived from
+ * https://raw.githubusercontent.com/istio/istio/57f3b2bab3c07188d940fce94d3261f617ad0e10/pkg/workloadapi/workload.proto
+ * with the following changes:
+ *
+ * 1) delete unused fields;
+ * 2) change go_package;
+ * 3) append bootstrap extension stub;
+ */
 
-option go_package = "istio.io/proxy/discovery_proto";
-
-// Contains the metadata for a single workload instance.
-message WorkloadMetadataResource {
-  // Unique identifier, typically matches IP address.
+message Workload {
+  // Name represents the name for the workload.
+  // For Kubernetes, this is the pod name.
+  // This is just for debugging and may be elided as an optimization.
   string name = 1;
 
-  // The full name of the workload instance.
-  string instance_name = 2;
+  // Namespace represents the namespace for the workload.
+  // This is just for debugging and may be elided as an optimization.
+  string namespace = 2;
 
-  // The Kubernetes namespace to which the workload instance belongs.
-  string namespace_name = 3;
+  // IP address of the workload.
+  bytes address = 3;
 
-  // The name of the workload provided by the instance. This is typically the
-  // Kubernetes deployment name.
-  string workload_name = 5;
+  // The SPIFFE identity of the workload. The identity is joined to form spiffe://<trust_domain>/ns/<namespace>/sa/<service_account>.
+  // TrustDomain of the workload. May be elided if this is the mesh wide default (typically cluster.local)
+  string trust_domain = 6;
 
-  // Canonical name of the workload
-  string canonical_name = 7;
+  // ServiceAccount of the workload. May be elided if this is "default"
+  string service_account = 7;
 
-  // Canonical revision of the workload
-  string canonical_revision = 8;
+  // CanonicalName for the workload. Used for telemetry.
+  string canonical_name = 10;
+
+  // CanonicalRevision for the workload. Used for telemetry.
+  string canonical_revision = 11;
+
+  // WorkloadType represents the type of the workload. Used for telemetry.
+  WorkloadType workload_type = 12;
+
+  // WorkloadName represents the name for the workload (of type WorkloadType). Used for telemetry.
+  string workload_name = 13;
 }
 
-message BootstrapExtension {
-  envoy.config.core.v3.ConfigSource config_source = 1;
+enum WorkloadType {
+  DEPLOYMENT = 0;
+  CRONJOB = 1;
+  POD = 2;
+  JOB = 3;
 }

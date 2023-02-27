@@ -24,8 +24,10 @@
 #include "source/common/grpc/common.h"
 #include "source/common/http/header_map_impl.h"
 #include "source/common/http/header_utility.h"
+#include "source/common/network/utility.h"
 #include "source/common/stream_info/utility.h"
 #include "source/extensions/common/utils.h"
+#include "source/extensions/common/workload_discovery/api.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/common/expr/context.h"
 #include "source/extensions/filters/common/expr/evaluator.h"
@@ -72,6 +74,27 @@ extractEndpointMetadata(const StreamInfo::StreamInfo& info) {
     }
   }
   return {};
+}
+
+const Network::Address::InstanceConstSharedPtr
+extractEndpointAddress(const StreamInfo::StreamInfo& info) {
+  auto upstream_info = info.upstreamInfo();
+  auto upstream_host = upstream_info ? upstream_info->upstreamHost() : nullptr;
+  if (upstream_host) {
+    if (upstream_host->metadata()) {
+      const auto& filter_metadata = upstream_host->metadata()->filter_metadata();
+      const auto& it = filter_metadata.find("tunnel");
+      if (it != filter_metadata.end()) {
+        const auto& destination_it = it->second.fields().find("destination");
+        if (destination_it != it->second.fields().end()) {
+          return Network::Utility::parseInternetAddressAndPortNoThrow(
+              destination_it->second.string_value(), /*v6only=*/false);
+        }
+      }
+    }
+    return upstream_host->address();
+  }
+  return nullptr;
 }
 
 enum class Reporter {
@@ -439,7 +462,9 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         scope_(factory_context.scope()),
         disable_host_header_fallback_(proto_config.disable_host_header_fallback()),
         report_duration_(
-            PROTOBUF_GET_MS_OR_DEFAULT(proto_config, tcp_reporting_duration, /* 5s */ 5000)) {
+            PROTOBUF_GET_MS_OR_DEFAULT(proto_config, tcp_reporting_duration, /* 5s */ 5000)),
+        metadata_provider_(Extensions::Common::WorkloadDiscovery::GetProvider(
+            factory_context.getServerFactoryContext())) {
     reporter_ = Reporter::ClientSidecar;
     switch (proto_config.reporter()) {
     case stats::Reporter::UNSPECIFIED:
@@ -677,6 +702,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
 
   const bool disable_host_header_fallback_;
   const std::chrono::milliseconds report_duration_;
+  Extensions::Common::WorkloadDiscovery::WorkloadMetadataProviderSharedPtr metadata_provider_;
   std::unique_ptr<MetricOverrides> metric_overrides_;
 };
 
@@ -975,7 +1001,10 @@ private:
                                                      : context_.unknown_});
       switch (config_->reporter()) {
       case Reporter::ServerGateway: {
-        auto endpoint_peer = extractEndpointMetadata(info);
+        std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer =
+            config_->metadata_provider_
+                ? config_->metadata_provider_->GetMetadata(extractEndpointAddress(info))
+                : std::nullopt;
         tags_.push_back(
             {context_.destination_workload_,
              endpoint_peer ? pool_.add(endpoint_peer->workload_name_) : context_.unknown_});
