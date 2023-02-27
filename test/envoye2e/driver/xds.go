@@ -228,7 +228,10 @@ func (u *UpdateWorkloadMetadata) Run(p *Params) error {
 		}
 		log.Printf("updating metadata for %q\n", wl.Address)
 		out.Address = ip.AsSlice()
-		p.Config.Workloads.UpdateResource(string(out.Address), out)
+		err = p.Config.Workloads.UpdateResource(string(out.Address), out)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
