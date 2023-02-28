@@ -11,7 +11,11 @@ admin:
 {{ .Vars.StatsConfig }}
 dynamic_resources:
   ads_config:
+{{- if eq .Vars.EnableDelta "true" }}
+    api_type: DELTA_GRPC
+{{- else }}
     api_type: GRPC
+{{- end}}
     transport_api_version: V3
     grpc_services:
     - envoy_grpc:
@@ -60,12 +64,6 @@ static_resources:
               socket_address:
                 address: 127.0.0.1
                 port_value: {{ .Ports.BackendPort }}
-          {{- if eq .Vars.EnableEndpointMetadata "true" }}
-          metadata:
-            filter_metadata:
-              istio:
-                workload: ratings-v1;default;ratings;version-1;server-cluster
-          {{- end }}
 {{ .Vars.ServerStaticCluster | indent 2 }}
 {{- if ne .Vars.DisableDirectResponse "true" }}
   listeners:
@@ -107,3 +105,12 @@ bootstrap_extensions:
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
     type_url: type.googleapis.com/envoy.extensions.bootstrap.internal_listener.v3.InternalListener
+{{- if eq .Vars.EnableMetadataDiscovery "true" }}
+- name: metadata_discovery
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/istio.workload.BootstrapExtension
+    value:
+      config_source:
+        ads: {}
+{{- end }}

@@ -1,0 +1,68 @@
+// Copyright Istio Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package istio.workload;
+option go_package = "test/envoye2e/workloadapi";
+
+/**
+ * Warning: Derived from
+ * https://raw.githubusercontent.com/istio/istio/57f3b2bab3c07188d940fce94d3261f617ad0e10/pkg/workloadapi/workload.proto
+ * with the following changes:
+ *
+ * 1) delete unused fields;
+ * 2) change go_package;
+ * 3) append bootstrap extension stub;
+ */
+
+message Workload {
+  // Name represents the name for the workload.
+  // For Kubernetes, this is the pod name.
+  // This is just for debugging and may be elided as an optimization.
+  string name = 1;
+
+  // Namespace represents the namespace for the workload.
+  // This is just for debugging and may be elided as an optimization.
+  string namespace = 2;
+
+  // IP address of the workload.
+  bytes address = 3;
+
+  // The SPIFFE identity of the workload. The identity is joined to form spiffe://<trust_domain>/ns/<namespace>/sa/<service_account>.
+  // TrustDomain of the workload. May be elided if this is the mesh wide default (typically cluster.local)
+  string trust_domain = 6;
+
+  // ServiceAccount of the workload. May be elided if this is "default"
+  string service_account = 7;
+
+  // CanonicalName for the workload. Used for telemetry.
+  string canonical_name = 10;
+
+  // CanonicalRevision for the workload. Used for telemetry.
+  string canonical_revision = 11;
+
+  // WorkloadType represents the type of the workload. Used for telemetry.
+  WorkloadType workload_type = 12;
+
+  // WorkloadName represents the name for the workload (of type WorkloadType). Used for telemetry.
+  string workload_name = 13;
+}
+
+enum WorkloadType {
+  DEPLOYMENT = 0;
+  CRONJOB = 1;
+  POD = 2;
+  JOB = 3;
+}

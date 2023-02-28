@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/netip"
 
 	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -31,6 +32,8 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"google.golang.org/grpc"
+
+	"istio.io/proxy/test/envoye2e/workloadapi"
 )
 
 // XDS creates an xDS server
@@ -40,11 +43,15 @@ type XDS struct {
 
 // XDSServer is a struct holding xDS state.
 type XDSServer struct {
+	cache.MuxCache
 	Extensions *ExtensionServer
 	Cache      cache.SnapshotCache
+	Workloads  *cache.LinearCache
 }
 
 var _ Step = &XDS{}
+
+const WorkloadTypeURL = "type.googleapis.com/istio.workload.Workload"
 
 // Run starts up an Envoy XDS server.
 func (x *XDS) Run(p *Params) error {
@@ -52,8 +59,30 @@ func (x *XDS) Run(p *Params) error {
 	x.grpc = grpc.NewServer()
 	p.Config.Extensions = NewExtensionServer(context.Background())
 	extensionservice.RegisterExtensionConfigDiscoveryServiceServer(x.grpc, p.Config.Extensions)
+
+	// Register caches.
 	p.Config.Cache = cache.NewSnapshotCache(false, cache.IDHash{}, x)
-	xdsServer := server.NewServer(context.Background(), p.Config.Cache, nil)
+	p.Config.Workloads = cache.NewLinearCache(WorkloadTypeURL,
+		cache.WithLogger(x))
+
+	p.Config.Caches = map[string]cache.Cache{
+		"default":   p.Config.Cache,
+		"workloads": p.Config.Workloads,
+	}
+	p.Config.Classify = func(r *cache.Request) string {
+		if r.TypeUrl == WorkloadTypeURL {
+			return "workloads"
+		}
+		return "default"
+	}
+	p.Config.ClassifyDelta = func(r *cache.DeltaRequest) string {
+		if r.TypeUrl == WorkloadTypeURL {
+			return "workloads"
+		}
+		return "default"
+	}
+
+	xdsServer := server.NewServer(context.Background(), &p.Config, nil)
 	discovery.RegisterAggregatedDiscoveryServiceServer(x.grpc, xdsServer)
 	secret.RegisterSecretDiscoveryServiceServer(x.grpc, xdsServer)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", p.Ports.XDSPort))
@@ -66,6 +95,16 @@ func (x *XDS) Run(p *Params) error {
 	}()
 	return nil
 }
+
+type NamedWorkload struct {
+	workloadapi.Workload
+}
+
+func (nw *NamedWorkload) GetName() string {
+	return string(nw.Address)
+}
+
+var _ types.ResourceWithName = &NamedWorkload{}
 
 // Cleanup stops the XDS server.
 func (x *XDS) Cleanup() {
@@ -164,3 +203,37 @@ func (u *UpdateExtensions) Run(p *Params) error {
 }
 
 func (u *UpdateExtensions) Cleanup() {}
+
+type WorkloadMetadata struct {
+	Address  string
+	Metadata string
+}
+
+type UpdateWorkloadMetadata struct {
+	Workloads []WorkloadMetadata
+}
+
+var _ Step = &UpdateWorkloadMetadata{}
+
+func (u *UpdateWorkloadMetadata) Run(p *Params) error {
+	for _, wl := range u.Workloads {
+		out := &workloadapi.Workload{}
+		if err := p.FillYAML(wl.Metadata, out); err != nil {
+			return err
+		}
+		// Parse address as IP bytes
+		ip, err := netip.ParseAddr(wl.Address)
+		if err != nil {
+			return err
+		}
+		log.Printf("updating metadata for %q\n", wl.Address)
+		out.Address = ip.AsSlice()
+		err = p.Config.Workloads.UpdateResource(string(out.Address), out)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (u *UpdateWorkloadMetadata) Cleanup() {}

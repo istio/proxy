@@ -628,10 +628,18 @@ func TestStatsEndpointLabels(t *testing.T) {
 	}
 }
 
+const BackendMetadata = `
+namespace: default
+workload_name: ratings-v1
+canonical_name: ratings
+canonical_revision: version-1
+`
+
 func TestStatsServerWaypointProxy(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"RequestCount":            "10",
-		"EnableEndpointMetadata":  "true",
+		"EnableDelta":             "true",
+		"EnableMetadataDiscovery": "true",
 		"StatsFilterServerConfig": driver.LoadTestJSON("testdata/stats/server_waypoint_proxy_config.yaml"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
@@ -645,6 +653,10 @@ func TestStatsServerWaypointProxy(t *testing.T) {
 			&driver.XDS{},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+			&driver.UpdateWorkloadMetadata{Workloads: []driver.WorkloadMetadata{{
+				Address:  "127.0.0.1",
+				Metadata: BackendMetadata,
+			}}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{Duration: 1 * time.Second},
@@ -670,7 +682,8 @@ func TestStatsServerWaypointProxy(t *testing.T) {
 func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"RequestCount":            "10",
-		"EnableEndpointMetadata":  "true",
+		"EnableDelta":             "true",
+		"EnableMetadataDiscovery": "true",
 		"StatsFilterServerConfig": driver.LoadTestJSON("testdata/stats/server_waypoint_proxy_config.yaml"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ServerClusterName"] = "internal_outbound"
@@ -709,6 +722,10 @@ func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 					driver.LoadTestData("testdata/secret/server.yaml.tmpl"),
 				},
 			},
+			&driver.UpdateWorkloadMetadata{Workloads: []driver.WorkloadMetadata{{
+				Address:  "127.0.0.1",
+				Metadata: BackendMetadata,
+			}}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Sleep{Duration: 1 * time.Second},
