@@ -47,7 +47,7 @@ Istio::Common::WorkloadMetadataObject convert(const istio::workload::Workload& w
     break;
   }
   return Istio::Common::WorkloadMetadataObject(
-      workload.name(), /* cluster_name */ "", workload.namespace_(), workload.workload_name(),
+      workload.name(), workload.cluster_id(), workload.namespace_(), workload.workload_name(),
       workload.canonical_name(), workload.canonical_revision(), /* app_name */ "",
       /* app_version */ "", workload_type);
 }

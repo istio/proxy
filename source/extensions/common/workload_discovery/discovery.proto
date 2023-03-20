@@ -58,6 +58,33 @@ message Workload {
 
   // WorkloadName represents the name for the workload (of type WorkloadType). Used for telemetry.
   string workload_name = 13;
+
+  // The cluster ID that the workload instance belongs to
+  string cluster_id = 18;
+
+  reserved "network";
+  reserved 4;
+
+  reserved "protocol";
+  reserved 5;
+
+  reserved "waypoint_addresses";
+  reserved 8;
+
+  reserved "node";
+  reserved 9;
+
+  reserved "native_hbone";
+  reserved 14;
+
+  reserved "virtual_ips";
+  reserved 15;
+
+  reserved "authorization_policies";
+  reserved 16;
+
+  reserved "status";
+  reserved 17;
 }
 
 enum WorkloadType {
