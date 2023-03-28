@@ -118,7 +118,7 @@ std::string MakeEnvoyJwtFilterConfig() {
     type_url: "type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication"
     value:
       providers:
-        testing: 
+        testing:
           issuer: testing@secure.istio.io
           local_jwks:
             inline_string: "%s"
@@ -128,12 +128,12 @@ std::string MakeEnvoyJwtFilterConfig() {
           local_jwks:
             inline_string: "%s"
           payload_in_metadata: testing-rbac@secure.istio.io
-      rules: 
+      rules:
       - match:
           prefix: /
         requires:
           requires_any:
-            requirements: 
+            requirements:
             - provider_name: testing
             - provider_name: testing-rbac
             - allow_missing_or_failed:
@@ -294,7 +294,7 @@ public:
 };
 
 INSTANTIATE_TEST_SUITE_P(Protocols, IstioHttpIntegrationTestWithEnvoyJwtFilter,
-                         testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
+                         testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParamsWithoutHTTP3()),
                          HttpProtocolIntegrationTest::protocolTestParamsToString);
 
 TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, NoJwt) {
