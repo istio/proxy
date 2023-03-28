@@ -71,7 +71,7 @@ Http::TestRequestHeaderMapImpl BaseRequestHeaders() {
   return Http::TestRequestHeaderMapImpl{{":method", "GET"},
                                         {":path", "/"},
                                         {":scheme", "http"},
-                                        {":authority", "host"},
+                                        {":authority", "sni.lyft.com"},
                                         {"x-forwarded-for", "10.0.0.1"}};
 }
 
@@ -220,9 +220,10 @@ public:
   }
 };
 
-INSTANTIATE_TEST_SUITE_P(Protocols, ExchangedTokenIntegrationTest,
-                         testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
-                         HttpProtocolIntegrationTest::protocolTestParamsToString);
+INSTANTIATE_TEST_SUITE_P(
+    Protocols, ExchangedTokenIntegrationTest,
+    testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParamsWithoutHTTP3()),
+    HttpProtocolIntegrationTest::protocolTestParamsToString);
 
 TEST_P(ExchangedTokenIntegrationTest, ValidExchangeToken) {
   codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));
