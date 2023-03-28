@@ -295,7 +295,7 @@ public:
 
 INSTANTIATE_TEST_SUITE_P(
     Protocols, IstioHttpIntegrationTestWithEnvoyJwtFilter,
-    testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParamsWithoutHTTP3()),
+    testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
     HttpProtocolIntegrationTest::protocolTestParamsToString);
 
 TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, NoJwt) {

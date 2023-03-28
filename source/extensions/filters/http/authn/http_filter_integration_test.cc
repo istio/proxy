@@ -84,7 +84,7 @@ typedef HttpProtocolIntegrationTest AuthenticationFilterIntegrationTest;
 
 INSTANTIATE_TEST_SUITE_P(
     Protocols, AuthenticationFilterIntegrationTest,
-    testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParamsWithoutHTTP3()),
+    testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
     HttpProtocolIntegrationTest::protocolTestParamsToString);
 
 TEST_P(AuthenticationFilterIntegrationTest, EmptyPolicy) {
