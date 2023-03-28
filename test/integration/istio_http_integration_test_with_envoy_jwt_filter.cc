@@ -293,9 +293,10 @@ public:
   FakeStreamPtr zipkin_request_{};
 };
 
-INSTANTIATE_TEST_SUITE_P(Protocols, IstioHttpIntegrationTestWithEnvoyJwtFilter,
-                         testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParamsWithoutHTTP3()),
-                         HttpProtocolIntegrationTest::protocolTestParamsToString);
+INSTANTIATE_TEST_SUITE_P(
+    Protocols, IstioHttpIntegrationTestWithEnvoyJwtFilter,
+    testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParamsWithoutHTTP3()),
+    HttpProtocolIntegrationTest::protocolTestParamsToString);
 
 TEST_P(IstioHttpIntegrationTestWithEnvoyJwtFilter, NoJwt) {
   // initialize();
