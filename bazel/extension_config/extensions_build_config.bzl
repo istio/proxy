@@ -418,6 +418,18 @@ ENVOY_CONTRIB_EXTENSIONS = {
     #
 
     "envoy.network.connection_balance.dlb":                     "//contrib/network/connection_balance/dlb/source:connection_balancer",
+
+    #
+    # Input matchers
+    #
+
+    "envoy.matching.input_matchers.hyperscan":                  "//contrib/hyperscan/matching/input_matchers/source:config",
+
+    #
+    # Regex engines
+    #
+
+    "envoy.regex_engines.hyperscan":                            "//contrib/hyperscan/regex_engines/source:config",
 }
 
 
@@ -435,6 +447,8 @@ ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.tls.key_providers.cryptomb",
     "envoy.tls.key_providers.qat",
     "envoy.network.connection_balance.dlb",
+    "envoy.matching.input_matchers.hyperscan",
+    "envoy.regex_engines.hyperscan",
 ]
 
 EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_DISABLED_EXTENSIONS] +
