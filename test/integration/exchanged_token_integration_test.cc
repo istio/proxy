@@ -220,10 +220,9 @@ public:
   }
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    Protocols, ExchangedTokenIntegrationTest,
-    testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
-    HttpProtocolIntegrationTest::protocolTestParamsToString);
+INSTANTIATE_TEST_SUITE_P(Protocols, ExchangedTokenIntegrationTest,
+                         testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
+                         HttpProtocolIntegrationTest::protocolTestParamsToString);
 
 TEST_P(ExchangedTokenIntegrationTest, ValidExchangeToken) {
   codec_client_ = makeHttpConnection(makeClientConnection((lookupPort("http"))));

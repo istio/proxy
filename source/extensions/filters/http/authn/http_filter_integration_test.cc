@@ -82,10 +82,9 @@ std::string MakeHeaderToMetadataConfig() {
 
 typedef HttpProtocolIntegrationTest AuthenticationFilterIntegrationTest;
 
-INSTANTIATE_TEST_SUITE_P(
-    Protocols, AuthenticationFilterIntegrationTest,
-    testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
-    HttpProtocolIntegrationTest::protocolTestParamsToString);
+INSTANTIATE_TEST_SUITE_P(Protocols, AuthenticationFilterIntegrationTest,
+                         testing::ValuesIn(HttpProtocolIntegrationTest::getProtocolTestParams()),
+                         HttpProtocolIntegrationTest::protocolTestParamsToString);
 
 TEST_P(AuthenticationFilterIntegrationTest, EmptyPolicy) {
   config_helper_.addFilter("name: istio_authn");
