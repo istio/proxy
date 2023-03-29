@@ -50,6 +50,7 @@ envoy_cc_extension(
         "@envoy//source/extensions/filters/common/expr:evaluator_lib",
         "@envoy//source/extensions/filters/http/common:factory_base_lib",
         "@envoy//source/extensions/filters/http/common:pass_through_filter_lib",
+        "@envoy//source/extensions/filters/http/grpc_stats:config",
     ],
 )
 
