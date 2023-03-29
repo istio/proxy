@@ -71,7 +71,7 @@ Http::TestRequestHeaderMapImpl BaseRequestHeaders() {
   return Http::TestRequestHeaderMapImpl{{":method", "GET"},
                                         {":path", "/"},
                                         {":scheme", "http"},
-                                        {":authority", "host"},
+                                        {":authority", "sni.lyft.com"},
                                         {"x-forwarded-for", "10.0.0.1"}};
 }
 

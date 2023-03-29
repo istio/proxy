@@ -35,7 +35,7 @@ Http::TestRequestHeaderMapImpl SimpleRequestHeaders() {
   return Http::TestRequestHeaderMapImpl{{":method", "GET"},
                                         {":path", "/"},
                                         {":scheme", "http"},
-                                        {":authority", "host"},
+                                        {":authority", "sni.lyft.com"},
                                         {"x-forwarded-for", "10.0.0.1"}};
 }
 
@@ -175,7 +175,7 @@ TEST_P(AuthenticationFilterIntegrationTest, CORSPreflight) {
       {":method", "OPTIONS"},
       {":path", "/"},
       {":scheme", "http"},
-      {":authority", "host"},
+      {":authority", "sni.lyft.com"},
       {"x-forwarded-for", "10.0.0.1"},
       {"access-control-request-method", "GET"},
       {"origin", "example.com"},
