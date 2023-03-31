@@ -59,9 +59,8 @@ PrincipalInfo getPrincipals(const StreamInfo::FilterState& filter_state);
 class IstioAuthnFilter : public Network::ReadFilter, public Network::ConnectionCallbacks {
 public:
   IstioAuthnFilter(bool shared)
-      : shared_(shared ? StreamInfo::StreamSharingMayImpactPooling
-                       : SharedWithUpstreamConnectionOnce
-                : StreamInfo::StreamSharingMayImpactPooling::None) {}
+      : shared_(shared ? StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce
+                       : StreamInfo::StreamSharingMayImpactPooling::None) {}
   // Network::ConnectionCallbacks
   void onEvent(Network::ConnectionEvent event) override;
   void onAboveWriteBufferHighWatermark() override {}
