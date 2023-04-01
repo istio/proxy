@@ -131,8 +131,10 @@ struct Context : public Singleton::Instance {
         response_bytes_(pool_.add("istio_response_bytes")),
         request_messages_total_(pool_.add("istio_request_messages_total")),
         response_messages_total_(pool_.add("istio_response_messages_total")),
-        tcp_connections_opened_total_(pool_.add("istio_tcp_connections_opened_total")),
-        tcp_connections_closed_total_(pool_.add("istio_tcp_connections_closed_total")),
+        tcp_connections_opened_total_(
+            pool_.add("istio_tcp_connections_opened_total")),
+        tcp_connections_closed_total_(
+            pool_.add("istio_tcp_connections_closed_total")),
         tcp_sent_bytes_total_(pool_.add("istio_tcp_sent_bytes_total")),
         tcp_received_bytes_total_(pool_.add("istio_tcp_received_bytes_total")),
         empty_(pool_.add("")),
@@ -784,10 +786,12 @@ class IstioStatsFilter : public Http::PassThroughFilter,
   ~IstioStatsFilter() { ASSERT(report_timer_ == nullptr); }
 
   // Http::StreamDecoderFilter
-  Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap& request_headers, bool) override {
+  Http::FilterHeadersStatus decodeHeaders(
+      Http::RequestHeaderMap& request_headers, bool) override {
     is_grpc_ = Grpc::Common::isGrpcRequestHeaders(request_headers);
     if (is_grpc_) {
-      report_timer_ = decoder_callbacks_->dispatcher().createTimer([this] { onReportTimer(); });
+      report_timer_ = decoder_callbacks_->dispatcher().createTimer(
+          [this] { onReportTimer(); });
       report_timer_->enableTimer(config_->report_duration_);
     }
     return Http::FilterHeadersStatus::Continue;
@@ -806,8 +810,8 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     }
 
     // TODO: copy Http::CodeStatsImpl version for status codes and flags.
-    tags_.push_back(
-        {context_.response_code_, pool_.add(absl::StrCat(info.responseCode().value_or(0)))});
+    tags_.push_back({context_.response_code_,
+                     pool_.add(absl::StrCat(info.responseCode().value_or(0)))});
     if (is_grpc_) {
       auto const& optional_status = Grpc::Common::getGrpcStatus(
           response_trailers
@@ -868,18 +872,18 @@ class IstioStatsFilter : public Http::PassThroughFilter,
   // Network::ConnectionCallbacks
   void onEvent(Network::ConnectionEvent event) override {
     switch (event) {
-    case Network::ConnectionEvent::LocalClose:
-    case Network::ConnectionEvent::RemoteClose:
-      reportHelper(true);
-      break;
-    default:
-      break;
+      case Network::ConnectionEvent::LocalClose:
+      case Network::ConnectionEvent::RemoteClose:
+        reportHelper(true);
+        break;
+      default:
+        break;
     }
   }
   void onAboveWriteBufferHighWatermark() override {}
   void onBelowWriteBufferLowWatermark() override {}
 
-private:
+ private:
   // Invoked periodically for streams.
   void reportHelper(bool end_stream) {
     if (end_stream && report_timer_) {
@@ -899,13 +903,17 @@ private:
         const auto* counters =
             decoder_callbacks_->streamInfo()
                 .filterState()
-                ->getDataReadOnly<GrpcStats::GrpcStatsObject>("envoy.filters.http.grpc_stats");
+                ->getDataReadOnly<GrpcStats::GrpcStatsObject>(
+                    "envoy.filters.http.grpc_stats");
         if (counters) {
-          Config::StreamOverrides stream(*config_, pool_, decoder_callbacks_->streamInfo());
-          stream.addCounter(context_.request_messages_total_, tags_,
-                            counters->request_message_count - request_message_count_);
-          stream.addCounter(context_.response_messages_total_, tags_,
-                            counters->response_message_count - response_message_count_);
+          Config::StreamOverrides stream(*config_, pool_,
+                                         decoder_callbacks_->streamInfo());
+          stream.addCounter(
+              context_.request_messages_total_, tags_,
+              counters->request_message_count - request_message_count_);
+          stream.addCounter(
+              context_.response_messages_total_, tags_,
+              counters->response_message_count - response_message_count_);
           request_message_count_ = counters->request_message_count;
           response_message_count_ = counters->response_message_count;
         }
