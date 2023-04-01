@@ -75,6 +75,18 @@ func SkipWasm(t *testing.T, runtime string) {
 	}
 }
 
+func SkipV8(t *testing.T, runtime string) {
+	if runtime == "envoy.wasm.runtime.v8" {
+		t.Skip("Skip v8 runtime test since wasm module is not generated")
+	}
+}
+
+func SkipTSan(t *testing.T) {
+	if os.Getenv("TSAN") != "" {
+		t.Skip("https://github.com/istio/istio/issues/21273")
+	}
+}
+
 func IsTSanASan() bool {
 	return os.Getenv("TSAN") != "" || os.Getenv("ASAN") != ""
 }
