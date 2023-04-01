@@ -342,6 +342,7 @@ func TestStatsGrpc(t *testing.T) {
 func TestStatsGrpcStream(t *testing.T) {
 	for _, runtime := range Runtimes {
 		t.Run(runtime.WasmRuntime, func(t *testing.T) {
+			env.SkipWasm(t, runtime.WasmRuntime)
 			params := driver.NewTestParams(t, map[string]string{
 				"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
 				"StatsFilterCode":            runtime.StatsFilterCode,
