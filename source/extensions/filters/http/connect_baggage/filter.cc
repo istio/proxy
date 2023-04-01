@@ -53,7 +53,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
       decoder_callbacks_->streamInfo().filterState()->setData(
           "wasm.downstream_peer", std::move(state), StreamInfo::FilterState::StateType::Mutable,
           StreamInfo::FilterState::LifeSpan::FilterChain,
-          StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
+          StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce);
     }
     {
       // This is needed because TCP stats filter awaits for TCP prefix.
@@ -65,7 +65,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
       decoder_callbacks_->streamInfo().filterState()->setData(
           "wasm.downstream_peer_id", std::move(state), StreamInfo::FilterState::StateType::Mutable,
           StreamInfo::FilterState::LifeSpan::FilterChain,
-          StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
+          StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce);
     }
   }
   return Http::FilterHeadersStatus::Continue;

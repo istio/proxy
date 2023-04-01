@@ -33,7 +33,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
         std::make_shared<Istio::SetInternalDstAddress::Authority>(headers.getHostValue(),
                                                                   per_route_settings->port()),
         StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::FilterChain,
-        StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
+        StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce);
   }
   return Http::FilterHeadersStatus::Continue;
 }
@@ -47,7 +47,7 @@ Network::FilterStatus NetworkFilter::onNewConnection() {
     info.filterState()->setData(
         Istio::SetInternalDstAddress::FilterStateKey, object,
         StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::Connection,
-        StreamInfo::FilterState::StreamSharing::SharedWithUpstreamConnectionOnce);
+        StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce);
     ENVOY_LOG_MISC(trace, "Re-shared authority object");
   }
   return Network::FilterStatus::Continue;
