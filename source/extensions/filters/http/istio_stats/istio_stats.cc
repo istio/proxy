@@ -30,6 +30,7 @@
 #include "source/extensions/filters/common/expr/context.h"
 #include "source/extensions/filters/common/expr/evaluator.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
+#include "source/extensions/filters/http/grpc_stats/grpc_stats_filter.h"
 #include "source/extensions/filters/network/istio_authn/config.h"
 
 namespace Envoy {
@@ -128,6 +129,8 @@ struct Context : public Singleton::Instance {
             pool_.add("istio_request_duration_milliseconds")),
         request_bytes_(pool_.add("istio_request_bytes")),
         response_bytes_(pool_.add("istio_response_bytes")),
+        request_messages_total_(pool_.add("istio_request_messages_total")),
+        response_messages_total_(pool_.add("istio_response_messages_total")),
         tcp_connections_opened_total_(
             pool_.add("istio_tcp_connections_opened_total")),
         tcp_connections_closed_total_(
@@ -196,6 +199,8 @@ struct Context : public Singleton::Instance {
         {"request_duration_milliseconds", request_duration_milliseconds_},
         {"request_bytes", request_bytes_},
         {"response_bytes", response_bytes_},
+        {"request_messages_total", request_messages_total_},
+        {"response_messages_total", response_messages_total_},
         {"tcp_connections_opened_total", tcp_connections_opened_total_},
         {"tcp_connections_closed_total", tcp_connections_closed_total_},
         {"tcp_sent_bytes_total", tcp_sent_bytes_total_},
@@ -241,6 +246,8 @@ struct Context : public Singleton::Instance {
   const Stats::StatName request_duration_milliseconds_;
   const Stats::StatName request_bytes_;
   const Stats::StatName response_bytes_;
+  const Stats::StatName request_messages_total_;
+  const Stats::StatName response_messages_total_;
   const Stats::StatName tcp_connections_opened_total_;
   const Stats::StatName tcp_connections_closed_total_;
   const Stats::StatName tcp_sent_bytes_total_;
@@ -778,15 +785,25 @@ class IstioStatsFilter : public Http::PassThroughFilter,
   }
   ~IstioStatsFilter() { ASSERT(report_timer_ == nullptr); }
 
+  // Http::StreamDecoderFilter
+  Http::FilterHeadersStatus decodeHeaders(
+      Http::RequestHeaderMap& request_headers, bool) override {
+    is_grpc_ = Grpc::Common::isGrpcRequestHeaders(request_headers);
+    if (is_grpc_) {
+      report_timer_ = decoder_callbacks_->dispatcher().createTimer(
+          [this] { onReportTimer(); });
+      report_timer_->enableTimer(config_->report_duration_);
+    }
+    return Http::FilterHeadersStatus::Continue;
+  }
+
   // AccessLog::Instance
   void log(const Http::RequestHeaderMap* request_headers,
            const Http::ResponseHeaderMap* response_headers,
            const Http::ResponseTrailerMap* response_trailers,
            const StreamInfo::StreamInfo& info) override {
-    populatePeerInfo(info, info.filterState());
-    const bool is_grpc =
-        request_headers && Grpc::Common::isGrpcRequestHeaders(*request_headers);
-    if (is_grpc) {
+    reportHelper(true);
+    if (is_grpc_) {
       tags_.push_back({context_.request_protocol_, context_.grpc_});
     } else {
       tags_.push_back({context_.request_protocol_, context_.http_});
@@ -795,7 +812,7 @@ class IstioStatsFilter : public Http::PassThroughFilter,
     // TODO: copy Http::CodeStatsImpl version for status codes and flags.
     tags_.push_back({context_.response_code_,
                      pool_.add(absl::StrCat(info.responseCode().value_or(0)))});
-    if (is_grpc) {
+    if (is_grpc_) {
       auto const& optional_status = Grpc::Common::getGrpcStatus(
           response_trailers
               ? *response_trailers
@@ -858,10 +875,6 @@ class IstioStatsFilter : public Http::PassThroughFilter,
       case Network::ConnectionEvent::LocalClose:
       case Network::ConnectionEvent::RemoteClose:
         reportHelper(true);
-        if (report_timer_) {
-          report_timer_->disableTimer();
-          report_timer_.reset();
-        }
         break;
       default:
         break;
@@ -871,8 +884,42 @@ class IstioStatsFilter : public Http::PassThroughFilter,
   void onBelowWriteBufferLowWatermark() override {}
 
  private:
-  // Invoked periodically for TCP streams.
+  // Invoked periodically for streams.
   void reportHelper(bool end_stream) {
+    if (end_stream && report_timer_) {
+      report_timer_->disableTimer();
+      report_timer_.reset();
+    }
+    // HTTP handled first.
+    if (decoder_callbacks_) {
+      if (!peer_read_) {
+        const auto& info = decoder_callbacks_->streamInfo();
+        peer_read_ = peerInfoRead(config_->reporter(), info.filterState());
+        if (peer_read_ || end_stream) {
+          populatePeerInfo(info, info.filterState());
+        }
+      }
+      if (is_grpc_ && (peer_read_ || end_stream)) {
+        const auto* counters =
+            decoder_callbacks_->streamInfo()
+                .filterState()
+                ->getDataReadOnly<GrpcStats::GrpcStatsObject>(
+                    "envoy.filters.http.grpc_stats");
+        if (counters) {
+          Config::StreamOverrides stream(*config_, pool_,
+                                         decoder_callbacks_->streamInfo());
+          stream.addCounter(
+              context_.request_messages_total_, tags_,
+              counters->request_message_count - request_message_count_);
+          stream.addCounter(
+              context_.response_messages_total_, tags_,
+              counters->response_message_count - response_message_count_);
+          request_message_count_ = counters->request_message_count;
+          response_message_count_ = counters->response_message_count;
+        }
+      }
+      return;
+    }
     const auto& info = network_read_callbacks_->connection().streamInfo();
     // TCP MX writes to upstream stream info instead.
     OptRef<const StreamInfo::UpstreamInfo> upstream_info;
@@ -885,17 +932,17 @@ class IstioStatsFilter : public Http::PassThroughFilter,
             : info.filterState();
 
     Config::StreamOverrides stream(*config_, pool_, info);
-    if (!network_peer_read_) {
-      network_peer_read_ = peerInfoRead(config_->reporter(), filter_state);
+    if (!peer_read_) {
+      peer_read_ = peerInfoRead(config_->reporter(), filter_state);
       // Report connection open once peer info is read or connection is closed.
-      if (network_peer_read_ || end_stream) {
+      if (peer_read_ || end_stream) {
         populatePeerInfo(info, filter_state);
         tags_.push_back({context_.request_protocol_, context_.tcp_});
         populateFlagsAndConnectionSecurity(info);
         stream.addCounter(context_.tcp_connections_opened_total_, tags_);
       }
     }
-    if (network_peer_read_ || end_stream) {
+    if (peer_read_ || end_stream) {
       auto meter = info.getDownstreamBytesMeter();
       if (meter) {
         stream.addCounter(context_.tcp_sent_bytes_total_, tags_,
@@ -1203,10 +1250,13 @@ class IstioStatsFilter : public Http::PassThroughFilter,
   Stats::StatNameTagVector tags_;
   Event::TimerPtr report_timer_{nullptr};
   Network::ReadFilterCallbacks* network_read_callbacks_;
-  bool network_peer_read_{false};
+  bool peer_read_{false};
   uint64_t bytes_sent_{0};
   uint64_t bytes_received_{0};
   absl::optional<bool> mutual_tls_;
+  bool is_grpc_{false};
+  uint64_t request_message_count_{0};
+  uint64_t response_message_count_{0};
 };
 
 }  // namespace
