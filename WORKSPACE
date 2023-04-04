@@ -34,10 +34,10 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit date: 2023-04-03
-ENVOY_SHA = "e68f82ae79ab60c0ec0733b204b3baf556327fff"
+# Commit date: 2023-04-04
+ENVOY_SHA = "27226a86e3f62990cc53586e8000fa35fc523f2e"
 
-ENVOY_SHA256 = "7444852215824a8bce5f2b76a48410088cff5b13aa3d663004309dcf31d0ea78"
+ENVOY_SHA256 = "17b3c04591a42f0b2b7af177250ec3a299bf603f51502c81e4821b69acda27e9"
 
 ENVOY_ORG = "envoyproxy"
 
