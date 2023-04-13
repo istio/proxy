@@ -36,8 +36,7 @@ Http::TestRequestHeaderMapImpl SimpleRequestHeaders() {
   return Http::TestRequestHeaderMapImpl{{":method", "GET"},
                                         {":path", "/"},
                                         {":scheme", "http"},
-                                        {":authority", "host"},
-                                        {"x-forwarded-for", "10.0.0.1"}};
+                                        {":authority", "host"}};
 }
 
 // Keep the same as issuer in the policy below.
@@ -187,7 +186,6 @@ TEST_P(AuthenticationFilterIntegrationTest, CORSPreflight) {
       {":path", "/"},
       {":scheme", "http"},
       {":authority", "host"},
-      {"x-forwarded-for", "10.0.0.1"},
       {"access-control-request-method", "GET"},
       {"origin", "example.com"},
   };

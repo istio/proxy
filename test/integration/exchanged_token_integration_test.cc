@@ -72,8 +72,7 @@ Http::TestRequestHeaderMapImpl BaseRequestHeaders() {
   return Http::TestRequestHeaderMapImpl{{":method", "GET"},
                                         {":path", "/"},
                                         {":scheme", "http"},
-                                        {":authority", "host"},
-                                        {"x-forwarded-for", "10.0.0.1"}};
+                                        {":authority", "host"}};
 }
 
 // Generates test request header with given token.
