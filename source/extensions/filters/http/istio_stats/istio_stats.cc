@@ -103,8 +103,7 @@ enum class Reporter {
   ClientSidecar,
   // Regular inbound listener on a sidecar.
   ServerSidecar,
-  // Inbound listener on a shared proxy. The destination properties are derived
-  // from the endpoint metadata instead of the proxy bootstrap.
+  // Gateway listener for a set of destination workloads.
   ServerGateway,
 };
 
@@ -457,6 +456,56 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
   absl::flat_hash_map<std::string, uint32_t> expression_ids_;
 };
 
+// Self-managed scope with active rotation.
+// The expired stats scope is drained gracefully to accommodate the asynchronous
+// stats_flush_interval.
+class RotatingScope : public Logger::Loggable<Logger::Id::filter> {
+public:
+  RotatingScope(Server::Configuration::FactoryContext& factory_context, uint64_t rotate_interval_ms,
+                uint64_t drain_interval_ms)
+      : parent_scope_(factory_context.scope()), active_scope_(parent_scope_.createScope("")),
+        rotate_interval_ms_(rotate_interval_ms), drain_interval_ms_(drain_interval_ms) {
+    if (rotate_interval_ms_ > 0) {
+      ASSERT(drain_interval_ms_ < rotate_interval_ms_);
+      Event::Dispatcher& dispatcher = factory_context.mainThreadDispatcher();
+      rotate_timer_ = dispatcher.createTimer([this] { onRotate(); });
+      delete_timer_ = dispatcher.createTimer([this] { onDelete(); });
+      rotate_timer_->enableTimer(std::chrono::milliseconds(rotate_interval_ms_));
+    }
+  }
+  ~RotatingScope() {
+    if (rotate_timer_) {
+      rotate_timer_->disableTimer();
+      rotate_timer_.reset();
+    }
+    if (delete_timer_) {
+      delete_timer_->disableTimer();
+      delete_timer_.reset();
+    }
+  }
+  Stats::Scope& scope() { return *active_scope_; }
+
+private:
+  void onRotate() {
+    ENVOY_LOG(info, "Rotating active Istio stats scope after {}ms.", rotate_interval_ms_);
+    draining_scope_ = active_scope_;
+    active_scope_ = parent_scope_.createScope("");
+    rotate_timer_->enableTimer(std::chrono::milliseconds(rotate_interval_ms_));
+    delete_timer_->enableTimer(std::chrono::milliseconds(drain_interval_ms_));
+  }
+  void onDelete() {
+    ENVOY_LOG(info, "Deleting draining Istio stats scope after {}ms.", drain_interval_ms_);
+    draining_scope_.reset();
+  }
+  Stats::Scope& parent_scope_;
+  Stats::ScopeSharedPtr active_scope_;
+  Stats::ScopeSharedPtr draining_scope_{nullptr};
+  const uint64_t rotate_interval_ms_;
+  const uint64_t drain_interval_ms_;
+  Event::TimerPtr rotate_timer_{nullptr};
+  Event::TimerPtr delete_timer_{nullptr};
+};
+
 struct Config : public Logger::Loggable<Logger::Id::filter> {
   Config(const stats::PluginConfig& proto_config,
          Server::Configuration::FactoryContext& factory_context)
@@ -466,7 +515,11 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
               return std::make_shared<Context>(factory_context.serverScope().symbolTable(),
                                                factory_context.localInfo().node());
             })),
-        scope_(factory_context.scope()),
+        scope_(factory_context,
+               PROTOBUF_GET_MS_OR_DEFAULT(proto_config, expiry_duration,
+                                          /* 12h */ 1000 * 60 * 60 * 12),
+               PROTOBUF_GET_MS_OR_DEFAULT(proto_config, graceful_drain_duration,
+                                          /* 5m */ 1000 * 60 * 5)),
         disable_host_header_fallback_(proto_config.disable_host_header_fallback()),
         report_duration_(
             PROTOBUF_GET_MS_OR_DEFAULT(proto_config, tcp_reporting_duration, /* 5s */ 5000)),
@@ -493,7 +546,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
       break;
     }
     if (proto_config.metrics_size() > 0 || proto_config.definitions_size() > 0) {
-      metric_overrides_ = std::make_unique<MetricOverrides>(context_, scope_.symbolTable());
+      metric_overrides_ = std::make_unique<MetricOverrides>(context_, scope().symbolTable());
       for (const auto& definition : proto_config.definitions()) {
         const auto& it = context_->all_metrics_.find(definition.name());
         if (it != context_->all_metrics_.end()) {
@@ -629,12 +682,12 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
           return;
         }
         auto new_tags = parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
-        Stats::Utility::counterFromStatNames(parent_.scope_,
+        Stats::Utility::counterFromStatNames(parent_.scope(),
                                              {parent_.context_->stat_namespace_, metric}, new_tags)
             .add(amount);
         return;
       }
-      Stats::Utility::counterFromStatNames(parent_.scope_,
+      Stats::Utility::counterFromStatNames(parent_.scope(),
                                            {parent_.context_->stat_namespace_, metric}, tags)
           .add(amount);
     }
@@ -647,12 +700,12 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         }
         auto new_tags = parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
         Stats::Utility::histogramFromStatNames(
-            parent_.scope_, {parent_.context_->stat_namespace_, metric}, unit, new_tags)
+            parent_.scope(), {parent_.context_->stat_namespace_, metric}, unit, new_tags)
             .recordValue(value);
         return;
       }
       Stats::Utility::histogramFromStatNames(
-          parent_.scope_, {parent_.context_->stat_namespace_, metric}, unit, tags)
+          parent_.scope(), {parent_.context_->stat_namespace_, metric}, unit, tags)
           .recordValue(value);
     }
 
@@ -664,17 +717,17 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
           switch (metric.type_) {
           case MetricOverrides::MetricType::Counter:
             Stats::Utility::counterFromStatNames(
-                parent_.scope_, {parent_.context_->stat_namespace_, metric.name_}, tags)
+                parent_.scope(), {parent_.context_->stat_namespace_, metric.name_}, tags)
                 .add(amount);
             break;
           case MetricOverrides::MetricType::Histogram:
             Stats::Utility::histogramFromStatNames(
-                parent_.scope_, {parent_.context_->stat_namespace_, metric.name_},
+                parent_.scope(), {parent_.context_->stat_namespace_, metric.name_},
                 Stats::Histogram::Unit::Bytes, tags)
                 .recordValue(amount);
             break;
           case MetricOverrides::MetricType::Gauge:
-            Stats::Utility::gaugeFromStatNames(parent_.scope_,
+            Stats::Utility::gaugeFromStatNames(parent_.scope(),
                                                {parent_.context_->stat_namespace_, metric.name_},
                                                Stats::Gauge::ImportMode::Accumulate, tags)
                 .set(amount);
@@ -696,15 +749,16 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
     tags.push_back({context_->tag_, context_->istio_version_.empty() ? context_->unknown_
                                                                      : context_->istio_version_});
 
-    Stats::Utility::gaugeFromStatNames(scope_, {context_->stat_namespace_, context_->istio_build_},
+    Stats::Utility::gaugeFromStatNames(scope(), {context_->stat_namespace_, context_->istio_build_},
                                        Stats::Gauge::ImportMode::Accumulate, tags)
         .set(1);
   }
 
   Reporter reporter() const { return reporter_; }
+  Stats::Scope& scope() { return scope_.scope(); }
 
   ContextSharedPtr context_;
-  Stats::Scope& scope_;
+  RotatingScope scope_;
   Reporter reporter_;
 
   const bool disable_host_header_fallback_;
@@ -721,7 +775,7 @@ class IstioStatsFilter : public Http::PassThroughFilter,
                          public Network::ConnectionCallbacks {
 public:
   IstioStatsFilter(ConfigSharedPtr config)
-      : config_(config), context_(*config->context_), pool_(config->scope_.symbolTable()) {
+      : config_(config), context_(*config->context_), pool_(config->scope().symbolTable()) {
     tags_.reserve(25);
     switch (config_->reporter()) {
     case Reporter::ServerSidecar:

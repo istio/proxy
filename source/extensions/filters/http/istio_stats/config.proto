@@ -111,4 +111,10 @@ message PluginConfig {
 
   // Proxy deployment type.
   Reporter reporter = 10;
+
+  // Metric expiry duration. Defaults to 12h. Set to 0 to disable the metric expiry.
+  google.protobuf.Duration expiry_duration = 11;
+
+  // Metric expiry graceful drain duration. Defaults to 5m. No-op if the metric expiry is disabled.
+  google.protobuf.Duration graceful_drain_duration = 12;
 }
