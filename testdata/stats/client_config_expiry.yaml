@@ -1,0 +1,2 @@
+expiry_duration: 1s
+graceful_drain_duration: {nanos: 1000000}
