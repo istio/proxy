@@ -1,2 +1,2 @@
-expiry_duration: 1s
-graceful_drain_duration: {nanos: 1000000}
+rotation_interval: 2s
+graceful_deletion_interval: 1s
