@@ -782,7 +782,7 @@ func TestStatsExpiry(t *testing.T) {
 					Body: "hello, world!",
 				},
 			},
-			&driver.Sleep{Duration: 2 * time.Second},
+			&driver.Sleep{Duration: 4 * time.Second},
 			&driver.Stats{AdminPort: params.Ports.ClientAdmin, Matchers: map[string]driver.StatMatcher{
 				"istio_requests_total": &driver.MissingStat{Metric: "istio_requests_total"},
 			}},

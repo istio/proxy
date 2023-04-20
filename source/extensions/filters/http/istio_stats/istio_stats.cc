@@ -14,6 +14,8 @@
 
 #include "source/extensions/filters/http/istio_stats/istio_stats.h"
 
+#include <atomic>
+
 #include "envoy/registry/registry.h"
 #include "envoy/server/factory_context.h"
 #include "envoy/singleton/manager.h"
@@ -456,17 +458,32 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
   absl::flat_hash_map<std::string, uint32_t> expression_ids_;
 };
 
-// Self-managed scope with active rotation.
-// The expired stats scope is drained gracefully to accommodate the asynchronous
-// stats_flush_interval.
+// Self-managed scope with active rotation. Envoy stats scope controls the
+// lifetime of the individual metrics. Because the scope is attached to xDS
+// resources, metrics with data derived from the requests can accumulate and
+// grow indefinitely for long-living xDS resources. To limit this growth,
+// this class implements a rotation mechanism, whereas a new scope is created
+// periodically to replace the current scope.
+//
+// The replaced stats scope is deleted gracefully after a minimum of 1s delay
+// for two reasons:
+//
+// 1. Stats flushing is asynchronous and the data may be lost if not flushed
+// before the deletion (see stats_flush_interval).
+//
+// 2. The implementation avoids locking by releasing a raw pointer to workers.
+// When the rotation happens on the main, the raw pointer may still be in-use
+// by workers for a short duration.
 class RotatingScope : public Logger::Loggable<Logger::Id::filter> {
 public:
   RotatingScope(Server::Configuration::FactoryContext& factory_context, uint64_t rotate_interval_ms,
-                uint64_t drain_interval_ms)
+                uint64_t delete_interval_ms)
       : parent_scope_(factory_context.scope()), active_scope_(parent_scope_.createScope("")),
-        rotate_interval_ms_(rotate_interval_ms), drain_interval_ms_(drain_interval_ms) {
+        raw_scope_(active_scope_.get()), rotate_interval_ms_(rotate_interval_ms),
+        delete_interval_ms_(delete_interval_ms) {
     if (rotate_interval_ms_ > 0) {
-      ASSERT(drain_interval_ms_ < rotate_interval_ms_);
+      ASSERT(delete_interval_ms_ < rotate_interval_ms_);
+      ASSERT(delete_interval_ms_ >= 1000);
       Event::Dispatcher& dispatcher = factory_context.mainThreadDispatcher();
       rotate_timer_ = dispatcher.createTimer([this] { onRotate(); });
       delete_timer_ = dispatcher.createTimer([this] { onDelete(); });
@@ -483,25 +500,27 @@ public:
       delete_timer_.reset();
     }
   }
-  Stats::Scope& scope() { return *active_scope_; }
+  Stats::Scope* scope() { return raw_scope_.load(); }
 
 private:
   void onRotate() {
     ENVOY_LOG(info, "Rotating active Istio stats scope after {}ms.", rotate_interval_ms_);
     draining_scope_ = active_scope_;
+    delete_timer_->enableTimer(std::chrono::milliseconds(delete_interval_ms_));
     active_scope_ = parent_scope_.createScope("");
+    raw_scope_.store(active_scope_.get());
     rotate_timer_->enableTimer(std::chrono::milliseconds(rotate_interval_ms_));
-    delete_timer_->enableTimer(std::chrono::milliseconds(drain_interval_ms_));
   }
   void onDelete() {
-    ENVOY_LOG(info, "Deleting draining Istio stats scope after {}ms.", drain_interval_ms_);
+    ENVOY_LOG(info, "Deleting draining Istio stats scope after {}ms.", delete_interval_ms_);
     draining_scope_.reset();
   }
   Stats::Scope& parent_scope_;
   Stats::ScopeSharedPtr active_scope_;
+  std::atomic<Stats::Scope*> raw_scope_;
   Stats::ScopeSharedPtr draining_scope_{nullptr};
   const uint64_t rotate_interval_ms_;
-  const uint64_t drain_interval_ms_;
+  const uint64_t delete_interval_ms_;
   Event::TimerPtr rotate_timer_{nullptr};
   Event::TimerPtr delete_timer_{nullptr};
 };
@@ -515,10 +534,8 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
               return std::make_shared<Context>(factory_context.serverScope().symbolTable(),
                                                factory_context.localInfo().node());
             })),
-        scope_(factory_context,
-               PROTOBUF_GET_MS_OR_DEFAULT(proto_config, expiry_duration,
-                                          /* 12h */ 1000 * 60 * 60 * 12),
-               PROTOBUF_GET_MS_OR_DEFAULT(proto_config, graceful_drain_duration,
+        scope_(factory_context, PROTOBUF_GET_MS_OR_DEFAULT(proto_config, rotation_interval, 0),
+               PROTOBUF_GET_MS_OR_DEFAULT(proto_config, graceful_deletion_interval,
                                           /* 5m */ 1000 * 60 * 5)),
         disable_host_header_fallback_(proto_config.disable_host_header_fallback()),
         report_duration_(
@@ -546,7 +563,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
       break;
     }
     if (proto_config.metrics_size() > 0 || proto_config.definitions_size() > 0) {
-      metric_overrides_ = std::make_unique<MetricOverrides>(context_, scope().symbolTable());
+      metric_overrides_ = std::make_unique<MetricOverrides>(context_, scope()->symbolTable());
       for (const auto& definition : proto_config.definitions()) {
         const auto& it = context_->all_metrics_.find(definition.name());
         if (it != context_->all_metrics_.end()) {
@@ -682,12 +699,12 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
           return;
         }
         auto new_tags = parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
-        Stats::Utility::counterFromStatNames(parent_.scope(),
+        Stats::Utility::counterFromStatNames(*parent_.scope(),
                                              {parent_.context_->stat_namespace_, metric}, new_tags)
             .add(amount);
         return;
       }
-      Stats::Utility::counterFromStatNames(parent_.scope(),
+      Stats::Utility::counterFromStatNames(*parent_.scope(),
                                            {parent_.context_->stat_namespace_, metric}, tags)
           .add(amount);
     }
@@ -700,12 +717,12 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         }
         auto new_tags = parent_.metric_overrides_->overrideTags(metric, tags, expr_values_);
         Stats::Utility::histogramFromStatNames(
-            parent_.scope(), {parent_.context_->stat_namespace_, metric}, unit, new_tags)
+            *parent_.scope(), {parent_.context_->stat_namespace_, metric}, unit, new_tags)
             .recordValue(value);
         return;
       }
       Stats::Utility::histogramFromStatNames(
-          parent_.scope(), {parent_.context_->stat_namespace_, metric}, unit, tags)
+          *parent_.scope(), {parent_.context_->stat_namespace_, metric}, unit, tags)
           .recordValue(value);
     }
 
@@ -717,17 +734,17 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
           switch (metric.type_) {
           case MetricOverrides::MetricType::Counter:
             Stats::Utility::counterFromStatNames(
-                parent_.scope(), {parent_.context_->stat_namespace_, metric.name_}, tags)
+                *parent_.scope(), {parent_.context_->stat_namespace_, metric.name_}, tags)
                 .add(amount);
             break;
           case MetricOverrides::MetricType::Histogram:
             Stats::Utility::histogramFromStatNames(
-                parent_.scope(), {parent_.context_->stat_namespace_, metric.name_},
+                *parent_.scope(), {parent_.context_->stat_namespace_, metric.name_},
                 Stats::Histogram::Unit::Bytes, tags)
                 .recordValue(amount);
             break;
           case MetricOverrides::MetricType::Gauge:
-            Stats::Utility::gaugeFromStatNames(parent_.scope(),
+            Stats::Utility::gaugeFromStatNames(*parent_.scope(),
                                                {parent_.context_->stat_namespace_, metric.name_},
                                                Stats::Gauge::ImportMode::Accumulate, tags)
                 .set(amount);
@@ -749,13 +766,14 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
     tags.push_back({context_->tag_, context_->istio_version_.empty() ? context_->unknown_
                                                                      : context_->istio_version_});
 
-    Stats::Utility::gaugeFromStatNames(scope(), {context_->stat_namespace_, context_->istio_build_},
+    Stats::Utility::gaugeFromStatNames(*scope(),
+                                       {context_->stat_namespace_, context_->istio_build_},
                                        Stats::Gauge::ImportMode::Accumulate, tags)
         .set(1);
   }
 
   Reporter reporter() const { return reporter_; }
-  Stats::Scope& scope() { return scope_.scope(); }
+  Stats::Scope* scope() { return scope_.scope(); }
 
   ContextSharedPtr context_;
   RotatingScope scope_;
@@ -775,7 +793,7 @@ class IstioStatsFilter : public Http::PassThroughFilter,
                          public Network::ConnectionCallbacks {
 public:
   IstioStatsFilter(ConfigSharedPtr config)
-      : config_(config), context_(*config->context_), pool_(config->scope().symbolTable()) {
+      : config_(config), context_(*config->context_), pool_(config->scope()->symbolTable()) {
     tags_.reserve(25);
     switch (config_->reporter()) {
     case Reporter::ServerSidecar:
