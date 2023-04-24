@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/trace v1.4.0
 	github.com/cncf/xds/go v0.0.0-20221128185840-c261a164b73d
 	github.com/d4l3k/messagediff v1.2.2-0.20180726183240-b9e99b2f9263
-	github.com/envoyproxy/go-control-plane v0.11.1-0.20230414193417-178e253923d1
+	github.com/envoyproxy/go-control-plane v0.11.1-0.20230420152043-c9825d328dac
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.9
 	github.com/prometheus/client_model v0.3.0
