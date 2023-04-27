@@ -24,6 +24,7 @@ load(
 
 envoy_cc_test(
     name = "istio_http_integration_test_with_envoy_jwt_filter",
+    size = "large",
     srcs = [
         "istio_http_integration_test_with_envoy_jwt_filter.cc",
     ],
@@ -39,6 +40,7 @@ envoy_cc_test(
 
 envoy_cc_test(
     name = "exchanged_token_integration_test",
+    size = "large",
     srcs = ["exchanged_token_integration_test.cc"],
     repository = "@envoy",
     deps = [
