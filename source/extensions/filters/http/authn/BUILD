@@ -159,6 +159,7 @@ envoy_cc_test(
 
 envoy_cc_test(
     name = "http_filter_integration_test",
+    size = "large",
     srcs = ["http_filter_integration_test.cc"],
     data = glob(["testdata/*"]),
     repository = "@envoy",
