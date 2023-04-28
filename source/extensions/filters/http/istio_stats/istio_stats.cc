@@ -820,8 +820,8 @@ public:
   // AccessLog::Instance
   void log(const Http::RequestHeaderMap* request_headers,
            const Http::ResponseHeaderMap* response_headers,
-           const Http::ResponseTrailerMap* response_trailers,
-           const StreamInfo::StreamInfo& info) override {
+           const Http::ResponseTrailerMap* response_trailers, const StreamInfo::StreamInfo& info,
+           AccessLog::AccessLogType) override {
     reportHelper(true);
     if (is_grpc_) {
       tags_.push_back({context_.request_protocol_, context_.grpc_});
