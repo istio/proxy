@@ -1029,6 +1029,11 @@ private:
                 const auto& host_it = service.find("host");
                 if (host_it != service.end()) {
                   service_host = host_it->second.string_value();
+                }
+                const auto& name_it = service.find("name");
+                if (name_it != service.end()) {
+                  service_host_name = name_it->second.string_value();
+                } else {
                   service_host_name = service_host.substr(0, service_host.find_first_of('.'));
                 }
               }
