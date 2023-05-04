@@ -316,8 +316,7 @@ using google::api::expr::runtime::CelValue;
 // Instructions on dropping, creating, and overriding labels.
 // This is not the "hot path" of the metrics system and thus, fairly
 // unoptimized.
-struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
-                         public Filters::Common::Expr::StreamActivation {
+struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
   MetricOverrides(ContextSharedPtr& context, Stats::SymbolTable& symbol_table)
       : context_(context), pool_(symbol_table) {}
   ContextSharedPtr context_;
@@ -344,57 +343,6 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter>,
   // Third transformation: tags added.
   using TagAdditions = std::vector<std::pair<Stats::StatName, uint32_t>>;
   absl::flat_hash_map<Stats::StatName, TagAdditions> tag_additions_;
-
-  void evaluate(Stats::StatNameDynamicPool& pool, const StreamInfo::StreamInfo& info,
-                const Http::RequestHeaderMap* request_headers,
-                const Http::ResponseHeaderMap* response_headers,
-                const Http::ResponseTrailerMap* response_trailers,
-                std::vector<std::pair<Stats::StatName, uint64_t>>& expr_values) {
-    activation_info_ = &info;
-    activation_request_headers_ = request_headers;
-    activation_response_headers_ = response_headers;
-    activation_response_trailers_ = response_trailers;
-    expr_values.reserve(compiled_exprs_.size());
-    for (size_t id = 0; id < compiled_exprs_.size(); id++) {
-      Protobuf::Arena arena;
-      auto eval_status = compiled_exprs_[id].first->Evaluate(*this, &arena);
-      if (!eval_status.ok() || eval_status.value().IsError()) {
-        expr_values.push_back(std::make_pair(context_->unknown_, 0));
-      } else {
-        const auto string_value = Filters::Common::Expr::print(eval_status.value());
-        if (compiled_exprs_[id].second) {
-          uint64_t amount = 0;
-          if (!absl::SimpleAtoi(string_value, &amount)) {
-            ENVOY_LOG(trace, "Failed to get metric value: {}", string_value);
-          }
-          expr_values.push_back(std::make_pair(Stats::StatName(), amount));
-        } else {
-          expr_values.push_back(std::make_pair(pool.add(string_value), 0));
-        }
-      }
-    }
-    resetActivation();
-  }
-
-  absl::optional<CelValue> FindValue(absl::string_view name,
-                                     Protobuf::Arena* arena) const override {
-    auto obj = StreamActivation::FindValue(name, arena);
-    if (obj) {
-      return obj;
-    }
-    if (name == "node") {
-      return Filters::Common::Expr::CelProtoWrapper::CreateMessage(&context_->node_, arena);
-    }
-    if (activation_info_) {
-      const auto* obj = activation_info_->filterState()
-                            .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
-                                absl::StrCat("wasm.", name));
-      if (obj) {
-        return obj->exprValue(arena, false);
-      }
-    }
-    return {};
-  }
 
   Stats::StatNameTagVector
   overrideTags(Stats::StatName metric, const Stats::StatNameTagVector& tags,
@@ -679,7 +627,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
   }
 
   // RAII for stream context propagation.
-  struct StreamOverrides {
+  struct StreamOverrides : public Filters::Common::Expr::StreamActivation {
     StreamOverrides(Config& parent, Stats::StatNameDynamicPool& pool,
                     const StreamInfo::StreamInfo& info,
                     const Http::RequestHeaderMap* request_headers = nullptr,
@@ -687,9 +635,53 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
                     const Http::ResponseTrailerMap* response_trailers = nullptr)
         : parent_(parent) {
       if (parent_.metric_overrides_) {
-        parent_.metric_overrides_->evaluate(pool, info, request_headers, response_headers,
-                                            response_trailers, expr_values_);
+        activation_info_ = &info;
+        activation_request_headers_ = request_headers;
+        activation_response_headers_ = response_headers;
+        activation_response_trailers_ = response_trailers;
+        const auto& compiled_exprs = parent_.metric_overrides_->compiled_exprs_;
+        expr_values_.reserve(compiled_exprs.size());
+        for (size_t id = 0; id < compiled_exprs.size(); id++) {
+          Protobuf::Arena arena;
+          auto eval_status = compiled_exprs[id].first->Evaluate(*this, &arena);
+          if (!eval_status.ok() || eval_status.value().IsError()) {
+            expr_values_.push_back(std::make_pair(parent_.context_->unknown_, 0));
+          } else {
+            const auto string_value = Filters::Common::Expr::print(eval_status.value());
+            if (compiled_exprs[id].second) {
+              uint64_t amount = 0;
+              if (!absl::SimpleAtoi(string_value, &amount)) {
+                ENVOY_LOG(trace, "Failed to get metric value: {}", string_value);
+              }
+              expr_values_.push_back(std::make_pair(Stats::StatName(), amount));
+            } else {
+              expr_values_.push_back(std::make_pair(pool.add(string_value), 0));
+            }
+          }
+        }
+        resetActivation();
       }
+    }
+
+    absl::optional<CelValue> FindValue(absl::string_view name,
+                                       Protobuf::Arena* arena) const override {
+      auto obj = StreamActivation::FindValue(name, arena);
+      if (obj) {
+        return obj;
+      }
+      if (name == "node") {
+        return Filters::Common::Expr::CelProtoWrapper::CreateMessage(&parent_.context_->node_,
+                                                                     arena);
+      }
+      if (activation_info_) {
+        const auto* obj = activation_info_->filterState()
+                              .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
+                                  absl::StrCat("wasm.", name));
+        if (obj) {
+          return obj->exprValue(arena, false);
+        }
+      }
+      return {};
     }
 
     void addCounter(Stats::StatName metric, const Stats::StatNameTagVector& tags,
