@@ -111,4 +111,12 @@ message PluginConfig {
 
   // Proxy deployment type.
   Reporter reporter = 10;
+
+  // Metric scope rotation interval. Set to 0 to disable the metric scope rotation.
+  // Defaults to 0.
+  google.protobuf.Duration rotation_interval = 11;
+
+  // Metric expiry graceful deletion interval. No-op if the metric rotation is disabled.
+  // Defaults to 5m. Must be >=1s.
+  google.protobuf.Duration graceful_deletion_interval = 12;
 }

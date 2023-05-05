@@ -86,6 +86,7 @@ func init() {
 			"TestStatsPayload/UseHostHeader/envoy.wasm.runtime.v8",
 			"TestStatsPayload/UseHostHeader/",
 			"TestStatsParserRegression",
+			"TestStatsExpiry",
 			"TestTCPMetadataExchange",
 			"TestTCPMetadataExchangeNoAlpn",
 		},
