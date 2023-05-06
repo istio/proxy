@@ -48,7 +48,7 @@ func (s *Stats) Run(p *Params) error {
 		reader := strings.NewReader(body)
 		metrics, err = (&expfmt.TextParser{}).TextToMetricFamilies(reader)
 		if err != nil {
-			return fmt.Errorf("parse metric error: %v body: %s", err, body)
+			return err
 		}
 		count := 0
 		for _, metric := range metrics {
