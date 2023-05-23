@@ -31,15 +31,9 @@
 namespace Envoy::Extensions::Common::WorkloadDiscovery {
 
 namespace {
-Istio::Common::WorkloadMetadataObject convert(const istio::workload::Address& address) {
-  switch (address.type()) {
-    case istio::workload::Service:
-      return;
-    case istio::workload::Workload:
-      break;
-  }
+Istio::Common::WorkloadMetadataObject convert(const istio::workload::Workload& workload) {
   auto workload_type = Istio::Common::WorkloadType::Deployment;
-  switch (address.workload().workload_type()) {
+  switch (workload.workload_type()) {
   case istio::workload::WorkloadType::CRONJOB:
     workload_type = Istio::Common::WorkloadType::CronJob;
     break;
@@ -53,8 +47,8 @@ Istio::Common::WorkloadMetadataObject convert(const istio::workload::Address& ad
     break;
   }
   return Istio::Common::WorkloadMetadataObject(
-      address.workload().name(), address.workload().cluster_id(), address.workload().namespace_(), address.workload().workload_name(),
-      address.workload().canonical_name(), address.workload().canonical_revision(), /* app_name */ "",
+      workload.name(), workload.cluster_id(), workload.namespace_(), workload.workload_name(),
+      workload.canonical_name(), workload.canonical_revision(), /* app_name */ "",
       /* app_version */ "", workload_type);
 }
 } // namespace
@@ -144,9 +138,10 @@ private:
             dynamic_cast<const istio::workload::Address&>(resource.get().resource());
         switch (address.type()) {
         case istio::workload::Service:
-          break; //breaks for loop?
-        case istio::workload:Workload:
-          index->emplace(address.workload().address(), convert(address));
+          break; // breaks for loop?
+        case istio::workload:
+        Workload:
+          index->emplace(address.workload().address(), convert(address.workload()));
           break;
         }
       }
@@ -161,9 +156,9 @@ private:
             dynamic_cast<const istio::workload::Address&>(resource.get().resource());
         switch (address.type()) {
         case istio::workload::Service:
-          break; //breaks for loop?
-        case istio::workload:Workload:
-          added->emplace(address.workload().address(), convert(address));
+          break; // breaks for loop?
+        case istio::workload::Workload:
+          added->emplace(address.workload().address(), convert(address.workload()));
           break;
         }
       }
