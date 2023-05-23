@@ -31,6 +31,13 @@ cat /etc/centos-release
 
 git --version
 
+yum -y remove git
+yum -y remove git-*
+yum -y install https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm
+yum -y install git
+
+git --version
+
 echo "$(uname -s)-$(uname -m)"
 cat "${WD}/../WORKSPACE"
 echo 'Run tests'
