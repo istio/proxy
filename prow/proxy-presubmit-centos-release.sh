@@ -27,10 +27,7 @@ export BAZEL_BUILD_RBE_JOBS=0
 # shellcheck disable=SC1090,SC1091
 source "${WD}/proxy-common.inc"
 
-cat /etc/centos-release
-
-git --version
-
+# upgrade git to 2.*
 yum -y remove git
 yum -y remove git-*
 yum -y install https://packages.endpointdev.com/rhel/7/os/x86_64/endpoint-repo.x86_64.rpm
