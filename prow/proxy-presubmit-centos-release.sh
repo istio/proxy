@@ -27,6 +27,10 @@ export BAZEL_BUILD_RBE_JOBS=0
 # shellcheck disable=SC1090,SC1091
 source "${WD}/proxy-common.inc"
 
+cat /etc/centos-release
+
+git --version
+
 echo "$(uname -s)-$(uname -m)"
 cat "${WD}/../WORKSPACE"
 echo 'Run tests'
