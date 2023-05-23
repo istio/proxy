@@ -49,33 +49,12 @@ option go_package = "test/envoye2e/workloadapi";
 // In this case, the key format will be "network/hostname".
 // These resources cannot be looked up on-demand.
 message Address {
-  oneof type {
-    // Workload represents an individual workload.
-    // This could be a single Pod, a VM instance, etc.
-    Workload workload = 1;
-    // Service represents a service - a group of workloads that can be accessed together.
-    Service service = 2;
-  }
-}
-
-message Service {
-  reserved "name";
-  reserved 1;
-
-  reserved "namespace";
+  // Workload represents an individual workload.
+  // This could be a single Pod, a VM instance, etc.
+  Workload workload = 1;
+  // Service represents a service - a group of workloads that can be accessed together.
+  reserved "service";
   reserved 2;
-
-  reserved "hostname";
-  reserved 3;
-
-  reserved "addresses";
-  reserved 4;
-
-  reserved "ports";
-  reserved 5;
-
-  reserved "subject_alt_names";
-  reserved 6;
 }
 
 message Workload {

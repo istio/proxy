@@ -136,13 +136,8 @@ private:
       for (const auto& resource : resources) {
         const auto& address =
             dynamic_cast<const istio::workload::Address&>(resource.get().resource());
-        switch (address.type()) {
-        case istio::workload::Service:
-          break; // breaks for loop?
-        case istio::workload:
-        Workload:
+        if (address.workload() != nullptr) { 
           index->emplace(address.workload().address(), convert(address.workload()));
-          break;
         }
       }
       parent_.reset(index);
@@ -154,12 +149,8 @@ private:
       for (const auto& resource : added_resources) {
         const auto& address =
             dynamic_cast<const istio::workload::Address&>(resource.get().resource());
-        switch (address.type()) {
-        case istio::workload::Service:
-          break; // breaks for loop?
-        case istio::workload::Workload:
-          added->emplace(address.workload().address(), convert(address.workload()));
-          break;
+        if (address.workload() != nullptr) { 
+          index->emplace(address.workload().address(), convert(address.workload()));
         }
       }
       AddressVectorSharedPtr removed = std::make_shared<AddressVector>();
