@@ -162,7 +162,6 @@ private:
           // do nothing
           break;
         }
-
       }
       AddressVectorSharedPtr removed = std::make_shared<AddressVector>();
       removed->reserve(removed_resources.size());
