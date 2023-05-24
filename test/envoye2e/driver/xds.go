@@ -97,12 +97,19 @@ func (x *XDS) Run(p *Params) error {
 }
 
 type NamedAddress struct {
-	workloadapi.Address
+	*workloadapi.Address
 }
 
-func (nw *NamedAddress) GetName() string {
-	ii, _ := netip.AddrFromSlice(nw.GetWorkload().Address)
-	return nw.GetWorkload().Network + "/" + ii.String()
+func (namedAddr *NamedAddress) GetName() string {
+	var name string
+	switch addr := namedAddr.Type.(type) {
+	case *workloadapi.Address_Service:
+		// TODO: all fields currently reserved and unused/unimplemented
+	case *workloadapi.Address_Workload:
+		ii, _ := netip.AddrFromSlice(addr.Workload.Address)
+		name = addr.Workload.Network + "/" + ii.String()
+	}
+	return name
 }
 
 var _ types.ResourceWithName = &NamedAddress{}
@@ -234,7 +241,8 @@ func (u *UpdateWorkloadMetadata) Run(p *Params) error {
 				Workload: out,
 			},
 		}
-		err = p.Config.Addresses.UpdateResource(out.GetName(), addr)
+		namedAddr := NamedAddress{addr}
+		err = p.Config.Addresses.UpdateResource(namedAddr.GetName(), addr)
 		if err != nil {
 			return err
 		}
