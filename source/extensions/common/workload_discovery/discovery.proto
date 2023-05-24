@@ -81,8 +81,9 @@ message Workload {
   reserved "hostname";
   reserved 21;
 
-  reserved "network";
-  reserved 4;
+  // Network represents the network this workload is on. This may be elided for the default network.
+  // A (network,address) pair makeup a unique key for a workload *at a point in time*.
+  string network = 4;
 
   reserved "tunnel_protocol";
   reserved 5;
