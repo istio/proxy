@@ -114,10 +114,10 @@ private:
     }
     AddressIndex address_index_;
   };
-  class WorkloadSubscription : Config::SubscriptionBase<istio::workload::Workload> {
+  class WorkloadSubscription : Config::SubscriptionBase<istio::workload::Address> {
   public:
     WorkloadSubscription(WorkloadMetadataProviderImpl& parent)
-        : Config::SubscriptionBase<istio::workload::Workload>(
+        : Config::SubscriptionBase<istio::workload::Address>(
               parent.factory_context_.messageValidationVisitor(), "address"),
           parent_(parent) {
       subscription_ = parent.factory_context_.clusterManager()
@@ -134,9 +134,16 @@ private:
                         const std::string&) override {
       AddressIndexSharedPtr index = std::make_shared<AddressIndex>();
       for (const auto& resource : resources) {
-        const auto& workload =
-            dynamic_cast<const istio::workload::Workload&>(resource.get().resource());
-        index->emplace(workload.address(), convert(workload));
+        const auto& address =
+            dynamic_cast<const istio::workload::Address&>(resource.get().resource());
+        switch (address.type_case()) {
+        case istio::workload::Address::kWorkload:
+          index->emplace(address.workload().address(), convert(address.workload()));
+          break;
+        default:
+          // do nothing
+          break;
+        }
       }
       parent_.reset(index);
     }
@@ -145,9 +152,16 @@ private:
                         const std::string&) override {
       AddressIndexSharedPtr added = std::make_shared<AddressIndex>();
       for (const auto& resource : added_resources) {
-        const auto& workload =
-            dynamic_cast<const istio::workload::Workload&>(resource.get().resource());
-        added->emplace(workload.address(), convert(workload));
+        const auto& address =
+            dynamic_cast<const istio::workload::Address&>(resource.get().resource());
+        switch (address.type_case()) {
+        case istio::workload::Address::kWorkload:
+          added->emplace(address.workload().address(), convert(address.workload()));
+          break;
+        default:
+          // do nothing
+          break;
+        }
       }
       AddressVectorSharedPtr removed = std::make_shared<AddressVector>();
       removed->reserve(removed_resources.size());

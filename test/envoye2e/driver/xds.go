@@ -46,12 +46,12 @@ type XDSServer struct {
 	cache.MuxCache
 	Extensions *ExtensionServer
 	Cache      cache.SnapshotCache
-	Workloads  *cache.LinearCache
+	Addresses  *cache.LinearCache
 }
 
 var _ Step = &XDS{}
 
-const WorkloadTypeURL = "type.googleapis.com/istio.workload.Workload"
+const AddressTypeURL = "type.googleapis.com/istio.workload.Address"
 
 // Run starts up an Envoy XDS server.
 func (x *XDS) Run(p *Params) error {
@@ -62,22 +62,22 @@ func (x *XDS) Run(p *Params) error {
 
 	// Register caches.
 	p.Config.Cache = cache.NewSnapshotCache(false, cache.IDHash{}, x)
-	p.Config.Workloads = cache.NewLinearCache(WorkloadTypeURL,
+	p.Config.Addresses = cache.NewLinearCache(AddressTypeURL,
 		cache.WithLogger(x))
 
 	p.Config.Caches = map[string]cache.Cache{
 		"default":   p.Config.Cache,
-		"workloads": p.Config.Workloads,
+		"addresses": p.Config.Addresses,
 	}
 	p.Config.Classify = func(r *cache.Request) string {
-		if r.TypeUrl == WorkloadTypeURL {
-			return "workloads"
+		if r.TypeUrl == AddressTypeURL {
+			return "addresses"
 		}
 		return "default"
 	}
 	p.Config.ClassifyDelta = func(r *cache.DeltaRequest) string {
-		if r.TypeUrl == WorkloadTypeURL {
-			return "workloads"
+		if r.TypeUrl == AddressTypeURL {
+			return "addresses"
 		}
 		return "default"
 	}
@@ -96,15 +96,23 @@ func (x *XDS) Run(p *Params) error {
 	return nil
 }
 
-type NamedWorkload struct {
-	workloadapi.Workload
+type NamedAddress struct {
+	*workloadapi.Address
 }
 
-func (nw *NamedWorkload) GetName() string {
-	return string(nw.Address)
+func (namedAddr *NamedAddress) GetName() string {
+	var name string
+	switch addr := namedAddr.Type.(type) {
+	case *workloadapi.Address_Service:
+		// TODO: all fields currently reserved and unused/unimplemented
+	case *workloadapi.Address_Workload:
+		ii, _ := netip.AddrFromSlice(addr.Workload.Address)
+		name = addr.Workload.Network + "/" + ii.String()
+	}
+	return name
 }
 
-var _ types.ResourceWithName = &NamedWorkload{}
+var _ types.ResourceWithName = &NamedAddress{}
 
 // Cleanup stops the XDS server.
 func (x *XDS) Cleanup() {
@@ -228,7 +236,13 @@ func (u *UpdateWorkloadMetadata) Run(p *Params) error {
 		}
 		log.Printf("updating metadata for %q\n", wl.Address)
 		out.Address = ip.AsSlice()
-		err = p.Config.Workloads.UpdateResource(string(out.Address), out)
+		addr := &workloadapi.Address{
+			Type: &workloadapi.Address_Workload{
+				Workload: out,
+			},
+		}
+		namedAddr := NamedAddress{addr}
+		err = p.Config.Addresses.UpdateResource(namedAddr.GetName(), addr)
 		if err != nil {
 			return err
 		}
