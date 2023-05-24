@@ -101,7 +101,8 @@ type NamedAddress struct {
 }
 
 func (nw *NamedAddress) GetName() string {
-	return string(nw.GetWorkload().Address)
+	ii, _ := netip.AddrFromSlice(nw.GetWorkload().Address)
+	return nw.GetWorkload().Network + "/" + ii.String()
 }
 
 var _ types.ResourceWithName = &NamedAddress{}
@@ -233,7 +234,7 @@ func (u *UpdateWorkloadMetadata) Run(p *Params) error {
 				Workload: out,
 			},
 		}
-		err = p.Config.Addresses.UpdateResource(string(out.Address), addr)
+		err = p.Config.Addresses.UpdateResource(out.GetName(), addr)
 		if err != nil {
 			return err
 		}
