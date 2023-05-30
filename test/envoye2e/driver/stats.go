@@ -20,9 +20,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/d4l3k/messagediff"
+	"github.com/google/go-cmp/cmp"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
+	"google.golang.org/protobuf/testing/protocmp"
 
 	"istio.io/proxy/test/envoye2e/env"
 )
@@ -92,8 +93,8 @@ func (me *ExactStat) Matches(params *Params, that *dto.MetricFamily) error {
 	metric := &dto.MetricFamily{}
 	params.LoadTestProto(me.Metric, metric)
 
-	if s, same := messagediff.PrettyDiff(metric, that); !same {
-		return fmt.Errorf("diff: %v, got: %v, want: %v", s, that, metric)
+	if diff := cmp.Diff(metric, that, protocmp.Transform()); diff != "" {
+		return fmt.Errorf("diff: %v, got: %v, want: %v", diff, that, metric)
 	}
 	return nil
 }
@@ -110,7 +111,7 @@ func (me *PartialStat) Matches(params *Params, that *dto.MetricFamily) error {
 	for _, wm := range metric.Metric {
 		found := false
 		for _, gm := range that.Metric {
-			if _, same := messagediff.PrettyDiff(wm, gm); !same {
+			if diff := cmp.Diff(wm, gm, protocmp.Transform()); diff != "" {
 				continue
 			}
 			found = true
