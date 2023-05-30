@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/d4l3k/messagediff"
+	"github.com/google/go-cmp/cmp"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 
@@ -92,8 +92,8 @@ func (me *ExactStat) Matches(params *Params, that *dto.MetricFamily) error {
 	metric := &dto.MetricFamily{}
 	params.LoadTestProto(me.Metric, metric)
 
-	if s, same := messagediff.PrettyDiff(metric, that, messagediff.IgnoreStructField("state")); !same {
-		return fmt.Errorf("diff: %v, got: %v, want: %v", s, that, metric)
+	if diff := cmp.Diff(metric, that); diff != "" {
+		return fmt.Errorf("diff: %v, got: %v, want: %v", diff, that, metric)
 	}
 	return nil
 }
@@ -110,7 +110,7 @@ func (me *PartialStat) Matches(params *Params, that *dto.MetricFamily) error {
 	for _, wm := range metric.Metric {
 		found := false
 		for _, gm := range that.Metric {
-			if _, same := messagediff.PrettyDiff(wm, gm, messagediff.IgnoreStructField("state")); !same {
+			if diff := cmp.Diff(wm, gm); diff != "" {
 				continue
 			}
 			found = true

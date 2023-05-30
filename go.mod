@@ -7,7 +7,6 @@ require (
 	cloud.google.com/go/monitoring v1.12.0
 	cloud.google.com/go/trace v1.8.0
 	github.com/cncf/xds/go v0.0.0-20230310173818-32f1caf87195
-	github.com/d4l3k/messagediff v1.2.2-0.20180726183240-b9e99b2f9263
 	github.com/envoyproxy/go-control-plane v0.11.1-0.20230526184532-dd0b405b25bf
 	github.com/golang/protobuf v1.5.3
 	github.com/google/go-cmp v0.5.9
