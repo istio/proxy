@@ -92,7 +92,7 @@ func (me *ExactStat) Matches(params *Params, that *dto.MetricFamily) error {
 	metric := &dto.MetricFamily{}
 	params.LoadTestProto(me.Metric, metric)
 
-	if s, same := messagediff.PrettyDiff(metric, that); !same {
+	if s, same := messagediff.PrettyDiff(metric, that, messagediff.IgnoreStructField("state")); !same {
 		return fmt.Errorf("diff: %v, got: %v, want: %v", s, that, metric)
 	}
 	return nil
@@ -110,7 +110,7 @@ func (me *PartialStat) Matches(params *Params, that *dto.MetricFamily) error {
 	for _, wm := range metric.Metric {
 		found := false
 		for _, gm := range that.Metric {
-			if _, same := messagediff.PrettyDiff(wm, gm); !same {
+			if _, same := messagediff.PrettyDiff(wm, gm, messagediff.IgnoreStructField("state")); !same {
 				continue
 			}
 			found = true
