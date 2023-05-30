@@ -106,8 +106,7 @@ func (namedAddr *NamedAddress) GetName() string {
 	case *workloadapi.Address_Service:
 		// TODO: all fields currently reserved and unused/unimplemented
 	case *workloadapi.Address_Workload:
-		ii, _ := netip.AddrFromSlice(addr.Workload.Address)
-		name = addr.Workload.Network + "/" + ii.String()
+		name = addr.Workload.Network + "/" + addr.Workload.Uid
 	}
 	return name
 }
@@ -235,7 +234,7 @@ func (u *UpdateWorkloadMetadata) Run(p *Params) error {
 			return err
 		}
 		log.Printf("updating metadata for %q\n", wl.Address)
-		out.Address = ip.AsSlice()
+		out.Addresses = [][]byte{ip.AsSlice()}
 		addr := &workloadapi.Address{
 			Type: &workloadapi.Address_Workload{
 				Workload: out,

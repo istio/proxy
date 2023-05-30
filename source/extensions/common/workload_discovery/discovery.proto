@@ -58,8 +58,7 @@ message Service {
 }
 
 message Workload {
-  reserved "uid";
-  reserved 20;
+  string uid = 20;
 
   // Name represents the name for the workload.
   // For Kubernetes, this is the pod name.
@@ -76,7 +75,7 @@ message Workload {
   // Each workload must have at least either an address or hostname; not both.
   // TODO: support dual stack by making this repeated
   // TODO: when this is repeated, update xds primary key from network/IP to network/UID
-  bytes address = 3;
+  repeated bytes addresses = 3;
 
   reserved "hostname";
   reserved 21;
