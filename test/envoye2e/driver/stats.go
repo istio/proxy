@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
+	"google.golang.org/protobuf/testing/protocmp"
 
 	"istio.io/proxy/test/envoye2e/env"
 )
@@ -93,7 +93,7 @@ func (me *ExactStat) Matches(params *Params, that *dto.MetricFamily) error {
 	metric := &dto.MetricFamily{}
 	params.LoadTestProto(me.Metric, metric)
 
-	if diff := cmp.Diff(metric, that, cmpopts.IgnoreUnexported()); diff != "" {
+	if diff := cmp.Diff(metric, that, protocmp.Transform()); diff != "" {
 		return fmt.Errorf("diff: %v, got: %v, want: %v", diff, that, metric)
 	}
 	return nil
@@ -111,7 +111,7 @@ func (me *PartialStat) Matches(params *Params, that *dto.MetricFamily) error {
 	for _, wm := range metric.Metric {
 		found := false
 		for _, gm := range that.Metric {
-			if diff := cmp.Diff(wm, gm, cmpopts.IgnoreUnexported()); diff != "" {
+			if diff := cmp.Diff(wm, gm, protocmp.Transform()); diff != "" {
 				continue
 			}
 			found = true
