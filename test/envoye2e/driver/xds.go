@@ -106,7 +106,7 @@ func (namedAddr *NamedAddress) GetName() string {
 	case *workloadapi.Address_Service:
 		// TODO: all fields currently reserved and unused/unimplemented
 	case *workloadapi.Address_Workload:
-		name = addr.Workload.Network + "/" + addr.Workload.Uid
+		name = addr.Workload.Uid
 	}
 	return name
 }
