@@ -637,6 +637,7 @@ namespace: default
 workload_name: ratings-v1
 canonical_name: ratings
 canonical_revision: version-1
+uid: //v1/pod/default/ratings
 `
 
 func TestStatsServerWaypointProxy(t *testing.T) {

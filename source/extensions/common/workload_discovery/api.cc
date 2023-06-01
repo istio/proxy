@@ -138,10 +138,14 @@ private:
             dynamic_cast<const istio::workload::Address&>(resource.get().resource());
         switch (address.type_case()) {
         case istio::workload::Address::kWorkload:
+        {
+          const auto& metadata = convert(address.workload());
+          index->emplace(address.workload().uid(), metadata);
           for (const auto& addr : address.workload().addresses()) {
-            index->emplace(addr, convert(address.workload()));
+            index->emplace(addr, metadata);
           }
           break;
+        }
         default:
           // do nothing
           break;
@@ -158,10 +162,14 @@ private:
             dynamic_cast<const istio::workload::Address&>(resource.get().resource());
         switch (address.type_case()) {
         case istio::workload::Address::kWorkload:
+        {
+          const auto& metadata = convert(address.workload());
+          added->emplace(address.workload().uid(), metadata);
           for (const auto& addr : address.workload().addresses()) {
-            added->emplace(addr, convert(address.workload()));
+            added->emplace(addr, metadata);
           }
           break;
+        }
         default:
           // do nothing
           break;
