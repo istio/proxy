@@ -114,11 +114,11 @@ private:
     }
     AddressIndex address_index_;
   };
-  class WorkloadSubscription : Config::SubscriptionBase<istio::workload::Address> {
+  class WorkloadSubscription : Config::SubscriptionBase<istio::workload::Workload> {
   public:
     WorkloadSubscription(WorkloadMetadataProviderImpl& parent)
-        : Config::SubscriptionBase<istio::workload::Address>(
-              parent.factory_context_.messageValidationVisitor(), "address"),
+        : Config::SubscriptionBase<istio::workload::Workload>(
+              parent.factory_context_.messageValidationVisitor(), "uid"),
           parent_(parent) {
       subscription_ = parent.factory_context_.clusterManager()
                           .subscriptionFactory()
@@ -134,20 +134,12 @@ private:
                         const std::string&) override {
       AddressIndexSharedPtr index = std::make_shared<AddressIndex>();
       for (const auto& resource : resources) {
-        const auto& address =
-            dynamic_cast<const istio::workload::Address&>(resource.get().resource());
-        switch (address.type_case()) {
-        case istio::workload::Address::kWorkload: {
-          const auto& metadata = convert(address.workload());
-          index->emplace(address.workload().uid(), metadata);
-          for (const auto& addr : address.workload().addresses()) {
-            index->emplace(addr, metadata);
-          }
-          break;
-        }
-        default:
-          // do nothing
-          break;
+        const auto& workload =
+            dynamic_cast<const istio::workload::Workload&>(resource.get().resource());
+        const auto& metadata = convert(workload);
+        index->emplace(workload.uid(), metadata);
+        for (const auto& addr : workload.addresses()) {
+          index->emplace(addr, metadata);
         }
       }
       parent_.reset(index);
@@ -157,20 +149,12 @@ private:
                         const std::string&) override {
       AddressIndexSharedPtr added = std::make_shared<AddressIndex>();
       for (const auto& resource : added_resources) {
-        const auto& address =
-            dynamic_cast<const istio::workload::Address&>(resource.get().resource());
-        switch (address.type_case()) {
-        case istio::workload::Address::kWorkload: {
-          const auto& metadata = convert(address.workload());
-          added->emplace(address.workload().uid(), metadata);
-          for (const auto& addr : address.workload().addresses()) {
-            added->emplace(addr, metadata);
-          }
-          break;
-        }
-        default:
-          // do nothing
-          break;
+        const auto& workload =
+            dynamic_cast<const istio::workload::Workload&>(resource.get().resource());
+        const auto& metadata = convert(workload);
+        added->emplace(workload.uid(), metadata);
+        for (const auto& addr : workload.addresses()) {
+          added->emplace(addr, metadata);
         }
       }
       AddressVectorSharedPtr removed = std::make_shared<AddressVector>();
