@@ -27,39 +27,8 @@ option go_package = "test/envoye2e/workloadapi";
  * 3) append bootstrap extension stub;
  */
 
-message Address {
-  // Workload represents an individual workload.
-  // This could be a single Pod, a VM instance, etc.
-  oneof type {
-    Workload workload = 1;
-    // Service represents a service - a group of workloads that can be accessed together.
-    Service service = 2;
-  }
-}
-
-message Service {
-  reserved "name";
-  reserved 1;
-
-  reserved "namespace";
-  reserved 2;
-
-  reserved "hostname";
-  reserved 3;
-
-  reserved "addresses";
-  reserved 4;
-
-  reserved "ports";
-  reserved 5;
-
-  reserved "subject_alt_names";
-  reserved 6;
-}
-
 message Workload {
-  reserved "uid";
-  reserved 20;
+  string uid = 20;
 
   // Name represents the name for the workload.
   // For Kubernetes, this is the pod name.
@@ -76,7 +45,7 @@ message Workload {
   // Each workload must have at least either an address or hostname; not both.
   // TODO: support dual stack by making this repeated
   // TODO: when this is repeated, update xds primary key from network/IP to network/UID
-  bytes address = 3;
+  repeated bytes addresses = 3;
 
   reserved "hostname";
   reserved 21;
