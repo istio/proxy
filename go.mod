@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/monitoring v1.13.0
 	cloud.google.com/go/trace v1.9.0
 	github.com/cncf/xds/go v0.0.0-20230428030218-4003588d1b74
-	github.com/envoyproxy/go-control-plane v0.11.2-0.20230603123427-f1ec42876c6f
+	github.com/envoyproxy/go-control-plane v0.11.2-0.20230608143842-6aeca6515bc3
 	github.com/golang/protobuf v1.5.3
 	github.com/google/go-cmp v0.5.9
 	github.com/prometheus/client_model v0.4.0
