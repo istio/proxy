@@ -296,7 +296,8 @@ getStackdriverOptions(const Wasm::Common::FlatNode& local_node_info,
       .add_column(sourceCanonicalServiceNameKey())                                                 \
       .add_column(sourceCanonicalServiceNamespaceKey())                                            \
       .add_column(destinationCanonicalRevisionKey())                                               \
-      .add_column(sourceCanonicalRevisionKey())
+      .add_column(sourceCanonicalRevisionKey())                                                    \
+      .add_column(proxyVersionKey())
 
 // Functions to register opencensus views to export.
 REGISTER_COUNT_VIEW(ServerRequestCount)
@@ -423,6 +424,7 @@ TAG_KEY_FUNC(source_canonical_revision, sourceCanonicalRevision)
 TAG_KEY_FUNC(destination_canonical_revision, destinationCanonicalRevision)
 TAG_KEY_FUNC(api_name, apiName)
 TAG_KEY_FUNC(api_version, apiVersion)
+TAG_KEY_FUNC(proxy_version, proxyVersion)
 
 } // namespace Metric
 } // namespace Stackdriver

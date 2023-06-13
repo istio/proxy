@@ -50,6 +50,7 @@ namespace Common {
   FIELD_FUNC(grpc_response_status)                                                                 \
   FIELD_FUNC(response_flags)                                                                       \
   FIELD_FUNC(connection_security_policy)
+  FIELD_FUNC(proxy_version)
 
 // A structure that can hold multiple Istio dimensions(metadata variables).
 // This could be use to key caches based on Istio dimensions for various

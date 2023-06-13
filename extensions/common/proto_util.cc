@@ -40,7 +40,7 @@ flatbuffers::DetachedBuffer
 extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata) {
   flatbuffers::FlatBufferBuilder fbb;
   flatbuffers::Offset<flatbuffers::String> name, namespace_, owner, workload_name, istio_version,
-      mesh_id, cluster_id;
+      mesh_id, cluster_id, proxy_version;
   std::vector<flatbuffers::Offset<KeyVal>> labels, platform_metadata;
   std::vector<flatbuffers::Offset<flatbuffers::String>> app_containers;
   std::vector<flatbuffers::Offset<flatbuffers::String>> ip_addrs;
@@ -80,6 +80,8 @@ extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata) {
       for (const auto& ip : ip_addresses) {
         ip_addrs.push_back(fbb.CreateString(toStdStringView(ip)));
       }
+    } else if (it.first == "PROXY_VERSION") {
+      proxy_version = fbb.CreateString(it.second.string_value());
     }
   }
   // finish pre-order construction
@@ -117,6 +119,7 @@ extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata) {
   if (ip_addrs.size() > 0) {
     node.add_instance_ips(ip_addrs_offset);
   }
+  node.add_proxy_version(proxy_version);
   auto data = node.Finish();
   fbb.Finish(data);
   return fbb.Release();
@@ -172,6 +175,9 @@ void extractStructFromNodeFlatBuffer(const FlatNode& node, google::protobuf::Str
       ip_addrs.push_back(flatbuffers::GetString(ip));
     }
     (*metadata->mutable_fields())["INSTANCE_IPS"].set_string_value(absl::StrJoin(ip_addrs, ","));
+  }
+  if (node.proxy_version()) {
+    (*metadata->mutable_fields())["PROXY_VERSION"].set_string_value(node.proxy_version()->str());
   }
 }
 
