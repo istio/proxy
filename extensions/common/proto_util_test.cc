@@ -53,7 +53,8 @@ constexpr std::string_view node_metadata_json = R"###(
       "gcp_project":"test_project"
    },
    "APP_CONTAINERS": "hello,test",
-   "INSTANCE_IPS": "10.10.10.1,10.10.10.2,10.10.10.3"
+   "INSTANCE_IPS": "10.10.10.1,10.10.10.2,10.10.10.3",
+   "PROXY_VERSON": "1.27.0"
 }
 )###";
 
@@ -75,6 +76,7 @@ constexpr std::string_view node_metadata_json_with_missing_lists = R"###(
       "gcp_cluster_name":"test_cluster",
       "gcp_project":"test_project"
    },
+   "PROXY_VERSON": "1.27.0"
 }
 )###";
 
@@ -96,6 +98,7 @@ TEST(ProtoUtilTest, extractNodeMetadata) {
   EXPECT_EQ(peer->app_containers()->size(), 2);
   EXPECT_EQ(peer->instance_ips()->size(), 3);
   EXPECT_EQ(peer->cluster_id()->string_view(), "test-cluster");
+  EXPECT_EQ(peer->proxy_version()->string_view(), "1.27.0");
 }
 
 // Test all possible metadata field.
@@ -116,6 +119,7 @@ TEST(ProtoUtilTest, extractNodeMetadataWithMissingLists) {
   EXPECT_EQ(peer->app_containers(), nullptr);
   EXPECT_EQ(peer->instance_ips(), nullptr);
   EXPECT_EQ(peer->cluster_id()->string_view(), "test-cluster");
+  EXPECT_EQ(peer->proxy_version()->string_view(), "1.27.0-cluster");
 }
 
 // Test roundtripping

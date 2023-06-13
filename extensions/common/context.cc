@@ -16,6 +16,7 @@
 #include "extensions/common/context.h"
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 #include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/util.h"
@@ -215,6 +216,7 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
   std::vector<flatbuffers::Offset<flatbuffers::String>> app_containers;
   std::vector<flatbuffers::Offset<flatbuffers::String>> ip_addrs;
   std::string value;
+  int64_t major_number, minor_number, patch;
   if (getValue({"node", "metadata", "NAME"}, &value)) {
     name = fbb.CreateString(value);
   }
@@ -265,15 +267,12 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
       ip_addrs.push_back(fbb.CreateString(toStdStringView(ip)));
     }
   }
-  {
-    std::string major_number, minor_number, patch;
-    if (getValue({"node", "metadata", "user_agent_build_version", "version", "major_number"}, &major_number)
-      && getValue({"node", "metadata", "user_agent_build_version", "version", "minor_number"}, &minor_number)
-      && getValue({"node", "metadata", "user_agent_build_version", "version", "patch"}, &patch)) {
-        proxy_version = fbb.CreateString(absl::StrCat(major_number, ".", minor_number, ".", patch));
-    }
+  if (getValue({"node", "user_agent_build_version", "version", "major_number"}, &major_number) &&
+      getValue({"node", "user_agent_build_version", "version", "minor_number"}, &minor_number) &&
+      getValue({"node", "user_agent_build_version", "version", "patch"}, &patch)) {
+    proxy_version = fbb.CreateString(absl::StrCat(std::to_string(major_number), ".", std::to_string(minor_number), ".", std::to_string(patch)));
   }
-
+  
   auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
   auto platform_metadata_offset = fbb.CreateVectorOfSortedTables(&platform_metadata);
   auto app_containers_offset = fbb.CreateVector(app_containers);
