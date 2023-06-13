@@ -53,8 +53,7 @@ constexpr std::string_view node_metadata_json = R"###(
       "gcp_project":"test_project"
    },
    "APP_CONTAINERS": "hello,test",
-   "INSTANCE_IPS": "10.10.10.1,10.10.10.2,10.10.10.3",
-   "PROXY_VERSON": "1.27.0"
+   "INSTANCE_IPS": "10.10.10.1,10.10.10.2,10.10.10.3"
 }
 )###";
 
@@ -76,7 +75,6 @@ constexpr std::string_view node_metadata_json_with_missing_lists = R"###(
       "gcp_cluster_name":"test_cluster",
       "gcp_project":"test_project"
    },
-   "PROXY_VERSON": "1.27.0"
 }
 )###";
 

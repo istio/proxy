@@ -424,6 +424,7 @@ TAG_KEY_FUNC(source_canonical_revision, sourceCanonicalRevision)
 TAG_KEY_FUNC(destination_canonical_revision, destinationCanonicalRevision)
 TAG_KEY_FUNC(api_name, apiName)
 TAG_KEY_FUNC(api_version, apiVersion)
+TAG_KEY_FUNC(proxy_version, proxyVersion)
 
 } // namespace Metric
 } // namespace Stackdriver
