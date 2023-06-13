@@ -16,7 +16,6 @@
 #include "extensions/common/context.h"
 
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 #include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/util.h"
