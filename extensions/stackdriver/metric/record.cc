@@ -108,7 +108,8 @@ TagKeyValueList getOutboundTagMap(const ::Wasm::Common::FlatNode& local_node_inf
       {sourceCanonicalServiceNameKey(), unknownIfEmpty(getLocalCanonicalName(local_node_info))},
       {sourceCanonicalServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
-      {sourceCanonicalRevisionKey(), unknownIfEmpty(getLocalCanonicalRev(local_node_info))}};
+      {sourceCanonicalRevisionKey(), unknownIfEmpty(getLocalCanonicalRev(local_node_info))},
+      {proxyVersionKey(), unknownIfEmpty(flatbuffers::GetString(local_node_info.istio_version()))}};
   return outboundMap;
 }
 
@@ -146,7 +147,8 @@ TagKeyValueList getInboundTagMap(const ::Wasm::Common::FlatNode& local_node_info
       {sourceCanonicalServiceNameKey(), unknownIfEmpty(getPeerCanonicalName(peer_node_info))},
       {sourceCanonicalServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
-      {sourceCanonicalRevisionKey(), unknownIfEmpty(getPeerCanonicalRev(peer_node_info))}};
+      {sourceCanonicalRevisionKey(), unknownIfEmpty(getPeerCanonicalRev(peer_node_info))},
+      {proxyVersionKey(), unknownIfEmpty(flatbuffers::GetString(local_node_info.istio_version()))}};
   return inboundMap;
 }
 

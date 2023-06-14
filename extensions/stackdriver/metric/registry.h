@@ -68,6 +68,7 @@ opencensus::tags::TagKey destinationCanonicalRevisionKey();
 opencensus::tags::TagKey sourceCanonicalRevisionKey();
 opencensus::tags::TagKey apiNameKey();
 opencensus::tags::TagKey apiVersionKey();
+opencensus::tags::TagKey proxyVersionKey();
 
 // Opencensus measure functions.
 opencensus::stats::MeasureInt64 serverRequestCountMeasure();
