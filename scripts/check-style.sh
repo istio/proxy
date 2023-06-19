@@ -18,6 +18,12 @@
 #
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# TODO: move to a version support both x86_64 and arm64
+if [[ "$(uname -m)" !=  "x86_64" ]]; then
+  echo "Skipping check-style on arm"
+  exit 0
+fi
+
 CLANG_VERSION_REQUIRED="11.0.1"
 CLANG_FORMAT=$(command -v clang-format)
 CLANG_VERSION="$(${CLANG_FORMAT} -version 2>/dev/null | cut -d ' ' -f 3 | cut -d '-' -f 1)"

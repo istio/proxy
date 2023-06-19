@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# shellcheck disable=SC2046,SC2230
+
 # WARNING: DO NOT EDIT, THIS FILE IS PROBABLY A COPY
 #
 # The original version of this file is located in the https://github.com/istio/common-files repo.
@@ -21,4 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO: this's a temporary solution to fix the build breakage, we should remove it later.
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.53.2
+mv $(go env GOPATH)/bin/golangci-lint $(which golangci-lint)
+golangci-lint --version
 golangci-lint run --fix -c ./common/config/.golangci-format.yml
