@@ -38,6 +38,7 @@ type Ports struct {
 	ServerAdmin      uint16
 	XDSPort          uint16
 	ServerTunnelPort uint16
+	OtelPort         uint16
 	Max              uint16
 }
 
@@ -75,6 +76,7 @@ func NewPorts(name uint16) *Ports {
 		ServerAdmin:      base + 4,
 		XDSPort:          base + 5,
 		ServerTunnelPort: base + 6,
-		Max:              base + 6,
+		OtelPort:         base + 7,
+		Max:              base + 7,
 	}
 }
