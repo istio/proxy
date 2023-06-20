@@ -59,18 +59,22 @@ if [[ ! -x "${BUILDIFIER}" ]]; then
   if [[ ! -x "${BUILDIFIER}" ]]; then
 
     if [ "$(uname)" == "Darwin" ]; then
-      BUILDIFIER_BIN="buildifier.osx"
+      BUILDIFIER_BIN="buildifier-darwin-amd64"
     elif [[ "$(uname -s)" =~ Linux* ]]; then
-      BUILDIFIER_BIN="buildifier"
+      if [ "$(uname -m)" == "aarch64" ]; then
+        BUILDIFIER_BIN="buildifier-linux-arm64"
+      else
+        BUILDIFIER_BIN="buildifier-linux-amd64"
+      fi
     else
       echo "Unsupported environment." ; exit 1 ;
     fi
 
-    echo "Downloading buildifier: https://github.com/bazelbuild/buildtools/releases/download/0.29.0/${BUILDIFIER_BIN}"
+    echo "Downloading buildifier"
 
     mkdir -p "${HOME}/bin"
     curl --silent --show-error --retry 10 --location \
-      "https://github.com/bazelbuild/buildtools/releases/download/0.29.0/${BUILDIFIER_BIN}" \
+      "https://github.com/bazelbuild/buildtools/releases/download/v6.1.2/${BUILDIFIER_BIN}" \
       -o "${BUILDIFIER}" \
     || { echo "Could not install required buildifier. Skip formatting." ; exit 1 ; }
     chmod +x "${BUILDIFIER}"
