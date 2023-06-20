@@ -17,7 +17,11 @@ TOP := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 SHELL := /bin/bash
 BAZEL_STARTUP_ARGS ?=
 BAZEL_BUILD_ARGS ?=
-BAZEL_TARGETS ?= //...
+BAZEL_TARGETS ?= //... \
+                 -extensions:metadata_exchange.wasm \
+                 -extensions:push_wasm_image_metadata_exchange \
+                 -extensions:wasm_image_metadata_exchange \
+                 -extensions:copy_original_file_metadata_exchange
 # Don't build Debian packages and Docker images in tests.
 BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS}
 E2E_TEST_TARGETS ?= $$(go list ./...)
@@ -72,11 +76,7 @@ TEST_ENVOY_DEBUG ?= trace
 CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE_GLIBCXX_USE_CXX11_ABI_ERROR=1
 # WASM is not build on CentOS, skip it
 # TODO can we do some sort of regex?
-CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS} \
-                             -extensions:metadata_exchange.wasm \
-                             -extensions:push_wasm_image_metadata_exchange \
-                             -extensions:wasm_image_metadata_exchange \
-                             -extensions:copy_original_file_metadata_exchange
+CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS}
 
 build:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
