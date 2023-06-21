@@ -18,31 +18,39 @@
 #
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-CLANG_VERSION_REQUIRED="11.0.1"
+CLANG_VERSION_REQUIRED="12.0.1"
+CLANG_DIRECTORY="${HOME}/clang-${CLANG_VERSION_REQUIRED}"
 CLANG_FORMAT=$(command -v clang-format)
 CLANG_VERSION="$(${CLANG_FORMAT} -version 2>/dev/null | cut -d ' ' -f 3 | cut -d '-' -f 1)"
+# Try system clang first.
 if [[ ! -x "${CLANG_FORMAT}" || "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}" ]]; then
-  # Install required clang version to a folder and cache it.
-  CLANG_DIRECTORY="${HOME}/clang"
   CLANG_FORMAT="${CLANG_DIRECTORY}/bin/clang-format"
+  # Try cached clang second.
+  CLANG_VERSION="$(${CLANG_FORMAT} -version 2>/dev/null | cut -d ' ' -f 3 | cut -d '-' -f 1)"
+  if [[ ! -x "${CLANG_FORMAT}" || "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}" ]]; then
+    # Install required clang version to a folder and cache it.
+    if [ "$(uname)" == "Darwin" ]; then
+      CLANG_BIN="x86_64-darwin-apple.tar.xz"
+    elif [[ "$(uname -s)" =~ Linux* ]]; then
+      if [ "$(uname -m)" == "aarch64" ]; then
+        CLANG_BIN="aarch64-linux-gnu"
+      else
+        CLANG_BIN="x86_64-linux-gnu-ubuntu-16.04.tar.xz"
+      fi
+    else
+      echo "Unsupported environment." ; exit 1 ;
+    fi
 
-  if [ "$(uname)" == "Darwin" ]; then
-    CLANG_BIN="x86_64-darwin-apple.tar.xz"
-  elif [[ "$(uname -s)" =~ Linux* ]]; then
-    CLANG_BIN="x86_64-linux-gnu-ubuntu-16.04.tar.xz"
-  else
-    echo "Unsupported environment." ; exit 1 ;
+    LLVM_URL_PREFIX="https://github.com/llvm/llvm-project/releases/download/llvmorg"
+    echo "Downloading clang-format: ${LLVM_URL_PREFIX}-${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}"
+    echo "Installing required clang-format ${CLANG_VERSION_REQUIRED} to ${CLANG_DIRECTORY}"
+
+    mkdir -p "${CLANG_DIRECTORY}"
+    curl -L --silent --show-error --retry 10 \
+      "${LLVM_URL_PREFIX}-${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}" \
+      | tar Jx -C "${CLANG_DIRECTORY}" --strip=1 \
+    || { echo "Could not install required clang-format. Skip formatting." ; exit 1 ; }
   fi
-
-  LLVM_URL_PREFIX="https://github.com/llvm/llvm-project/releases/download/llvmorg"
-  echo "Downloading clang-format: ${LLVM_URL_PREFIX}-${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}"
-  echo "Installing required clang-format ${CLANG_VERSION_REQUIRED} to ${CLANG_DIRECTORY}"
-
-  mkdir -p "${CLANG_DIRECTORY}"
-  curl -L --silent --show-error --retry 10 \
-    "${LLVM_URL_PREFIX}-${CLANG_VERSION_REQUIRED}/clang+llvm-${CLANG_VERSION_REQUIRED}-${CLANG_BIN}" \
-    | tar Jx -C "${CLANG_DIRECTORY}" --strip=1 \
-  || { echo "Could not install required clang-format. Skip formatting." ; exit 1 ; }
 fi
 
 BUILDIFIER=$(command -v buildifier)
@@ -51,18 +59,22 @@ if [[ ! -x "${BUILDIFIER}" ]]; then
   if [[ ! -x "${BUILDIFIER}" ]]; then
 
     if [ "$(uname)" == "Darwin" ]; then
-      BUILDIFIER_BIN="buildifier.osx"
+      BUILDIFIER_BIN="buildifier-darwin-amd64"
     elif [[ "$(uname -s)" =~ Linux* ]]; then
-      BUILDIFIER_BIN="buildifier"
+      if [ "$(uname -m)" == "aarch64" ]; then
+        BUILDIFIER_BIN="buildifier-linux-arm64"
+      else
+        BUILDIFIER_BIN="buildifier-linux-amd64"
+      fi
     else
       echo "Unsupported environment." ; exit 1 ;
     fi
 
-    echo "Downloading buildifier: https://github.com/bazelbuild/buildtools/releases/download/0.29.0/${BUILDIFIER_BIN}"
+    echo "Downloading buildifier"
 
     mkdir -p "${HOME}/bin"
     curl --silent --show-error --retry 10 --location \
-      "https://github.com/bazelbuild/buildtools/releases/download/0.29.0/${BUILDIFIER_BIN}" \
+      "https://github.com/bazelbuild/buildtools/releases/download/v6.1.2/${BUILDIFIER_BIN}" \
       -o "${BUILDIFIER}" \
     || { echo "Could not install required buildifier. Skip formatting." ; exit 1 ; }
     chmod +x "${BUILDIFIER}"
