@@ -6,15 +6,15 @@ require (
 	cloud.google.com/go/logging v1.7.0
 	cloud.google.com/go/monitoring v1.13.0
 	cloud.google.com/go/trace v1.9.0
-	github.com/cncf/xds/go v0.0.0-20230428030218-4003588d1b74
-	github.com/envoyproxy/go-control-plane v0.11.2-0.20230616101938-2d56eb7d45fa
+	github.com/cncf/xds/go v0.0.0-20230607035331-e9ce68804cb4
+	github.com/envoyproxy/go-control-plane v0.11.2-0.20230623081641-ba6e021b7da2
 	github.com/golang/protobuf v1.5.3
 	github.com/google/go-cmp v0.5.9
 	github.com/prometheus/client_model v0.4.0
 	github.com/prometheus/common v0.38.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20230530153820-e85fd2cbaebc
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230530153820-e85fd2cbaebc
-	google.golang.org/grpc v1.55.0
+	google.golang.org/grpc v1.56.0
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.3.0
