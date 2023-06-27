@@ -23,7 +23,6 @@ load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_package",
 )
-load("//bazel:wasm.bzl", "declare_wasm_image_targets")
 
 envoy_package()
 
@@ -56,12 +55,4 @@ envoy_wasm_cc_binary(
         "@proxy_wasm_cpp_sdk//:proxy_wasm_intrinsics_full",
         "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
     ],
-)
-
-declare_wasm_image_targets(
-    name = "metadata_exchange",
-    docker_registry = "{WASM_REPOSITORY}",
-    pkg = "//extensions",
-    tag = "{BUILD_SCM_REVISION}",
-    wasm_file = ":metadata_exchange.wasm",
 )
