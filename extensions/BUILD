@@ -46,6 +46,7 @@ envoy_wasm_cc_binary(
     ],
     copts = ["-UNULL_PLUGIN"],
     linkopts = WASM_LINKOPTS,
+    tags = ["manual"],
     deps = [
         "//extensions/common:node_info_fb_cc",
         "//extensions/common/wasm:json_util",
