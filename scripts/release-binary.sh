@@ -66,7 +66,7 @@ function usage() {
   exit 1
 }
 
-while getopts d:ipc arg ; do
+while getopts d:ic arg ; do
   case "${arg}" in
     d) DST="${OPTARG}";;
     i) CHECK=0;;
