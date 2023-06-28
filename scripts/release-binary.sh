@@ -54,9 +54,6 @@ BASE_BINARY_NAME="${BASE_BINARY_NAME:-"envoy"}"
 # If enabled, we will just build the Envoy binary rather than wasm, etc
 BUILD_ENVOY_BINARY_ONLY="${BUILD_ENVOY_BINARY_ONLY:-0}"
 
-# Push envoy docker image.
-PUSH_DOCKER_IMAGE=0
-
 # Support CentOS builds
 BUILD_FOR_CENTOS=0
 
@@ -65,9 +62,7 @@ function usage() {
     -d  The bucket name to store proxy binary (optional).
         If not provided, both envoy binary push and docker image push are skipped.
     -i  Skip Ubuntu Xenial check. DO NOT USE THIS FOR RELEASED BINARIES.
-    -c  Build for CentOS releases. This will disable the Ubuntu Xenial check.
-    -p  Push wasm oci image.
-        Registry is hard coded to gcr.io and repository is controlled via DOCKER_REPOSITORY and WASM_REPOSITORY env var."
+    -c  Build for CentOS releases. This will disable the Ubuntu Xenial check."
   exit 1
 }
 
@@ -75,7 +70,6 @@ while getopts d:ipc arg ; do
   case "${arg}" in
     d) DST="${OPTARG}";;
     i) CHECK=0;;
-    p) PUSH_DOCKER_IMAGE=1;;
     c) BUILD_FOR_CENTOS=1;;
     *) usage;;
   esac
@@ -190,11 +184,6 @@ trap 'rm -rf ${TMP_WASM}' EXIT
 make build_wasm
 if [ -n "${DST}" ]; then
   for extension in "${extensions[@]}"; do
-    if [ "${PUSH_DOCKER_IMAGE}" -eq 1 ]; then
-      echo "Pushing Wasm OCI image for ${extension}"
-      # shellcheck disable=SC2086
-      bazel run ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //extensions:push_wasm_image_${extension}
-    fi
     # Rename the plugin file and generate sha256 for it
     WASM_NAME="${extension}-${SHA}.wasm"
     WASM_COMPILED_NAME="${extension}-${SHA}.compiled.wasm"

@@ -17,11 +17,7 @@ TOP := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 SHELL := /bin/bash
 BAZEL_STARTUP_ARGS ?=
 BAZEL_BUILD_ARGS ?=
-BAZEL_TARGETS ?= //... \
-                 -extensions:metadata_exchange.wasm \
-                 -extensions:push_wasm_image_metadata_exchange \
-                 -extensions:wasm_image_metadata_exchange \
-                 -extensions:copy_original_file_metadata_exchange
+BAZEL_TARGETS ?= //... -extensions:metadata_exchange.wasm
 # Don't build Debian packages and Docker images in tests.
 BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS}
 E2E_TEST_TARGETS ?= $$(go list ./...)
