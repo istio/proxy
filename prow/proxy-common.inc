@@ -35,11 +35,22 @@ export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --v
 
 # Override envoy.
 if [[ "${ENVOY_REPOSITORY:-}" && "${ENVOY_PREFIX:-}" ]]; then
+  # Legacy path, keep around for a few releases to allow folks to migrate
+  # The other path is preferred as it uses an API intended for programmatic access and allows fine-grained access token usage.
   TMP_DIR=$(mktemp -d -t envoy-XXXXXXXXXX)
   trap 'rm -rf ${TMP_DIR:?}' EXIT
   ENVOY_SHA="${ENVOY_SHA:-$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "$WORKSPACE")}"
   BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_repository=envoy=${TMP_DIR}/${ENVOY_PREFIX}-${ENVOY_SHA}"
   curl -nsSfL "${ENVOY_REPOSITORY}/archive/${ENVOY_SHA}.tar.gz" | tar -C "${TMP_DIR}" -xz
+elif [[ "${ENVOY_REPOSITORY:-}" ]]; then
+  TMP_DIR=$(mktemp -d -t envoy-XXXXXXXXXX)
+  trap 'rm -rf ${TMP_DIR:?}' EXIT
+  ENVOY_SHA="${ENVOY_SHA:-$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "$WORKSPACE")}"
+  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_repository=envoy=${TMP_DIR}"
+  # User passes a URl like https://github.com/foo/bar, we translate it to https://api.github.com/foo/bar/repos.
+  api_url=${ENVOY_REPOSITORY/https:\/\/github.com/https:\/\/api.github.com/repos}
+  # Contents in the tarball will be in a folder, so --strip=1 it so we don't have to deal with the changing name
+  curl -nsSfL "${api_url}/tarball/${ENVOY_SHA}" | tar -C "${TMP_DIR}" -xz --strip=1
 fi
 
 # e2e tests under //test/envoye2e/... use Bazel artifacts.
