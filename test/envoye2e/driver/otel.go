@@ -15,25 +15,50 @@
 package driver
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
 
+	"github.com/golang/protobuf/proto"
 	collogspb "go.opentelemetry.io/proto/otlp/collector/logs/v1"
+	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 	"google.golang.org/grpc"
 )
 
+type OtelLogs struct {
+	collogspb.UnimplementedLogsServiceServer
+}
+
+type OtelMetrics struct {
+	colmetricspb.UnimplementedMetricsServiceServer
+}
+
 type Otel struct {
+	OtelLogs
+	OtelMetrics
 	grpc *grpc.Server
+	Port uint16
+}
+
+func (x *OtelLogs) Export(ctx context.Context, req *collogspb.ExportLogsServiceRequest) (*collogspb.ExportLogsServiceResponse, error) {
+	log.Printf("log=%s\n", proto.MarshalTextString(req))
+	return &collogspb.ExportLogsServiceResponse{}, nil
+}
+
+func (x *OtelMetrics) Export(ctx context.Context, req *colmetricspb.ExportMetricsServiceRequest) (*colmetricspb.ExportMetricsServiceResponse, error) {
+	//log.Printf("metric=%s\n", proto.MarshalTextString(req))
+	return &colmetricspb.ExportMetricsServiceResponse{}, nil
 }
 
 var _ Step = &Otel{}
 
 func (x *Otel) Run(p *Params) error {
-	log.Printf("Otel server starting on %d\n", p.Ports.OtelPort)
+	log.Printf("Otel server starting on %d\n", x.Port)
 	x.grpc = grpc.NewServer()
-	collogspb.RegisterLogsServiceServer(x.grpc, x)
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", p.Ports.OtelPort))
+	collogspb.RegisterLogsServiceServer(x.grpc, &x.OtelLogs)
+	colmetricspb.RegisterMetricsServiceServer(x.grpc, &x.OtelMetrics)
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", x.Port))
 	if err != nil {
 		return err
 	}

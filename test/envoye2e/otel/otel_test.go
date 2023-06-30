@@ -25,40 +25,31 @@ import (
 
 func TestOtelPayload(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
-
-	sdPort := params.Ports.Max + 1
-	stsPort := params.Ports.Max + 2
-	params.Vars["SDPort"] = strconv.Itoa(int(sdPort))
-	params.Vars["STSPort"] = strconv.Itoa(int(stsPort))
+	port := params.Ports.Max
 	params.Vars["ClientMetadata"] = driver.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = driver.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
+	params.Vars["StatsConfig"] = driver.LoadTestData("testdata/bootstrap/otel_stats.yaml.tmpl")
+	params.Vars["OtelPort"] = strconv.Itoa(int(port))
+	params.Vars["ClientStaticCluster"] = params.LoadTestData("testdata/cluster/otel.yaml.tmpl")
+	params.Vars["ServerStaticCluster"] = params.Vars["ClientStaticCluster"]
+	params.Vars["ClientHTTPAccessLogs"] = params.LoadTestData("testdata/access_logs/otel.yaml.tmpl")
+	params.Vars["ServerHTTPAccessLogs"] = params.LoadTestData("testdata/access_logs/otel.yaml.tmpl")
 
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
 			&driver.XDS{},
+			&driver.Otel{Port: port},
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/client.yaml.tmpl")}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.Repeat{N: 10, Step: driver.Get(params.Ports.ClientPort, "hello, world!")},
-			/*
-				sd.Check(params,
-					[]string{"testdata/stackdriver/client_request_count.yaml.tmpl", "testdata/stackdriver/server_request_count.yaml.tmpl"},
-					[]SDLogEntry{
-						{
-							LogBaseFile:   "testdata/stackdriver/server_access_log.yaml.tmpl",
-							LogEntryFile:  []string{"testdata/stackdriver/server_access_log_entry.yaml.tmpl"},
-							LogEntryCount: 10,
-						},
-						{
-							LogBaseFile:   "testdata/stackdriver/client_access_log.yaml.tmpl",
-							LogEntryFile:  []string{"testdata/stackdriver/client_access_log_entry.yaml.tmpl"},
-							LogEntryCount: 10,
-						},
-					}, true,
-				),
-			*/
+			&driver.Sleep{Duration: 10 * time.Second},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)

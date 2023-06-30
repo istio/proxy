@@ -14,6 +14,7 @@ filter_chains:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
       stat_prefix: client
+{{ .Vars.ClientHTTPAccessLogs | fill | indent 6 }}
       http_filters:
 {{ .Vars.ClientHTTPFilters | fill | indent 6 }}
       - name: envoy.filters.http.router
