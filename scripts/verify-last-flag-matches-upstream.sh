@@ -21,6 +21,11 @@
 
 set -x
 
+if [[ -n "${ENVOY_REPOSITORY}" ]]; then
+    echo "Skipping LastFlag verification, custom envoy used"
+    exit 0
+fi
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 WORKSPACE=${ROOT}/WORKSPACE
 PATH_LASTFLAG_SPEC_DOWNSTREAM="${ROOT}/extensions/common/util.cc"
