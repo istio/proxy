@@ -17,11 +17,7 @@ TOP := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 SHELL := /bin/bash
 BAZEL_STARTUP_ARGS ?=
 BAZEL_BUILD_ARGS ?=
-BAZEL_TARGETS ?= //... \
-                 -extensions:metadata_exchange.wasm \
-                 -extensions:push_wasm_image_metadata_exchange \
-                 -extensions:wasm_image_metadata_exchange \
-                 -extensions:copy_original_file_metadata_exchange
+BAZEL_TARGETS ?= //... -extensions:metadata_exchange.wasm
 # Don't build Debian packages and Docker images in tests.
 BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS}
 E2E_TEST_TARGETS ?= $$(go list ./...)
@@ -186,8 +182,6 @@ endif
 
 test_release_centos:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS)" BUILD_ENVOY_BINARY_ONLY=1 BASE_BINARY_NAME=envoy-centos && ./scripts/release-binary.sh -c
-
-PUSH_RELEASE_FLAGS ?= -p
 
 push_release:
 ifeq "$(shell uname -m)" "x86_64"

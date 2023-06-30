@@ -31,15 +31,26 @@ GOPATH=/home/prow/go
 ROOT=/go/src
 
 # Configure available resources and disable IPv6 tests.
-export BAZEL_BUILD_ARGS="--local_ram_resources=12288 --local_cpu_resources=8 --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=errors"
+export BAZEL_BUILD_ARGS="--verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=errors"
 
 # Override envoy.
 if [[ "${ENVOY_REPOSITORY:-}" && "${ENVOY_PREFIX:-}" ]]; then
+  # Legacy path, keep around for a few releases to allow folks to migrate
+  # The other path is preferred as it uses an API intended for programmatic access and allows fine-grained access token usage.
   TMP_DIR=$(mktemp -d -t envoy-XXXXXXXXXX)
   trap 'rm -rf ${TMP_DIR:?}' EXIT
   ENVOY_SHA="${ENVOY_SHA:-$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "$WORKSPACE")}"
   BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_repository=envoy=${TMP_DIR}/${ENVOY_PREFIX}-${ENVOY_SHA}"
   curl -nsSfL "${ENVOY_REPOSITORY}/archive/${ENVOY_SHA}.tar.gz" | tar -C "${TMP_DIR}" -xz
+elif [[ "${ENVOY_REPOSITORY:-}" ]]; then
+  TMP_DIR=$(mktemp -d -t envoy-XXXXXXXXXX)
+  trap 'rm -rf ${TMP_DIR:?}' EXIT
+  ENVOY_SHA="${ENVOY_SHA:-$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "$WORKSPACE")}"
+  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_repository=envoy=${TMP_DIR}"
+  # User passes a URl like https://github.com/foo/bar, we translate it to https://api.github.com/foo/bar/repos.
+  api_url=${ENVOY_REPOSITORY/https:\/\/github.com/https:\/\/api.github.com/repos}
+  # Contents in the tarball will be in a folder, so --strip=1 it so we don't have to deal with the changing name
+  curl -nsSfL "${api_url}/tarball/${ENVOY_SHA}" | tar -C "${TMP_DIR}" -xz --strip=1
 fi
 
 # e2e tests under //test/envoye2e/... use Bazel artifacts.
@@ -53,35 +64,21 @@ export BAZEL_BUILD_RBE_JOBS="${BAZEL_BUILD_RBE_JOBS:-0}"
 BAZEL_BUILD_RBE_INSTANCE="${BAZEL_BUILD_RBE_INSTANCE-projects/istio-testing/instances/default_instance}"
 BAZEL_BUILD_RBE_CACHE="${BAZEL_BUILD_RBE_CACHE-grpcs://remotebuildexecution.googleapis.com}"
 
-METADATA_SERVER_URL="http://169.254.169.254/computeMetadata/v1/instance/service-accounts/"
-WORKLOAD_IDENTITY="${WORKLOAD_IDENTITY-istio-prow-test-job@istio-testing.iam.gserviceaccount.com}"
+CREDS="google_default_credentials"
 # Use GCP service account when available.
 if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
-  echo "Detected GOOGLE_APPLICATION_CREDENTIALS, activating..." >&2
+  echo "Using legacy GOOGLE_APPLICATION_CREDENTIALS. Move to workload identity!" >&2
   gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
+  CREDS="google_credentials=${GOOGLE_APPLICATION_CREDENTIALS}"
+fi
 
-  # Use RBE when logged in.
-  BAZEL_BUILD_RBE_JOBS="${BAZEL_BUILD_RBE_JOBS:-200}"
-  if [[ -n "${BAZEL_BUILD_RBE_INSTANCE}" ]]; then
-    if [[ "${BAZEL_BUILD_RBE_JOBS}" -gt 0 ]]; then
-      echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE} (execute)"
-      export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --google_credentials=${GOOGLE_APPLICATION_CREDENTIALS} --config=remote-clang-libc++ --config=remote-ci --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --jobs=${BAZEL_BUILD_RBE_JOBS}"
-    elif [[ -n "${BAZEL_BUILD_RBE_CACHE}" ]]; then
-      echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE} (cache)"
-      export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --google_credentials=${GOOGLE_APPLICATION_CREDENTIALS} --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --remote_cache=${BAZEL_BUILD_RBE_CACHE}"
-    fi
-  fi
-elif gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep "${WORKLOAD_IDENTITY}"; then
-  echo "Detected GKE workload identity" >&2
-
-  BAZEL_BUILD_RBE_JOBS="${BAZEL_BUILD_RBE_JOBS:-200}"
-  if [[ -n "${BAZEL_BUILD_RBE_INSTANCE}" ]]; then
-    if [[ "${BAZEL_BUILD_RBE_JOBS}" -gt 0 ]]; then
-      echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE} (execute)"
-      export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --google_default_credentials --config=remote-clang-libc++ --config=remote-ci --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --jobs=${BAZEL_BUILD_RBE_JOBS}"
-    elif [[ -n "${BAZEL_BUILD_RBE_CACHE}" ]]; then
-      echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE} (cache)"
-      export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --google_default_credentials --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --remote_cache=${BAZEL_BUILD_RBE_CACHE}"
-    fi
+BAZEL_BUILD_RBE_JOBS="${BAZEL_BUILD_RBE_JOBS:-200}"
+if [[ -n "${BAZEL_BUILD_RBE_INSTANCE}" ]]; then
+  if [[ "${BAZEL_BUILD_RBE_JOBS}" -gt 0 ]]; then
+    echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE} (execute)"
+    export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --${CREDS} --config=remote-clang-libc++ --config=remote-ci --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --jobs=${BAZEL_BUILD_RBE_JOBS}"
+  elif [[ -n "${BAZEL_BUILD_RBE_CACHE}" ]]; then
+    echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE} (cache)"
+    export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --${CREDS} --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --remote_cache=${BAZEL_BUILD_RBE_CACHE}"
   fi
 fi
