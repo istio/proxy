@@ -69,11 +69,6 @@ TEST_ENVOY_PATH ?= $(BAZEL_BIN_PATH)/envoy
 TEST_ENVOY_TARGET ?= //:envoy
 TEST_ENVOY_DEBUG ?= trace
 
-CENTOS_BUILD_ARGS ?= --cxxopt -D_GLIBCXX_USE_CXX11_ABI=1 --cxxopt -DENVOY_IGNORE_GLIBCXX_USE_CXX11_ABI_ERROR=1
-# WASM is not build on CentOS, skip it
-# TODO can we do some sort of regex?
-CENTOS_BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS}
-
 build:
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(BAZEL_TARGETS)
@@ -132,14 +127,6 @@ test_tsan: E2E_TEST_ENVS = TSAN=true
 test_tsan: TEST_ENVOY_DEBUG = debug # tsan is too slow for trace
 test_tsan: test
 
-test_centos: BAZEL_BUILD_ARGS := $(CENTOS_BUILD_ARGS) $(BAZEL_BUILD_ARGS)
-test_centos: E2E_TEST_TARGETS =
-test_centos: BAZEL_TEST_TARGETS = $(CENTOS_BAZEL_TEST_TARGETS)
-# TODO: re-enable IPv6 tests
-test_centos: BAZEL_TEST_ARGS = --test_filter="-*IPv6*"
-test_centos: test
-
-
 check:
 	@echo >&2 "Please use \"make lint\" instead."
 	@false
@@ -180,9 +167,6 @@ else
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -i
 endif
 
-test_release_centos:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS)" BUILD_ENVOY_BINARY_ONLY=1 BASE_BINARY_NAME=envoy-centos && ./scripts/release-binary.sh -c
-
 push_release:
 ifeq "$(shell uname -m)" "x86_64"
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
@@ -190,9 +174,6 @@ else
 	# Only x86 has support for legacy GLIBC, otherwise pass -i to skip the check
 	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -i -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
 endif
-
-push_release_centos:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS) $(CENTOS_BUILD_ARGS)" BUILD_ENVOY_BINARY_ONLY=1 BASE_BINARY_NAME=envoy-centos && ./scripts/release-binary.sh -c -d "$(RELEASE_GCS_PATH)"
 
 # Used by build container to export the build output from the docker volume cache
 exportcache:
