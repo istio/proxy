@@ -65,9 +65,9 @@ Http::FilterHeadersStatus AlpnFilter::decodeHeaders(Http::RequestHeaderMap&, boo
       if (alpn_it != it->second.fields().end()) {
         auto alpnOverrideMetadata = alpn_it->second.string_value();
         if (alpnOverrideMetadata == "false") {
-            // Skip ALPN header rewrite
-              ENVOY_LOG(debug, "Skipping ALPN header rewrite because alpn_override metadata is false");
-              return Http::FilterHeadersStatus::Continue;
+          // Skip ALPN header rewrite
+          ENVOY_LOG(debug, "Skipping ALPN header rewrite because alpn_override metadata is false");
+          return Http::FilterHeadersStatus::Continue;
         }
       }
     }
