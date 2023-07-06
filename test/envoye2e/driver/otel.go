@@ -21,13 +21,12 @@ import (
 	"net"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/google/go-cmp/cmp"
 	collogspb "go.opentelemetry.io/proto/otlp/collector/logs/v1"
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 	metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
-
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/testing/protocmp"
 )
 
@@ -56,7 +55,6 @@ type Otel struct {
 }
 
 func (x *OtelLogs) Export(ctx context.Context, req *collogspb.ExportLogsServiceRequest) (*collogspb.ExportLogsServiceResponse, error) {
-	//log.Printf("log=%s\n", proto.MarshalTextString(req))
 	return &collogspb.ExportLogsServiceResponse{}, nil
 }
 
@@ -64,14 +62,13 @@ func (x *OtelMetrics) Export(ctx context.Context, req *colmetricspb.ExportMetric
 	if x.finished {
 		return &colmetricspb.ExportMetricsServiceResponse{}, nil
 	}
-	//log.Printf("metric=%s\n", proto.MarshalTextString(req))
 	for _, rm := range req.ResourceMetrics {
 		if rm.Resource != nil {
-			log.Printf("resource=%s\n", proto.MarshalTextString(rm.Resource))
+			log.Printf("resource=%s\n", protojson.Format(rm.Resource))
 		}
 		for _, sm := range rm.ScopeMetrics {
 			if sm.Scope != nil {
-				log.Printf("scope=%s\n", proto.MarshalTextString(sm.Scope))
+				log.Printf("scope=%s\n", protojson.Format(sm.Scope))
 			}
 			for _, m := range sm.Metrics {
 				// Clean up time field in the received metric.
