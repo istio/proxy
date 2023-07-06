@@ -52,6 +52,7 @@ func TestOtelPayload(t *testing.T) {
 		Port: port,
 		Metrics: []string{
 			"testdata/otel/client_request_count.yaml.tmpl",
+			"testdata/otel/server_request_count.yaml.tmpl",
 		},
 	}
 	if err := (&driver.Scenario{

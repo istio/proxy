@@ -42,7 +42,7 @@ type OtelMetrics struct {
 }
 
 type verify struct {
-	want map[string]*metricspb.Metric
+	want []*metricspb.Metric
 	done chan struct{}
 }
 
@@ -51,7 +51,7 @@ type Otel struct {
 	OtelMetrics
 	grpc *grpc.Server
 	Port uint16
-	// Metrics contains the expected (total) metric protos. Client must produce it exactly.
+	// Metrics contains the expected (total) metric protos. Clients must produce them exactly.
 	Metrics []string
 }
 
@@ -66,21 +66,33 @@ func (x *OtelMetrics) Export(ctx context.Context, req *colmetricspb.ExportMetric
 	}
 	//log.Printf("metric=%s\n", proto.MarshalTextString(req))
 	for _, rm := range req.ResourceMetrics {
-		log.Printf("resource=%s\n", proto.MarshalTextString(rm.Resource))
+		if rm.Resource != nil {
+			log.Printf("resource=%s\n", proto.MarshalTextString(rm.Resource))
+		}
 		for _, sm := range rm.ScopeMetrics {
-			log.Printf("scope=%s\n", proto.MarshalTextString(sm.Scope))
+			if sm.Scope != nil {
+				log.Printf("scope=%s\n", proto.MarshalTextString(sm.Scope))
+			}
 			for _, m := range sm.Metrics {
+				// Clean up time field in the received metric.
 				if sum := m.GetSum(); sum != nil {
 					for _, dp := range sum.DataPoints {
 						dp.TimeUnixNano = 0
 					}
 				}
-				if want, ok := x.verify.want[m.Name]; ok {
-					if diff := cmp.Diff(m, want, protocmp.Transform()); diff != "" {
-						log.Printf("mismatched metric: %v\n", diff)
-					} else {
-						delete(x.verify.want, m.Name)
+				diff := ""
+				for i, want := range x.verify.want {
+					if want.Name != m.Name {
+						continue
 					}
+					if diff = cmp.Diff(m, want, protocmp.Transform()); diff == "" {
+						x.verify.want = append(x.verify.want[:i], x.verify.want[i+1:]...)
+						log.Printf("matched metric %q, want to match %d\n", m.Name, len(x.verify.want))
+						break
+					}
+				}
+				if diff != "" {
+					log.Printf("Failed to match a metric, last diff: %v", diff)
 				}
 			}
 		}
@@ -120,11 +132,10 @@ func (x *Otel) Run(p *Params) error {
 		return err
 	}
 	x.verify.done = make(chan struct{})
-	x.verify.want = make(map[string]*metricspb.Metric)
 	for _, m := range x.Metrics {
 		mpb := &metricspb.Metric{}
 		p.LoadTestProto(m, mpb)
-		x.verify.want[mpb.Name] = mpb
+		x.verify.want = append(x.verify.want, mpb)
 	}
 	go func() {
 		_ = x.grpc.Serve(lis)
