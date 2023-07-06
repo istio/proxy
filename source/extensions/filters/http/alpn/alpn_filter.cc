@@ -55,6 +55,24 @@ Http::Protocol AlpnFilterConfig::getHttpProtocol(
 }
 
 Http::FilterHeadersStatus AlpnFilter::decodeHeaders(Http::RequestHeaderMap&, bool) {
+  const auto upstream_info = decoder_callbacks_->streamInfo().upstreamInfo();
+  auto upstream_host = upstream_info ? upstream_info->upstreamHost() : nullptr;
+  if (upstream_host && upstream_host->metadata()) {
+    const auto& filter_metadata = upstream_host->metadata()->filter_metadata();
+    const auto& it = filter_metadata.find("istio");
+    if (it != filter_metadata.end()) {
+      const auto& alpn_it = it->second.fields().find("alpn_override");
+      if (alpn_it != it->second.fields().end()) {
+        const auto alpnOverrideMetadata = alpn_it->second.string_value();
+        if (alpnOverrideMetadata == "false") {
+          // Skip ALPN header rewrite
+          ENVOY_LOG(debug, "Skipping ALPN header rewrite because alpn_override metadata is false");
+          return Http::FilterHeadersStatus::Continue;
+        }
+      }
+    }
+  }
+
   Router::RouteConstSharedPtr route = decoder_callbacks_->route();
   const Router::RouteEntry* route_entry;
   if (!route || !(route_entry = route->routeEntry())) {
