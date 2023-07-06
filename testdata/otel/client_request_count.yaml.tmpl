@@ -1,0 +1,82 @@
+name: "istiocustom.istio_requests_total"
+sum:
+  data_points:
+  - attributes:
+    - key: "reporter"
+      value:
+        string_value: "source"
+    - key: "source_workload"
+      value:
+        string_value: "productpage-v1"
+    - key: "source_canonical_service"
+      value:
+        string_value: "productpage-v1"
+    - key: "source_canonical_revision"
+      value:
+        string_value: "version-1"
+    - key: "source_workload_namespace"
+      value:
+        string_value: "default"
+    - key: "source_principal"
+      value:
+        string_value: "unknown"
+    - key: "source_app"
+      value:
+        string_value: "productpage"
+    - key: "source_version"
+      value:
+        string_value: "v1"
+    - key: "source_cluster"
+      value:
+        string_value: "client-cluster"
+    - key: "destination_workload"
+      value:
+        string_value: "ratings-v1"
+    - key: "destination_workload_namespace"
+      value:
+        string_value: "default"
+    - key: "destination_principal"
+      value:
+        string_value: "unknown"
+    - key: "destination_app"
+      value:
+        string_value: "ratings"
+    - key: "destination_version"
+      value:
+        string_value: "v1"
+    - key: "destination_service"
+      value:
+        string_value: "server.default.svc.cluster.local"
+    - key: "destination_canonical_service"
+      value:
+        string_value: "ratings"
+    - key: "destination_canonical_revision"
+      value:
+        string_value: "version-1"
+    - key: "destination_service_name"
+      value:
+        string_value: "server"
+    - key: "destination_service_namespace"
+      value:
+        string_value: "default"
+    - key: "destination_cluster"
+      value:
+        string_value: "server-cluster"
+    - key: "request_protocol"
+      value:
+        string_value: "http"
+    - key: "response_code"
+      value:
+        string_value: "200"
+    - key: "grpc_response_status"
+      value:
+        string_value: ""
+    - key: "response_flags"
+      value:
+        string_value: "-"
+    - key: "connection_security_policy"
+      value:
+        string_value: "unknown"
+    as_int: 10
+  aggregation_temporality: AGGREGATION_TEMPORALITY_CUMULATIVE
+  is_monotonic: true

@@ -5,3 +5,8 @@ stats_sinks:
     grpc_service:
       envoy_grpc:
         cluster_name: otel
+stats_config:
+  stats_matcher:
+    inclusion_list:
+      patterns:
+      - prefix: "istiocustom."
