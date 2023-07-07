@@ -17,7 +17,50 @@ syntax = "proto3";
 
 package io.istio.http.connect_baggage;
 
-// Computes the downstream peer metadata using the "baggage"
-// header.
+// Peer metadata provider filter. This filter encapsulates the discovery of the
+// peer telemetry attributes for consumption by the telemetry filters.
 message Config {
+  // Use CONNECT baggage header encoding.
+  message Baggage {
+  }
+
+  // Use workload metadata xDS. Requires that the bootstrap extension is enabled.
+  // By default, uses the remote address as the lookup key.
+  message WorkloadDiscovery {
+  }
+
+  // Use Istio HTTP metadata exchange headers. Removes these headers if found.
+  message IstioHeaders {
+  }
+
+  // An exhaustive list of the derivation methods.
+  message DiscoveryMethod {
+    oneof method_specifier {
+      Baggage baggage = 1;
+      WorkloadDiscovery workload_discovery = 2;
+      IstioHeaders istio_headers = 3;
+    }
+  }
+
+  // The order of the derivation of the downstream peer metadata, in the precedence order.
+  repeated DiscoveryMethod downstream_discovery = 1;
+
+  // The order of the derivation of the upstream peer metadata, in the precedence order.
+  repeated DiscoveryMethod upstream_discovery = 2;
+
+  // An exhaustive list of the metadata propagation methods.
+  message PropagationMethod {
+    oneof method_specifier {
+      IstioHeaders istio_headers = 1;
+    }
+  }
+
+  // Downstream injection of the metadata via a response header.
+  repeated PropagationMethod downstream_propagation = 3;
+
+  // Upstream injection of the metadata via a request header.
+  repeated PropagationMethod upstream_propagation = 4;
+
+  // True to enable sharing with the upstream.
+  bool shared_with_upstream = 5;
 }

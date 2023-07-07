@@ -18,15 +18,114 @@
 #include "source/extensions/filters/http/common/pass_through_filter.h"
 #include "source/extensions/filters/http/connect_baggage/config.pb.h"
 #include "source/extensions/filters/http/connect_baggage/config.pb.validate.h"
+#include "source/extensions/common/workload_discovery/api.h"
+#include "extensions/common/context.h"
 
 namespace Envoy {
 namespace Extensions {
 namespace HttpFilters {
 namespace ConnectBaggage {
 
+// Peer info in the flatbuffers format.
+using PeerInfo = std::string;
+
+// Base class for the discovery methods.
+class DiscoveryMethod {
+public:
+  virtual ~DiscoveryMethod() = default;
+  virtual absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
+                                                  Http::HeaderMap&) const PURE;
+};
+
+using DiscoveryMethodPtr = std::unique_ptr<DiscoveryMethod>;
+
+class BaggageMethod : public DiscoveryMethod {
+public:
+  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
+                                          Http::HeaderMap&) const override;
+};
+
+class XDSMethod : public DiscoveryMethod {
+public:
+  XDSMethod(Server::Configuration::ServerFactoryContext& factory_context)
+      : metadata_provider_(Extensions::Common::WorkloadDiscovery::GetProvider(factory_context)) {}
+  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
+                                          Http::HeaderMap&) const override;
+
+private:
+  Extensions::Common::WorkloadDiscovery::WorkloadMetadataProviderSharedPtr metadata_provider_;
+};
+
+class MXMethod : public DiscoveryMethod {
+public:
+  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
+                                          Http::HeaderMap&) const override;
+
+private:
+  absl::optional<PeerInfo> lookup(absl::string_view id, absl::string_view value) const;
+  mutable absl::flat_hash_map<std::string, std::string> cache_;
+  const int64_t max_peer_cache_size_{500};
+};
+
+// Base class for the propagation methods.
+class PropagationMethod {
+public:
+  virtual ~PropagationMethod() = default;
+  virtual void inject(Http::HeaderMap&) const PURE;
+};
+
+using PropagationMethodPtr = std::unique_ptr<PropagationMethod>;
+
+class MXPropagationMethod : public PropagationMethod {
+public:
+  MXPropagationMethod(Server::Configuration::ServerFactoryContext& factory_context);
+  void inject(Http::HeaderMap&) const override;
+
+private:
+  const std::string id_;
+  std::string value_;
+};
+
+class FilterConfig {
+public:
+  FilterConfig(const io::istio::http::connect_baggage::Config&,
+               Server::Configuration::FactoryContext&);
+  void discoverDownstream(StreamInfo::StreamInfo&, Http::RequestHeaderMap&) const;
+  void discoverUpstream(StreamInfo::StreamInfo&, Http::ResponseHeaderMap&) const;
+  void injectDownstream(Http::ResponseHeaderMap&) const;
+  void injectUpstream(Http::RequestHeaderMap&) const;
+
+private:
+  std::vector<DiscoveryMethodPtr> buildDiscoveryMethods(
+      const Protobuf::RepeatedPtrField<io::istio::http::connect_baggage::Config::DiscoveryMethod>&,
+      Server::Configuration::FactoryContext&) const;
+  std::vector<PropagationMethodPtr>
+  buildPropagationMethods(const Protobuf::RepeatedPtrField<
+                              io::istio::http::connect_baggage::Config::PropagationMethod>&,
+                          Server::Configuration::FactoryContext&) const;
+  StreamInfo::StreamSharingMayImpactPooling sharedWithUpstream() const {
+    return shared_with_upstream_
+               ? StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce
+               : StreamInfo::StreamSharingMayImpactPooling::None;
+  }
+  void setFilterState(StreamInfo::StreamInfo&, bool downstream, const std::string& value) const;
+  const bool shared_with_upstream_;
+  const std::vector<DiscoveryMethodPtr> downstream_discovery_;
+  const std::vector<DiscoveryMethodPtr> upstream_discovery_;
+  const std::vector<PropagationMethodPtr> downstream_propagation_;
+  const std::vector<PropagationMethodPtr> upstream_propagation_;
+};
+
+using FilterConfigSharedPtr = std::shared_ptr<FilterConfig>;
+
 class Filter : public Http::PassThroughFilter {
 public:
+  Filter(const FilterConfigSharedPtr& config) : config_(config) {}
   Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap&, bool) override;
+  Http::FilterHeadersStatus encodeHeaders(Http::ResponseHeaderMap&, bool) override;
+
+private:
+  FilterConfigSharedPtr config_;
 };
 
 class FilterConfigFactory : public Common::FactoryBase<io::istio::http::connect_baggage::Config> {
