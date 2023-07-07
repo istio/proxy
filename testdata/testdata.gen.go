@@ -1,6 +1,7 @@
 // Code generated for package testdata by go-bindata DO NOT EDIT. (@generated)
 // sources:
 // bootstrap/client.yaml.tmpl
+// bootstrap/otel_stats.yaml.tmpl
 // bootstrap/server.yaml.tmpl
 // bootstrap/stats.yaml.tmpl
 // listener/client.yaml.tmpl
@@ -149,6 +150,35 @@ func bootstrapClientYamlTmpl() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "bootstrap/client.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _bootstrapOtel_statsYamlTmpl = []byte(`stats_sinks:
+- name: otel
+  typed_config:
+    "@type": type.googleapis.com/envoy.extensions.stat_sinks.open_telemetry.v3.SinkConfig
+    grpc_service:
+      envoy_grpc:
+        cluster_name: otel
+stats_config:
+  stats_matcher:
+    inclusion_list:
+      patterns:
+      - prefix: "istiocustom."
+`)
+
+func bootstrapOtel_statsYamlTmplBytes() ([]byte, error) {
+	return _bootstrapOtel_statsYamlTmpl, nil
+}
+
+func bootstrapOtel_statsYamlTmpl() (*asset, error) {
+	bytes, err := bootstrapOtel_statsYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "bootstrap/otel_stats.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -392,6 +422,7 @@ filter_chains:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
       stat_prefix: client
+{{ .Vars.ClientHTTPAccessLogs | fill | indent 6 }}
       http_filters:
 {{ .Vars.ClientHTTPFilters | fill | indent 6 }}
       - name: envoy.filters.http.router
@@ -548,6 +579,7 @@ filter_chains:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
       codec_type: AUTO
       stat_prefix: server
+{{ .Vars.ServerHTTPAccessLogs | fill | indent 6 }}
       http_filters:
 {{ .Vars.ServerHTTPFilters | fill | indent 6 }}
       - name: envoy.filters.http.router
@@ -877,6 +909,7 @@ func AssetNames() []string {
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
 	"bootstrap/client.yaml.tmpl":            bootstrapClientYamlTmpl,
+	"bootstrap/otel_stats.yaml.tmpl":        bootstrapOtel_statsYamlTmpl,
 	"bootstrap/server.yaml.tmpl":            bootstrapServerYamlTmpl,
 	"bootstrap/stats.yaml.tmpl":             bootstrapStatsYamlTmpl,
 	"listener/client.yaml.tmpl":             listenerClientYamlTmpl,
@@ -931,9 +964,10 @@ type bintree struct {
 
 var _bintree = &bintree{nil, map[string]*bintree{
 	"bootstrap": &bintree{nil, map[string]*bintree{
-		"client.yaml.tmpl": &bintree{bootstrapClientYamlTmpl, map[string]*bintree{}},
-		"server.yaml.tmpl": &bintree{bootstrapServerYamlTmpl, map[string]*bintree{}},
-		"stats.yaml.tmpl":  &bintree{bootstrapStatsYamlTmpl, map[string]*bintree{}},
+		"client.yaml.tmpl":     &bintree{bootstrapClientYamlTmpl, map[string]*bintree{}},
+		"otel_stats.yaml.tmpl": &bintree{bootstrapOtel_statsYamlTmpl, map[string]*bintree{}},
+		"server.yaml.tmpl":     &bintree{bootstrapServerYamlTmpl, map[string]*bintree{}},
+		"stats.yaml.tmpl":      &bintree{bootstrapStatsYamlTmpl, map[string]*bintree{}},
 	}},
 	"listener": &bintree{nil, map[string]*bintree{
 		"client.yaml.tmpl":             &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
