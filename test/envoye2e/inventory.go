@@ -89,6 +89,7 @@ func init() {
 			"TestStatsExpiry",
 			"TestTCPMetadataExchange",
 			"TestTCPMetadataExchangeNoAlpn",
+			"TestOtelPayload",
 		},
 	}
 }
