@@ -381,7 +381,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   const auto status = JsonStringToMessage(configuration, &config_, json_options);
   if (!status.ok()) {
     logWarn("Cannot parse Stackdriver plugin configuration JSON string " + configuration + ", " +
-            status.message().ToString());
+            std::string(status.message()));
     return false;
   }
   local_node_info_ = getLocalNodeMetadata();
