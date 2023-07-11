@@ -24,6 +24,7 @@
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/message_differencer.h"
 #include "google/protobuf/util/time_util.h"
+#include "test/test_common/status_utility.h"
 #include "gtest/gtest.h"
 
 namespace Extensions {
@@ -301,7 +302,9 @@ expectedRequest(int log_entry_count, bool for_audit = false, bool use_error_log 
   google::logging::v2::WriteLogEntriesRequest req;
   google::protobuf::util::JsonParseOptions options;
   std::string non_audit_log = use_error_log ? write_error_log_request_json : write_log_request_json;
-  JsonStringToMessage((for_audit ? write_audit_request_json : non_audit_log), &req, options);
+  const auto status =
+      JsonStringToMessage((for_audit ? write_audit_request_json : non_audit_log), &req, options);
+  EXPECT_OK(status);
   for (int i = 1; i < log_entry_count; i++) {
     auto* new_entry = req.mutable_entries()->Add();
     new_entry->CopyFrom(req.entries()[0]);

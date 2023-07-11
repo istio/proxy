@@ -22,6 +22,7 @@
 #include "source/common/common/base64.h"
 #include "source/common/stream_info/filter_state_impl.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
+#include "test/test_common/status_utility.h"
 
 // WASM_PROLOG
 #ifdef NULL_PLUGIN
@@ -78,7 +79,8 @@ static const std::string& getData(Envoy::StreamInfo::FilterStateImpl& filter_sta
 static void BM_ReadFlatBuffer(benchmark::State& state) {
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct, json_parse_options);
+  ASSERT_OK(
+      JsonStringToMessage(std::string(node_metadata_json), &metadata_struct, json_parse_options));
   auto out = extractNodeFlatBufferFromStruct(metadata_struct);
 
   Envoy::StreamInfo::FilterStateImpl filter_state{
@@ -101,7 +103,8 @@ BENCHMARK(BM_ReadFlatBuffer);
 static void BM_WriteRawBytes(benchmark::State& state) {
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct, json_parse_options);
+  ASSERT_OK(
+      JsonStringToMessage(std::string(node_metadata_json), &metadata_struct, json_parse_options));
   auto bytes = metadata_struct.SerializeAsString();
   Envoy::StreamInfo::FilterStateImpl filter_state{
       Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
@@ -116,7 +119,8 @@ BENCHMARK(BM_WriteRawBytes);
 static void BM_WriteFlatBufferWithCache(benchmark::State& state) {
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_metadata_json), &metadata_struct, json_parse_options);
+  ASSERT_OK(
+      JsonStringToMessage(std::string(node_metadata_json), &metadata_struct, json_parse_options));
   auto bytes = metadata_struct.SerializeAsString();
   Envoy::StreamInfo::FilterStateImpl filter_state{
       Envoy::StreamInfo::FilterState::LifeSpan::TopSpan};
@@ -168,7 +172,8 @@ static void BM_DecodeFlatBuffer(benchmark::State& state) {
   // Construct a header from sample value.
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_flatbuffer_json), &metadata_struct, json_parse_options);
+  ASSERT_OK(
+      JsonStringToMessage(std::string(node_flatbuffer_json), &metadata_struct, json_parse_options));
   std::string metadata_bytes;
   ::Wasm::Common::serializeToStringDeterministic(metadata_struct, &metadata_bytes);
   const std::string header_value =
@@ -191,7 +196,8 @@ static void BM_DecodeBaggage(benchmark::State& state) {
   // Construct a header from sample value.
   google::protobuf::Struct metadata_struct;
   JsonParseOptions json_parse_options;
-  JsonStringToMessage(std::string(node_flatbuffer_json), &metadata_struct, json_parse_options);
+  ASSERT_OK(
+      JsonStringToMessage(std::string(node_flatbuffer_json), &metadata_struct, json_parse_options));
   auto fb = ::Wasm::Common::extractNodeFlatBufferFromStruct(metadata_struct);
   const auto& node = *flatbuffers::GetRoot<Wasm::Common::FlatNode>(fb.data());
   const std::string baggage = Istio::Common::convertFlatNodeToWorkloadMetadata(node).baggage();

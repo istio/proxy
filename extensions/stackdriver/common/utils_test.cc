@@ -19,6 +19,7 @@
 #include "gmock/gmock.h"
 #include "google/protobuf/util/json_util.h"
 #include "google/protobuf/util/message_differencer.h"
+#include "test/test_common/status_utility.h"
 #include "gtest/gtest.h"
 
 namespace Extensions {
@@ -35,7 +36,7 @@ TEST(UtilsTest, TestEnvoyGrpcInsecure) {
         }
     })";
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service, options);
+  ASSERT_OK(JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service, options));
 
   StackdriverStubOption opt;
   opt.insecure_endpoint = "test";
@@ -73,7 +74,7 @@ TEST(UtilsTest, TestEnvoyGrpcSTS) {
         }
     })";
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service, options);
+  ASSERT_OK(JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service, options));
 
   StackdriverStubOption opt;
   opt.secure_endpoint = "secure";
@@ -101,7 +102,7 @@ TEST(UtilsTest, TestEnvoyGrpcDefaultCredential) {
         }
     })";
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service, options);
+  ASSERT_OK(JsonStringToMessage(envoy_google_grpc_json, &expected_envoy_grpc_service, options));
 
   StackdriverStubOption opt;
   opt.secure_endpoint = "secure";

@@ -17,7 +17,6 @@
 
 #include "extensions/common/node_info_generated.h"
 #include "google/protobuf/struct.pb.h"
-#include "google/protobuf/stubs/status.h"
 #include "google/protobuf/text_format.h"
 #include "google/protobuf/util/json_util.h"
 #include "gtest/gtest.h"

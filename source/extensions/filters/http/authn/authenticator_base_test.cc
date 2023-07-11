@@ -24,6 +24,7 @@
 #include "source/extensions/filters/http/authn/test_utils.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/ssl/mocks.h"
+#include "test/test_common/status_utility.h"
 
 using google::protobuf::util::MessageDifferencer;
 using istio::authn::Payload;
@@ -149,7 +150,7 @@ TEST_P(ValidateX509Test, SslConnectionWithPeerCert) {
 TEST_P(ValidateX509Test, SslConnectionWithCertsSkipTrustDomainValidation) {
   // skip trust domain validation.
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage("{ skip_validate_trust_domain: true }", &filter_config_, options);
+  ASSERT_OK(JsonStringToMessage("{ skip_validate_trust_domain: true }", &filter_config_, options));
 
   auto ssl = std::make_shared<NiceMock<Ssl::MockConnectionInfo>>();
   ON_CALL(*ssl, peerCertificatePresented()).WillByDefault(Return(true));
@@ -195,7 +196,7 @@ TEST_P(ValidateX509Test, SslConnectionWithSpiffeCertsDifferentTrustDomain) {
 TEST_P(ValidateX509Test, SslConnectionWithPeerMalformedSpiffeCert) {
   // skip trust domain validation.
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage("{ skip_validate_trust_domain: true }", &filter_config_, options);
+  ASSERT_OK(JsonStringToMessage("{ skip_validate_trust_domain: true }", &filter_config_, options));
 
   auto ssl = std::make_shared<NiceMock<Ssl::MockConnectionInfo>>();
   ON_CALL(*ssl, peerCertificatePresented()).WillByDefault(Return(true));
@@ -251,7 +252,7 @@ TEST_F(ValidateJwtTest, NoIstioAuthnConfig) {
 TEST_F(ValidateJwtTest, NoIssuer) {
   // no issuer in jwt
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(
+  ASSERT_OK(JsonStringToMessage(
       R"({
               "jwt_output_payload_locations":
               {
@@ -259,7 +260,7 @@ TEST_F(ValidateJwtTest, NoIssuer) {
               }
            }
         )",
-      &filter_config_, options);
+      &filter_config_, options));
 
   // When there is no issuer in the JWT config, validateJwt() should return
   // nullptr and failure.
@@ -270,14 +271,14 @@ TEST_F(ValidateJwtTest, NoIssuer) {
 TEST_F(ValidateJwtTest, OutputPayloadLocationNotDefine) {
   jwt_.set_issuer("issuer@foo.com");
   google::protobuf::util::JsonParseOptions options;
-  JsonStringToMessage(
+  ASSERT_OK(JsonStringToMessage(
       R"({
               "jwt_output_payload_locations":
               {
               }
            }
         )",
-      &filter_config_, options);
+      &filter_config_, options));
 
   // authenticator has empty jwt_output_payload_locations in Istio authn config
   // When there is no matching jwt_output_payload_locations for the issuer in
@@ -322,8 +323,8 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailableWithBadData) {
 TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
   jwt_.set_issuer("issuer@foo.com");
   google::protobuf::Struct header_payload;
-  JsonStringToMessage(kSecIstioAuthUserinfoHeaderValue, &header_payload,
-                      google::protobuf::util::JsonParseOptions{});
+  ASSERT_OK(JsonStringToMessage(kSecIstioAuthUserinfoHeaderValue, &header_payload,
+                                google::protobuf::util::JsonParseOptions{}));
   google::protobuf::Struct payload;
   (*payload.mutable_fields())["issuer@foo.com"].mutable_struct_value()->CopyFrom(header_payload);
   (*dynamic_metadata_
@@ -331,7 +332,7 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
       .MergeFrom(payload);
 
   Payload expected_payload;
-  JsonStringToMessage(
+  ASSERT_OK(JsonStringToMessage(
       R"({
              "jwt": {
                "user": "issuer@foo.com/sub@foo.com",
@@ -347,7 +348,7 @@ TEST_F(ValidateJwtTest, JwtPayloadAvailable) {
              }
            }
         )",
-      &expected_payload, google::protobuf::util::JsonParseOptions{});
+      &expected_payload, google::protobuf::util::JsonParseOptions{}));
 
   EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
   MessageDifferencer diff;
@@ -362,8 +363,8 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedToken) {
   jwt_.add_jwt_headers(kExchangedTokenHeaderName);
 
   google::protobuf::Struct exchange_token_payload;
-  JsonStringToMessage(kExchangedTokenPayload, &exchange_token_payload,
-                      google::protobuf::util::JsonParseOptions{});
+  ASSERT_OK(JsonStringToMessage(kExchangedTokenPayload, &exchange_token_payload,
+                                google::protobuf::util::JsonParseOptions{}));
   google::protobuf::Struct payload;
   (*payload.mutable_fields())["token-service"].mutable_struct_value()->CopyFrom(
       exchange_token_payload);
@@ -372,7 +373,7 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedToken) {
       .MergeFrom(payload);
 
   Payload expected_payload;
-  JsonStringToMessage(
+  ASSERT_OK(JsonStringToMessage(
       R"({
              "jwt": {
                "user": "https://accounts.example.com/example-subject",
@@ -385,7 +386,7 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedToken) {
              }
            }
         )",
-      &expected_payload, google::protobuf::util::JsonParseOptions{});
+      &expected_payload, google::protobuf::util::JsonParseOptions{}));
 
   EXPECT_TRUE(authenticator_.validateJwt(jwt_, payload_));
   // On different platforms, the order of fields in raw_claims may be
@@ -405,8 +406,8 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenMissing) {
   jwt_.add_jwt_headers(kExchangedTokenHeaderName);
 
   google::protobuf::Struct exchange_token_payload;
-  JsonStringToMessage(kExchangedTokenPayloadNoOriginalClaims, &exchange_token_payload,
-                      google::protobuf::util::JsonParseOptions{});
+  ASSERT_OK(JsonStringToMessage(kExchangedTokenPayloadNoOriginalClaims, &exchange_token_payload,
+                                google::protobuf::util::JsonParseOptions{}));
   google::protobuf::Struct payload;
   (*payload.mutable_fields())["token-service"].mutable_struct_value()->CopyFrom(
       exchange_token_payload);
@@ -423,8 +424,8 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenNotInIntendedHeader) {
   jwt_.set_issuer("token-service");
 
   google::protobuf::Struct exchange_token_payload;
-  JsonStringToMessage(kExchangedTokenPayload, &exchange_token_payload,
-                      google::protobuf::util::JsonParseOptions{});
+  ASSERT_OK(JsonStringToMessage(kExchangedTokenPayload, &exchange_token_payload,
+                                google::protobuf::util::JsonParseOptions{}));
   google::protobuf::Struct payload;
   (*payload.mutable_fields())["token-service"].mutable_struct_value()->CopyFrom(
       exchange_token_payload);
@@ -433,7 +434,7 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenNotInIntendedHeader) {
       .MergeFrom(payload);
 
   Payload expected_payload;
-  JsonStringToMessage(
+  ASSERT_OK(JsonStringToMessage(
       R"({
              "jwt": {
                "user": "token-service/subject",
@@ -452,7 +453,7 @@ TEST_F(ValidateJwtTest, OriginalPayloadOfExchangedTokenNotInIntendedHeader) {
              }
            }
         )",
-      &expected_payload, google::protobuf::util::JsonParseOptions{});
+      &expected_payload, google::protobuf::util::JsonParseOptions{}));
 
   // When an exchanged token is not in the intended header, the token
   // is treated as a normal token with its claims extracted.
