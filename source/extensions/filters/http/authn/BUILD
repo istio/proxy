@@ -104,6 +104,7 @@ envoy_cc_test(
         "//source/extensions/common:filter_names_lib",
         "@envoy//test/mocks/network:network_mocks",
         "@envoy//test/mocks/ssl:ssl_mocks",
+        "@envoy//test/test_common:status_utility_lib",
         "@envoy//test/test_common:utility_lib",
     ],
 )

@@ -144,6 +144,7 @@ envoy_extension_cc_benchmark_binary(
         ":proto_util",
         "@envoy//source/common/stream_info:filter_state_lib",
         "@envoy//source/extensions/filters/common/expr:cel_state_lib",
+        "@envoy//test/test_common:status_utility_lib",
     ],
 )
 
