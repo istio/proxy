@@ -106,7 +106,11 @@ bool FilterContext::getJwtPayloadFromEnvoyJwtFilter(const std::string& issuer,
   // TODO (pitlv2109): Return protobuf Struct instead of string, once Istio jwt
   // filter is removed. Also need to change how Istio authn filter processes the
   // jwt payload.
-  Protobuf::util::MessageToJsonString(entry_it->second.struct_value(), payload);
+  const auto convert_status =
+      Protobuf::util::MessageToJsonString(entry_it->second.struct_value(), payload);
+  if (!convert_status.ok()) {
+    return false;
+  }
   return true;
 }
 

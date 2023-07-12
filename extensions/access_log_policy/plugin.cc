@@ -36,7 +36,6 @@ namespace AccessLogPolicy {
 namespace Plugin {
 
 using google::protobuf::util::JsonParseOptions;
-using google::protobuf::util::Status;
 using proxy_wasm::WasmHeaderMapType;
 
 PROXY_WASM_NULL_PLUGIN_REGISTRY;
@@ -83,7 +82,7 @@ bool PluginRootContext::configure(size_t configuration_size) {
   const auto status = JsonStringToMessage(configuration, &config_, json_options);
   if (!status.ok()) {
     logWarn("Cannot parse AccessLog plugin configuration JSON string " + configuration + ", " +
-            status.message().ToString());
+            std::string(status.message()));
     return false;
   }
 

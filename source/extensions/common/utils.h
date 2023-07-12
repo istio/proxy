@@ -53,8 +53,7 @@ bool IsMutualTLS(const Network::Connection* connection);
 bool GetRequestedServerName(const Network::Connection* connection, std::string* name);
 
 // Parse JSON string into message.
-::google::protobuf::util::Status ParseJsonMessage(const std::string& json,
-                                                  ::google::protobuf::Message* output);
+absl::Status ParseJsonMessage(const std::string& json, ::google::protobuf::Message* output);
 
 // Get the namespace part of Istio certificate URI.
 absl::optional<absl::string_view> GetNamespace(absl::string_view principal);

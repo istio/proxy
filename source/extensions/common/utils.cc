@@ -19,7 +19,6 @@
 
 using ::google::protobuf::Message;
 using ::google::protobuf::Struct;
-using ::google::protobuf::util::Status;
 
 namespace Envoy {
 namespace Utils {
@@ -179,7 +178,7 @@ bool GetRequestedServerName(const Network::Connection* connection, std::string* 
   return false;
 }
 
-Status ParseJsonMessage(const std::string& json, Message* output) {
+absl::Status ParseJsonMessage(const std::string& json, Message* output) {
   ::google::protobuf::util::JsonParseOptions options;
   options.ignore_unknown_fields = true;
   return ::google::protobuf::util::JsonStringToMessage(json, output, options);
