@@ -16,56 +16,43 @@
 
 #include "source/extensions/filters/http/common/factory_base.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
-#include "source/extensions/filters/http/connect_baggage/config.pb.h"
-#include "source/extensions/filters/http/connect_baggage/config.pb.validate.h"
+#include "source/extensions/filters/http/peer_metadata/config.pb.h"
+#include "source/extensions/filters/http/peer_metadata/config.pb.validate.h"
 #include "source/extensions/common/workload_discovery/api.h"
+#include "source/common/singleton/const_singleton.h"
 #include "extensions/common/context.h"
 
 namespace Envoy {
 namespace Extensions {
 namespace HttpFilters {
-namespace ConnectBaggage {
+namespace PeerMetadata {
+
+constexpr absl::string_view WasmDownstreamPeer = "wasm.downstream_peer";
+constexpr absl::string_view WasmDownstreamPeerID = "wasm.downstream_peer_id";
+constexpr absl::string_view WasmUpstreamPeer = "wasm.upstream_peer";
+constexpr absl::string_view WasmUpstreamPeerID = "wasm.upstream_peer_id";
+
+struct HeaderValues {
+  const Http::LowerCaseString Baggage{"baggage"};
+  const Http::LowerCaseString ExchangeMetadataHeader{"x-envoy-peer-metadata"};
+  const Http::LowerCaseString ExchangeMetadataHeaderId{"x-envoy-peer-metadata-id"};
+};
+
+using Headers = ConstSingleton<HeaderValues>;
 
 // Peer info in the flatbuffers format.
 using PeerInfo = std::string;
 
-// Base class for the discovery methods.
+// Base class for the discovery methods. First derivation wins but all methods perform removal.
 class DiscoveryMethod {
 public:
   virtual ~DiscoveryMethod() = default;
   virtual absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
                                                   Http::HeaderMap&) const PURE;
+  virtual void remove(Http::HeaderMap&) const {}
 };
 
 using DiscoveryMethodPtr = std::unique_ptr<DiscoveryMethod>;
-
-class BaggageMethod : public DiscoveryMethod {
-public:
-  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
-                                          Http::HeaderMap&) const override;
-};
-
-class XDSMethod : public DiscoveryMethod {
-public:
-  XDSMethod(Server::Configuration::ServerFactoryContext& factory_context)
-      : metadata_provider_(Extensions::Common::WorkloadDiscovery::GetProvider(factory_context)) {}
-  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
-                                          Http::HeaderMap&) const override;
-
-private:
-  Extensions::Common::WorkloadDiscovery::WorkloadMetadataProviderSharedPtr metadata_provider_;
-};
-
-class MXMethod : public DiscoveryMethod {
-public:
-  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
-                                          Http::HeaderMap&) const override;
-
-private:
-  absl::optional<PeerInfo> lookup(absl::string_view id, absl::string_view value) const;
-  mutable absl::flat_hash_map<std::string, std::string> cache_;
-  const int64_t max_peer_cache_size_{500};
-};
 
 // Base class for the propagation methods.
 class PropagationMethod {
@@ -88,7 +75,7 @@ private:
 
 class FilterConfig {
 public:
-  FilterConfig(const io::istio::http::connect_baggage::Config&,
+  FilterConfig(const io::istio::http::peer_metadata::Config&,
                Server::Configuration::FactoryContext&);
   void discoverDownstream(StreamInfo::StreamInfo&, Http::RequestHeaderMap&) const;
   void discoverUpstream(StreamInfo::StreamInfo&, Http::ResponseHeaderMap&) const;
@@ -97,17 +84,19 @@ public:
 
 private:
   std::vector<DiscoveryMethodPtr> buildDiscoveryMethods(
-      const Protobuf::RepeatedPtrField<io::istio::http::connect_baggage::Config::DiscoveryMethod>&,
+      const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::DiscoveryMethod>&,
+      bool downstream,
       Server::Configuration::FactoryContext&) const;
   std::vector<PropagationMethodPtr>
   buildPropagationMethods(const Protobuf::RepeatedPtrField<
-                              io::istio::http::connect_baggage::Config::PropagationMethod>&,
+                              io::istio::http::peer_metadata::Config::PropagationMethod>&,
                           Server::Configuration::FactoryContext&) const;
   StreamInfo::StreamSharingMayImpactPooling sharedWithUpstream() const {
     return shared_with_upstream_
                ? StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce
                : StreamInfo::StreamSharingMayImpactPooling::None;
   }
+  void discover(StreamInfo::StreamInfo&, bool downstream, Http::HeaderMap&) const;
   void setFilterState(StreamInfo::StreamInfo&, bool downstream, const std::string& value) const;
   const bool shared_with_upstream_;
   const std::vector<DiscoveryMethodPtr> downstream_discovery_;
@@ -128,18 +117,18 @@ private:
   FilterConfigSharedPtr config_;
 };
 
-class FilterConfigFactory : public Common::FactoryBase<io::istio::http::connect_baggage::Config> {
+class FilterConfigFactory : public Common::FactoryBase<io::istio::http::peer_metadata::Config> {
 public:
-  FilterConfigFactory() : FactoryBase("envoy.filters.http.connect_baggage") {}
+  FilterConfigFactory() : FactoryBase("envoy.filters.http.peer_metadata") {}
 
 private:
   Http::FilterFactoryCb
-  createFilterFactoryFromProtoTyped(const io::istio::http::connect_baggage::Config&,
+  createFilterFactoryFromProtoTyped(const io::istio::http::peer_metadata::Config&,
                                     const std::string&,
                                     Server::Configuration::FactoryContext&) override;
 };
 
-} // namespace ConnectBaggage
+} // namespace PeerMetadata
 } // namespace HttpFilters
 } // namespace Extensions
 } // namespace Envoy

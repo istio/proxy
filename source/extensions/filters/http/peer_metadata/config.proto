@@ -15,7 +15,7 @@
 
 syntax = "proto3";
 
-package io.istio.http.connect_baggage;
+package io.istio.http.peer_metadata;
 
 // Peer metadata provider filter. This filter encapsulates the discovery of the
 // peer telemetry attributes for consumption by the telemetry filters.
@@ -25,7 +25,13 @@ message Config {
   }
 
   // Use workload metadata xDS. Requires that the bootstrap extension is enabled.
-  // By default, uses the remote address as the lookup key.
+  // For downstream discovery, uses the remote address as the lookup key.
+  // For upstream discovery:
+  //
+  // * If the upstream host address is an IP, uses it as the lookup key;
+  //
+  // * If the upstream host address is internal, uses the
+  // "filter_metadata.tunnel.address" dynamic metadata value.
   message WorkloadDiscovery {
   }
 

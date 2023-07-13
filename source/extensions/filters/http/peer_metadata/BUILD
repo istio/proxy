@@ -18,6 +18,7 @@
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_extension",
+    "envoy_cc_test",
     "envoy_extension_package",
     "envoy_proto_library",
 )
@@ -25,7 +26,7 @@ load(
 envoy_extension_package()
 
 envoy_cc_extension(
-    name = "connect_baggage",
+    name = "filter_lib",
     srcs = ["filter.cc"],
     hdrs = ["filter.h"],
     repository = "@envoy",
@@ -40,6 +41,7 @@ envoy_cc_extension(
         "@envoy//source/common/common:hash_lib",
         "@envoy//source/common/http:header_utility_lib",
         "@envoy//source/common/http:utility_lib",
+        "@envoy//source/common/network:utility_lib",
         "@envoy//source/extensions/filters/common/expr:cel_state_lib",
         "@envoy//source/extensions/filters/http/common:factory_base_lib",
         "@envoy//source/extensions/filters/http/common:pass_through_filter_lib",
@@ -49,4 +51,18 @@ envoy_cc_extension(
 envoy_proto_library(
     name = "config",
     srcs = ["config.proto"],
+)
+
+envoy_cc_test(
+    name = "filter_test",
+    srcs = ["filter_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":filter_lib",
+        "@envoy//test/mocks/stream_info:stream_info_mocks",
+        "@envoy//test/mocks/server:factory_context_mocks",
+        "@envoy//test/common/stream_info:test_util",
+        "@envoy//source/common/network:address_lib",
+        "@envoy//test/test_common:logging_lib",
+    ],
 )
