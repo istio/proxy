@@ -29,7 +29,6 @@
 #include "source/common/network/utility.h"
 #include "source/common/stream_info/utility.h"
 #include "source/extensions/common/utils.h"
-#include "source/extensions/common/workload_discovery/api.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/common/expr/context.h"
 #include "source/extensions/filters/common/expr/evaluator.h"
@@ -1088,10 +1087,11 @@ private:
                                                      : context_.unknown_});
       switch (config_->reporter()) {
       case Reporter::ServerGateway: {
-        std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer =
-            config_->metadata_provider_
-                ? config_->metadata_provider_->GetMetadata(extractEndpointAddress(info))
-                : std::nullopt;
+        std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer;
+        const auto* endpoint_object = peerInfo(Reporter::ClientSidecar, filter_state);
+        if (endpoint_object) {
+          endpoint_peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*endpoint_object));
+        }
         tags_.push_back(
             {context_.destination_workload_,
              endpoint_peer ? pool_.add(endpoint_peer->workload_name_) : context_.unknown_});

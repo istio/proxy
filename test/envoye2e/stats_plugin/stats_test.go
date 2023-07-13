@@ -650,6 +650,7 @@ func TestStatsServerWaypointProxy(t *testing.T) {
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_waypoint_proxy_node_metadata.json.tmpl")
 	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_native_inbound.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/mx_waypoint.yaml.tmpl") + "\n" +
 		driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
 	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_native_outbound.yaml.tmpl")
 
@@ -694,7 +695,8 @@ func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 	params.Vars["ServerClusterName"] = "internal_outbound"
 	params.Vars["ServerInternalAddress"] = "internal_inbound"
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_waypoint_proxy_node_metadata.json.tmpl")
-	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
+	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_waypoint.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
 	params.Vars["EnableTunnelEndpointMetadata"] = "true"
 
 	if err := (&driver.Scenario{
