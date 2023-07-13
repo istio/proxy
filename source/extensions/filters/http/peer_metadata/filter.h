@@ -85,12 +85,10 @@ public:
 private:
   std::vector<DiscoveryMethodPtr> buildDiscoveryMethods(
       const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::DiscoveryMethod>&,
-      bool downstream,
+      bool downstream, Server::Configuration::FactoryContext&) const;
+  std::vector<PropagationMethodPtr> buildPropagationMethods(
+      const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::PropagationMethod>&,
       Server::Configuration::FactoryContext&) const;
-  std::vector<PropagationMethodPtr>
-  buildPropagationMethods(const Protobuf::RepeatedPtrField<
-                              io::istio::http::peer_metadata::Config::PropagationMethod>&,
-                          Server::Configuration::FactoryContext&) const;
   StreamInfo::StreamSharingMayImpactPooling sharedWithUpstream() const {
     return shared_with_upstream_
                ? StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce

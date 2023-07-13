@@ -63,7 +63,8 @@ public:
 class XDSMethod : public DiscoveryMethod {
 public:
   XDSMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context)
-      : downstream_(downstream), metadata_provider_(Extensions::Common::WorkloadDiscovery::GetProvider(factory_context)) {}
+      : downstream_(downstream),
+        metadata_provider_(Extensions::Common::WorkloadDiscovery::GetProvider(factory_context)) {}
   absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
                                           Http::HeaderMap&) const override;
 
@@ -120,7 +121,7 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
             if (it != filter_metadata.end()) {
               const auto& destination_it = it->second.fields().find("destination");
               if (destination_it != it->second.fields().end()) {
-                peer_address =  Network::Utility::parseInternetAddressAndPortNoThrow(
+                peer_address = Network::Utility::parseInternetAddressAndPortNoThrow(
                     destination_it->second.string_value(), /*v6only=*/false);
               }
             }
@@ -205,8 +206,10 @@ void MXPropagationMethod::inject(Http::HeaderMap& headers) const {
 FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
                            Server::Configuration::FactoryContext& factory_context)
     : shared_with_upstream_(config.shared_with_upstream()),
-      downstream_discovery_(buildDiscoveryMethods(config.downstream_discovery(), true, factory_context)),
-      upstream_discovery_(buildDiscoveryMethods(config.upstream_discovery(), false, factory_context)),
+      downstream_discovery_(
+          buildDiscoveryMethods(config.downstream_discovery(), true, factory_context)),
+      upstream_discovery_(
+          buildDiscoveryMethods(config.upstream_discovery(), false, factory_context)),
       downstream_propagation_(
           buildPropagationMethods(config.downstream_propagation(), factory_context)),
       upstream_propagation_(
@@ -215,8 +218,7 @@ FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
 std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
     const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::DiscoveryMethod>&
         config,
-    bool downstream,
-    Server::Configuration::FactoryContext& factory_context) const {
+    bool downstream, Server::Configuration::FactoryContext& factory_context) const {
   std::vector<DiscoveryMethodPtr> methods;
   methods.reserve(config.size());
   for (const auto& method : config) {
@@ -226,7 +228,8 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
       break;
     case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::
         kWorkloadDiscovery:
-      methods.push_back(std::make_unique<XDSMethod>(downstream, factory_context.getServerFactoryContext()));
+      methods.push_back(
+          std::make_unique<XDSMethod>(downstream, factory_context.getServerFactoryContext()));
       break;
     case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::
         kIstioHeaders:
@@ -269,7 +272,8 @@ void FilterConfig::discoverUpstream(StreamInfo::StreamInfo& info,
   discover(info, false, headers);
 }
 
-void FilterConfig::discover(StreamInfo::StreamInfo& info, bool downstream, Http::HeaderMap& headers) const {
+void FilterConfig::discover(StreamInfo::StreamInfo& info, bool downstream,
+                            Http::HeaderMap& headers) const {
   for (const auto& method : downstream ? downstream_discovery_ : upstream_discovery_) {
     const auto result = method->derivePeerInfo(info, headers);
     if (result) {
@@ -305,7 +309,7 @@ void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
   // presence before emitting any telemetry.
   auto node_id = std::make_unique<Filters::Common::Expr::CelState>(CelPrototypes::get().NodeId);
   node_id->setValue("unknown");
-  info.filterState()->setData(downstream ?  WasmDownstreamPeerID : WasmUpstreamPeerID,
+  info.filterState()->setData(downstream ? WasmDownstreamPeerID : WasmUpstreamPeerID,
                               std::move(node_id), StreamInfo::FilterState::StateType::Mutable,
                               StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());
 }

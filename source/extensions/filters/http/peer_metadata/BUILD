@@ -59,10 +59,10 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":filter_lib",
-        "@envoy//test/mocks/stream_info:stream_info_mocks",
-        "@envoy//test/mocks/server:factory_context_mocks",
-        "@envoy//test/common/stream_info:test_util",
         "@envoy//source/common/network:address_lib",
+        "@envoy//test/common/stream_info:test_util",
+        "@envoy//test/mocks/server:factory_context_mocks",
+        "@envoy//test/mocks/stream_info:stream_info_mocks",
         "@envoy//test/test_common:logging_lib",
     ],
 )
