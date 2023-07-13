@@ -31,7 +31,7 @@ message Config {
   // * If the upstream host address is an IP, uses it as the lookup key;
   //
   // * If the upstream host address is internal, uses the
-  // "filter_metadata.tunnel.address" dynamic metadata value.
+  // "filter_metadata.tunnel.destination" dynamic metadata value.
   message WorkloadDiscovery {
   }
 
