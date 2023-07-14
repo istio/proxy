@@ -25,6 +25,7 @@ import (
 	"cloud.google.com/go/logging/apiv2/loggingpb"
 	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
 	"github.com/google/go-cmp/cmp"
+	metric "google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/testing/protocmp"
 
@@ -83,7 +84,11 @@ func (sd *Stackdriver) Run(p *driver.Params) error {
 						})
 						for _, point := range ts.Points {
 							point.Interval = nil
-							sd.ts[key] += point.Value.GetInt64Value()
+							if ts.MetricKind == metric.MetricDescriptor_DELTA {
+								sd.ts[key] += point.Value.GetInt64Value()
+							} else {
+								sd.ts[key] = point.Value.GetInt64Value()
+							}
 						}
 					} else {
 						log.Printf("skipping metric type %q\n", ts.Metric.Type)
