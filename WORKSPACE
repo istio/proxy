@@ -39,9 +39,9 @@ bind(
 #
 # Note: this is needed by release builder to resolve envoy dep sha to tag.
 # Commit date: 2023-07-13
-ENVOY_SHA = "b1b66e55362453edd79f46069dad09c807fa9f68"
+ENVOY_SHA = "75c3b805d150c9e75fa999c718d95126dd5bbbdc"
 
-ENVOY_SHA256 = "71aaa287d489df05dc69a3f0fb258d055ef59593738e8af2f97aaa566ff6a1ae"
+ENVOY_SHA256 = "5906e03478f0c68f2e7341259f0aa0201d92abb8e1fd5e69abf7fd7b6d3158d1"
 
 ENVOY_ORG = "envoyproxy"
 
