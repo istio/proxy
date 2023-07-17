@@ -167,6 +167,35 @@ TEST_F(AlpnFilterTest, EmptyOverrideAlpn) {
   }
 }
 
+TEST_F(AlpnFilterTest, AlpnOverrideFalse) {
+  NiceMock<StreamInfo::MockStreamInfo> stream_info;
+  NiceMock<StreamInfo::MockUpstreamInfo> upstream_info;
+  Envoy::Upstream::HostDescriptionConstSharedPtr upstream_host; // TODO: generate mock?, remove pointer
+  Envoy::Upstream::MetadataConstSharedPtr host_metadata; // TODO: generate mock?, remove pointer
+  google::protobuf::Map<std::string, google::protobuf::Struct> filter_metadata; // mock, 
+
+  TestUtility::loadFromYaml(R"EOF(
+  filter_metadata:
+    istio:
+      alpn_override: false
+  )EOF",
+                            *filter_metadata);
+
+  ON_CALL(callbacks_, streamInfo()).WillByDefault(ReturnRef(stream_info));
+  ON_CALL(stream_info, upstreamInfo()).WillByDefault(ReturnRef(upstream_info));
+  ON_CALL(upstream_info, upstreamHost()).WillByDefault(ReturnRef(upstream_host));
+  ON_CALL(upstream_host, metadata()).WillByDefault(ReturnRef(host_metadata));
+  ON_CALL(host_metadata, filter_metadata()).WillByDefault(ReturnRef(filter_metadata));
+
+  const AlpnOverrides alpn = {{Http::Protocol::Http10, {"foo", "bar"}},
+                              {Http::Protocol::Http11, {"baz"}}};
+  auto filter = makeAlpnOverrideFilter(alpn);
+
+  EXPECT_CALL(callbacks_, route()).Times(0);
+  EXPECT_EQ(filter->decodeHeaders(headers_, false), Http::FilterHeadersStatus::Continue);
+  }
+}
+
 } // namespace
 } // namespace Alpn
 } // namespace Http
