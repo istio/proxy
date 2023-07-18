@@ -180,7 +180,7 @@ std::string_view toStdStringView(absl::string_view view) {
 }
 } // namespace
 
-flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(const WorkloadMetadataObject& obj) {
+std::string convertWorkloadMetadataToFlatNode(const WorkloadMetadataObject& obj) {
   flatbuffers::FlatBufferBuilder fbb;
 
   flatbuffers::Offset<flatbuffers::String> name, cluster, namespace_, workload_name, owner;
@@ -231,7 +231,8 @@ flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(const WorkloadMeta
   node.add_labels(labels_offset);
   auto data = node.Finish();
   fbb.Finish(data);
-  return fbb.Release();
+  auto fb = fbb.Release();
+  return std::string(reinterpret_cast<const char*>(fb.data()), fb.size());
 }
 
 WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(const Wasm::Common::FlatNode& node) {

@@ -49,10 +49,14 @@ filter_chains:
                 connect_config:
                   {}
       http_filters:
-      - name: connect_baggage
+      - name: peer_metadata 
         typed_config:
           "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: type.googleapis.com/io.istio.http.connect_baggage.Config
+          type_url: type.googleapis.com/io.istio.http.peer_metadata.Config
+          value:
+            downstream_discovery:
+            - baggage: {}
+            shared_with_upstream: true
       - name: envoy.filters.http.router
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

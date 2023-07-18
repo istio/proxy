@@ -29,6 +29,7 @@ namespace Envoy {
 namespace Extensions {
 namespace NetworkFilters {
 namespace IstioAuthn {
+namespace {
 
 TEST(Principal, Basic) {
   const std::string value1 = "spiffe://cluster.local/ns/my-namespace/sa/my-account1";
@@ -129,6 +130,7 @@ TEST_P(IstioAuthnFilterTest, CallbacksWithSslMultipleSAN) {
 INSTANTIATE_TEST_SUITE_P(IstioAuthnFilterTestShared, IstioAuthnFilterTest,
                          testing::Values(true, false));
 
+} // namespace
 } // namespace IstioAuthn
 } // namespace NetworkFilters
 } // namespace Extensions

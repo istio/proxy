@@ -195,7 +195,7 @@ private:
   WorkloadSubscription subscription_;
 };
 
-SINGLETON_MANAGER_REGISTRATION(WorkloadMetadataProvider)
+SINGLETON_MANAGER_REGISTRATION(workload_metadata_provider)
 
 class WorkloadDiscoveryExtension : public Server::BootstrapExtension {
 public:
@@ -206,7 +206,7 @@ public:
   // Server::Configuration::BootstrapExtension
   void onServerInitialized() override {
     provider_ = factory_context_.singletonManager().getTyped<WorkloadMetadataProvider>(
-        SINGLETON_MANAGER_REGISTERED_NAME(WorkloadMetadataProvider), [&] {
+        SINGLETON_MANAGER_REGISTERED_NAME(workload_metadata_provider), [&] {
           return std::make_shared<WorkloadMetadataProviderImpl>(config_.config_source(),
                                                                 factory_context_);
         });
@@ -240,7 +240,7 @@ REGISTER_FACTORY(WorkloadDiscoveryFactory, Server::Configuration::BootstrapExten
 WorkloadMetadataProviderSharedPtr
 GetProvider(Server::Configuration::ServerFactoryContext& context) {
   return context.singletonManager().getTyped<WorkloadMetadataProvider>(
-      SINGLETON_MANAGER_REGISTERED_NAME(WorkloadMetadataProvider));
+      SINGLETON_MANAGER_REGISTERED_NAME(workload_metadata_provider));
 }
 
 } // namespace Envoy::Extensions::Common::WorkloadDiscovery

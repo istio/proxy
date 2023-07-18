@@ -123,9 +123,9 @@ var TestCases = []struct {
 
 func enableStats(t *testing.T, vars map[string]string) {
 	t.Helper()
-	vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
+	vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_native_inbound.yaml.tmpl") + "\n" +
 		driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
-	vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl") + "\n" +
+	vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_native_outbound.yaml.tmpl") + "\n" +
 		driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
 }
 
@@ -494,7 +494,7 @@ func TestStats403Failure(t *testing.T) {
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 			enableStats(t, params.Vars)
-			params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
+			params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_native_inbound.yaml.tmpl") + "\n" +
 				params.LoadTestData("testdata/filters/rbac.yaml.tmpl") + "\n" +
 				driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
 			if err := (&driver.Scenario{
@@ -545,9 +545,9 @@ func TestStatsECDS(t *testing.T) {
 
 			updateExtensions := &driver.UpdateExtensions{
 				Extensions: []string{
-					driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl"),
+					driver.LoadTestData("testdata/filters/mx_native_inbound.yaml.tmpl"),
 					driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl"),
-					driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl"),
+					driver.LoadTestData("testdata/filters/mx_native_outbound.yaml.tmpl"),
 					driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl"),
 				},
 			}
@@ -649,9 +649,10 @@ func TestStatsServerWaypointProxy(t *testing.T) {
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_waypoint_proxy_node_metadata.json.tmpl")
-	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_inbound.yaml.tmpl") + "\n" +
+	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_native_inbound.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/mx_waypoint.yaml.tmpl") + "\n" +
 		driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
-	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_outbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_native_outbound.yaml.tmpl")
 
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
@@ -694,7 +695,8 @@ func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 	params.Vars["ServerClusterName"] = "internal_outbound"
 	params.Vars["ServerInternalAddress"] = "internal_inbound"
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_waypoint_proxy_node_metadata.json.tmpl")
-	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
+	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_waypoint.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
 	params.Vars["EnableTunnelEndpointMetadata"] = "true"
 
 	if err := (&driver.Scenario{

@@ -97,7 +97,7 @@ struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
 };
 
 // Convert metadata object to flatbuffer.
-flatbuffers::DetachedBuffer convertWorkloadMetadataToFlatNode(const WorkloadMetadataObject& obj);
+std::string convertWorkloadMetadataToFlatNode(const WorkloadMetadataObject& obj);
 
 // Convert flatbuffer to metadata object.
 WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(const Wasm::Common::FlatNode& node);

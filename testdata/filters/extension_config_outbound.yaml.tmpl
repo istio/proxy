@@ -9,6 +9,7 @@
             cluster_name: xds_cluster
     type_urls:
     - envoy.extensions.filters.http.wasm.v3.Wasm
+    - io.istio.http.peer_metadata.Config
 - name: stats_outbound{{.N}}
   config_discovery:
     config_source:
