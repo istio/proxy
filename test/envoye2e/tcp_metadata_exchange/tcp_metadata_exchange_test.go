@@ -127,3 +127,52 @@ func TestTCPMetadataExchangeNoAlpn(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTCPMetadataExchangeWithConnectionTermination(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{
+		"DisableDirectResponse": "true",
+		"AlpnProtocol":          "mx-protocol",
+		"StatsConfig":           driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+	}, envoye2e.ProxyE2ETests)
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_stats_network_filter.yaml.tmpl")
+	params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
+	params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
+		params.LoadTestData("testdata/filters/client_stats_network_filter.yaml.tmpl")
+	params.Vars["ClientClusterTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
+	params.Vars["ServerListenerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
+
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			&driver.Update{
+				Node:      "client",
+				Version:   "0",
+				Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_client.yaml.tmpl")},
+				Listeners: []string{params.LoadTestData("testdata/listener/tcp_client.yaml.tmpl")},
+			},
+			&driver.Update{
+				Node:      "server",
+				Version:   "0",
+				Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_server.yaml.tmpl")},
+				Listeners: []string{params.LoadTestData("testdata/listener/tcp_server.yaml.tmpl")},
+			},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.TCPServerAcceptAndClose{},
+			&driver.Repeat{
+				N: 10,
+				Step: &driver.InterceptedTCPConnection{
+					ReadTimeout: 10 * time.Second,
+				},
+			},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				"istio_tcp_connections_opened_total": &driver.ExactStat{Metric: "testdata/metric/tcp_server_connection_open_without_mx.yaml.tmpl"},
+			}},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
