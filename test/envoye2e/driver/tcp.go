@@ -208,7 +208,10 @@ func (t *InterceptedTCPConnection) Run(p *Params) error {
 	defer conn.Close()
 
 	fmt.Fprintf(conn, "some data"+"\n")
-	conn.SetReadDeadline(time.Now().Add(t.ReadTimeout))
+	err = conn.SetReadDeadline(time.Now().Add(t.ReadTimeout))
+	if err != nil {
+		return fmt.Errorf("failed to set read deadline: %v", err)
+	}
 
 	_, err = bufio.NewReader(conn).ReadString('\n')
 	if err != io.EOF {
