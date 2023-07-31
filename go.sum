@@ -18,8 +18,8 @@ github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ3
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
-github.com/envoyproxy/go-control-plane v0.11.2-0.20230720192929-ca30412827b9 h1:gsMB8npuTj1xLdkt0nB1xlWXnKfWw2ZE3LGxQjHQ6Lo=
-github.com/envoyproxy/go-control-plane v0.11.2-0.20230720192929-ca30412827b9/go.mod h1:djL+W7LURiPM8Szxc5/47R6qMRulOSkfsDLO1CaGUNM=
+github.com/envoyproxy/go-control-plane v0.11.2-0.20230726084335-b501c94cb61e h1:HXKPsHR2TRMWMdbCqwWsWzNqml/+oMQO3zm5LhhoYOo=
+github.com/envoyproxy/go-control-plane v0.11.2-0.20230726084335-b501c94cb61e/go.mod h1:djL+W7LURiPM8Szxc5/47R6qMRulOSkfsDLO1CaGUNM=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/envoyproxy/protoc-gen-validate v1.0.1 h1:kt9FtLiooDc0vbwTLhdg3dyNX1K9Qwa1EK9LcD4jVUQ=
 github.com/envoyproxy/protoc-gen-validate v1.0.1/go.mod h1:0vj8bNkYbSTNS2PIyH87KZaeN4x9zpL9Qt8fQC7d+vs=
