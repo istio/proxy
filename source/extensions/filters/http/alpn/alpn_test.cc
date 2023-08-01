@@ -167,6 +167,33 @@ TEST_F(AlpnFilterTest, EmptyOverrideAlpn) {
   }
 }
 
+TEST_F(AlpnFilterTest, AlpnOverrideFalse) {
+  NiceMock<StreamInfo::MockStreamInfo> stream_info;
+  std::shared_ptr<NiceMock<StreamInfo::MockUpstreamInfo>> upstream_info(
+      new NiceMock<StreamInfo::MockUpstreamInfo>());
+  std::shared_ptr<NiceMock<Envoy::Upstream::MockHostDescription>> upstream_host(
+      new NiceMock<Envoy::Upstream::MockHostDescription>());
+  auto metadata = std::make_shared<envoy::config::core::v3::Metadata>(
+      TestUtility::parseYaml<envoy::config::core::v3::Metadata>(
+          R"EOF(
+        filter_metadata:
+          istio:
+            alpn_override: "false"
+      )EOF"));
+
+  ON_CALL(callbacks_, streamInfo()).WillByDefault(ReturnRef(stream_info));
+  ON_CALL(stream_info, upstreamInfo()).WillByDefault(Return(upstream_info));
+  ON_CALL(*upstream_info, upstreamHost()).WillByDefault(Return(upstream_host));
+  ON_CALL(*upstream_host, metadata()).WillByDefault(Return(metadata));
+
+  const AlpnOverrides alpn = {{Http::Protocol::Http10, {"foo", "bar"}},
+                              {Http::Protocol::Http11, {"baz"}}};
+  auto filter = makeAlpnOverrideFilter(alpn);
+
+  EXPECT_CALL(callbacks_, route()).Times(0);
+  EXPECT_EQ(filter->decodeHeaders(headers_, false), Http::FilterHeadersStatus::Continue);
+}
+
 } // namespace
 } // namespace Alpn
 } // namespace Http
