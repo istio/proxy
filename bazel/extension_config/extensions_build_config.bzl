@@ -54,6 +54,9 @@ ENVOY_EXTENSIONS = {
     #
 
     "envoy.health_checkers.redis":                      "//source/extensions/health_checkers/redis:config",
+    "envoy.health_checkers.tcp":                        "//source/extensions/health_checkers/tcp:health_checker_lib",
+    "envoy.health_checkers.http":                       "//source/extensions/health_checkers/http:health_checker_lib",
+    "envoy.health_checkers.grpc":                       "//source/extensions/health_checkers/grpc:health_checker_lib",
 
     #
     # Input Matchers
