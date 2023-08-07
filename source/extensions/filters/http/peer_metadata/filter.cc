@@ -73,18 +73,6 @@ private:
   Extensions::Common::WorkloadDiscovery::WorkloadMetadataProviderSharedPtr metadata_provider_;
 };
 
-class MXMethod : public DiscoveryMethod {
-public:
-  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
-                                          Http::HeaderMap&) const override;
-  void remove(Http::HeaderMap&) const override;
-
-private:
-  absl::optional<PeerInfo> lookup(absl::string_view id, absl::string_view value) const;
-  mutable absl::flat_hash_map<std::string, std::string> cache_;
-  const int64_t max_peer_cache_size_{500};
-};
-
 absl::optional<PeerInfo> BaggageMethod::derivePeerInfo(const StreamInfo::StreamInfo&,
                                                        Http::HeaderMap& headers) const {
   const auto header_string =
@@ -140,6 +128,11 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
   return {};
 }
 
+MXMethod::MXMethod(Server::Configuration::ServerFactoryContext& factory_context)
+    : tls_(factory_context.threadLocal()) {
+  tls_.set([](Event::Dispatcher&) { return std::make_shared<MXCache>(); });
+}
+
 absl::optional<PeerInfo> MXMethod::derivePeerInfo(const StreamInfo::StreamInfo&,
                                                   Http::HeaderMap& headers) const {
   const auto peer_id_header = headers.get(Headers::get().ExchangeMetadataHeaderId);
@@ -162,9 +155,10 @@ void MXMethod::remove(Http::HeaderMap& headers) const {
 absl::optional<PeerInfo> MXMethod::lookup(absl::string_view id, absl::string_view value) const {
   // This code is copied from:
   // https://github.com/istio/proxy/blob/release-1.18/extensions/metadata_exchange/plugin.cc#L116
+  auto& cache = tls_->cache_;
   if (max_peer_cache_size_ > 0 && !id.empty()) {
-    auto it = cache_.find(id);
-    if (it != cache_.end()) {
+    auto it = cache.find(id);
+    if (it != cache.end()) {
       return it->second;
     }
   }
@@ -177,17 +171,20 @@ absl::optional<PeerInfo> MXMethod::lookup(absl::string_view id, absl::string_vie
   std::string out(reinterpret_cast<const char*>(fb.data()), fb.size());
   if (max_peer_cache_size_ > 0 && !id.empty()) {
     // do not let the cache grow beyond max cache size.
-    if (static_cast<uint32_t>(cache_.size()) > max_peer_cache_size_) {
-      cache_.erase(cache_.begin(), std::next(cache_.begin(), max_peer_cache_size_ / 4));
+    if (static_cast<uint32_t>(cache.size()) > max_peer_cache_size_) {
+      cache.erase(cache.begin(), std::next(cache.begin(), max_peer_cache_size_ / 4));
     }
-    cache_.emplace(id, out);
+    cache.emplace(id, out);
   }
   return out;
 }
 
 MXPropagationMethod::MXPropagationMethod(
     Server::Configuration::ServerFactoryContext& factory_context)
-    : id_(factory_context.localInfo().node().id()) {
+    : id_(factory_context.localInfo().node().id()), value_(computeValue(factory_context)) {}
+
+std::string MXPropagationMethod::computeValue(
+    Server::Configuration::ServerFactoryContext& factory_context) const {
   const auto fb = ::Wasm::Common::extractNodeFlatBufferFromStruct(
       factory_context.localInfo().node().metadata());
   google::protobuf::Struct metadata;
@@ -195,7 +192,7 @@ MXPropagationMethod::MXPropagationMethod(
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(fb.data()), &metadata);
   std::string metadata_bytes;
   ::Wasm::Common::serializeToStringDeterministic(metadata, &metadata_bytes);
-  value_ = Base64::encode(metadata_bytes.data(), metadata_bytes.size());
+  return Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 }
 
 void MXPropagationMethod::inject(Http::HeaderMap& headers) const {
@@ -233,7 +230,7 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
       break;
     case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::
         kIstioHeaders:
-      methods.push_back(std::make_unique<MXMethod>());
+      methods.push_back(std::make_unique<MXMethod>(factory_context.getServerFactoryContext()));
       break;
     default:
       break;
