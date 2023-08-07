@@ -20,22 +20,22 @@ package io.istio.http.peer_metadata;
 // Peer metadata provider filter. This filter encapsulates the discovery of the
 // peer telemetry attributes for consumption by the telemetry filters.
 message Config {
-  // Use CONNECT baggage header encoding.
+  // This method uses `baggage` header encoding.
   message Baggage {
   }
 
-  // Use workload metadata xDS. Requires that the bootstrap extension is enabled.
-  // For downstream discovery, uses the remote address as the lookup key.
+  // This method uses the workload metadata xDS. Requires that the bootstrap extension is enabled.
+  // For downstream discovery, the remote address is the lookup key in xDS.
   // For upstream discovery:
   //
-  // * If the upstream host address is an IP, uses it as the lookup key;
+  // * If the upstream host address is an IP, this IP is used as the lookup key;
   //
   // * If the upstream host address is internal, uses the
-  // "filter_metadata.tunnel.destination" dynamic metadata value.
+  // "filter_metadata.tunnel.destination" dynamic metadata value as the lookup key.
   message WorkloadDiscovery {
   }
 
-  // Use Istio HTTP metadata exchange headers. Removes these headers if found.
+  // This method uses Istio HTTP metadata exchange headers, e.g. `x-envoy-peer-metadata`. Removes these headers if found.
   message IstioHeaders {
   }
 
@@ -49,9 +49,11 @@ message Config {
   }
 
   // The order of the derivation of the downstream peer metadata, in the precedence order.
+  // First successful lookup wins.
   repeated DiscoveryMethod downstream_discovery = 1;
 
   // The order of the derivation of the upstream peer metadata, in the precedence order.
+  // First successful lookup wins.
   repeated DiscoveryMethod upstream_discovery = 2;
 
   // An exhaustive list of the metadata propagation methods.

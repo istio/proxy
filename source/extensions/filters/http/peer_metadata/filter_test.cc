@@ -316,6 +316,23 @@ constexpr absl::string_view SampleIstioHeader =
     "NWJjNzc4Ch8KDkFQUF9DT05UQUlORVJTEg0aC3Rlc3QsYm9uemFpChYKCU5BTUVTUEFDRRIJGgdkZWZhdWx0CjMKK1NUQU"
     "NLRFJJVkVSX01PTklUT1JJTkdfRVhQT1JUX0lOVEVSVkFMX1NFQ1MSBBoCMjA";
 
+TEST(MXMethod, Cache) {
+  NiceMock<Server::Configuration::MockServerFactoryContext> context_;
+  MXMethod method(context_);
+  NiceMock<StreamInfo::MockStreamInfo> stream_info;
+  Http::TestRequestHeaderMapImpl request_headers;
+  const int32_t max = 1000;
+  for (int32_t run = 0; run < 3; run++) {
+    for (int32_t i = 0; i < max; i++) {
+      std::string id = absl::StrCat("test-", i);
+      request_headers.setReference(Headers::get().ExchangeMetadataHeaderId, id);
+      request_headers.setReference(Headers::get().ExchangeMetadataHeader, SampleIstioHeader);
+      const auto result = method.derivePeerInfo(stream_info, request_headers);
+      EXPECT_TRUE(result.has_value());
+    }
+  }
+}
+
 TEST_F(PeerMetadataTest, DownstreamMX) {
   request_headers_.setReference(Headers::get().ExchangeMetadataHeaderId, "test-pod");
   request_headers_.setReference(Headers::get().ExchangeMetadataHeader, SampleIstioHeader);
