@@ -61,7 +61,7 @@ func Get(port uint16, body string) *HTTPCall {
 	}
 }
 
-func (g *HTTPCall) Run(_ *Params) error {
+func (g *HTTPCall) Run(p *Params) error {
 	url := fmt.Sprintf("http://127.0.0.1:%d%v", g.Port, g.Path)
 	if g.Timeout == 0 {
 		g.Timeout = DefaultTimeout
@@ -71,7 +71,11 @@ func (g *HTTPCall) Run(_ *Params) error {
 		return err
 	}
 	for key, val := range g.RequestHeaders {
-		req.Header.Add(key, val)
+		header, err := p.Fill(val)
+		if err != nil {
+			panic(err)
+		}
+		req.Header.Add(key, header)
 	}
 	if len(g.Authority) > 0 {
 		req.Host = g.Authority

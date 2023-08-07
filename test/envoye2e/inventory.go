@@ -35,6 +35,7 @@ func init() {
 			"TestPassthroughCONNECT/quic",
 			"TestPassthroughCONNECT/h2",
 			"TestHTTPExchange",
+			"TestNativeHTTPExchange",
 			"TestHTTPLocalRatelimit",
 			"TestStackdriverAccessLog/AllClientErrorRequestsGetsLoggedOnNoMxAndError",
 			"TestStackdriverAccessLog/AllErrorRequestsGetsLogged",

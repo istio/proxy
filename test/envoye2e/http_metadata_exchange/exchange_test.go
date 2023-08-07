@@ -87,3 +87,37 @@ func TestHTTPExchange(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestNativeHTTPExchange(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/mx_native_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/mx_native_outbound.yaml.tmpl")
+	metadata := EncodeMetadata(t, params)
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl"), Concurrency: 2},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.Repeat{
+				N: 1000,
+				Step: &driver.HTTPCall{
+					Port: params.Ports.ServerPort,
+					Body: "hello, world!",
+					RequestHeaders: map[string]string{
+						"x-envoy-peer-metadata-id": "client{{ .N }}",
+						"x-envoy-peer-metadata":    metadata,
+					},
+					ResponseHeaders: map[string]string{
+						"x-envoy-peer-metadata-id": "server",
+						"x-envoy-peer-metadata":    driver.Any,
+					},
+				},
+			},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
