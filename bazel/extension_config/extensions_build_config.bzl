@@ -373,6 +373,19 @@ ENVOY_EXTENSIONS = {
     #
 
     "envoy.http.header_validators.envoy_default":        "//source/extensions/http/header_validators/envoy_default:config",
+    
+    #
+    # Config Subscription
+    #
+    "envoy.config_subscription.rest":                             "//source/extensions/config_subscription/rest:http_subscription_lib",
+    "envoy.config_subscription.filesystem":                       "//source/extensions/config_subscription/filesystem:filesystem_subscription_lib",
+    "envoy.config_subscription.filesystem_collection":            "//source/extensions/config_subscription/filesystem:filesystem_subscription_lib",
+    "envoy.config_subscription.grpc":                             "//source/extensions/config_subscription/grpc:grpc_subscription_lib",
+    "envoy.config_subscription.delta_grpc":                       "//source/extensions/config_subscription/grpc:grpc_subscription_lib",
+    "envoy.config_subscription.ads":                              "//source/extensions/config_subscription/grpc:grpc_subscription_lib",
+    "envoy.config_subscription.aggregated_grpc_collection":       "//source/extensions/config_subscription/grpc:grpc_collection_subscription_lib",
+    "envoy.config_subscription.aggregated_delta_grpc_collection": "//source/extensions/config_subscription/grpc:grpc_collection_subscription_lib",
+    "envoy.config_subscription.ads_collection":                   "//source/extensions/config_subscription/grpc:grpc_collection_subscription_lib",
 }
 
 ENVOY_CONTRIB_EXTENSIONS = {
@@ -421,19 +434,6 @@ ENVOY_CONTRIB_EXTENSIONS = {
     #
 
     "envoy.network.connection_balance.dlb":                     "//contrib/network/connection_balance/dlb/source:connection_balancer",
-
-    #
-    # Config Subscription
-    #
-    "envoy.config_subscription.rest":                             "//source/extensions/config_subscription/rest:http_subscription_lib",
-    "envoy.config_subscription.filesystem":                       "//source/extensions/config_subscription/filesystem:filesystem_subscription_lib",
-    "envoy.config_subscription.filesystem_collection":            "//source/extensions/config_subscription/filesystem:filesystem_subscription_lib",
-    "envoy.config_subscription.grpc":                             "//source/extensions/config_subscription/grpc:grpc_subscription_lib",
-    "envoy.config_subscription.delta_grpc":                       "//source/extensions/config_subscription/grpc:grpc_subscription_lib",
-    "envoy.config_subscription.ads":                              "//source/extensions/config_subscription/grpc:grpc_subscription_lib",
-    "envoy.config_subscription.aggregated_grpc_collection":       "//source/extensions/config_subscription/grpc:grpc_collection_subscription_lib",
-    "envoy.config_subscription.aggregated_delta_grpc_collection": "//source/extensions/config_subscription/grpc:grpc_collection_subscription_lib",
-    "envoy.config_subscription.ads_collection":                   "//source/extensions/config_subscription/grpc:grpc_collection_subscription_lib",
 }
 
 
