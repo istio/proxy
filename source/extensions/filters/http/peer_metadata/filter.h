@@ -54,6 +54,22 @@ public:
 
 using DiscoveryMethodPtr = std::unique_ptr<DiscoveryMethod>;
 
+class MXMethod : public DiscoveryMethod {
+public:
+  MXMethod(Server::Configuration::ServerFactoryContext& factory_context);
+  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
+                                          Http::HeaderMap&) const override;
+  void remove(Http::HeaderMap&) const override;
+
+private:
+  absl::optional<PeerInfo> lookup(absl::string_view id, absl::string_view value) const;
+  struct MXCache : public ThreadLocal::ThreadLocalObject {
+    absl::flat_hash_map<std::string, std::string> cache_;
+  };
+  mutable ThreadLocal::TypedSlot<MXCache> tls_;
+  const int64_t max_peer_cache_size_{500};
+};
+
 // Base class for the propagation methods.
 class PropagationMethod {
 public:
@@ -69,8 +85,9 @@ public:
   void inject(Http::HeaderMap&) const override;
 
 private:
+  std::string computeValue(Server::Configuration::ServerFactoryContext&) const;
   const std::string id_;
-  std::string value_;
+  const std::string value_;
 };
 
 class FilterConfig {
