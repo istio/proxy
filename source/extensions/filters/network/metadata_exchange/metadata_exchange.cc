@@ -69,7 +69,7 @@ MetadataExchangeConfig::MetadataExchangeConfig(const std::string& stat_prefix,
     : scope_(scope), stat_prefix_(stat_prefix), protocol_(protocol),
       filter_direction_(filter_direction), stats_(generateStats(stat_prefix, scope)) {}
 
-Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data, bool) {
+Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data, bool end_stream) {
   switch (conn_state_) {
   case Invalid:
     FALLTHRU;
@@ -103,6 +103,14 @@ Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data, boo
   case NeedMoreDataInitialHeader: {
     tryReadInitialProxyHeader(data);
     if (conn_state_ == NeedMoreDataInitialHeader) {
+      if (end_stream) {
+        // Upstream has entered a half-closed state, and will be sending no more data.
+        // Since this plugin would expect additional headers, but none is forthcoming,
+        // do not block the tcp_proxy downstream of us from draining the buffer.
+        ENVOY_LOG(debug, "Upstream closed early, aborting istio-peer-exchange");
+        conn_state_ = Invalid;
+        return Network::FilterStatus::Continue;
+      }
       return Network::FilterStatus::StopIteration;
     }
     if (conn_state_ == Invalid) {
