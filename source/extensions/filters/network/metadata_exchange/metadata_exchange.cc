@@ -107,7 +107,7 @@ Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data, boo
         // Upstream has entered a half-closed state, and will be sending no more data.
         // Since this plugin would expect additional headers, but none is forthcoming,
         // do not block the tcp_proxy downstream of us from draining the buffer.
-        ENVOY_LOG(warn, "Upstream closed early, aborting istio-peer-exchange");
+        ENVOY_LOG(debug, "Upstream closed early, aborting istio-peer-exchange");
         conn_state_ = Invalid;
         return Network::FilterStatus::Continue;
       }
