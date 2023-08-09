@@ -311,10 +311,7 @@ void MetadataExchangeFilter::getMetadata(google::protobuf::Struct* metadata) {
 std::string MetadataExchangeFilter::getMetadataId() { return local_info_.node().id(); }
 
 void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
-  auto key = config_->filter_direction_ == FilterDirection::Downstream
-                 ? ::Wasm::Common::kDownstreamMetadataIdKey
-                 : ::Wasm::Common::kUpstreamMetadataIdKey;
-  updatePeerId(toAbslStringView(key), ::Wasm::Common::kMetadataNotFoundValue);
+  updatePeerId(::Wasm::Common::kMetadataNotFoundValue, ::Wasm::Common::kMetadataNotFoundValue);
 }
 
 } // namespace MetadataExchange

@@ -347,7 +347,7 @@ PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
                            const std::string_view peer_metadata_key) {
   // Attempt to read from filter_state first.
   found_ = getValue({peer_metadata_id_key}, &peer_id_);
-  if (found_ && peer_id_ != kMetadataNotFoundValue) {
+  if (found_) {
     if (getValue({peer_metadata_key}, &peer_node_)) {
       return;
     }
@@ -355,6 +355,9 @@ PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
 
   // Sentinel value is preserved as ID to implement maybeWaiting.
   found_ = false;
+  if (getValue({kMetadataNotFoundValue}, &peer_id_)) {
+    peer_id_ = kMetadataNotFoundValue;
+  }
 
   // Downstream peer metadata will never be in localhost endpoint. Skip
   // looking for it.
