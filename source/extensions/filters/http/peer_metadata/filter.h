@@ -90,7 +90,7 @@ private:
   const std::string value_;
 };
 
-class FilterConfig {
+class FilterConfig : public Logger::Loggable<Logger::Id::filter> {
 public:
   FilterConfig(const io::istio::http::peer_metadata::Config&,
                Server::Configuration::FactoryContext&);

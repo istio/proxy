@@ -297,18 +297,28 @@ void FilterConfig::injectUpstream(Http::RequestHeaderMap& headers) const {
 
 void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
                                   const std::string& value) const {
-  auto node_info = std::make_unique<CelStateHashable>(CelPrototypes::get().NodeInfo);
-  node_info->setValue(value);
-  info.filterState()->setData(downstream ? WasmDownstreamPeer : WasmUpstreamPeer,
-                              std::move(node_info), StreamInfo::FilterState::StateType::Mutable,
-                              StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());
+  const absl::string_view key = downstream ? WasmDownstreamPeer : WasmUpstreamPeer;
+  if (!info.filterState()->hasDataWithName(key)) {
+    auto node_info = std::make_unique<CelStateHashable>(CelPrototypes::get().NodeInfo);
+    node_info->setValue(value);
+    info.filterState()->setData(
+        key, std::move(node_info), StreamInfo::FilterState::StateType::Mutable,
+        StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());
+  } else {
+    ENVOY_LOG(debug, "Duplicate peer metadata, skipping");
+  }
   // This is needed because stats filter awaits for the prefix on the wire and checks for the key
   // presence before emitting any telemetry.
-  auto node_id = std::make_unique<Filters::Common::Expr::CelState>(CelPrototypes::get().NodeId);
-  node_id->setValue("unknown");
-  info.filterState()->setData(downstream ? WasmDownstreamPeerID : WasmUpstreamPeerID,
-                              std::move(node_id), StreamInfo::FilterState::StateType::Mutable,
-                              StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());
+  const absl::string_view id_key = downstream ? WasmDownstreamPeerID : WasmUpstreamPeerID;
+  if (!info.filterState()->hasDataWithName(id_key)) {
+    auto node_id = std::make_unique<Filters::Common::Expr::CelState>(CelPrototypes::get().NodeId);
+    node_id->setValue("unknown");
+    info.filterState()->setData(
+        id_key, std::move(node_id), StreamInfo::FilterState::StateType::Mutable,
+        StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());
+  } else {
+    ENVOY_LOG(debug, "Duplicate peer id, skipping");
+  }
 }
 
 Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers, bool) {
