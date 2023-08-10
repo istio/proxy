@@ -32,8 +32,8 @@ constexpr std::string_view kUpstreamMetadataKey = "upstream_peer";
 constexpr std::string_view kDownstreamMetadataIdKey = "downstream_peer_id";
 constexpr std::string_view kDownstreamMetadataKey = "downstream_peer";
 
-// Sentinel value assigned to peer metadata ID key, indicating that the peer
-// metadata is absent. This is different from a missing peer metadata ID key
+// Sentinel key in the filter state, indicating that the peer metadata is
+// decidedly absent. This is different from a missing peer metadata ID key
 // which could indicate that the metadata is not received yet.
 const std::string kMetadataNotFoundValue = "envoy.wasm.metadata_exchange.peer_unknown";
 
