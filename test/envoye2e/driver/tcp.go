@@ -21,6 +21,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -131,3 +132,92 @@ func (t *TCPConnection) Run(p *Params) error {
 }
 
 func (t *TCPConnection) Cleanup() {}
+
+// TCPServerAcceptAndClose implements a TCP server
+// which accepts the data and then closes the connection
+// immediately without any response.
+//
+// The exception from this description is the "ping" data
+// which is handled differently for checking if the server
+// is already up.
+type TCPServerAcceptAndClose struct {
+	lis net.Listener
+}
+
+var _ Step = &TCPServerAcceptAndClose{}
+
+func (t *TCPServerAcceptAndClose) Run(p *Params) error {
+	var err error
+	t.lis, err = net.Listen("tcp", fmt.Sprintf(":%d", p.Ports.BackendPort))
+	if err != nil {
+		return fmt.Errorf("failed to listen on %v", err)
+	}
+	go t.serve()
+	if err = waitForTCPServer(p.Ports.BackendPort); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *TCPServerAcceptAndClose) Cleanup() {
+	t.lis.Close()
+}
+
+func (t *TCPServerAcceptAndClose) serve() {
+	for {
+		conn, err := t.lis.Accept()
+		if err != nil {
+			return
+		}
+
+		go t.handleConnection(conn)
+	}
+}
+
+func (t *TCPServerAcceptAndClose) handleConnection(conn net.Conn) {
+	defer conn.Close()
+	reader := bufio.NewReader(conn)
+	bytes, err := reader.ReadString('\n')
+	if err != nil {
+		if err != io.EOF {
+			log.Println("failed to read data, err:", err)
+		}
+		return
+	}
+	bytes = strings.TrimSpace(bytes)
+	if strings.HasSuffix(bytes, "ping") {
+		log.Println("pinged - the TCP Server is available")
+		_, _ = conn.Write([]byte("alive\n"))
+	}
+	log.Println("received data. Closing the connection")
+}
+
+// InterceptedTCPConnection is a connection which expects
+// the terminated connection (before the timeout occurs)
+type InterceptedTCPConnection struct {
+	ReadTimeout time.Duration
+}
+
+var _ Step = &InterceptedTCPConnection{}
+
+func (t *InterceptedTCPConnection) Run(p *Params) error {
+	conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", p.Ports.ClientPort))
+	if err != nil {
+		return fmt.Errorf("failed to connect to tcp server: %v", err)
+	}
+	defer conn.Close()
+
+	fmt.Fprintf(conn, "some data"+"\n")
+	err = conn.SetReadDeadline(time.Now().Add(t.ReadTimeout))
+	if err != nil {
+		return fmt.Errorf("failed to set read deadline: %v", err)
+	}
+
+	_, err = bufio.NewReader(conn).ReadString('\n')
+	if err != io.EOF {
+		return errors.New("the connection should be terminated")
+	}
+	return nil
+}
+
+func (t *InterceptedTCPConnection) Cleanup() {}
