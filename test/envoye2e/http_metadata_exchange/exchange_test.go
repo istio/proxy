@@ -90,10 +90,10 @@ func TestHTTPExchange(t *testing.T) {
 
 func TestNativeHTTPExchange(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
-	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
 	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/mx_native_inbound.yaml.tmpl")
-	params.Vars["ClientHTTPFilters"] = params.LoadTestData("testdata/filters/mx_native_outbound.yaml.tmpl")
+	// TCP MX should not break HTTP MX when there is no TCP prefix or TCP MX ALPN.
+	params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl")
 	metadata := EncodeMetadata(t, params)
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
@@ -102,6 +102,7 @@ func TestNativeHTTPExchange(t *testing.T) {
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl"), Concurrency: 2},
 			&driver.Sleep{Duration: 1 * time.Second},
 			&driver.Repeat{
+				// Must be high enough to exercise cache eviction.
 				N: 1000,
 				Step: &driver.HTTPCall{
 					Port: params.Ports.ServerPort,
@@ -116,6 +117,9 @@ func TestNativeHTTPExchange(t *testing.T) {
 					},
 				},
 			},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				"envoy_server_envoy_bug_failures": &driver.ExactStat{Metric: "testdata/metric/envoy_bug_failures.yaml"},
+			}},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
