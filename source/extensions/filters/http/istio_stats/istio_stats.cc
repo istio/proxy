@@ -93,10 +93,8 @@ bool peerInfoRead(Reporter reporter, const StreamInfo::FilterState& filter_state
       reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
           ? "wasm.downstream_peer_id"
           : "wasm.upstream_peer_id";
-  const auto* object =
-      filter_state.getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
-          filter_state_key);
-  return object != nullptr;
+  return filter_state.hasDataWithName(filter_state_key) ||
+         filter_state.hasDataWithName("envoy.wasm.metadata_exchange.peer_unknown");
 }
 
 const Wasm::Common::FlatNode* peerInfo(Reporter reporter,
