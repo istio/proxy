@@ -168,38 +168,3 @@ done
 if [ "${BUILD_ENVOY_BINARY_ONLY}" -eq 1 ]; then
   exit 0
 fi
-
-# Build and publish Wasm plugins
-extensions=(metadata_exchange)
-TMP_WASM=$(mktemp -d -t wasm-plugins-XXXXXXXXXX)
-trap 'rm -rf ${TMP_WASM}' EXIT
-make build_wasm
-if [ -n "${DST}" ]; then
-  for extension in "${extensions[@]}"; do
-    # Rename the plugin file and generate sha256 for it
-    WASM_NAME="${extension}-${SHA}.wasm"
-    WASM_COMPILED_NAME="${extension}-${SHA}.compiled.wasm"
-    WASM_PATH="${TMP_WASM}/${WASM_NAME}"
-    WASM_COMPILED_PATH="${TMP_WASM}/${WASM_COMPILED_NAME}"
-    SHA256_PATH="${WASM_PATH}.sha256"
-    SHA256_COMPILED_PATH="${WASM_COMPILED_PATH}.sha256"
-    # shellcheck disable=SC2086
-    BAZEL_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin/extensions/${extension}.wasm
-    # shellcheck disable=SC2086
-    BAZEL_COMPILED_TARGET=$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin/extensions/${extension}.compiled.wasm
-    cp "${BAZEL_TARGET}" "${WASM_PATH}"
-    cp "${BAZEL_COMPILED_TARGET}" "${WASM_COMPILED_PATH}"
-    sha256sum "${WASM_PATH}" > "${SHA256_PATH}"
-    sha256sum "${WASM_COMPILED_PATH}" > "${SHA256_COMPILED_PATH}"
-
-    # push wasm files and sha to the given bucket
-    gsutil stat "${DST}/${WASM_NAME}" \
-      && { echo "WASM file ${WASM_NAME} already exist"; continue; } \
-      || echo "Pushing the WASM file ${WASM_NAME}"
-    gsutil stat "${DST}/${WASM_COMPILED_NAME}" \
-      && { echo "WASM file ${WASM_COMPILED_NAME} already exist"; continue; } \
-      || echo "Pushing the WASM file ${WASM_COMPILED_NAME}"
-    gsutil cp "${WASM_PATH}" "${SHA256_PATH}" "${DST}"
-    gsutil cp "${WASM_COMPILED_PATH}" "${SHA256_COMPILED_PATH}" "${DST}"
-  done
-fi
