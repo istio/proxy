@@ -17,7 +17,7 @@ TOP := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 SHELL := /bin/bash
 BAZEL_STARTUP_ARGS ?=
 BAZEL_BUILD_ARGS ?=
-BAZEL_TARGETS ?= //... -extensions:metadata_exchange.wasm
+BAZEL_TARGETS ?= //...
 # Don't build Debian packages and Docker images in tests.
 BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS}
 E2E_TEST_TARGETS ?= $$(go list ./...)
@@ -83,14 +83,7 @@ build_envoy_asan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
 build_envoy_asan: BAZEL_TARGETS = //:envoy
 build_envoy_asan: build
 
-build_wasm:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) //extensions:metadata_exchange.wasm
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_REL) @envoy//test/tools/wee8_compile:wee8_compile_tool
-	bazel-bin/external/envoy/test/tools/wee8_compile/wee8_compile_tool bazel-bin/extensions/metadata_exchange.wasm bazel-bin/extensions/metadata_exchange.compiled.wasm
-
-# NOTE: build_wasm has to happen before build_envoy, since the integration test references bazel-bin symbol link for envoy binary,
-# which will be overwritten if wasm build happens after envoy.
-check_wasm: build_wasm build_envoy
+check_wasm:
 	@true
 
 clean:
