@@ -210,7 +210,14 @@ FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
       downstream_propagation_(
           buildPropagationMethods(config.downstream_propagation(), factory_context)),
       upstream_propagation_(
-          buildPropagationMethods(config.upstream_propagation(), factory_context)) {}
+          buildPropagationMethods(config.upstream_propagation(), factory_context)) {
+  strip_headers_ = false;
+  if (const char* env_p = std::getenv("ISTIO_META_STRIP_HEADERS")) {
+    if (strcmp(env_p, "true") == 0) {
+      strip_headers_ = true;
+    }
+  }
+}
 
 std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
     const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::DiscoveryMethod>&
@@ -323,8 +330,30 @@ void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
 
 Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers, bool) {
   config_->discoverDownstream(decoder_callbacks_->streamInfo(), headers);
-  config_->injectUpstream(headers);
+  if (!config_->strip_headers_ ||
+      !(config_->strip_headers_ && skipMXHeaders(decoder_callbacks_->streamInfo()))) {
+    config_->injectUpstream(headers);
+  }
   return Http::FilterHeadersStatus::Continue;
+}
+
+bool Filter::skipMXHeaders(StreamInfo::StreamInfo& info) const {
+  const auto& cluster_info = info.upstreamClusterInfo();
+  if (cluster_info && cluster_info.value()) {
+    const auto& cluster_name = cluster_info.value()->name();
+    if (cluster_name == "PassthroughCluster") {
+      return true;
+    }
+    const auto& filter_metadata = cluster_info.value()->metadata().filter_metadata();
+    const auto& it = filter_metadata.find("istio");
+    if (it == filter_metadata.end()) {
+      return true;
+    }
+    if (cluster_info.value()->edsServiceName() == "") {
+      return true;
+    }
+  }
+  return false;
 }
 
 Http::FilterHeadersStatus Filter::encodeHeaders(Http::ResponseHeaderMap& headers, bool) {

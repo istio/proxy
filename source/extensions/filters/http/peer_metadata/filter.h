@@ -98,6 +98,7 @@ public:
   void discoverUpstream(StreamInfo::StreamInfo&, Http::ResponseHeaderMap&) const;
   void injectDownstream(Http::ResponseHeaderMap&) const;
   void injectUpstream(Http::RequestHeaderMap&) const;
+  bool strip_headers_;
 
 private:
   std::vector<DiscoveryMethodPtr> buildDiscoveryMethods(
@@ -130,6 +131,7 @@ public:
 
 private:
   FilterConfigSharedPtr config_;
+  bool skipMXHeaders(StreamInfo::StreamInfo&) const;
 };
 
 class FilterConfigFactory : public Common::FactoryBase<io::istio::http::peer_metadata::Config> {
