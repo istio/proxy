@@ -20,8 +20,8 @@ set -ex
 
 # Use clang for the release builds.
 export PATH=/usr/lib/llvm/bin:$PATH
-export CC=${CC:-clang}
-export CXX=${CXX:-clang++}
+export CC=${CC:-/usr/lib/llvm/bin/clang}
+export CXX=${CXX:-/usr/lib/llvm/bin/clang++}
 
 # ARCH_SUFFIX allows optionally appending a -{ARCH} suffix to published binaries.
 # For backwards compatibility, Istio skips this for amd64.

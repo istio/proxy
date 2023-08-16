@@ -27,10 +27,10 @@ TAG ?=
 repo_dir := .
 
 ifeq "$(origin CC)" "default"
-CC := clang
+CC := /usr/lib/llvm/bin/clang
 endif
 ifeq "$(origin CXX)" "default"
-CXX := clang++
+CXX := /usr/lib/llvm/bin/clang++
 endif
 PATH := /usr/lib/llvm/bin:$(PATH)
 
