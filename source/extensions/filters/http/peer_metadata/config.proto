@@ -71,4 +71,7 @@ message Config {
 
   // True to enable sharing with the upstream.
   bool shared_with_upstream = 5;
+
+  // Strip x-envoy-peer-metadata and x-envoy-peer-metadata-id headers on HTTP requests to services outside the mesh
+  bool strip_headers = 6;
 }

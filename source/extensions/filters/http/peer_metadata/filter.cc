@@ -202,7 +202,7 @@ void MXPropagationMethod::inject(Http::HeaderMap& headers) const {
 
 FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
                            Server::Configuration::FactoryContext& factory_context)
-    : shared_with_upstream_(config.shared_with_upstream()),
+    : strip_headers_(config.strip_headers()), shared_with_upstream_(config.shared_with_upstream()),
       downstream_discovery_(
           buildDiscoveryMethods(config.downstream_discovery(), true, factory_context)),
       upstream_discovery_(
@@ -210,14 +210,7 @@ FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
       downstream_propagation_(
           buildPropagationMethods(config.downstream_propagation(), factory_context)),
       upstream_propagation_(
-          buildPropagationMethods(config.upstream_propagation(), factory_context)) {
-  strip_headers_ = false;
-  if (const char* env_p = std::getenv("ISTIO_META_STRIP_HEADERS")) {
-    if (strcmp(env_p, "true") == 0) {
-      strip_headers_ = true;
-    }
-  }
-}
+          buildPropagationMethods(config.upstream_propagation(), factory_context)) {}
 
 std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
     const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::DiscoveryMethod>&
@@ -346,10 +339,15 @@ bool Filter::skipMXHeaders(StreamInfo::StreamInfo& info) const {
     }
     const auto& filter_metadata = cluster_info.value()->metadata().filter_metadata();
     const auto& it = filter_metadata.find("istio");
-    if (it == filter_metadata.end()) {
-      return true;
-    }
-    if (cluster_info.value()->edsServiceName() == "") {
+    if (it != filter_metadata.end()) {
+      const auto& skip_mx = it->second.fields().find("external");
+      if (skip_mx != it->second.fields().end()) {
+        const auto skip_mx_value = skip_mx->second.string_value();
+        if (skip_mx_value == "true") {
+          return true;
+        }
+      }
+    } else {
       return true;
     }
   }
