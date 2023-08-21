@@ -2,7 +2,7 @@ name: server
 traffic_direction: INBOUND
 address:
   socket_address:
-    address: 127.0.0.1
+    address: 127.0.0.2
     port_value: {{ .Ports.ServerPort }}
 listener_filters:
 - name: "envoy.filters.listener.tls_inspector"

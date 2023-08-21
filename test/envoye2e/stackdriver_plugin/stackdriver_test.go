@@ -1198,6 +1198,7 @@ func TestStackdriverMetricExpiry(t *testing.T) {
 			&driver.Repeat{
 				N: 10,
 				Step: &driver.HTTPCall{
+					IP:   "127.0.0.2",
 					Port: params.Ports.ServerPort,
 					Body: "hello, world!",
 				},

@@ -1,7 +1,7 @@
 http_request:
   request_method: "GET"
   request_url: "http://127.0.0.1:{{ .Ports.ClientPort }}/"
-  server_ip: "127.0.0.1:{{ .Ports.ServerPort }}"
+  server_ip: "127.0.0.2:{{ .Ports.ServerPort }}"
   protocol: "http"
   status: 200
   user_agent: "Go-http-client/1.1"

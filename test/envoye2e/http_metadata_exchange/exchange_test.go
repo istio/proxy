@@ -56,6 +56,7 @@ func TestNativeHTTPExchange(t *testing.T) {
 				// Must be high enough to exercise cache eviction.
 				N: 1000,
 				Step: &driver.HTTPCall{
+					IP:   "127.0.0.2",
 					Port: params.Ports.ServerPort,
 					Body: "hello, world!",
 					RequestHeaders: map[string]string{

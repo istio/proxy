@@ -51,6 +51,8 @@ type HTTPCall struct {
 	Timeout time.Duration
 	// DisableRedirect prevents the client from following redirects and returns the original response.
 	DisableRedirect bool
+	// IP address override instead of 127.0.0.1
+	IP string
 }
 
 func Get(port uint16, body string) *HTTPCall {
@@ -62,7 +64,11 @@ func Get(port uint16, body string) *HTTPCall {
 }
 
 func (g *HTTPCall) Run(p *Params) error {
-	url := fmt.Sprintf("http://127.0.0.1:%d%v", g.Port, g.Path)
+	ip := "127.0.0.1"
+	if g.IP != "" {
+		ip = g.IP
+	}
+	url := fmt.Sprintf("http://%s:%d%v", ip, g.Port, g.Path)
 	if g.Timeout == 0 {
 		g.Timeout = DefaultTimeout
 	}

@@ -28,7 +28,7 @@ labels:
   source_canonical_revision: version-1
   source_version: v1
   {{- end }}
-  destination_ip: "127.0.0.1:{{ .Ports.ServerPort }}"
+  destination_ip: "127.0.0.2:{{ .Ports.ServerPort }}"
   protocol: tcp
   connection_state: "CLOSE"
   log_sampled: "false"
