@@ -11,8 +11,8 @@ load_assignment:
       metadata:
         filter_metadata:
           tunnel:
-            address: 127.0.0.1:{{ .Ports.ServerTunnelPort }}
-            destination: 127.0.0.1:{{ .Ports.ServerPort }}
+            address: 127.0.0.2:{{ .Ports.ServerTunnelPort }}
+            destination: 127.0.0.2:{{ .Ports.ServerPort }}
 {{- end }}
 transport_socket:
   name: envoy.transport_sockets.internal_upstream

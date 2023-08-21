@@ -234,7 +234,7 @@ func TestPassthroughCONNECT(t *testing.T) {
 			}
 
 			req := driver.Get(params.Ports.ClientPort, "hello, world!")
-			req.Authority = fmt.Sprintf("127.0.0.1:%d", params.Ports.ServerPort)
+			req.Authority = fmt.Sprintf("127.0.0.2:%d", params.Ports.ServerPort)
 
 			if err := (&driver.Scenario{
 				Steps: []driver.Step{
