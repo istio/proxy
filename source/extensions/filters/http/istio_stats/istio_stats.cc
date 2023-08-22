@@ -1016,19 +1016,6 @@ private:
       auto principals = NetworkFilters::IstioAuthn::getPrincipals(info.filterState());
       peer_san = principals.peer;
       local_san = principals.local;
-
-      // This fallback should be deleted once istio_authn is globally enabled.
-      if (peer_san.empty() && local_san.empty()) {
-        const Ssl::ConnectionInfoConstSharedPtr ssl_info =
-            info.downstreamAddressProvider().sslConnection();
-        if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
-          peer_san = ssl_info->uriSanPeerCertificate()[0];
-        }
-        if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
-          local_san = ssl_info->uriSanLocalCertificate()[0];
-        }
-      }
-
       // Save the connection security policy for a tag added later.
       mutual_tls_ = !peer_san.empty() && !local_san.empty();
       break;
