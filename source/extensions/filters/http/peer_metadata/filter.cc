@@ -346,8 +346,8 @@ bool MXPropagationMethod::skipMXHeaders(StreamInfo::StreamInfo& info) const {
     if (it != filter_metadata.end()) {
       const auto& skip_mx = it->second.fields().find("external");
       if (skip_mx != it->second.fields().end()) {
-        const auto skip_mx_value = skip_mx->second.string_value();
-        if (skip_mx_value == "true") {
+        const auto skip_mx_value = skip_mx->second.bool_value();
+        if (skip_mx_value) {
           return true;
         }
       }
