@@ -74,7 +74,7 @@ private:
 class PropagationMethod {
 public:
   virtual ~PropagationMethod() = default;
-  virtual void inject(StreamInfo::StreamInfo&, Http::HeaderMap&) const PURE;
+  virtual void inject(const StreamInfo::StreamInfo&, Http::HeaderMap&) const PURE;
 };
 
 using PropagationMethodPtr = std::unique_ptr<PropagationMethod>;
@@ -82,15 +82,15 @@ using PropagationMethodPtr = std::unique_ptr<PropagationMethod>;
 class MXPropagationMethod : public PropagationMethod {
 public:
   MXPropagationMethod(Server::Configuration::ServerFactoryContext& factory_context,
-                      io::istio::http::peer_metadata::Config_IstioHeaders);
-  void inject(StreamInfo::StreamInfo&, Http::HeaderMap&) const override;
+                      const io::istio::http::peer_metadata::Config_IstioHeaders&);
+  void inject(const StreamInfo::StreamInfo&, Http::HeaderMap&) const override;
 
 private:
   std::string computeValue(Server::Configuration::ServerFactoryContext&) const;
   const std::string id_;
   const std::string value_;
-  bool skip_external_clusters_;
-  bool skipMXHeaders(StreamInfo::StreamInfo&) const;
+  const bool skip_external_clusters_;
+  bool skipMXHeaders(const StreamInfo::StreamInfo&) const;
 };
 
 class FilterConfig : public Logger::Loggable<Logger::Id::filter> {
@@ -99,8 +99,8 @@ public:
                Server::Configuration::FactoryContext&);
   void discoverDownstream(StreamInfo::StreamInfo&, Http::RequestHeaderMap&) const;
   void discoverUpstream(StreamInfo::StreamInfo&, Http::ResponseHeaderMap&) const;
-  void injectDownstream(StreamInfo::StreamInfo&, Http::ResponseHeaderMap&) const;
-  void injectUpstream(StreamInfo::StreamInfo&, Http::RequestHeaderMap&) const;
+  void injectDownstream(const StreamInfo::StreamInfo&, Http::ResponseHeaderMap&) const;
+  void injectUpstream(const StreamInfo::StreamInfo&, Http::RequestHeaderMap&) const;
 
 private:
   std::vector<DiscoveryMethodPtr> buildDiscoveryMethods(

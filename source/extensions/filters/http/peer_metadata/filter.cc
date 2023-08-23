@@ -181,10 +181,9 @@ absl::optional<PeerInfo> MXMethod::lookup(absl::string_view id, absl::string_vie
 
 MXPropagationMethod::MXPropagationMethod(
     Server::Configuration::ServerFactoryContext& factory_context,
-    io::istio::http::peer_metadata::Config_IstioHeaders istioHeaders)
-    : id_(factory_context.localInfo().node().id()), value_(computeValue(factory_context)) {
-  skip_external_clusters_ = istioHeaders.skip_external_clusters();
-}
+    const io::istio::http::peer_metadata::Config_IstioHeaders& istio_headers)
+    : id_(factory_context.localInfo().node().id()), value_(computeValue(factory_context)),
+      skip_external_clusters_(istio_headers.skip_external_clusters()) {}
 
 std::string MXPropagationMethod::computeValue(
     Server::Configuration::ServerFactoryContext& factory_context) const {
@@ -198,11 +197,15 @@ std::string MXPropagationMethod::computeValue(
   return Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 }
 
-void MXPropagationMethod::inject(StreamInfo::StreamInfo& info, Http::HeaderMap& headers) const {
-  if (!skip_external_clusters_ || !(skip_external_clusters_ && skipMXHeaders(info))) {
-    headers.setReference(Headers::get().ExchangeMetadataHeaderId, id_);
-    headers.setReference(Headers::get().ExchangeMetadataHeader, value_);
+void MXPropagationMethod::inject(const StreamInfo::StreamInfo& info,
+                                 Http::HeaderMap& headers) const {
+  if (skip_external_clusters_) {
+    if (skipMXHeaders(info)) {
+      return;
+    }
   }
+  headers.setReference(Headers::get().ExchangeMetadataHeaderId, id_);
+  headers.setReference(Headers::get().ExchangeMetadataHeader, value_);
 }
 
 FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
@@ -288,14 +291,14 @@ void FilterConfig::discover(StreamInfo::StreamInfo& info, bool downstream,
   }
 }
 
-void FilterConfig::injectDownstream(StreamInfo::StreamInfo& info,
+void FilterConfig::injectDownstream(const StreamInfo::StreamInfo& info,
                                     Http::ResponseHeaderMap& headers) const {
   for (const auto& method : downstream_propagation_) {
     method->inject(info, headers);
   }
 }
 
-void FilterConfig::injectUpstream(StreamInfo::StreamInfo& info,
+void FilterConfig::injectUpstream(const StreamInfo::StreamInfo& info,
                                   Http::RequestHeaderMap& headers) const {
   for (const auto& method : upstream_propagation_) {
     method->inject(info, headers);
@@ -334,7 +337,7 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
   return Http::FilterHeadersStatus::Continue;
 }
 
-bool MXPropagationMethod::skipMXHeaders(StreamInfo::StreamInfo& info) const {
+bool MXPropagationMethod::skipMXHeaders(const StreamInfo::StreamInfo& info) const {
   const auto& cluster_info = info.upstreamClusterInfo();
   if (cluster_info && cluster_info.value()) {
     const auto& cluster_name = cluster_info.value()->name();
@@ -351,8 +354,6 @@ bool MXPropagationMethod::skipMXHeaders(StreamInfo::StreamInfo& info) const {
           return true;
         }
       }
-    } else {
-      return true;
     }
   }
   return false;
