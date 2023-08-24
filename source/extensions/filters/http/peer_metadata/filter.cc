@@ -354,6 +354,8 @@ bool MXPropagationMethod::skipMXHeaders(const StreamInfo::StreamInfo& info) cons
           return true;
         }
       }
+    } else {
+      return true;
     }
   }
   return false;

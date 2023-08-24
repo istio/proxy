@@ -477,6 +477,22 @@ TEST_F(PeerMetadataTest, UpstreamMXPropagationSkip) {
   checkNoPeer(false);
 }
 
+TEST_F(PeerMetadataTest, UpstreamMXPropagationSkipPassthrough) {
+  std::shared_ptr<Upstream::MockClusterInfo> cluster_info_{
+      std::make_shared<NiceMock<Upstream::MockClusterInfo>>()};
+  cluster_info_->name_ = "PassthroughCluster";
+  ON_CALL(stream_info_, upstreamClusterInfo()).WillByDefault(testing::Return(cluster_info_));
+  initialize(R"EOF(
+    upstream_propagation:
+      - istio_headers:
+          skip_external_clusters: true
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
 } // namespace
 } // namespace PeerMetadata
 } // namespace HttpFilters
