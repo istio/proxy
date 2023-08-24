@@ -122,7 +122,7 @@ static_resources:
         - endpoint:
             address:
               socket_address:
-                address: 127.0.0.1
+                address: 127.0.0.2
                 port_value: {{ .Ports.ServerPort }}
           {{- if eq .Vars.EnableEndpointMetadata "true" }}
           metadata:
@@ -568,7 +568,7 @@ internal_listener: {}
 {{- else }}
 address:
   socket_address:
-    address: 127.0.0.1
+    address: 127.0.0.2
     port_value: {{ .Ports.ServerPort }}
 {{- end }}
 filter_chains:
@@ -695,7 +695,7 @@ var _listenerTcp_serverYamlTmpl = []byte(`name: server
 traffic_direction: INBOUND
 address:
   socket_address:
-    address: 127.0.0.1
+    address: 127.0.0.2
     port_value: {{ .Ports.ServerPort }}
 listener_filters:
 - name: "envoy.filters.listener.tls_inspector"
@@ -738,7 +738,7 @@ address:
 {{ if eq .Vars.quic "true" }}
     protocol: UDP
 {{ end }}
-    address: 127.0.0.1
+    address: 127.0.0.2
     port_value: {{ .Ports.ServerTunnelPort }}
 {{ if eq .Vars.quic "true" }}
 udp_listener_config:
