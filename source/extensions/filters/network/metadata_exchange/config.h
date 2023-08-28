@@ -52,7 +52,7 @@ class MetadataExchangeUpstreamConfigFactory
 public:
   Network::FilterFactoryCb
   createFilterFactoryFromProto(const Protobuf::Message&,
-                               Server::Configuration::CommonFactoryContext&) override;
+                               Server::Configuration::UpstreamFactoryContext&) override;
 
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
 
@@ -61,7 +61,7 @@ public:
 private:
   Network::FilterFactoryCb
   createFilterFactory(const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
-                      Server::Configuration::CommonFactoryContext& context);
+                      Server::Configuration::UpstreamFactoryContext& context);
 };
 
 } // namespace MetadataExchange
