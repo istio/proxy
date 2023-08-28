@@ -37,6 +37,9 @@ message Config {
 
   // This method uses Istio HTTP metadata exchange headers, e.g. `x-envoy-peer-metadata`. Removes these headers if found.
   message IstioHeaders {
+    // Strip x-envoy-peer-metadata and x-envoy-peer-metadata-id headers on HTTP requests to services outside the mesh.
+    // Detects upstream clusters with `istio` and `external` filter metadata fields
+    bool skip_external_clusters = 1;
   }
 
   // An exhaustive list of the derivation methods.

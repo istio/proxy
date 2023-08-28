@@ -435,9 +435,59 @@ TEST_F(PeerMetadataTest, DownstreamMXPropagation) {
 TEST_F(PeerMetadataTest, UpstreamMXPropagation) {
   initialize(R"EOF(
     upstream_propagation:
-      - istio_headers: {}
+      - istio_headers:
+          skip_external_clusters: false
   )EOF");
   EXPECT_EQ(2, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, UpstreamMXPropagationSkipNoMatch) {
+  initialize(R"EOF(
+    upstream_propagation:
+      - istio_headers:
+          skip_external_clusters: true
+  )EOF");
+  EXPECT_EQ(2, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, UpstreamMXPropagationSkip) {
+  std::shared_ptr<Upstream::MockClusterInfo> cluster_info_{
+      std::make_shared<NiceMock<Upstream::MockClusterInfo>>()};
+  auto metadata = TestUtility::parseYaml<envoy::config::core::v3::Metadata>(R"EOF(
+      filter_metadata:
+        istio:
+          external: true
+    )EOF");
+  ON_CALL(stream_info_, upstreamClusterInfo()).WillByDefault(testing::Return(cluster_info_));
+  ON_CALL(*cluster_info_, metadata()).WillByDefault(ReturnRef(metadata));
+  initialize(R"EOF(
+    upstream_propagation:
+      - istio_headers:
+          skip_external_clusters: true
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, UpstreamMXPropagationSkipPassthrough) {
+  std::shared_ptr<Upstream::MockClusterInfo> cluster_info_{
+      std::make_shared<NiceMock<Upstream::MockClusterInfo>>()};
+  cluster_info_->name_ = "PassthroughCluster";
+  ON_CALL(stream_info_, upstreamClusterInfo()).WillByDefault(testing::Return(cluster_info_));
+  initialize(R"EOF(
+    upstream_propagation:
+      - istio_headers:
+          skip_external_clusters: true
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
   EXPECT_EQ(0, response_headers_.size());
   checkNoPeer(true);
   checkNoPeer(false);
