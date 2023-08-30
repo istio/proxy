@@ -45,7 +45,7 @@ fi
 # The bucket name to store proxy binaries.
 DST=""
 
-# Verify that we're building binaries on Ubuntu 16.04 (Xenial).
+# Verify that we're building binaries on Ubuntu 18.04 (Bionic).
 CHECK=1
 
 # Defines the base binary name for artifacts. For example, this will be "envoy-debug".
@@ -58,7 +58,7 @@ function usage() {
   echo "$0
     -d  The bucket name to store proxy binary (optional).
         If not provided, both envoy binary push and docker image push are skipped.
-    -i  Skip Ubuntu Xenial check. DO NOT USE THIS FOR RELEASED BINARIES."
+    -i  Skip Ubuntu Bionic check. DO NOT USE THIS FOR RELEASED BINARIES."
   exit 1
 }
 
@@ -83,11 +83,11 @@ if [ "${DST}" == "none" ]; then
   DST=""
 fi
 
-# Make sure the release binaries are built on x86_64 Ubuntu 16.04 (Xenial)
+# Make sure the release binaries are built on x86_64 Ubuntu 18.04 (Bionic)
 if [ "${CHECK}" -eq 1 ] ; then
   if [[ "${BAZEL_BUILD_ARGS}" != *"--config=remote-"* ]]; then
     UBUNTU_RELEASE=${UBUNTU_RELEASE:-$(lsb_release -c -s)}
-    [[ "${UBUNTU_RELEASE}" == 'xenial' ]] || { echo 'Must run on Ubuntu 16.04 (Xenial).'; exit 1; }
+    [[ "${UBUNTU_RELEASE}" == 'bionic' ]] || { echo 'Must run on Ubuntu Bionic.'; exit 1; }
   fi
   [[ "$(uname -m)" == 'x86_64' ]] || { echo 'Must run on x86_64.'; exit 1; }
 fi

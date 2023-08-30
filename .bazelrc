@@ -50,7 +50,7 @@ build --cxxopt -Wformat-security
 build --host_linkopt=-pthread
 
 # Asan configuration
-build:clang --config=clang
+build:clang-asan-ci --config=clang
 build:clang-asan-ci --action_env=ENVOY_UBSAN_VPTR=1
 build:clang-asan-ci --copt=-fsanitize=vptr,function
 build:clang-asan-ci --linkopt=-fsanitize=vptr,function
