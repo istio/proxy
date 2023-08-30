@@ -53,7 +53,7 @@ UNAME := $(shell uname)
 ifeq ($(UNAME),Linux)
 BAZEL_CONFIG_DEV  = $(BAZEL_CONFIG)
 BAZEL_CONFIG_REL  = $(BAZEL_CONFIG) --config=release
-BAZEL_CONFIG_ASAN = $(BAZEL_CONFIG) --config=clang-asan
+BAZEL_CONFIG_ASAN = $(BAZEL_CONFIG) --config=clang-asan-ci
 BAZEL_CONFIG_TSAN = $(BAZEL_CONFIG) --config=clang-tsan
 endif
 ifeq ($(UNAME),Darwin)

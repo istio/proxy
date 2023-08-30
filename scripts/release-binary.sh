@@ -39,7 +39,7 @@ BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --stamp"
 if [[ "$(uname)" == "Darwin" ]]; then
   BAZEL_CONFIG_ASAN="--config=macos-asan"
 else
-  BAZEL_CONFIG_ASAN="--config=clang-asan"
+  BAZEL_CONFIG_ASAN="--config=clang-asan-ci"
 fi
 
 # The bucket name to store proxy binaries.

@@ -50,10 +50,11 @@ build --cxxopt -Wformat-security
 build --host_linkopt=-pthread
 
 # Asan configuration
-build:clang-asan --action_env=ENVOY_UBSAN_VPTR=1
-build:clang-asan --copt=-fsanitize=vptr,function
-build:clang-asan --linkopt=-fsanitize=vptr,function
-build:clang-asan --linkopt='-L/usr/lib/llvm-14/lib/clang/14.0.6/lib/x86_64-pc-linux-gnu'
-build:clang-asan --linkopt=-l:libclang_rt.ubsan_standalone.a
-build:clang-asan --linkopt=-l:libclang_rt.ubsan_standalone_cxx.a
+build:clang --config=clang
+build:clang-asan-ci --action_env=ENVOY_UBSAN_VPTR=1
+build:clang-asan-ci --copt=-fsanitize=vptr,function
+build:clang-asan-ci --linkopt=-fsanitize=vptr,function
+build:clang-asan-ci --linkopt='-L/usr/lib/llvm/lib/clang/14.0.0/lib/x86_64-unknown-linux-gnu'
+build:clang-asan-ci --linkopt=-l:libclang_rt.ubsan_standalone.a
+build:clang-asan-ci --linkopt=-l:libclang_rt.ubsan_standalone_cxx.a
 
