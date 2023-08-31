@@ -48,3 +48,19 @@ build --cxxopt -Wformat-security
 
 # Link pthread for flatbuffers
 build --host_linkopt=-pthread
+
+# CI sanitizer configuration
+#
+build:clang-asan-ci --config=clang-asan
+build:clang-asan-ci --action_env=ENVOY_UBSAN_VPTR=1
+build:clang-asan-ci --copt=-fsanitize=vptr,function
+build:clang-asan-ci --linkopt=-fsanitize=vptr,function
+build:clang-asan-ci --linkopt='-L/usr/lib/llvm/lib/x86_64-unknown-linux-gnu'
+build:clang-asan-ci --linkopt='-Wl,-rpath,/usr/lib/llvm/lib/x86_64-unknown-linux-gnu'
+build:clang-asan-ci --linkopt='-L/usr/lib/llvm/lib/clang/14.0.0/lib/x86_64-unknown-linux-gnu'
+build:clang-asan-ci --linkopt=-l:libclang_rt.ubsan_standalone.a
+build:clang-asan-ci --linkopt=-l:libclang_rt.ubsan_standalone_cxx.a
+
+build:clang-tsan-ci --config=clang-tsan
+build:clang-tsan-ci --linkopt=-L/opt/libcxx_tsan/lib
+build:clang-tsan-ci --linkopt=-Wl,-rpath,/opt/libcxx_tsan/lib

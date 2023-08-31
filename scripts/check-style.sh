@@ -18,7 +18,7 @@
 #
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-CLANG_VERSION_REQUIRED="12.0.1"
+CLANG_VERSION_REQUIRED="14.0.0"
 CLANG_DIRECTORY="${HOME}/clang-${CLANG_VERSION_REQUIRED}"
 CLANG_FORMAT=$(command -v clang-format)
 CLANG_VERSION="$(${CLANG_FORMAT} -version 2>/dev/null | cut -d ' ' -f 3 | cut -d '-' -f 1)"
@@ -33,9 +33,9 @@ if [[ ! -x "${CLANG_FORMAT}" || "${CLANG_VERSION}" != "${CLANG_VERSION_REQUIRED}
       CLANG_BIN="x86_64-darwin-apple.tar.xz"
     elif [[ "$(uname -s)" =~ Linux* ]]; then
       if [ "$(uname -m)" == "aarch64" ]; then
-        CLANG_BIN="aarch64-linux-gnu"
+        CLANG_BIN="aarch64-linux-gnu.tar.xz"
       else
-        CLANG_BIN="x86_64-linux-gnu-ubuntu-16.04.tar.xz"
+        CLANG_BIN="x86_64-linux-gnu-ubuntu-18.04.tar.xz"
       fi
     else
       echo "Unsupported environment." ; exit 1 ;

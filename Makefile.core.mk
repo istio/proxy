@@ -26,35 +26,20 @@ HUB ?=
 TAG ?=
 repo_dir := .
 
-ifeq "$(origin CC)" "default"
-CC := /usr/lib/llvm/bin/clang
-endif
-ifeq "$(origin CXX)" "default"
-CXX := /usr/lib/llvm/bin/clang++
-endif
-PATH := /usr/lib/llvm/bin:$(PATH)
-
 VERBOSE ?=
 ifeq "$(VERBOSE)" "1"
 BAZEL_STARTUP_ARGS := --client_debug $(BAZEL_STARTUP_ARGS)
 BAZEL_BUILD_ARGS := -s --sandbox_debug --verbose_failures $(BAZEL_BUILD_ARGS)
 endif
 
-ifeq "$(origin WITH_LIBCXX)" "undefined"
-WITH_LIBCXX := $(shell ($(CXX) --version | grep ^g++ >/dev/null && echo 0) || echo 1)
-endif
-ifeq "$(WITH_LIBCXX)" "1"
 BAZEL_CONFIG = --config=libc++
-else
-BAZEL_CONFIG =
-endif
 
 UNAME := $(shell uname)
 ifeq ($(UNAME),Linux)
 BAZEL_CONFIG_DEV  = $(BAZEL_CONFIG)
 BAZEL_CONFIG_REL  = $(BAZEL_CONFIG) --config=release
-BAZEL_CONFIG_ASAN = $(BAZEL_CONFIG) --config=clang-asan
-BAZEL_CONFIG_TSAN = $(BAZEL_CONFIG) --config=clang-tsan
+BAZEL_CONFIG_ASAN = $(BAZEL_CONFIG) --config=clang-asan-ci
+BAZEL_CONFIG_TSAN = $(BAZEL_CONFIG) --config=clang-tsan-ci
 endif
 ifeq ($(UNAME),Darwin)
 BAZEL_CONFIG_DEV  = # macOS always links against libc++
@@ -68,7 +53,6 @@ TEST_ENVOY_TARGET ?= //:envoy
 TEST_ENVOY_DEBUG ?= trace
 
 build:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(BAZEL_TARGETS)
 
 build_envoy: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_REL)
@@ -100,10 +84,9 @@ gen-check:
 	@scripts/gen-testdata.sh -c
 
 test:
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && \
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) $(TEST_ENVOY_TARGET)
+	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(TEST_ENVOY_TARGET) $(BAZEL_TEST_TARGETS)
 	if [ -n "$(BAZEL_TEST_TARGETS)" ]; then \
-	  export PATH=$(PATH) CC=$(CC) CXX=$(CXX) && bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) $(BAZEL_TEST_ARGS) -- $(BAZEL_TEST_TARGETS); \
+	  bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(BAZEL_TEST_TARGETS); \
 	fi
 	if [ -n "$(E2E_TEST_TARGETS)" ]; then \
 	  env ENVOY_DEBUG=$(TEST_ENVOY_DEBUG) ENVOY_PATH=$(shell bazel info $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) bazel-bin)/envoy $(E2E_TEST_ENVS) GO111MODULE=on go test -timeout 30m $(E2E_TEST_FLAGS) $(E2E_TEST_TARGETS); \
@@ -152,18 +135,18 @@ extensions-docs:  $(metadata_exchange_docs) $(stackdriver_docs) $(accesslog_poli
 
 test_release:
 ifeq "$(shell uname -m)" "x86_64"
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
+	export BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
 else
 	# Only x86 has support for legacy GLIBC, otherwise pass -i to skip the check
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -i
+	export BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -i
 endif
 
 push_release:
 ifeq "$(shell uname -m)" "x86_64"
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
+	export BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
 else
 	# Only x86 has support for legacy GLIBC, otherwise pass -i to skip the check
-	export PATH=$(PATH) CC=$(CC) CXX=$(CXX) BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -i -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
+	export BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -i -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
 endif
 
 # Used by build container to export the build output from the docker volume cache
