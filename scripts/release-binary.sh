@@ -129,11 +129,14 @@ do
       BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
       ;;
     "asan")
-      # NOTE: libc++ is dynamically linked in this build.
-      CONFIG_PARAMS="${BAZEL_CONFIG_ASAN} --config=release-symbol"
-      BINARY_BASE_NAME="${BASE_BINARY_NAME}-asan"
-      # shellcheck disable=SC2086
-      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
+      # Asan is skipped on ARM64
+      if [[ "$(uname -m)" != "aarch64" ]]; then
+        # NOTE: libc++ is dynamically linked in this build.
+        CONFIG_PARAMS="${BAZEL_CONFIG_ASAN} --config=release-symbol"
+        BINARY_BASE_NAME="${BASE_BINARY_NAME}-asan"
+        # shellcheck disable=SC2086
+        BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
+      fi
       ;;
     "debug")
       CONFIG_PARAMS="--config=debug"
