@@ -13,6 +13,9 @@ build:remote --remote_timeout=7200
 # Istio specific Bazel build/test options.
 # ========================================
 
+# Enable libc++ and C++20 by default.
+build --config=libc++20
+
 # Need for CI image to pickup docker-credential-gcloud, PATH is fixed in rbe-toolchain-* configs.
 build:remote-ci --action_env=PATH=/usr/local/google-cloud-sdk/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/llvm/bin
 

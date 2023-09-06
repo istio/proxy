@@ -32,7 +32,7 @@ BAZEL_STARTUP_ARGS := --client_debug $(BAZEL_STARTUP_ARGS)
 BAZEL_BUILD_ARGS := -s --sandbox_debug --verbose_failures $(BAZEL_BUILD_ARGS)
 endif
 
-BAZEL_CONFIG = --config=libc++
+BAZEL_CONFIG =
 
 UNAME := $(shell uname)
 ifeq ($(UNAME),Linux)
