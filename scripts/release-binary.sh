@@ -28,11 +28,6 @@ export CXX=${CXX:-/usr/lib/llvm/bin/clang++}
 # Note: user provides "arm64"; we expand to "-arm64" for simple usage in script.
 export ARCH_SUFFIX="${ARCH_SUFFIX+-${ARCH_SUFFIX}}"
 
-# Add --config=libc++ if wasn't passed already.
-if [[ "$(uname)" != "Darwin" && "${BAZEL_BUILD_ARGS}" != *"--config=libc++"* ]]; then
-  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --config=libc++"
-fi
-
 # Expliticly stamp.
 BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --stamp"
 
