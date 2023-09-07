@@ -33,6 +33,7 @@ labels:
   connection_state: "CLOSE"
   log_sampled: "false"
   upstream_cluster: "inbound|9080|tcp|server.default.svc.cluster.local"
+  route_name: "server_route"
   requested_server_name: "server.com"
   {{- if .Vars.RbacDryRun }}
   dry_run_result: "AuthzDenied"
