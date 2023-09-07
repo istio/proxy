@@ -35,9 +35,9 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Commit date: 2023-09-06
-ENVOY_SHA = "baa61e9f699b8e9b8b5257aebb166bf5914e057c"
+ENVOY_SHA = "93b7427eb6bfcdd9c67b6723389b2f7cb05fa407"
 
-ENVOY_SHA256 = "72e68c9353d68a56942ab87343875bebbaeb716c5fe0998e2fe7e6b1d21ff484"
+ENVOY_SHA256 = "a751094c904850d1bdb0e0545e0f9d6e69f0841dec9da5beabd065ae603d9e2d"
 
 ENVOY_ORG = "envoyproxy"
 
