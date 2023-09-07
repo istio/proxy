@@ -3,6 +3,7 @@ labels:
   destination_service_host: server.default.svc.cluster.local
   destination_service_name: server
   response_flag: "-"
+  route_name: "server_route"
   service_authentication_policy: {{ .Vars.ServiceAuthenticationPolicy }}
   {{- if .Vars.SourceUnknownOnClose }}
   source_name: ""
@@ -33,9 +34,6 @@ labels:
   connection_state: "CLOSE"
   log_sampled: "false"
   upstream_cluster: "inbound|9080|tcp|server.default.svc.cluster.local"
-  {{- if not .Vars.RbacDryRun }}
-  route_name: "server_route"
-  {{- end }}
   requested_server_name: "server.com"
   {{- if .Vars.RbacDryRun }}
   dry_run_result: "AuthzDenied"

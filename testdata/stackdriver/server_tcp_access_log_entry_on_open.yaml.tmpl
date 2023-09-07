@@ -3,6 +3,7 @@ labels:
   destination_service_host: server.default.svc.cluster.local
   destination_service_name: server
   response_flag: "-"
+  route_name: "server_route"
   service_authentication_policy: {{ .Vars.ServiceAuthenticationPolicy }}
   {{- if .Vars.SourceUnknownOnOpen }}
   source_name: ""
