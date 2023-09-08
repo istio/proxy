@@ -42,6 +42,7 @@ labels:
   upstream_cluster: "server-inbound-cluster"
   {{- if .Vars.RbacAccessDenied }}
   response_details: "AuthzDenied"
+  route_name: server_route
   policy_name: "foo.httpbin-deny"
   policy_rule: "0"
   {{-  else }}
