@@ -130,8 +130,8 @@ private:
 
   private:
     // Config::SubscriptionCallbacks
-    void onConfigUpdate(const std::vector<Config::DecodedResourceRef>& resources,
-                        const std::string&) override {
+    absl::Status onConfigUpdate(const std::vector<Config::DecodedResourceRef>& resources,
+                                const std::string&) override {
       AddressIndexSharedPtr index = std::make_shared<AddressIndex>();
       for (const auto& resource : resources) {
         const auto& workload =
@@ -143,10 +143,11 @@ private:
         }
       }
       parent_.reset(index);
+      return absl::OkStatus();
     }
-    void onConfigUpdate(const std::vector<Config::DecodedResourceRef>& added_resources,
-                        const Protobuf::RepeatedPtrField<std::string>& removed_resources,
-                        const std::string&) override {
+    absl::Status onConfigUpdate(const std::vector<Config::DecodedResourceRef>& added_resources,
+                                const Protobuf::RepeatedPtrField<std::string>& removed_resources,
+                                const std::string&) override {
       AddressIndexSharedPtr added = std::make_shared<AddressIndex>();
       for (const auto& resource : added_resources) {
         const auto& workload =
@@ -163,6 +164,7 @@ private:
         removed->push_back(resource);
       }
       parent_.update(added, removed);
+      return absl::OkStatus();
     }
     void onConfigUpdateFailed(Config::ConfigUpdateFailureReason, const EnvoyException*) override {
       // Do nothing - feature is automatically disabled.
