@@ -178,11 +178,11 @@ envoy_cc_library(
     ],
     hdrs = [
         "//extensions/common/wasm:json_util.h",
-        "//extensions/common/wasm:nlohmann_json_hpp",
     ],
     repository = "@envoy",
     visibility = ["//visibility:public"],
     deps = [
+        "@com_github_nlohmann_json//:json",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
     ],

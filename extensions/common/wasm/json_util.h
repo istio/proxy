@@ -17,7 +17,7 @@
 
 #include <optional>
 
-#include "extensions/common/wasm/nlohmann_json.hpp"
+#include "include/nlohmann/json.hpp"
 
 /**
  * Utilities for working with JSON without exceptions.
