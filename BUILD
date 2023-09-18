@@ -48,7 +48,6 @@ envoy_cc_binary(
         "//source/extensions/filters/network/istio_authn:config_lib",
         "//source/extensions/filters/network/metadata_exchange:config_lib",
         "//source/extensions/filters/network/sni_verifier:config_lib",
-        "//source/extensions/filters/network/tcp_cluster_rewrite:config_lib",
         "@envoy//source/exe:envoy_main_entry_lib",
     ],
 )

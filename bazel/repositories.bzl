@@ -80,23 +80,6 @@ cc_proto_library(
         ":alpn_filter_config_proto_lib",
     ],
 )
-
-proto_library(
-    name = "tcp_cluster_rewrite_config_proto_lib",
-    srcs = glob(
-        ["envoy/config/filter/network/tcp_cluster_rewrite/v2alpha1/*.proto", ],
-    ),
-    visibility = ["//visibility:public"],
-)
-
-cc_proto_library(
-    name = "tcp_cluster_rewrite_config_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":tcp_cluster_rewrite_config_proto_lib",
-    ],
-)
-
 """
     http_archive(
         name = "istioapi_git",
@@ -114,17 +97,6 @@ cc_proto_library(
             name = "alpn_filter_config_cc_proto",
             actual = "@istioapi_git//:alpn_filter_config_cc_proto",
         )
-        native.bind(
-            name = "tcp_cluster_rewrite_config_cc_proto",
-            actual = "@istioapi_git//:tcp_cluster_rewrite_config_cc_proto",
-        )
 
 def istioapi_dependencies():
     istioapi_repositories()
-
-def docker_dependencies():
-    http_archive(
-        name = "io_bazel_rules_docker",
-        sha256 = "b1e80761a8a8243d03ebca8845e9cc1ba6c82ce7c5179ce2b295cd36f7e394bf",
-        urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.25.0/rules_docker-v0.25.0.tar.gz"],
-    )
