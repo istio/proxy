@@ -4,7 +4,7 @@ listener_filters:
 - name: set_dst_address
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-    type_url: type.googleapis.com/istio.set_internal_dst_address.v1.Config
+    type_url: type.googleapis.com/envoy.extensions.filters.listener.original_dst.v3.OriginalDst
 filter_chains:
 - filters:
   - name: tcp_proxy

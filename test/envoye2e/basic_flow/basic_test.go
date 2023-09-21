@@ -165,6 +165,7 @@ func TestBasicCONNECT(t *testing.T) {
 			params.Vars["ServerInternalAddress"] = "internal_inbound"
 			params.Vars["quic"] = strconv.FormatBool(options.Quic)
 			params.Vars["EnableTunnelEndpointMetadata"] = "true"
+			params.Vars["EnableOriginalDstPortOverride"] = "true"
 
 			updateClient := &driver.Update{
 				Node: "client", Version: "{{ .N }}",
@@ -215,6 +216,7 @@ func TestPassthroughCONNECT(t *testing.T) {
 			params.Vars["ServerClusterName"] = "internal_outbound"
 			params.Vars["ServerInternalAddress"] = "internal_inbound"
 			params.Vars["quic"] = strconv.FormatBool(options.Quic)
+			params.Vars["EnableOriginalDstPortOverride"] = "true"
 
 			updateClient := &driver.Update{
 				Node: "client", Version: "{{ .N }}",

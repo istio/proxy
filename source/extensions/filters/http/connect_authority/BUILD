@@ -31,11 +31,13 @@ envoy_cc_extension(
     repository = "@envoy",
     deps = [
         ":config_cc_proto",
-        "//source/extensions/filters/listener/set_internal_dst_address:filter_lib",
         "@envoy//envoy/registry",
         "@envoy//source/common/http:utility_lib",
+        "@envoy//source/common/network:filter_state_dst_address_lib",
+        "@envoy//source/common/network:utility_lib",
         "@envoy//source/extensions/filters/http/common:factory_base_lib",
         "@envoy//source/extensions/filters/http/common:pass_through_filter_lib",
+        "@envoy//source/extensions/filters/listener/original_dst:original_dst_lib",
         "@envoy//source/extensions/filters/network/common:factory_base_lib",
     ],
 )

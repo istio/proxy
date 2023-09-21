@@ -17,7 +17,9 @@
 #include "envoy/registry/registry.h"
 #include "envoy/server/factory_context.h"
 #include "source/common/http/utility.h"
-#include "source/extensions/filters/listener/set_internal_dst_address/filter.h"
+#include "source/common/network/utility.h"
+#include "source/common/network/filter_state_dst_address.h"
+#include "source/extensions/filters/listener/original_dst/original_dst.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -28,10 +30,20 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
   const FilterConfig* per_route_settings =
       Http::Utility::resolveMostSpecificPerFilterConfig<FilterConfig>(decoder_callbacks_);
   if (per_route_settings && per_route_settings->enabled()) {
+    const auto address = Network::Utility::parseInternetAddressAndPortNoThrow(
+        std::string(headers.getHostValue()), /*v6only=*/false);
+    if (address) {
+      decoder_callbacks_->streamInfo().filterState()->setData(
+          ListenerFilters::OriginalDst::FilterNames::get().LocalFilterStateKey,
+          std::make_shared<Network::AddressObject>(address),
+          StreamInfo::FilterState::StateType::Mutable,
+          StreamInfo::FilterState::LifeSpan::FilterChain,
+          StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce);
+    }
     decoder_callbacks_->streamInfo().filterState()->setData(
-        Istio::SetInternalDstAddress::FilterStateKey,
-        std::make_shared<Istio::SetInternalDstAddress::Authority>(headers.getHostValue(),
-                                                                  per_route_settings->port()),
+        ListenerFilters::OriginalDst::FilterNames::get().RemoteFilterStateKey,
+        std::make_shared<Network::AddressObject>(
+            decoder_callbacks_->streamInfo().downstreamAddressProvider().remoteAddress()),
         StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::FilterChain,
         StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce);
   }
@@ -42,10 +54,11 @@ Network::FilterStatus NetworkFilter::onNewConnection() {
   // Re-shares the object with the upstream.
   StreamInfo::StreamInfo& info = network_read_callbacks_->connection().streamInfo();
   std::shared_ptr<StreamInfo::FilterState::Object> object =
-      info.filterState()->getDataSharedMutableGeneric(Istio::SetInternalDstAddress::FilterStateKey);
+      info.filterState()->getDataSharedMutableGeneric(
+          ListenerFilters::OriginalDst::FilterNames::get().LocalFilterStateKey);
   if (object) {
     info.filterState()->setData(
-        Istio::SetInternalDstAddress::FilterStateKey, object,
+        ListenerFilters::OriginalDst::FilterNames::get().LocalFilterStateKey, object,
         StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::Connection,
         StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce);
     ENVOY_LOG_MISC(trace, "Re-shared authority object");
