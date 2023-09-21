@@ -18,6 +18,7 @@
 #include "envoy/server/factory_context.h"
 #include "source/common/http/utility.h"
 #include "source/common/network/utility.h"
+#include "source/common/network/filter_state_dst_address.h"
 #include "source/extensions/filters/listener/original_dst/original_dst.h"
 
 namespace Envoy {
@@ -33,14 +34,16 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
         std::string(headers.getHostValue()), /*v6only=*/false);
     if (address) {
       decoder_callbacks_->streamInfo().filterState()->setData(
-          ListenerFilters::OriginalDst::FilterNames::get().Key,
-          std::make_shared<ListenerFilters::OriginalDst::AddressObject>(address),
-          StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::FilterChain,
+          ListenerFilters::OriginalDst::FilterNames::get().LocalFilterStateKey,
+          std::make_shared<Network::AddressObject>(address),
+          StreamInfo::FilterState::StateType::Mutable,
+          StreamInfo::FilterState::LifeSpan::FilterChain,
           StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce);
     }
     decoder_callbacks_->streamInfo().filterState()->setData(
-        ListenerFilters::OriginalDst::FilterNames::get().RemoteKey,
-        std::make_shared<ListenerFilters::OriginalDst::AddressObject>(decoder_callbacks_->streamInfo().downstreamAddressProvider().remoteAddress()),
+        ListenerFilters::OriginalDst::FilterNames::get().RemoteFilterStateKey,
+        std::make_shared<Network::AddressObject>(
+            decoder_callbacks_->streamInfo().downstreamAddressProvider().remoteAddress()),
         StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::FilterChain,
         StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce);
   }
@@ -51,10 +54,11 @@ Network::FilterStatus NetworkFilter::onNewConnection() {
   // Re-shares the object with the upstream.
   StreamInfo::StreamInfo& info = network_read_callbacks_->connection().streamInfo();
   std::shared_ptr<StreamInfo::FilterState::Object> object =
-      info.filterState()->getDataSharedMutableGeneric(ListenerFilters::OriginalDst::FilterNames::get().Key);
+      info.filterState()->getDataSharedMutableGeneric(
+          ListenerFilters::OriginalDst::FilterNames::get().LocalFilterStateKey);
   if (object) {
     info.filterState()->setData(
-        ListenerFilters::OriginalDst::FilterNames::get().Key, object,
+        ListenerFilters::OriginalDst::FilterNames::get().LocalFilterStateKey, object,
         StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::Connection,
         StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce);
     ENVOY_LOG_MISC(trace, "Re-shared authority object");
