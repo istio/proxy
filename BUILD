@@ -43,7 +43,6 @@ envoy_cc_binary(
         "//source/extensions/filters/http/connect_authority",  # Experimental: ambient
         "//source/extensions/filters/http/istio_stats",
         "//source/extensions/filters/http/peer_metadata:filter_lib",
-        "//source/extensions/filters/listener/set_internal_dst_address:filter_lib",  # Experimental: ambient
         "//source/extensions/filters/network/istio_authn:config_lib",
         "//source/extensions/filters/network/metadata_exchange:config_lib",
         "@envoy//source/exe:envoy_main_entry_lib",

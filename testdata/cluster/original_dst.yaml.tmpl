@@ -2,6 +2,10 @@ name: original_dst
 type: ORIGINAL_DST
 cleanup_interval: 1s
 lb_policy: CLUSTER_PROVIDED
+{{- if eq .Vars.EnableOriginalDstPortOverride "true" }}
+original_dst_lb_config:
+  upstream_port_override: {{ .Ports.ServerTunnelPort }}
+{{ end }}
 typed_extension_protocol_options:
   envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
     '@type': type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions

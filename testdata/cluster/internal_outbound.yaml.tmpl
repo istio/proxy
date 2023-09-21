@@ -10,16 +10,15 @@ load_assignment:
 {{- if eq .Vars.EnableTunnelEndpointMetadata "true" }}
       metadata:
         filter_metadata:
-          tunnel:
-            address: 127.0.0.2:{{ .Ports.ServerTunnelPort }}
-            destination: 127.0.0.2:{{ .Ports.ServerPort }}
+          envoy.filters.listener.original_dst:
+            local: 127.0.0.2:{{ .Ports.ServerPort }}
 {{- end }}
 transport_socket:
   name: envoy.transport_sockets.internal_upstream
   typed_config:
     "@type": type.googleapis.com/envoy.extensions.transport_sockets.internal_upstream.v3.InternalUpstreamTransport
     passthrough_metadata:
-    - name: tunnel
+    - name: envoy.filters.listener.original_dst
       kind: { host: {}}
     transport_socket:
       name: envoy.transport_sockets.raw_buffer

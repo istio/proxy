@@ -698,6 +698,7 @@ func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_waypoint.yaml.tmpl") + "\n" +
 		driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
 	params.Vars["EnableTunnelEndpointMetadata"] = "true"
+	params.Vars["EnableOriginalDstPortOverride"] = "true"
 
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
