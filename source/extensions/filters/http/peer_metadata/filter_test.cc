@@ -222,8 +222,8 @@ TEST_F(PeerMetadataTest, UpstreamXDSInternal) {
   ON_CALL(*upstream_host, metadata()).WillByDefault(testing::Return(host_metadata));
   TestUtility::loadFromYaml(R"EOF(
   filter_metadata:
-    tunnel:
-      destination: 127.0.0.100:80
+    envoy.filters.listener.original_dst:
+      local: 127.0.0.100:80
   )EOF",
                             *host_metadata);
 
