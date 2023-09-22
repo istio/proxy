@@ -105,9 +105,9 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
         case Network::Address::Type::EnvoyInternal:
           if (upstream_host->metadata()) {
             const auto& filter_metadata = upstream_host->metadata()->filter_metadata();
-            const auto& it = filter_metadata.find("tunnel");
+            const auto& it = filter_metadata.find("envoy.filters.listener.original_dst");
             if (it != filter_metadata.end()) {
-              const auto& destination_it = it->second.fields().find("destination");
+              const auto& destination_it = it->second.fields().find("local");
               if (destination_it != it->second.fields().end()) {
                 peer_address = Network::Utility::parseInternetAddressAndPortNoThrow(
                     destination_it->second.string_value(), /*v6only=*/false);
