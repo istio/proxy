@@ -56,8 +56,8 @@ using CelPrototypes = ConstSingleton<CelPrototypeValues>;
 
 class BaggageMethod : public DiscoveryMethod {
 public:
-  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
-                                          Http::HeaderMap&) const override;
+  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
+                                          Context&) const override;
 };
 
 class XDSMethod : public DiscoveryMethod {
@@ -65,8 +65,8 @@ public:
   XDSMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context)
       : downstream_(downstream),
         metadata_provider_(Extensions::Common::WorkloadDiscovery::GetProvider(factory_context)) {}
-  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
-                                          Http::HeaderMap&) const override;
+  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
+                                          Context&) const override;
 
 private:
   const bool downstream_;
@@ -74,7 +74,7 @@ private:
 };
 
 absl::optional<PeerInfo> BaggageMethod::derivePeerInfo(const StreamInfo::StreamInfo&,
-                                                       Http::HeaderMap& headers) const {
+                                                       Http::HeaderMap& headers, Context&) const {
   const auto header_string =
       Http::HeaderUtility::getAllOfHeaderAsString(headers, Headers::get().Baggage);
   const auto result = header_string.result();
@@ -86,7 +86,7 @@ absl::optional<PeerInfo> BaggageMethod::derivePeerInfo(const StreamInfo::StreamI
 }
 
 absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo& info,
-                                                   Http::HeaderMap&) const {
+                                                   Http::HeaderMap&, Context&) const {
   if (!metadata_provider_) {
     return {};
   }
@@ -128,17 +128,23 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
   return {};
 }
 
-MXMethod::MXMethod(Server::Configuration::ServerFactoryContext& factory_context)
-    : tls_(factory_context.threadLocal()) {
+MXMethod::MXMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context)
+    : downstream_(downstream), tls_(factory_context.threadLocal()) {
   tls_.set([](Event::Dispatcher&) { return std::make_shared<MXCache>(); });
 }
 
 absl::optional<PeerInfo> MXMethod::derivePeerInfo(const StreamInfo::StreamInfo&,
-                                                  Http::HeaderMap& headers) const {
+                                                  Http::HeaderMap& headers, Context& ctx) const {
   const auto peer_id_header = headers.get(Headers::get().ExchangeMetadataHeaderId);
+  if (downstream_) {
+    ctx.request_peer_id_received_ = !peer_id_header.empty();
+  }
   absl::string_view peer_id =
       peer_id_header.empty() ? "" : peer_id_header[0]->value().getStringView();
   const auto peer_info_header = headers.get(Headers::get().ExchangeMetadataHeader);
+  if (downstream_) {
+    ctx.request_peer_received_ = !peer_info_header.empty();
+  }
   absl::string_view peer_info =
       peer_info_header.empty() ? "" : peer_info_header[0]->value().getStringView();
   if (!peer_info.empty()) {
@@ -180,9 +186,10 @@ absl::optional<PeerInfo> MXMethod::lookup(absl::string_view id, absl::string_vie
 }
 
 MXPropagationMethod::MXPropagationMethod(
-    Server::Configuration::ServerFactoryContext& factory_context,
+    bool downstream, Server::Configuration::ServerFactoryContext& factory_context,
     const io::istio::http::peer_metadata::Config_IstioHeaders& istio_headers)
-    : id_(factory_context.localInfo().node().id()), value_(computeValue(factory_context)),
+    : downstream_(downstream), id_(factory_context.localInfo().node().id()),
+      value_(computeValue(factory_context)),
       skip_external_clusters_(istio_headers.skip_external_clusters()) {}
 
 std::string MXPropagationMethod::computeValue(
@@ -197,15 +204,19 @@ std::string MXPropagationMethod::computeValue(
   return Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 }
 
-void MXPropagationMethod::inject(const StreamInfo::StreamInfo& info,
-                                 Http::HeaderMap& headers) const {
+void MXPropagationMethod::inject(const StreamInfo::StreamInfo& info, Http::HeaderMap& headers,
+                                 Context& ctx) const {
   if (skip_external_clusters_) {
     if (skipMXHeaders(info)) {
       return;
     }
   }
-  headers.setReference(Headers::get().ExchangeMetadataHeaderId, id_);
-  headers.setReference(Headers::get().ExchangeMetadataHeader, value_);
+  if (!downstream_ || ctx.request_peer_id_received_) {
+    headers.setReference(Headers::get().ExchangeMetadataHeaderId, id_);
+  }
+  if (!downstream_ || ctx.request_peer_received_) {
+    headers.setReference(Headers::get().ExchangeMetadataHeader, value_);
+  }
 }
 
 FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
@@ -216,9 +227,9 @@ FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
       upstream_discovery_(
           buildDiscoveryMethods(config.upstream_discovery(), false, factory_context)),
       downstream_propagation_(
-          buildPropagationMethods(config.downstream_propagation(), factory_context)),
+          buildPropagationMethods(config.downstream_propagation(), true, factory_context)),
       upstream_propagation_(
-          buildPropagationMethods(config.upstream_propagation(), factory_context)) {}
+          buildPropagationMethods(config.upstream_propagation(), false, factory_context)) {}
 
 std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
     const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::DiscoveryMethod>&
@@ -238,7 +249,8 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
       break;
     case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::
         kIstioHeaders:
-      methods.push_back(std::make_unique<MXMethod>(factory_context.getServerFactoryContext()));
+      methods.push_back(
+          std::make_unique<MXMethod>(downstream, factory_context.getServerFactoryContext()));
       break;
     default:
       break;
@@ -250,7 +262,7 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
 std::vector<PropagationMethodPtr> FilterConfig::buildPropagationMethods(
     const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::PropagationMethod>&
         config,
-    Server::Configuration::FactoryContext& factory_context) const {
+    bool downstream, Server::Configuration::FactoryContext& factory_context) const {
   std::vector<PropagationMethodPtr> methods;
   methods.reserve(config.size());
   for (const auto& method : config) {
@@ -258,7 +270,7 @@ std::vector<PropagationMethodPtr> FilterConfig::buildPropagationMethods(
     case io::istio::http::peer_metadata::Config::PropagationMethod::MethodSpecifierCase::
         kIstioHeaders:
       methods.push_back(std::make_unique<MXPropagationMethod>(
-          factory_context.getServerFactoryContext(), method.istio_headers()));
+          downstream, factory_context.getServerFactoryContext(), method.istio_headers()));
       break;
     default:
       break;
@@ -267,20 +279,20 @@ std::vector<PropagationMethodPtr> FilterConfig::buildPropagationMethods(
   return methods;
 }
 
-void FilterConfig::discoverDownstream(StreamInfo::StreamInfo& info,
-                                      Http::RequestHeaderMap& headers) const {
-  discover(info, true, headers);
+void FilterConfig::discoverDownstream(StreamInfo::StreamInfo& info, Http::RequestHeaderMap& headers,
+                                      Context& ctx) const {
+  discover(info, true, headers, ctx);
 }
 
-void FilterConfig::discoverUpstream(StreamInfo::StreamInfo& info,
-                                    Http::ResponseHeaderMap& headers) const {
-  discover(info, false, headers);
+void FilterConfig::discoverUpstream(StreamInfo::StreamInfo& info, Http::ResponseHeaderMap& headers,
+                                    Context& ctx) const {
+  discover(info, false, headers, ctx);
 }
 
-void FilterConfig::discover(StreamInfo::StreamInfo& info, bool downstream,
-                            Http::HeaderMap& headers) const {
+void FilterConfig::discover(StreamInfo::StreamInfo& info, bool downstream, Http::HeaderMap& headers,
+                            Context& ctx) const {
   for (const auto& method : downstream ? downstream_discovery_ : upstream_discovery_) {
-    const auto result = method->derivePeerInfo(info, headers);
+    const auto result = method->derivePeerInfo(info, headers, ctx);
     if (result) {
       setFilterState(info, downstream, *result);
       break;
@@ -292,16 +304,16 @@ void FilterConfig::discover(StreamInfo::StreamInfo& info, bool downstream,
 }
 
 void FilterConfig::injectDownstream(const StreamInfo::StreamInfo& info,
-                                    Http::ResponseHeaderMap& headers) const {
+                                    Http::ResponseHeaderMap& headers, Context& ctx) const {
   for (const auto& method : downstream_propagation_) {
-    method->inject(info, headers);
+    method->inject(info, headers, ctx);
   }
 }
 
 void FilterConfig::injectUpstream(const StreamInfo::StreamInfo& info,
-                                  Http::RequestHeaderMap& headers) const {
+                                  Http::RequestHeaderMap& headers, Context& ctx) const {
   for (const auto& method : upstream_propagation_) {
-    method->inject(info, headers);
+    method->inject(info, headers, ctx);
   }
 }
 
@@ -332,8 +344,8 @@ void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
 }
 
 Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers, bool) {
-  config_->discoverDownstream(decoder_callbacks_->streamInfo(), headers);
-  config_->injectUpstream(decoder_callbacks_->streamInfo(), headers);
+  config_->discoverDownstream(decoder_callbacks_->streamInfo(), headers, ctx_);
+  config_->injectUpstream(decoder_callbacks_->streamInfo(), headers, ctx_);
   return Http::FilterHeadersStatus::Continue;
 }
 
@@ -357,8 +369,8 @@ bool MXPropagationMethod::skipMXHeaders(const StreamInfo::StreamInfo& info) cons
 }
 
 Http::FilterHeadersStatus Filter::encodeHeaders(Http::ResponseHeaderMap& headers, bool) {
-  config_->discoverUpstream(decoder_callbacks_->streamInfo(), headers);
-  config_->injectDownstream(decoder_callbacks_->streamInfo(), headers);
+  config_->discoverUpstream(decoder_callbacks_->streamInfo(), headers, ctx_);
+  config_->injectDownstream(decoder_callbacks_->streamInfo(), headers, ctx_);
   return Http::FilterHeadersStatus::Continue;
 }
 
