@@ -28,11 +28,12 @@ static constexpr char StatPrefix[] = "metadata_exchange.";
 
 Network::FilterFactoryCb createFilterFactoryHelper(
     const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
-    Server::Configuration::CommonFactoryContext& context, FilterDirection filter_direction) {
+    Server::Configuration::ServerFactoryContext& context, FilterDirection filter_direction) {
   ASSERT(!proto_config.protocol().empty());
 
   MetadataExchangeConfigSharedPtr filter_config(std::make_shared<MetadataExchangeConfig>(
-      StatPrefix, proto_config.protocol(), filter_direction, context.scope()));
+      StatPrefix, proto_config.protocol(), filter_direction, proto_config.enable_discovery(),
+      context, context.scope()));
   return [filter_config, &context](Network::FilterManager& filter_manager) -> void {
     filter_manager.addFilter(
         std::make_shared<MetadataExchangeFilter>(filter_config, context.localInfo()));
@@ -53,7 +54,8 @@ ProtobufTypes::MessagePtr MetadataExchangeConfigFactory::createEmptyConfigProto(
 Network::FilterFactoryCb MetadataExchangeConfigFactory::createFilterFactory(
     const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
     Server::Configuration::FactoryContext& context) {
-  return createFilterFactoryHelper(proto_config, context, FilterDirection::Downstream);
+  return createFilterFactoryHelper(proto_config, context.getServerFactoryContext(),
+                                   FilterDirection::Downstream);
 }
 
 Network::FilterFactoryCb MetadataExchangeUpstreamConfigFactory::createFilterFactoryFromProto(

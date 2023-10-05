@@ -4,3 +4,6 @@
     type_url: envoy.tcp.metadataexchange.config.MetadataExchange
     value:
       protocol: mx-protocol
+{{- if eq .Vars.EnableMetadataDiscovery "true" }}
+      enable_discovery: true
+{{- end }}

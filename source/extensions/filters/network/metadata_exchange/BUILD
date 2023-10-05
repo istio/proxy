@@ -40,6 +40,7 @@ envoy_cc_library(
     deps = [
         "//extensions/common:context",
         "//extensions/common:proto_util",
+        "//source/extensions/common/workload_discovery:api_lib",
         "//source/extensions/filters/network/metadata_exchange/config:metadata_exchange_cc_proto",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/base:endian",
@@ -86,6 +87,7 @@ envoy_cc_test(
         "@envoy//test/mocks/local_info:local_info_mocks",
         "@envoy//test/mocks/network:network_mocks",
         "@envoy//test/mocks/protobuf:protobuf_mocks",
+        "@envoy//test/mocks/server:server_factory_context_mocks",
         "@envoy//test/test_common:wasm_lib",
     ],
 )

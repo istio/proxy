@@ -19,4 +19,4 @@ load_assignment:
             port_value: {{ .Ports.ServerPort }}
 {{ .Vars.ClientClusterTLSContext }}
 filters:
-{{ .Vars.ClientUpstreamFilters }}
+{{ .Vars.ClientUpstreamFilters | fill }}

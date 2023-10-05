@@ -137,7 +137,6 @@ private:
         const auto& workload =
             dynamic_cast<const istio::workload::Workload&>(resource.get().resource());
         const auto& metadata = convert(workload);
-        index->emplace(workload.uid(), metadata);
         for (const auto& addr : workload.addresses()) {
           index->emplace(addr, metadata);
         }
@@ -145,6 +144,7 @@ private:
       parent_.reset(index);
       return absl::OkStatus();
     }
+    // TODO(kuat) This is not working correctly due to breakage by "uid" PR.
     absl::Status onConfigUpdate(const std::vector<Config::DecodedResourceRef>& added_resources,
                                 const Protobuf::RepeatedPtrField<std::string>& removed_resources,
                                 const std::string&) override {
