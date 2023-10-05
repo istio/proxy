@@ -30,6 +30,7 @@
 #include "source/common/protobuf/protobuf.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/network/metadata_exchange/config/metadata_exchange.pb.h"
+#include "source/extensions/common/workload_discovery/api.h"
 
 namespace Envoy {
 namespace Tcp {
@@ -58,7 +59,7 @@ struct MetadataExchangeStats {
  * Direction of the flow of traffic in which this this MetadataExchange filter
  * is placed.
  */
-enum FilterDirection { Downstream, Upstream };
+enum class FilterDirection { Downstream, Upstream };
 
 /**
  * Configuration for the MetadataExchange filter.
@@ -66,7 +67,9 @@ enum FilterDirection { Downstream, Upstream };
 class MetadataExchangeConfig {
 public:
   MetadataExchangeConfig(const std::string& stat_prefix, const std::string& protocol,
-                         const FilterDirection filter_direction, Stats::Scope& scope);
+                         const FilterDirection filter_direction, bool enable_discovery,
+                         Server::Configuration::ServerFactoryContext& factory_context,
+                         Stats::Scope& scope);
 
   const MetadataExchangeStats& stats() { return stats_; }
 
@@ -78,14 +81,15 @@ public:
   const std::string protocol_;
   // Direction of filter.
   const FilterDirection filter_direction_;
+  // Set if WDS is enabled.
+  Extensions::Common::WorkloadDiscovery::WorkloadMetadataProviderSharedPtr metadata_provider_;
   // Stats for MetadataExchange Filter.
   MetadataExchangeStats stats_;
 
   static const CelStatePrototype& nodeInfoPrototype() {
     static const CelStatePrototype* const prototype = new CelStatePrototype(
         true, ::Envoy::Extensions::Filters::Common::Expr::CelStateType::FlatBuffers,
-        toAbslStringView(::Wasm::Common::nodeInfoSchema()),
-        StreamInfo::FilterState::LifeSpan::Connection);
+        ::Wasm::Common::nodeInfoSchema(), StreamInfo::FilterState::LifeSpan::Connection);
     return *prototype;
   }
 
@@ -133,7 +137,7 @@ private:
   void tryReadProxyData(Buffer::Instance& data);
 
   // Helper function to share the metadata with other filters.
-  void updatePeer(const Envoy::ProtobufWkt::Struct& struct_value);
+  void updatePeer(const std::string& fb);
   void updatePeerId(absl::string_view key, absl::string_view value);
 
   // Helper function to get Dynamic metadata.

@@ -30,8 +30,13 @@ metric:
     value: spiffe://cluster.local/ns/default/sa/server
   - name: destination_app
     value: ratings
+{{- if eq .Vars.AppVersionFallback "true" }}
+  - name: destination_version
+    value: version-1
+{{- else }}
   - name: destination_version
     value: v1
+{{- end }}
   - name: destination_service
     value: server.default.svc.cluster.local
   - name: destination_canonical_service

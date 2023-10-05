@@ -28,4 +28,7 @@ message MetadataExchange {
   // Protocol that Alpn should support on the server.
   // [#comment:TODO(GargNupur): Make it a list.]
   string protocol = 1;
+
+  // If true, will attempt to use WDS in case the prefix peer metadata is not available.
+  bool enable_discovery = 2;
 }
