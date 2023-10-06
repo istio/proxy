@@ -137,6 +137,15 @@ bootstrap_extensions:
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
     type_url: type.googleapis.com/envoy.extensions.bootstrap.internal_listener.v3.InternalListener
+{{- if eq .Vars.EnableMetadataDiscovery "true" }}
+- name: metadata_discovery
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/istio.workload.BootstrapExtension
+    value:
+      config_source:
+        ads: {}
+{{- end }}
 `)
 
 func bootstrapClientYamlTmplBytes() ([]byte, error) {
