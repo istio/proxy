@@ -317,8 +317,8 @@ constexpr absl::string_view SampleIstioHeader =
     "NLRFJJVkVSX01PTklUT1JJTkdfRVhQT1JUX0lOVEVSVkFMX1NFQ1MSBBoCMjA";
 
 TEST(MXMethod, Cache) {
-  NiceMock<Server::Configuration::MockServerFactoryContext> context_;
-  MXMethod method(context_);
+  NiceMock<Server::Configuration::MockServerFactoryContext> context;
+  MXMethod method(true, context);
   NiceMock<StreamInfo::MockStreamInfo> stream_info;
   Http::TestRequestHeaderMapImpl request_headers;
   const int32_t max = 1000;
@@ -327,7 +327,8 @@ TEST(MXMethod, Cache) {
       std::string id = absl::StrCat("test-", i);
       request_headers.setReference(Headers::get().ExchangeMetadataHeaderId, id);
       request_headers.setReference(Headers::get().ExchangeMetadataHeader, SampleIstioHeader);
-      const auto result = method.derivePeerInfo(stream_info, request_headers);
+      Context ctx;
+      const auto result = method.derivePeerInfo(stream_info, request_headers, ctx);
       EXPECT_TRUE(result.has_value());
     }
   }
@@ -427,8 +428,23 @@ TEST_F(PeerMetadataTest, DownstreamMXPropagation) {
       - istio_headers: {}
   )EOF");
   EXPECT_EQ(0, request_headers_.size());
-  EXPECT_EQ(2, response_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
   checkNoPeer(true);
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, DownstreamMXDiscoveryPropagation) {
+  request_headers_.setReference(Headers::get().ExchangeMetadataHeaderId, "test-pod");
+  request_headers_.setReference(Headers::get().ExchangeMetadataHeader, SampleIstioHeader);
+  initialize(R"EOF(
+    downstream_discovery:
+      - istio_headers: {}
+    downstream_propagation:
+      - istio_headers: {}
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(2, response_headers_.size());
+  checkPeerNamespace(true, "default");
   checkNoPeer(false);
 }
 
