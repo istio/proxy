@@ -43,12 +43,17 @@ using Headers = ConstSingleton<HeaderValues>;
 // Peer info in the flatbuffers format.
 using PeerInfo = std::string;
 
+struct Context {
+  bool request_peer_id_received_{false};
+  bool request_peer_received_{false};
+};
+
 // Base class for the discovery methods. First derivation wins but all methods perform removal.
 class DiscoveryMethod {
 public:
   virtual ~DiscoveryMethod() = default;
-  virtual absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
-                                                  Http::HeaderMap&) const PURE;
+  virtual absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
+                                                  Context&) const PURE;
   virtual void remove(Http::HeaderMap&) const {}
 };
 
@@ -56,13 +61,14 @@ using DiscoveryMethodPtr = std::unique_ptr<DiscoveryMethod>;
 
 class MXMethod : public DiscoveryMethod {
 public:
-  MXMethod(Server::Configuration::ServerFactoryContext& factory_context);
-  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&,
-                                          Http::HeaderMap&) const override;
+  MXMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context);
+  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
+                                          Context&) const override;
   void remove(Http::HeaderMap&) const override;
 
 private:
   absl::optional<PeerInfo> lookup(absl::string_view id, absl::string_view value) const;
+  const bool downstream_;
   struct MXCache : public ThreadLocal::ThreadLocalObject {
     absl::flat_hash_map<std::string, std::string> cache_;
   };
@@ -74,18 +80,19 @@ private:
 class PropagationMethod {
 public:
   virtual ~PropagationMethod() = default;
-  virtual void inject(const StreamInfo::StreamInfo&, Http::HeaderMap&) const PURE;
+  virtual void inject(const StreamInfo::StreamInfo&, Http::HeaderMap&, Context&) const PURE;
 };
 
 using PropagationMethodPtr = std::unique_ptr<PropagationMethod>;
 
 class MXPropagationMethod : public PropagationMethod {
 public:
-  MXPropagationMethod(Server::Configuration::ServerFactoryContext& factory_context,
+  MXPropagationMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context,
                       const io::istio::http::peer_metadata::Config_IstioHeaders&);
-  void inject(const StreamInfo::StreamInfo&, Http::HeaderMap&) const override;
+  void inject(const StreamInfo::StreamInfo&, Http::HeaderMap&, Context&) const override;
 
 private:
+  const bool downstream_;
   std::string computeValue(Server::Configuration::ServerFactoryContext&) const;
   const std::string id_;
   const std::string value_;
@@ -97,10 +104,10 @@ class FilterConfig : public Logger::Loggable<Logger::Id::filter> {
 public:
   FilterConfig(const io::istio::http::peer_metadata::Config&,
                Server::Configuration::FactoryContext&);
-  void discoverDownstream(StreamInfo::StreamInfo&, Http::RequestHeaderMap&) const;
-  void discoverUpstream(StreamInfo::StreamInfo&, Http::ResponseHeaderMap&) const;
-  void injectDownstream(const StreamInfo::StreamInfo&, Http::ResponseHeaderMap&) const;
-  void injectUpstream(const StreamInfo::StreamInfo&, Http::RequestHeaderMap&) const;
+  void discoverDownstream(StreamInfo::StreamInfo&, Http::RequestHeaderMap&, Context&) const;
+  void discoverUpstream(StreamInfo::StreamInfo&, Http::ResponseHeaderMap&, Context&) const;
+  void injectDownstream(const StreamInfo::StreamInfo&, Http::ResponseHeaderMap&, Context&) const;
+  void injectUpstream(const StreamInfo::StreamInfo&, Http::RequestHeaderMap&, Context&) const;
 
 private:
   std::vector<DiscoveryMethodPtr> buildDiscoveryMethods(
@@ -108,13 +115,13 @@ private:
       bool downstream, Server::Configuration::FactoryContext&) const;
   std::vector<PropagationMethodPtr> buildPropagationMethods(
       const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::PropagationMethod>&,
-      Server::Configuration::FactoryContext&) const;
+      bool downstream, Server::Configuration::FactoryContext&) const;
   StreamInfo::StreamSharingMayImpactPooling sharedWithUpstream() const {
     return shared_with_upstream_
                ? StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce
                : StreamInfo::StreamSharingMayImpactPooling::None;
   }
-  void discover(StreamInfo::StreamInfo&, bool downstream, Http::HeaderMap&) const;
+  void discover(StreamInfo::StreamInfo&, bool downstream, Http::HeaderMap&, Context&) const;
   void setFilterState(StreamInfo::StreamInfo&, bool downstream, const std::string& value) const;
   const bool shared_with_upstream_;
   const std::vector<DiscoveryMethodPtr> downstream_discovery_;
@@ -133,6 +140,7 @@ public:
 
 private:
   FilterConfigSharedPtr config_;
+  Context ctx_;
 };
 
 class FilterConfigFactory : public Common::FactoryBase<io::istio::http::peer_metadata::Config> {
