@@ -24,6 +24,7 @@
 #include "test/mocks/local_info/mocks.h"
 #include "test/mocks/network/mocks.h"
 #include "test/mocks/protobuf/mocks.h"
+#include "test/mocks/server/server_factory_context.h"
 
 using ::google::protobuf::util::MessageDifferencer;
 using testing::NiceMock;
@@ -57,7 +58,7 @@ public:
 
   void initialize() {
     config_ = std::make_shared<MetadataExchangeConfig>(
-        stat_prefix_, "istio2", FilterDirection::Downstream, *scope_.rootScope());
+        stat_prefix_, "istio2", FilterDirection::Downstream, false, context_, *scope_.rootScope());
     filter_ = std::make_unique<MetadataExchangeFilter>(config_, local_info_);
     filter_->initializeReadFilterCallbacks(read_filter_callbacks_);
     filter_->initializeWriteFilterCallbacks(write_filter_callbacks_);
@@ -78,6 +79,7 @@ public:
     (*productpage_value_.mutable_fields())["labels"].set_string_value("{app, productpage}");
   }
 
+  NiceMock<Server::Configuration::MockServerFactoryContext> context_;
   Envoy::ProtobufWkt::Struct details_value_;
   Envoy::ProtobufWkt::Struct productpage_value_;
   MetadataExchangeConfigSharedPtr config_;

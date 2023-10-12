@@ -62,12 +62,16 @@ bool serializeToStringDeterministic(const google::protobuf::Struct& metadata,
 
 } // namespace
 
-MetadataExchangeConfig::MetadataExchangeConfig(const std::string& stat_prefix,
-                                               const std::string& protocol,
-                                               const FilterDirection filter_direction,
-                                               Stats::Scope& scope)
+MetadataExchangeConfig::MetadataExchangeConfig(
+    const std::string& stat_prefix, const std::string& protocol,
+    const FilterDirection filter_direction, bool enable_discovery,
+    Server::Configuration::ServerFactoryContext& factory_context, Stats::Scope& scope)
     : scope_(scope), stat_prefix_(stat_prefix), protocol_(protocol),
-      filter_direction_(filter_direction), stats_(generateStats(stat_prefix, scope)) {}
+      filter_direction_(filter_direction), stats_(generateStats(stat_prefix, scope)) {
+  if (enable_discovery) {
+    metadata_provider_ = Extensions::Common::WorkloadDiscovery::GetProvider(factory_context);
+  }
+}
 
 Network::FilterStatus MetadataExchangeFilter::onData(Buffer::Instance& data, bool end_stream) {
   switch (conn_state_) {
@@ -260,33 +264,34 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
       Envoy::MessageUtil::anyConvert<Envoy::ProtobufWkt::Struct>(proxy_data);
   auto key_metadata_it = value_struct.fields().find(ExchangeMetadataHeader);
   if (key_metadata_it != value_struct.fields().end()) {
-    updatePeer(key_metadata_it->second.struct_value());
+    const auto fb =
+        ::Wasm::Common::extractNodeFlatBufferFromStruct(key_metadata_it->second.struct_value());
+    std::string out(reinterpret_cast<const char*>(fb.data()), fb.size());
+    updatePeer(out);
   }
   const auto key_metadata_id_it = value_struct.fields().find(ExchangeMetadataHeaderId);
   if (key_metadata_id_it != value_struct.fields().end()) {
     Envoy::ProtobufWkt::Value val = key_metadata_id_it->second;
-    updatePeerId(toAbslStringView(config_->filter_direction_ == FilterDirection::Downstream
-                                      ? ::Wasm::Common::kDownstreamMetadataIdKey
-                                      : ::Wasm::Common::kUpstreamMetadataIdKey),
+    updatePeerId(config_->filter_direction_ == FilterDirection::Downstream
+                     ? ::Wasm::Common::kDownstreamMetadataIdKey
+                     : ::Wasm::Common::kUpstreamMetadataIdKey,
                  val.string_value());
   }
 }
 
-void MetadataExchangeFilter::updatePeer(const Envoy::ProtobufWkt::Struct& struct_value) {
-  const auto fb = ::Wasm::Common::extractNodeFlatBufferFromStruct(struct_value);
-
+void MetadataExchangeFilter::updatePeer(const std::string& fb) {
   // Filter object captures schema by view, hence the global singleton for the
   // prototype.
   auto state = std::make_unique<::Envoy::Extensions::Filters::Common::Expr::CelState>(
       MetadataExchangeConfig::nodeInfoPrototype());
-  state->setValue(absl::string_view(reinterpret_cast<const char*>(fb.data()), fb.size()));
+  state->setValue(fb);
 
   auto key = config_->filter_direction_ == FilterDirection::Downstream
                  ? ::Wasm::Common::kDownstreamMetadataKey
                  : ::Wasm::Common::kUpstreamMetadataKey;
   read_callbacks_->connection().streamInfo().filterState()->setData(
-      absl::StrCat("wasm.", toAbslStringView(key)), std::move(state),
-      StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::Connection);
+      absl::StrCat("wasm.", key), std::move(state), StreamInfo::FilterState::StateType::Mutable,
+      StreamInfo::FilterState::LifeSpan::Connection);
 }
 
 void MetadataExchangeFilter::updatePeerId(absl::string_view key, absl::string_view value) {
@@ -311,6 +316,21 @@ void MetadataExchangeFilter::getMetadata(google::protobuf::Struct* metadata) {
 std::string MetadataExchangeFilter::getMetadataId() { return local_info_.node().id(); }
 
 void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
+  if (config_->metadata_provider_) {
+    const Network::Address::InstanceConstSharedPtr peer_address =
+        read_callbacks_->connection().connectionInfoProvider().remoteAddress();
+    ENVOY_LOG(debug, "Look up metadata based on peer address {}", peer_address->asString());
+    const auto metadata_object = config_->metadata_provider_->GetMetadata(peer_address);
+    if (metadata_object) {
+      updatePeer(Istio::Common::convertWorkloadMetadataToFlatNode(metadata_object.value()));
+      updatePeerId(config_->filter_direction_ == FilterDirection::Downstream
+                       ? ::Wasm::Common::kDownstreamMetadataIdKey
+                       : ::Wasm::Common::kUpstreamMetadataIdKey,
+                   "unknown");
+      config_->stats().metadata_added_.inc();
+      return;
+    }
+  }
   updatePeerId(::Wasm::Common::kMetadataNotFoundValue, ::Wasm::Common::kMetadataNotFoundValue);
 }
 

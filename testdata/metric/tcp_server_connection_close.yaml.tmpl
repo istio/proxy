@@ -16,10 +16,17 @@ metric:
     value: default
   - name: source_principal
     value: spiffe://cluster.local/ns/default/sa/client
+{{- if eq .Vars.AppVersionFallback "true" }}
+  - name: source_app
+    value: productpage-v1
+  - name: source_version
+    value: version-1
+{{- else }}
   - name: source_app
     value: productpage
   - name: source_version
     value: v1
+{{- end }}
   - name: source_cluster
     value: client-cluster
   - name: destination_workload
