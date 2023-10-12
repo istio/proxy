@@ -135,6 +135,7 @@ ENVOY_EXTENSIONS = {
     "envoy.filters.http.ratelimit":                     "//source/extensions/filters/http/ratelimit:config",
     "envoy.filters.http.rbac":                          "//source/extensions/filters/http/rbac:config",
     "envoy.filters.http.router":                        "//source/extensions/filters/http/router:config",
+    "envoy.filters.http.set_filter_state":              "//source/extensions/filters/http/set_filter_state:config",
     "envoy.filters.http.set_metadata":                  "//source/extensions/filters/http/set_metadata:config",
     "envoy.filters.http.tap":                           "//source/extensions/filters/http/tap:config",
     "envoy.filters.http.wasm":                          "//source/extensions/filters/http/wasm:config",
@@ -171,6 +172,7 @@ ENVOY_EXTENSIONS = {
     "envoy.filters.network.redis_proxy":                          "//source/extensions/filters/network/redis_proxy:config",
     "envoy.filters.network.tcp_proxy":                            "//source/extensions/filters/network/tcp_proxy:config",
     "envoy.filters.network.thrift_proxy":                         "//source/extensions/filters/network/thrift_proxy:config",
+    "envoy.filters.network.set_filter_state":                     "//source/extensions/filters/network/set_filter_state:config",
     "envoy.filters.network.sni_cluster":                          "//source/extensions/filters/network/sni_cluster:config",
     "envoy.filters.network.sni_dynamic_forward_proxy":            "//source/extensions/filters/network/sni_dynamic_forward_proxy:config",
     "envoy.filters.network.wasm":                                 "//source/extensions/filters/network/wasm:config",
@@ -387,6 +389,7 @@ ENVOY_EXTENSIONS = {
     "envoy.load_balancing_policies.maglev":            "//source/extensions/load_balancing_policies/maglev:config",
     "envoy.load_balancing_policies.ring_hash":         "//source/extensions/load_balancing_policies/ring_hash:config",
     "envoy.load_balancing_policies.subset":            "//source/extensions/load_balancing_policies/subset:config",
+    "envoy.load_balancing_policies.cluster_provided":  "//source/extensions/load_balancing_policies/cluster_provided:config",
 
     #
     # Config Subscription

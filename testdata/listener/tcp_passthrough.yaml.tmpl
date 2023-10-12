@@ -10,7 +10,14 @@ filter_chains:
   - name: connect_authority
     typed_config:
       "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-      type_url: type.googleapis.com/io.istio.http.connect_authority.Config
+      type_url: type.googleapis.com/envoy.extensions.filters.network.set_filter_state.v3.Config
+      value:
+        on_new_connection:
+        - object_key: envoy.filters.listener.original_dst.local_ip
+          format_string:
+            text_format_source:
+              inline_string: "%FILTER_STATE(envoy.filters.listener.original_dst.local_ip:PLAIN)%"
+          shared_with_upstream: ONCE
   - name: tcp_proxy
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy

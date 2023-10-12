@@ -40,7 +40,6 @@ envoy_cc_binary(
         "//source/extensions/common/workload_discovery:api_lib",  # Experimental: WIP
         "//source/extensions/filters/http/alpn:config_lib",
         "//source/extensions/filters/http/authn:filter_lib",
-        "//source/extensions/filters/http/connect_authority",  # Experimental: ambient
         "//source/extensions/filters/http/istio_stats",
         "//source/extensions/filters/http/peer_metadata:filter_lib",
         "//source/extensions/filters/network/istio_authn:config_lib",
