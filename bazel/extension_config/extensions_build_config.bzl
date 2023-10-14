@@ -347,6 +347,7 @@ ENVOY_EXTENSIONS = {
 
     "envoy.formatter.metadata":                         "//source/extensions/formatter/metadata:config",
     "envoy.formatter.req_without_query":                "//source/extensions/formatter/req_without_query:config",
+    "envoy.formatter.cel":                              "//source/extensions/formatter/cel:config",
 
     #
     # Key value store
