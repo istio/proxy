@@ -7,10 +7,10 @@ require (
 	cloud.google.com/go/monitoring v1.16.0
 	cloud.google.com/go/trace v1.10.1
 	github.com/cncf/xds/go v0.0.0-20230607035331-e9ce68804cb4
-	github.com/envoyproxy/go-control-plane v0.11.2-0.20231006174933-31216eb2a563
+	github.com/envoyproxy/go-control-plane v0.11.2-0.20231013203759-52093cd01fd1
 	github.com/golang/protobuf v1.5.3
 	github.com/google/go-cmp v0.5.9
-	github.com/prometheus/client_model v0.4.0
+	github.com/prometheus/client_model v0.5.0
 	github.com/prometheus/common v0.44.0
 	go.opentelemetry.io/proto/otlp v1.0.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20230920204549-e6e6cdab5c13
