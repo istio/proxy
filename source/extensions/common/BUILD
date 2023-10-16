@@ -56,6 +56,20 @@ envoy_cc_library(
     ],
 )
 
+envoy_cc_library(
+    name = "filter_objects_lib",
+    hdrs = [
+        "filter_objects.h",
+    ],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@envoy//envoy/registry",
+        "@envoy//envoy/stream_info:filter_state_interface",
+        "@envoy//source/common/router:string_accessor_lib",
+    ],
+)
+
 envoy_cc_test(
     name = "authn_test",
     srcs = [

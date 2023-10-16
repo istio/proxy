@@ -32,8 +32,8 @@ envoy_cc_extension(
     deps = [
         ":config_cc_proto",
         "//extensions/common:metadata_object_lib",
+        "//source/extensions/common:filter_objects_lib",
         "//source/extensions/common:utils_lib",
-        "//source/extensions/filters/network/istio_authn:config_lib",
         "@com_google_cel_cpp//eval/public:builtin_func_registrar",
         "@com_google_cel_cpp//eval/public:cel_expr_builder_factory",
         "@com_google_cel_cpp//parser",

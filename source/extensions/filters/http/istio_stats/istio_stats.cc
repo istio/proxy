@@ -29,12 +29,12 @@
 #include "source/common/network/utility.h"
 #include "source/common/stream_info/utility.h"
 #include "source/extensions/common/utils.h"
+#include "source/extensions/common/filter_objects.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/common/expr/context.h"
 #include "source/extensions/filters/common/expr/evaluator.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
 #include "source/extensions/filters/http/grpc_stats/grpc_stats_filter.h"
-#include "source/extensions/filters/network/istio_authn/config.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -1013,9 +1013,12 @@ private:
     switch (config_->reporter()) {
     case Reporter::ServerSidecar:
     case Reporter::ServerGateway: {
-      auto principals = NetworkFilters::IstioAuthn::getPrincipals(info.filterState());
-      peer_san = principals.peer;
-      local_san = principals.local;
+      auto peer_principal = info.filterState().getDataReadOnly<Router::StringAccessor>(
+          Extensions::Common::PeerPrincipalKey);
+      auto local_principal = info.filterState().getDataReadOnly<Router::StringAccessor>(
+          Extensions::Common::LocalPrincipalKey);
+      peer_san = peer_principal ? peer_principal->asString() : "";
+      local_san = local_principal ? local_principal->asString() : "";
 
       // This fallback should be deleted once istio_authn is globally enabled.
       if (peer_san.empty() && local_san.empty()) {
