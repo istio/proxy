@@ -44,8 +44,7 @@ func TestTCPMetadataExchange(t *testing.T) {
 			}
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-			params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_authn_network_filter.yaml.tmpl") + "\n" +
-				params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
+			params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
 				params.LoadTestData("testdata/filters/server_stats_network_filter.yaml.tmpl")
 			params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
 			params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/client_stats_network_filter.yaml.tmpl")
@@ -126,8 +125,7 @@ func TestTCPMetadataExchangeNoAlpn(t *testing.T) {
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_authn_network_filter.yaml.tmpl") + "\n" +
-		params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
+	params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
 		params.LoadTestData("testdata/filters/server_stats_network_filter.yaml.tmpl")
 	params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
 	params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/client_stats_network_filter.yaml.tmpl")
@@ -175,8 +173,7 @@ func TestTCPMetadataExchangeWithConnectionTermination(t *testing.T) {
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
-	params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_authn_network_filter.yaml.tmpl") + "\n" +
-		params.LoadTestData("testdata/filters/server_stats_network_filter.yaml.tmpl")
+	params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_stats_network_filter.yaml.tmpl")
 	params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
 	params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
 		params.LoadTestData("testdata/filters/client_stats_network_filter.yaml.tmpl")
