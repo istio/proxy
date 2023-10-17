@@ -35,10 +35,10 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 
-# Commit date: 2023-10-16
-ENVOY_SHA = "e528a9c896cdacafbf5bfc5869b4cd4dd71dd3d1"
+# Commit date: 2023-10-17
+ENVOY_SHA = "730ce85c658dc09f3d25ef000a2f2262e2aeac8e"
 
-ENVOY_SHA256 = "d0fa772db6a3747e20d37b75dd97c1708264be7a28bb5a713cd4f7f6fe529bcf"
+ENVOY_SHA256 = "ebac0634bc16918790996e20842c17e7a77704d6e6cc044dbe8987a9b43b5683"
 
 ENVOY_ORG = "envoyproxy"
 
