@@ -487,7 +487,21 @@ filter_chains:
       - name: connect_authority
         typed_config:
           "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-          type_url: type.googleapis.com/io.istio.http.connect_authority.Config
+          type_url: type.googleapis.com/envoy.extensions.filters.http.set_filter_state.v3.Config
+          value:
+            on_request_headers:
+            - object_key: envoy.filters.listener.original_dst.local_ip
+              format_string:
+                text_format_source:
+                  inline_string: "%REQ(:AUTHORITY)%"
+                omit_empty_values: true
+              shared_with_upstream: ONCE
+              skip_if_empty: true
+            - object_key: envoy.filters.listener.original_dst.remote_ip
+              format_string:
+                text_format_source:
+                  inline_string: "%DOWNSTREAM_REMOTE_ADDRESS%"
+              shared_with_upstream: ONCE
       - name: envoy.filters.http.router
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
@@ -499,13 +513,6 @@ filter_chains:
           routes:
           - name: client_route
             match: { prefix: / }
-            typed_per_filter_config:
-              connect_authority:
-                "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-                type_url: type.googleapis.com/io.istio.http.connect_authority.Config
-                value:
-                  enabled: true
-                  port: {{ .Ports.ServerTunnelPort }}
             route:
               cluster: tcp_passthrough
               timeout: 0s
@@ -677,7 +684,14 @@ filter_chains:
   - name: connect_authority
     typed_config:
       "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-      type_url: type.googleapis.com/io.istio.http.connect_authority.Config
+      type_url: type.googleapis.com/envoy.extensions.filters.network.set_filter_state.v3.Config
+      value:
+        on_new_connection:
+        - object_key: envoy.filters.listener.original_dst.local_ip
+          format_string:
+            text_format_source:
+              inline_string: "%FILTER_STATE(envoy.filters.listener.original_dst.local_ip:PLAIN)%"
+          shared_with_upstream: ONCE
   - name: tcp_proxy
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
@@ -758,16 +772,6 @@ udp_listener_config:
 filter_chains:
 - filters:
   # Capture SSL info for the internal listener passthrough
-{{ if eq .Vars.quic "true" }}
-# TODO: accessing uriSanPeerCertificates() triggers a crash in quiche version.
-{{ else }}
-  - name: authn
-    typed_config:
-      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-      type_url: type.googleapis.com/io.istio.network.authn.Config
-      value:
-        shared: true
-{{ end }}
   - name: envoy.filters.network.http_connection_manager
     typed_config:
       "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
@@ -792,7 +796,27 @@ filter_chains:
                 connect_config:
                   {}
       http_filters:
-      - name: peer_metadata 
+      {{ if eq .Vars.quic "true" }}
+      # TODO: accessing uriSanPeerCertificates() triggers a crash in quiche version.
+      {{ else }}
+      - name: authn
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: type.googleapis.com/envoy.extensions.filters.http.set_filter_state.v3.Config
+          value:
+            on_request_headers:
+            - object_key: io.istio.peer_principal
+              format_string:
+                text_format_source:
+                  inline_string: "%DOWNSTREAM_PEER_URI_SAN%"
+              shared_with_upstream: ONCE
+            - object_key: io.istio.local_principal
+              format_string:
+                text_format_source:
+                  inline_string: "%DOWNSTREAM_LOCAL_URI_SAN%"
+              shared_with_upstream: ONCE
+      {{ end }}
+      - name: peer_metadata
         typed_config:
           "@type": type.googleapis.com/udpa.type.v1.TypedStruct
           type_url: type.googleapis.com/io.istio.http.peer_metadata.Config
