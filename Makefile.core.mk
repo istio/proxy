@@ -49,6 +49,7 @@ BAZEL_CONFIG_TSAN = # no working config
 endif
 BAZEL_CONFIG_CURRENT ?= $(BAZEL_CONFIG_DEV)
 
+BAZEL_BIN_PATH ?= $(shell bazel info $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) bazel-bin)
 TEST_ENVOY_TARGET ?= //:envoy
 TEST_ENVOY_DEBUG ?= trace
 
