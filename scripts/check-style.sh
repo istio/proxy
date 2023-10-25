@@ -124,7 +124,7 @@ ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 ENVOY_SHA="$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "${WORKSPACE}")"
 
-TMP_DIR=`mktemp -d`
+TMP_DIR=$(mktemp -d)
 ENVOY_EXTENSIONS_BUILD_CONFIG="${TMP_DIR}/envoy.bzl"
 PROXY_EXTENSIONS_BUILD_CONFIG="${TMP_DIR}/proxy.bzl"
 
