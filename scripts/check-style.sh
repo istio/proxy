@@ -128,10 +128,12 @@ TMP_DIR=`mktemp -d`
 ENVOY_EXTENSIONS_BUILD_CONFIG="${TMP_DIR}/envoy.bzl"
 PROXY_EXTENSIONS_BUILD_CONFIG="${TMP_DIR}/proxy.bzl"
 
-# download envoy extension build config
+echo "get envoy extensions build config from ${ENVOY_ORG}/${ENVOY_REPO} commit: ${ENVOY_SHA}"
 curl --silent --show-error --retry 10 --location \
       "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${ENVOY_SHA}/source/extensions/extensions_build_config.bzl" \
       -o "${ENVOY_EXTENSIONS_BUILD_CONFIG}" \
+    || { echo "Could not get envoy extensions build config." ; exit 1 ; }
+
 # backup proxy extension build config
 cp "${ROOT}/bazel/extension_config/extensions_build_config.bzl" "${TMP_DIR}/proxy.bzl"
 # remove the first line
