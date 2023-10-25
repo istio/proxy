@@ -116,7 +116,7 @@ echo "All files are properly formatted."
 
 popd || exit 1
 
-check "Checking extensions build config"
+echo "Checking extensions build config"
 
 WORKSPACE="${ROOT}/WORKSPACE"
 
@@ -140,4 +140,4 @@ sed -i "1d" "${PROXY_EXTENSIONS_BUILD_CONFIG}"
 go run tools/extension-check/main.go \
   --ignore-extensions tools/extension-check/wellknown-extensions \
   --envoy-extensions-build-config "${ENVOY_EXTENSIONS_BUILD_CONFIG}" \
-  --proxy-extensions-build-config "${PROXY_EXTENSIONS_BUILD_CONFIG}"
+  --proxy-extensions-build-config "${PROXY_EXTENSIONS_BUILD_CONFIG}" || exit 1

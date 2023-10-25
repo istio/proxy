@@ -15,7 +15,6 @@ envoy.http.custom_response.local_response_policy
 envoy.filters.http.grpc_field_extraction
 envoy.quic.server_preferred_address.fixed
 envoy.network.dns_resolver.getaddrinfo
-envoy.compression.zstd.compressor
 envoy.route.early_data_policy.default
 envoy.geoip_providers.maxmind
 envoy.health_check.event_sinks.file
