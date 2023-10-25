@@ -142,4 +142,5 @@ sed -i "1d" "${PROXY_EXTENSIONS_BUILD_CONFIG}"
 go run tools/extension-check/main.go \
   --ignore-extensions tools/extension-check/wellknown-extensions \
   --envoy-extensions-build-config "${ENVOY_EXTENSIONS_BUILD_CONFIG}" \
-  --proxy-extensions-build-config "${PROXY_EXTENSIONS_BUILD_CONFIG}" || exit 1
+  --proxy-extensions-build-config "${PROXY_EXTENSIONS_BUILD_CONFIG}" \
+  || { echo "failed to check extension build config"; exit 1;}
