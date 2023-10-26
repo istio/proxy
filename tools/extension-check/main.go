@@ -75,6 +75,9 @@ func main() {
 	}
 }
 
+// extensions returns a map of extensions from the given file with giving key.
+// The file is expected to be a starlark file that defines a global variable.
+// Depends on go.starlark.net/starlark.
 func extensions(filename, key string) (map[string]string, error) {
 	thread := &starlark.Thread{
 		Name:  "extensions",
