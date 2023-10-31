@@ -20,6 +20,7 @@ package io.istio.http.peer_metadata;
 // Peer metadata provider filter. This filter encapsulates the discovery of the
 // peer telemetry attributes for consumption by the telemetry filters.
 message Config {
+  // DEPRECATED.
   // This method uses `baggage` header encoding.
   message Baggage {
   }
