@@ -34,7 +34,7 @@ var _ Step = &TCPServer{}
 
 func (t *TCPServer) Run(p *Params) error {
 	var err error
-	t.lis, err = net.Listen("tcp", fmt.Sprintf(":%d", p.Ports.BackendPort))
+	t.lis, err = net.Listen("tcp", fmt.Sprintf("127.0.0.3:%d", p.Ports.BackendPort))
 	if err != nil {
 		return fmt.Errorf("failed to listen on %v", err)
 	}
@@ -65,7 +65,7 @@ func waitForTCPServer(port uint16) error {
 	for i := 0; i < 30; i++ {
 		var conn net.Conn
 		var err error
-		conn, err = net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+		conn, err = net.Dial("tcp", fmt.Sprintf("127.0.0.3:%d", port))
 		if err != nil {
 			log.Println("Will wait 200ms and try again.")
 			time.Sleep(200 * time.Millisecond)

@@ -660,7 +660,7 @@ func TestStatsServerWaypointProxy(t *testing.T) {
 			&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
 			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
 			&driver.UpdateWorkloadMetadata{Workloads: []driver.WorkloadMetadata{{
-				Address:  "127.0.0.1",
+				Address:  "127.0.0.3",
 				Metadata: BackendMetadata,
 			}}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
@@ -731,7 +731,7 @@ func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 				},
 			},
 			&driver.UpdateWorkloadMetadata{Workloads: []driver.WorkloadMetadata{{
-				Address:  "127.0.0.1",
+				Address:  "127.0.0.3",
 				Metadata: BackendMetadata,
 			}}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
