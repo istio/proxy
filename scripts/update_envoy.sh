@@ -35,7 +35,7 @@ ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 
 # get latest commit for specified org/repo
-LATEST_SHA="$(git ls-remote https://github.com/"${ENVOY_ORG}"/"${ENVOY_REPO}" "$UPDATE_BRANCH" | awk '{ print $1}')"
+LATEST_SHA="$(git ls-remote https://github.com/"${ENVOY_ORG}"/"${ENVOY_REPO}" "refs/heads/$UPDATE_BRANCH" | awk '{ print $1}')"
 DATE=$(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/"${ENVOY_ORG}""/""${ENVOY_REPO}"/commits/"${LATEST_SHA}" | jq '.commit.committer.date')
 DATE=$(echo "${DATE/\"/}" | cut -d'T' -f1)
 
