@@ -48,7 +48,7 @@ func NewGRPCServer(port uint16) *GRPCServer {
 // Start causes the GRPCServer to start a listener and begin serving.
 func (g *GRPCServer) Start() <-chan error {
 	errCh := make(chan error)
-	addr := fmt.Sprintf("127.0.0.1:%d", g.port)
+	addr := fmt.Sprintf("127.0.0.3:%d", g.port)
 	go func() {
 		l, err := net.Listen("tcp", addr)
 		if err != nil {
