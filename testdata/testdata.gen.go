@@ -256,7 +256,7 @@ static_resources:
         - endpoint:
             address:
               socket_address:
-                address: 127.0.0.1
+                address: 127.0.0.3
                 port_value: {{ .Ports.BackendPort }}
 {{ .Vars.ServerStaticCluster | indent 2 }}
 {{- if ne .Vars.DisableDirectResponse "true" }}
@@ -264,7 +264,7 @@ static_resources:
   - name: staticreply
     address:
       socket_address:
-        address: 127.0.0.1
+        address: 127.0.0.3
         port_value: {{ .Ports.BackendPort }}
     filter_chains:
     - filters:
