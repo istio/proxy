@@ -736,6 +736,9 @@ func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 				},
 			},
 			&driver.UpdateWorkloadMetadata{Workloads: []driver.WorkloadMetadata{{
+				Address:  "127.0.0.1",
+				Metadata: ProductPageMetadata,
+			}, {
 				Address:  "127.0.0.3",
 				Metadata: BackendMetadata,
 			}}},

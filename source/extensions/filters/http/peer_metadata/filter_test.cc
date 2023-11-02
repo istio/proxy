@@ -251,7 +251,7 @@ TEST_F(PeerMetadataTest, DownstreamFallbackFirst) {
       - istio_headers: {}
       - workload_discovery: {}
   )EOF");
-  EXPECT_EQ(1, request_headers_.size());
+  EXPECT_EQ(0, request_headers_.size());
   EXPECT_EQ(0, response_headers_.size());
   checkPeerNamespace(true, "default");
   checkNoPeer(false);
@@ -278,7 +278,6 @@ TEST_F(PeerMetadataTest, DownstreamFallbackSecond) {
   checkPeerNamespace(true, "default");
   checkNoPeer(false);
 }
-
 
 TEST(MXMethod, Cache) {
   NiceMock<Server::Configuration::MockServerFactoryContext> context;
