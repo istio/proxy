@@ -162,6 +162,36 @@ do
   fi
 done
 
+echo "Checking extensions build config"
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+WORKSPACE="${ROOT}/WORKSPACE"
+
+ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
+ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
+ENVOY_SHA="$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "${WORKSPACE}")"
+
+TMP_DIR=$(mktemp -d)
+ENVOY_EXTENSIONS_BUILD_CONFIG="${TMP_DIR}/envoy.bzl"
+PROXY_EXTENSIONS_BUILD_CONFIG="${TMP_DIR}/proxy.bzl"
+
+echo "get envoy extensions build config from ${ENVOY_ORG}/${ENVOY_REPO} commit: ${ENVOY_SHA}"
+curl --silent --show-error --retry 10 --location \
+      "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${ENVOY_SHA}/source/extensions/extensions_build_config.bzl" \
+      -o "${ENVOY_EXTENSIONS_BUILD_CONFIG}" \
+    || { echo "Could not get envoy extensions build config." ; exit 1 ; }
+
+# backup proxy extension build config
+cp "${ROOT}/bazel/extension_config/extensions_build_config.bzl" "${TMP_DIR}/proxy.bzl"
+# remove the first line
+sed -i "1d" "${PROXY_EXTENSIONS_BUILD_CONFIG}"
+
+go run tools/extension-check/main.go \
+  --ignore-extensions tools/extension-check/wellknown-extensions \
+  --envoy-extensions-build-config "${ENVOY_EXTENSIONS_BUILD_CONFIG}" \
+  --proxy-extensions-build-config "${PROXY_EXTENSIONS_BUILD_CONFIG}" \
+  || { echo "failed to check extension build config"; exit 1;}
+
 # Exit early to skip wasm build
 if [ "${BUILD_ENVOY_BINARY_ONLY}" -eq 1 ]; then
   exit 0
