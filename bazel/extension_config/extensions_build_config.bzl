@@ -227,12 +227,6 @@ ENVOY_EXTENSIONS = {
     "envoy.tracers.opentelemetry":                      "//source/extensions/tracers/opentelemetry:config",
 
     #
-    # OpenTelemetry Resource Detectors
-    #
-
-    "envoy.tracers.opentelemetry.resource_detectors.environment":   "//source/extensions/tracers/opentelemetry/resource_detectors/environment:config",
-
-    #
     # Transport sockets
     #
 
