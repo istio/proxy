@@ -27,6 +27,7 @@ set -x
 
 # Update to main as envoyproxy/proxy has updated.
 UPDATE_BRANCH=${UPDATE_BRANCH:-"main"}
+ENVOY_SHA=${ENVOY_SHA:-""}
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 WORKSPACE=${ROOT}/WORKSPACE
