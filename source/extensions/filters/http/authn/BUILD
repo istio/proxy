@@ -24,6 +24,8 @@ load(
     "envoy_cc_test_library",
 )
 
+licenses(["notice"])
+
 envoy_cc_library(
     name = "authenticator",
     srcs = [

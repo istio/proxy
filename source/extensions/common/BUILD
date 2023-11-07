@@ -21,6 +21,10 @@ load(
     "envoy_cc_test",
 )
 
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
 envoy_cc_library(
     name = "authn_lib",
     srcs = [
@@ -30,7 +34,6 @@ envoy_cc_library(
         "authn.h",
     ],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
     deps = [
         ":filter_names_lib",
         ":utils_lib",
@@ -50,7 +53,6 @@ envoy_cc_library(
         "utils.h",
     ],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
     deps = [
         "@envoy//source/exe:envoy_common_lib",
     ],
@@ -62,7 +64,6 @@ envoy_cc_library(
         "filter_objects.h",
     ],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
     deps = [
         "@envoy//envoy/registry",
         "@envoy//envoy/stream_info:filter_state_interface",
@@ -105,5 +106,4 @@ cc_library(
     hdrs = [
         "filter_names.h",
     ],
-    visibility = ["//visibility:public"],
 )

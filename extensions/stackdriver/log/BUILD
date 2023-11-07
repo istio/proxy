@@ -15,7 +15,7 @@
 ################################################################################
 #
 
-licenses(["notice"])  # Apache 2
+package(default_visibility = ["//visibility:public"])
 
 load(
     "@envoy//bazel:envoy_build_system.bzl",
@@ -27,6 +27,8 @@ load(
     "envoy_extension_cc_test",
 )
 
+licenses(["notice"])
+
 envoy_cc_library(
     name = "logger",
     srcs = [
@@ -36,9 +38,6 @@ envoy_cc_library(
         "logger.h",
     ],
     repository = "@envoy",
-    visibility = [
-        "//extensions/stackdriver:__pkg__",
-    ],
     deps = [
         ":exporter",
         "//extensions/common:context",
@@ -57,9 +56,6 @@ envoy_cc_library(
     ],
     copts = ["-DPROXY_WASM_PROTOBUF=1"],
     repository = "@envoy",
-    visibility = [
-        "//extensions/stackdriver:__pkg__",
-    ],
     deps = [
         "//extensions/stackdriver/common:metrics",
         "//extensions/stackdriver/common:utils",

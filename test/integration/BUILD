@@ -22,6 +22,8 @@ load(
     "envoy_cc_test_library",
 )
 
+licenses(["notice"])
+
 envoy_cc_test(
     name = "istio_http_integration_test_with_envoy_jwt_filter",
     size = "large",

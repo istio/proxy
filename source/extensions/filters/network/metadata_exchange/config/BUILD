@@ -14,6 +14,9 @@
 #
 ################################################################################
 #
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
 
 proto_library(
     name = "metadata_exchange_proto",
@@ -22,6 +25,5 @@ proto_library(
 
 cc_proto_library(
     name = "metadata_exchange_cc_proto",
-    visibility = ["//visibility:public"],
     deps = ["metadata_exchange_proto"],
 )

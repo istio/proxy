@@ -15,12 +15,12 @@
 ################################################################################
 #
 
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
 cc_proto_library(
     name = "stackdriver_plugin_config_cc_proto",
-    visibility = [
-        "//extensions/stackdriver:__pkg__",
-        "//extensions/stackdriver/metric:__pkg__",
-    ],
     deps = ["stackdriver_plugin_config_proto"],
 )
 
