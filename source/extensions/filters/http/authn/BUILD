@@ -15,14 +15,15 @@
 ################################################################################
 #
 
-package(default_visibility = ["//visibility:public"])
-
 load(
     "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_extension_package",
     "envoy_cc_library",
     "envoy_cc_test",
     "envoy_cc_test_library",
 )
+
+envoy_extension_package()
 
 licenses(["notice"])
 
