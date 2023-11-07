@@ -15,10 +15,6 @@
 ################################################################################
 #
 
-licenses(["notice"])
-
-package(default_visibility = ["//extensions/stackdriver:__subpackages__"])
-
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
@@ -28,6 +24,10 @@ load(
     "@envoy//test/extensions:extensions_build_system.bzl",
     "envoy_extension_cc_test",
 )
+
+package(default_visibility = ["//extensions/stackdriver:__subpackages__"])
+
+licenses(["notice"])
 
 envoy_cc_library(
     name = "constants",

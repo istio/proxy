@@ -15,8 +15,6 @@
 ################################################################################
 #
 
-licenses(["notice"])
-
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
@@ -26,6 +24,10 @@ load(
     "@envoy//test/extensions:extensions_build_system.bzl",
     "envoy_extension_cc_test",
 )
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
 
 envoy_cc_library(
     name = "metric",
@@ -38,9 +40,6 @@ envoy_cc_library(
         "registry.h",
     ],
     repository = "@envoy",
-    visibility = [
-        "//extensions/stackdriver:__pkg__",
-    ],
     deps = [
         "//extensions/common:context",
         "//extensions/stackdriver/common:constants",

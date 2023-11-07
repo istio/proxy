@@ -25,7 +25,7 @@ std::optional<JsonObject> JsonParse(std::string_view str) {
   if (result.is_discarded() || !result.is_object()) {
     return std::nullopt;
   }
-  return result;
+  return {result};
 }
 
 template <>

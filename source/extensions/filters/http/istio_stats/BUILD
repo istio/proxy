@@ -24,6 +24,8 @@ load(
 
 envoy_extension_package()
 
+licenses(["notice"])
+
 envoy_cc_extension(
     name = "istio_stats",
     srcs = ["istio_stats.cc"],

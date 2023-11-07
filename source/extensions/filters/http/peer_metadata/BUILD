@@ -25,6 +25,8 @@ load(
 
 envoy_extension_package()
 
+licenses(["notice"])
+
 envoy_cc_extension(
     name = "filter_lib",
     srcs = ["filter.cc"],

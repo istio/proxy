@@ -15,14 +15,10 @@
 ################################################################################
 #
 
-licenses(["notice"])
-
 load(
     "@envoy//bazel:envoy_build_system.bzl",
-    "envoy_cc_benchmark_binary",
     "envoy_cc_library",
     "envoy_cc_test",
-    "envoy_package",
 )
 load(
     "@com_github_google_flatbuffers//:build_defs.bzl",
@@ -35,7 +31,9 @@ load(
     "envoy_extension_cc_test",
 )
 
-envoy_package()
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
 
 envoy_cc_library(
     name = "context",
@@ -47,7 +45,6 @@ envoy_cc_library(
         "istio_dimensions.h",
     ],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
     deps = [
         ":node_info_fb_cc",
         ":util",
@@ -64,7 +61,6 @@ envoy_cc_library(
         "proto_util.h",
     ],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
     deps = [
         ":node_info_fb_cc",
         ":util",
@@ -82,7 +78,6 @@ envoy_cc_library(
         "util.h",
     ],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
     deps = [
         "@proxy_wasm_cpp_host//:null_lib",
     ],
@@ -94,7 +89,6 @@ envoy_cc_library(
         "istio_dimensions.h",
     ],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
 )
 
 envoy_extension_cc_test(
@@ -180,7 +174,6 @@ envoy_cc_library(
         "//extensions/common/wasm:json_util.h",
     ],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
     deps = [
         "@com_github_nlohmann_json//:json",
         "@com_google_absl//absl/strings",
@@ -193,7 +186,6 @@ envoy_cc_library(
     srcs = ["metadata_object.cc"],
     hdrs = ["metadata_object.h"],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
     deps = [
         ":node_info_fb_cc",
         "@envoy//envoy/network:filter_interface",

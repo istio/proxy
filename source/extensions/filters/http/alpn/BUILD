@@ -19,10 +19,12 @@ load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
     "envoy_cc_test",
-    "envoy_package",
+    "envoy_extension_package",
 )
 
-envoy_package()
+envoy_extension_package()
+
+licenses(["notice"])
 
 envoy_cc_library(
     name = "alpn_filter",
@@ -42,7 +44,6 @@ envoy_cc_library(
     srcs = ["config.cc"],
     hdrs = ["config.h"],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
     deps = [
         ":alpn_filter",
         "//source/extensions/common:filter_names_lib",

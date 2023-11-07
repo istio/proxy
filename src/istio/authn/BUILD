@@ -17,6 +17,8 @@
 
 package(default_visibility = ["//visibility:public"])
 
+licenses(["notice"])
+
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_proto_library",

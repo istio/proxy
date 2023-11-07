@@ -1,12 +1,11 @@
-licenses(["notice"])  # Apache 2
-
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
-    "envoy_package",
 )
 
-envoy_package()
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
 
 envoy_cc_library(
     name = "access_log_policy_lib",
@@ -18,7 +17,6 @@ envoy_cc_library(
         "plugin.h",
     ],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
     deps = [
         "//extensions/access_log_policy/config/v1alpha1:access_log_policy_config_cc_proto",
         "//extensions/common:context",

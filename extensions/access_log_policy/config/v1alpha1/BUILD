@@ -15,11 +15,12 @@
 ################################################################################
 #
 
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
 cc_proto_library(
     name = "access_log_policy_config_cc_proto",
-    visibility = [
-        "//extensions/access_log_policy:__pkg__",
-    ],
     deps = ["access_log_policy_config_proto"],
 )
 

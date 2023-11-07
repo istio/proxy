@@ -27,13 +27,11 @@ config_setting(
     values = {
         "cpu": "darwin",
     },
-    visibility = ["//visibility:public"],
 )
 
 envoy_cc_binary(
     name = "envoy",
     repository = "@envoy",
-    visibility = ["//visibility:public"],
     deps = [
         "//extensions/access_log_policy:access_log_policy_lib",
         "//extensions/stackdriver:stackdriver_plugin",
@@ -54,5 +52,4 @@ pkg_tar(
     mode = "0755",
     package_dir = "/usr/local/bin/",
     tags = ["manual"],
-    visibility = ["//visibility:public"],
 )

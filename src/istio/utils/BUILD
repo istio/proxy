@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])
-
 package(default_visibility = ["//visibility:public"])
 
 load(
@@ -21,6 +19,8 @@ load(
     "envoy_cc_library",
     "envoy_cc_test",
 )
+
+licenses(["notice"])
 
 envoy_cc_library(
     name = "attribute_names_lib",
@@ -31,5 +31,4 @@ envoy_cc_library(
         "attribute_names.h",
     ],
     repository = "@envoy",
-    visibility = ["//visibility:public"],
 )
