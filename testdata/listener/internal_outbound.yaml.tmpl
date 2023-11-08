@@ -13,8 +13,4 @@ filter_chains:
       cluster: original_dst
       tunneling_config:
         hostname: "%DOWNSTREAM_LOCAL_ADDRESS%"
-        headers_to_add:
-        - header:
-            key: baggage
-            value: k8s.deployment.name=productpage-v1
       stat_prefix: outbound

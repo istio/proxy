@@ -54,12 +54,6 @@ struct CelPrototypeValues {
 
 using CelPrototypes = ConstSingleton<CelPrototypeValues>;
 
-class BaggageMethod : public DiscoveryMethod {
-public:
-  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
-                                          Context&) const override;
-};
-
 class XDSMethod : public DiscoveryMethod {
 public:
   XDSMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context)
@@ -72,18 +66,6 @@ private:
   const bool downstream_;
   Extensions::Common::WorkloadDiscovery::WorkloadMetadataProviderSharedPtr metadata_provider_;
 };
-
-absl::optional<PeerInfo> BaggageMethod::derivePeerInfo(const StreamInfo::StreamInfo&,
-                                                       Http::HeaderMap& headers, Context&) const {
-  const auto header_string =
-      Http::HeaderUtility::getAllOfHeaderAsString(headers, Headers::get().Baggage);
-  const auto result = header_string.result();
-  if (result) {
-    const auto metadata_object = Istio::Common::WorkloadMetadataObject::fromBaggage(*result);
-    return Istio::Common::convertWorkloadMetadataToFlatNode(metadata_object);
-  }
-  return {};
-}
 
 absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo& info,
                                                    Http::HeaderMap&, Context&) const {
@@ -239,9 +221,6 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
   methods.reserve(config.size());
   for (const auto& method : config) {
     switch (method.method_specifier_case()) {
-    case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::kBaggage:
-      methods.push_back(std::make_unique<BaggageMethod>());
-      break;
     case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::
         kWorkloadDiscovery:
       methods.push_back(

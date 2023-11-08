@@ -33,7 +33,6 @@ constexpr absl::string_view WasmUpstreamPeer = "wasm.upstream_peer";
 constexpr absl::string_view WasmUpstreamPeerID = "wasm.upstream_peer_id";
 
 struct HeaderValues {
-  const Http::LowerCaseString Baggage{"baggage"};
   const Http::LowerCaseString ExchangeMetadataHeader{"x-envoy-peer-metadata"};
   const Http::LowerCaseString ExchangeMetadataHeaderId{"x-envoy-peer-metadata-id"};
 };

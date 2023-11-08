@@ -65,7 +65,7 @@ filter_chains:
           type_url: type.googleapis.com/io.istio.http.peer_metadata.Config
           value:
             downstream_discovery:
-            - baggage: {}
+            - workload_discovery: {}
             shared_with_upstream: true
       - name: envoy.filters.http.router
         typed_config:

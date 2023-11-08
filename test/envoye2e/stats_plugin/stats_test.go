@@ -685,6 +685,11 @@ func TestStatsServerWaypointProxy(t *testing.T) {
 	}
 }
 
+const ProductPageMetadata = `
+workload_name: productpage-v1
+uid: //v1/pod/default/productpage
+`
+
 func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"RequestCount":            "10",
@@ -731,6 +736,9 @@ func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 				},
 			},
 			&driver.UpdateWorkloadMetadata{Workloads: []driver.WorkloadMetadata{{
+				Address:  "127.0.0.1",
+				Metadata: ProductPageMetadata,
+			}, {
 				Address:  "127.0.0.3",
 				Metadata: BackendMetadata,
 			}}},
