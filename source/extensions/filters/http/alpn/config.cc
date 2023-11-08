@@ -16,7 +16,6 @@
 #include "source/extensions/filters/http/alpn/config.h"
 
 #include "source/common/protobuf/message_validator_impl.h"
-#include "source/extensions/common/filter_names.h"
 #include "source/extensions/filters/http/alpn/alpn_filter.h"
 
 using istio::envoy::config::filter::http::alpn::v2alpha1::FilterConfig;
@@ -34,7 +33,7 @@ ProtobufTypes::MessagePtr AlpnConfigFactory::createEmptyConfigProto() {
   return ProtobufTypes::MessagePtr{new FilterConfig};
 }
 
-std::string AlpnConfigFactory::name() const { return Utils::IstioFilterName::kAlpn; }
+std::string AlpnConfigFactory::name() const { return "istio.alpn"; }
 
 Http::FilterFactoryCb
 AlpnConfigFactory::createFilterFactory(const FilterConfig& proto_config,

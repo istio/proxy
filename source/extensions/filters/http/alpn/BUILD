@@ -46,7 +46,6 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         ":alpn_filter",
-        "//source/extensions/common:filter_names_lib",
         "@envoy//envoy/registry",
         "@envoy//source/exe:envoy_common_lib",
         "@envoy//source/extensions/filters/http/common:factory_base_lib",
