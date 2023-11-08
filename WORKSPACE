@@ -46,10 +46,10 @@ ENVOY_REPO = "envoy"
 # persist the option in `user.bazelrc`.
 http_archive(
     name = "envoy",
-    sha256 = ENVOY_SHA256,
-    strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
     patch_args = ["-p1"],
     patches = ["patch.diff"],
+    sha256 = ENVOY_SHA256,
+    strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
     url = "https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz",
 )
 
