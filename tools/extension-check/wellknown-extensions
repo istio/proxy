@@ -6,7 +6,6 @@ envoy.config_mux.sotw_grpc_mux_factory
 envoy.filters.http.custom_response
 envoy.filters.http.file_system_buffer
 envoy.filters.http.geoip
-envoy.filters.http.grpc_field_extraction
 envoy.filters.http.json_to_metadata
 envoy.filters.http.rate_limit_quota
 envoy.filters.listener.local_ratelimit
