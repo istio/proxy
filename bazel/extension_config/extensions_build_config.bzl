@@ -117,6 +117,7 @@ ENVOY_EXTENSIONS = {
     "envoy.filters.http.ext_proc":                      "//source/extensions/filters/http/ext_proc:config",
     "envoy.filters.http.fault":                         "//source/extensions/filters/http/fault:config",
     "envoy.filters.http.gcp_authn":                      "//source/extensions/filters/http/gcp_authn:config",
+    "envoy.filters.http.grpc_field_extraction":         "//source/extensions/filters/http/grpc_field_extraction:config",
     "envoy.filters.http.grpc_http1_bridge":             "//source/extensions/filters/http/grpc_http1_bridge:config",
     "envoy.filters.http.grpc_http1_reverse_bridge":     "//source/extensions/filters/http/grpc_http1_reverse_bridge:config",
     "envoy.filters.http.grpc_json_transcoder":          "//source/extensions/filters/http/grpc_json_transcoder:config",
