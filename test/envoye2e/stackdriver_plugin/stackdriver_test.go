@@ -26,6 +26,8 @@ import (
 
 func enableStackDriver(t *testing.T, vars map[string]string) {
 	t.Helper()
+	// Disable flakey CI Tsan/Asan tests
+	env.SkipTSanASan(t)
 	vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_native_inbound.yaml.tmpl") + "\n" +
 		driver.LoadTestData("testdata/filters/stackdriver_inbound.yaml.tmpl")
 	vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_native_outbound.yaml.tmpl") + "\n" +
