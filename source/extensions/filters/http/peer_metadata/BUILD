@@ -66,5 +66,6 @@ envoy_cc_test(
         "@envoy//test/mocks/server:factory_context_mocks",
         "@envoy//test/mocks/stream_info:stream_info_mocks",
         "@envoy//test/test_common:logging_lib",
+        "@envoy//test/test_common:wasm_lib",
     ],
 )
