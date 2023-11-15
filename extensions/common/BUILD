@@ -28,7 +28,6 @@ load(
 load(
     "@envoy//test/extensions:extensions_build_system.bzl",
     "envoy_extension_cc_benchmark_binary",
-    "envoy_extension_cc_test",
 )
 
 package(default_visibility = ["//visibility:public"])
@@ -91,15 +90,15 @@ envoy_cc_library(
     repository = "@envoy",
 )
 
-envoy_extension_cc_test(
+envoy_cc_test(
     name = "proto_util_test",
     size = "small",
     srcs = ["proto_util_test.cc"],
-    extension_names = ["envoy.wasm.runtime.null"],
     repository = "@envoy",
     deps = [
         ":node_info_fb_cc",
         ":proto_util",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -188,8 +187,14 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         ":node_info_fb_cc",
+        "@com_github_google_flatbuffers//:flatbuffers",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
+        "@envoy//envoy/common:hashable_interface",
         "@envoy//envoy/network:filter_interface",
-        "@envoy//source/exe:envoy_common_lib",
+        "@envoy//envoy/ssl:connection_interface",
+        "@envoy//envoy/stream_info:filter_state_interface",
+        "@envoy//source/common/common:hash_lib",
     ],
 )
 

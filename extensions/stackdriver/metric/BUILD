@@ -18,10 +18,7 @@
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
-)
-load(
-    "@envoy//test/extensions:extensions_build_system.bzl",
-    "envoy_extension_cc_test",
+    "envoy_cc_test",
 )
 
 package(default_visibility = ["//visibility:public"])
@@ -49,14 +46,15 @@ envoy_cc_library(
     ],
 )
 
-envoy_extension_cc_test(
+envoy_cc_test(
     name = "registry_test",
     size = "small",
     srcs = ["registry_test.cc"],
-    extension_names = ["envoy.filters.http.wasm"],
     repository = "@envoy",
     deps = [
         ":metric",
+        "//extensions/stackdriver/common:constants",
+        "@com_google_protobuf//:protobuf",
         "@envoy//test/test_common:wasm_lib",
     ],
 )
