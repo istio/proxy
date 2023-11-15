@@ -18,7 +18,6 @@
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
-    "envoy_cc_test",
 )
 load(
     "@envoy//test/extensions:extensions_build_system.bzl",
