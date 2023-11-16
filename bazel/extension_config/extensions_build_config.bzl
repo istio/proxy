@@ -486,7 +486,7 @@ ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.filters.sip.router",
     "envoy.tls.key_providers.cryptomb",
     "envoy.tls.key_providers.qat",
-    "envoy.network.connection_balance.dlb",
+#    "envoy.network.connection_balance.dlb",
 ]
 
 EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_DISABLED_EXTENSIONS] +
