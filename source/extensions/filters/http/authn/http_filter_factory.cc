@@ -32,8 +32,9 @@ namespace iaapi = istio::authentication::v1alpha1;
 class AuthnFilterConfig : public NamedHttpFilterConfigFactory,
                           public Logger::Loggable<Logger::Id::filter> {
 public:
-  Http::FilterFactoryCb createFilterFactoryFromProto(const Protobuf::Message& proto_config,
-                                                     const std::string&, FactoryContext&) override {
+  absl::StatusOr<Http::FilterFactoryCb>
+  createFilterFactoryFromProto(const Protobuf::Message& proto_config, const std::string&,
+                               FactoryContext&) override {
     auto filter_config = dynamic_cast<const FilterConfig&>(proto_config);
     return createFilterFactory(filter_config);
   }

@@ -65,7 +65,7 @@ protected:
   void initialize(const std::string& yaml_config) {
     TestUtility::loadFromYaml(yaml_config, config_);
     FilterConfigFactory factory;
-    Http::FilterFactoryCb cb = factory.createFilterFactoryFromProto(config_, "", context_);
+    Http::FilterFactoryCb cb = factory.createFilterFactoryFromProto(config_, "", context_).value();
     Http::MockFilterChainFactoryCallbacks filter_callback;
     ON_CALL(filter_callback, addStreamFilter(_)).WillByDefault(testing::SaveArg<0>(&filter_));
     EXPECT_CALL(filter_callback, addStreamFilter(_));
