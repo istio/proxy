@@ -147,7 +147,7 @@ public:
   FilterConfigFactory() : FactoryBase("envoy.filters.http.peer_metadata") {}
 
 private:
-  Http::FilterFactoryCb
+  absl::StatusOr<Http::FilterFactoryCb>
   createFilterFactoryFromProtoTyped(const io::istio::http::peer_metadata::Config&,
                                     const std::string&,
                                     Server::Configuration::FactoryContext&) override;

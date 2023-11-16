@@ -31,7 +31,7 @@ public:
   IstioStatsFilterConfigFactory() : FactoryBase("envoy.filters.http.istio_stats") {}
 
 private:
-  Http::FilterFactoryCb
+  absl::StatusOr<Http::FilterFactoryCb>
   createFilterFactoryFromProtoTyped(const stats::PluginConfig& proto_config, const std::string&,
                                     Server::Configuration::FactoryContext&) override;
 };

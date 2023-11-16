@@ -353,7 +353,8 @@ Http::FilterHeadersStatus Filter::encodeHeaders(Http::ResponseHeaderMap& headers
   return Http::FilterHeadersStatus::Continue;
 }
 
-Http::FilterFactoryCb FilterConfigFactory::createFilterFactoryFromProtoTyped(
+absl::StatusOr<Http::FilterFactoryCb>
+FilterConfigFactory::createFilterFactoryFromProtoTyped(
     const io::istio::http::peer_metadata::Config& config, const std::string&,
     Server::Configuration::FactoryContext& factory_context) {
   auto filter_config = std::make_shared<FilterConfig>(config, factory_context);
