@@ -1203,8 +1203,7 @@ private:
 
 } // namespace
 
-absl::StatusOr<Http::FilterFactoryCb>
-IstioStatsFilterConfigFactory::createFilterFactoryFromProtoTyped(
+Http::FilterFactoryCb IstioStatsFilterConfigFactory::createFilterFactoryFromProtoTyped(
     const stats::PluginConfig& proto_config, const std::string&,
     Server::Configuration::FactoryContext& factory_context) {
   factory_context.api().customStatNamespaces().registerStatNamespace(CustomStatNamespace);
