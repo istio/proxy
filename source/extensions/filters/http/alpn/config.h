@@ -28,7 +28,7 @@ namespace Alpn {
 class AlpnConfigFactory : public Server::Configuration::NamedHttpFilterConfigFactory {
 public:
   // Server::Configuration::NamedHttpFilterConfigFactory
-  Http::FilterFactoryCb
+  absl::StatusOr<Http::FilterFactoryCb>
   createFilterFactoryFromProto(const Protobuf::Message& config, const std::string& stat_prefix,
                                Server::Configuration::FactoryContext& context) override;
   ProtobufTypes::MessagePtr createEmptyConfigProto() override;
