@@ -40,8 +40,6 @@ BAZEL_CONFIG_DEV  = $(BAZEL_CONFIG)
 BAZEL_CONFIG_REL  = $(BAZEL_CONFIG) --config=release
 BAZEL_CONFIG_ASAN = $(BAZEL_CONFIG) --config=clang-asan-ci
 BAZEL_CONFIG_TSAN = $(BAZEL_CONFIG) --config=clang-tsan-ci
-# Enable libc++ and C++20 by default.
-BAZEL_BUILD_ARGS := --config=libc++20 $(BAZEL_BUILD_ARGS)
 endif
 ifeq ($(UNAME),Darwin)
 BAZEL_CONFIG_DEV  = # macOS always links against libc++
