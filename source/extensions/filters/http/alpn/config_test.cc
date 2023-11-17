@@ -50,7 +50,8 @@ TEST(AlpnFilterConfigTest, OverrideAlpn) {
   TestUtility::loadFromYaml(yaml, proto_config);
   AlpnConfigFactory factory;
   NiceMock<Server::Configuration::MockFactoryContext> context;
-  Http::FilterFactoryCb cb = factory.createFilterFactoryFromProto(proto_config, "stats", context);
+  Http::FilterFactoryCb cb =
+      factory.createFilterFactoryFromProto(proto_config, "stats", context).value();
   Http::MockFilterChainFactoryCallbacks filter_callback;
   Http::StreamDecoderFilterSharedPtr added_filter;
   EXPECT_CALL(filter_callback, addStreamDecoderFilter(_))

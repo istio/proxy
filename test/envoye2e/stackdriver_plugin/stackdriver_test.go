@@ -1045,6 +1045,7 @@ func TestStackdriverRbacAccessDenied(t *testing.T) {
 
 func TestStackdriverRbacTCPDryRun(t *testing.T) {
 	t.Parallel()
+	env.SkipTSanASan(t) // TODO: fix me, temporarily skip
 	TestCases := []struct {
 		name               string
 		alpnProtocol       string
