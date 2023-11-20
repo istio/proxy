@@ -165,22 +165,6 @@ cc_library(
 )
 
 envoy_cc_library(
-    name = "json_util",
-    srcs = [
-        "//extensions/common/wasm:json_util.cc",
-    ],
-    hdrs = [
-        "//extensions/common/wasm:json_util.h",
-    ],
-    repository = "@envoy",
-    deps = [
-        "@com_github_nlohmann_json//:json",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:optional",
-    ],
-)
-
-envoy_cc_library(
     name = "metadata_object_lib",
     srcs = ["metadata_object.cc"],
     hdrs = ["metadata_object.h"],

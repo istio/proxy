@@ -35,7 +35,6 @@ envoy_cc_extension(
         ":config_cc_proto",
         "//extensions/common:metadata_object_lib",
         "//source/extensions/common:filter_objects_lib",
-        "//source/extensions/common:utils_lib",
         "@com_google_cel_cpp//eval/public:builtin_func_registrar",
         "@com_google_cel_cpp//eval/public:cel_expr_builder_factory",
         "@com_google_cel_cpp//parser",
@@ -52,6 +51,7 @@ envoy_cc_extension(
         "@envoy//source/extensions/filters/http/common:factory_base_lib",
         "@envoy//source/extensions/filters/http/common:pass_through_filter_lib",
         "@envoy//source/extensions/filters/http/grpc_stats:config",
+        "@envoy//source/extensions/filters/network/common:factory_base_lib",
     ],
 )
 
