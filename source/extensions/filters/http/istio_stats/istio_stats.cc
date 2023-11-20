@@ -783,10 +783,12 @@ public:
   }
 
   // AccessLog::Instance
-  void log(const Http::RequestHeaderMap* request_headers,
-           const Http::ResponseHeaderMap* response_headers,
-           const Http::ResponseTrailerMap* response_trailers, const StreamInfo::StreamInfo& info,
-           AccessLog::AccessLogType) override {
+  void log(const Formatter::HttpFormatterContext& log_context,
+           const StreamInfo::StreamInfo& info) override {
+    const Http::RequestHeaderMap* request_headers = &log_context.requestHeaders();
+    const Http::ResponseHeaderMap* response_headers = &log_context.responseHeaders();
+    const Http::ResponseTrailerMap* response_trailers = &log_context.responseTrailers();
+
     reportHelper(true);
     if (is_grpc_) {
       tags_.push_back({context_.request_protocol_, context_.grpc_});

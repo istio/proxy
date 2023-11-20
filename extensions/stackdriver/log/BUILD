@@ -15,17 +15,13 @@
 ################################################################################
 #
 
-package(default_visibility = ["//visibility:public"])
-
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
     "envoy_cc_test",
 )
-load(
-    "@envoy//test/extensions:extensions_build_system.bzl",
-    "envoy_extension_cc_test",
-)
+
+package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])
 
@@ -41,8 +37,13 @@ envoy_cc_library(
     deps = [
         ":exporter",
         "//extensions/common:context",
+        "//extensions/common:util",
         "//extensions/stackdriver/common:constants",
         "//extensions/stackdriver/common:utils",
+        "@com_google_absl//absl/strings",
+        "@com_google_googleapis//google/logging/v2:logging_cc_proto",
+        "@com_googlesource_code_re2//:re2",
+        "@proxy_wasm_cpp_host//:null_lib",
     ],
 )
 
@@ -64,14 +65,17 @@ envoy_cc_library(
     ],
 )
 
-envoy_extension_cc_test(
+envoy_cc_test(
     name = "logger_test",
     size = "small",
     srcs = ["logger_test.cc"],
-    extension_names = ["envoy.filters.http.wasm"],
     repository = "@envoy",
     deps = [
         ":logger",
+        "//extensions/stackdriver/common:constants",
+        "//extensions/stackdriver/common:utils",
+        "@com_google_googleapis//google/logging/v2:logging_cc_proto",
+        "@com_google_protobuf//:protobuf",
         "@envoy//test/test_common:status_utility_lib",
         "@envoy//test/test_common:wasm_lib",
     ],

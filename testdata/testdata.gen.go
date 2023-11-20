@@ -548,10 +548,6 @@ filter_chains:
       cluster: original_dst
       tunneling_config:
         hostname: "%DOWNSTREAM_LOCAL_ADDRESS%"
-        headers_to_add:
-        - header:
-            key: baggage
-            value: k8s.deployment.name=productpage-v1
       stat_prefix: outbound
 `)
 
@@ -822,7 +818,7 @@ filter_chains:
           type_url: type.googleapis.com/io.istio.http.peer_metadata.Config
           value:
             downstream_discovery:
-            - baggage: {}
+            - workload_discovery: {}
             shared_with_upstream: true
       - name: envoy.filters.http.router
         typed_config:

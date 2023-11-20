@@ -33,10 +33,10 @@ bind(
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit date: 2023-11-07
-ENVOY_SHA = "71b5e03d0e786cbcb105ef819f0341354a65b07b"
+# Commit date: 2023-11-20
+ENVOY_SHA = "e096fa40ef98571120a865397b15e188388bc30a"
 
-ENVOY_SHA256 = "4894dd770506a0e81d9851b27ead486bc64e1529af48085fe66fd8857495ed6c"
+ENVOY_SHA256 = "1ef86e93971447ce52d3a8f9188af98bd8ec0ed340e1a8fcc41e7544d33f260e"
 
 ENVOY_ORG = "envoyproxy"
 
@@ -46,8 +46,6 @@ ENVOY_REPO = "envoy"
 # persist the option in `user.bazelrc`.
 http_archive(
     name = "envoy",
-    patch_args = ["-p1"],
-    patches = ["patch.diff"],
     sha256 = ENVOY_SHA256,
     strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
     url = "https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz",
