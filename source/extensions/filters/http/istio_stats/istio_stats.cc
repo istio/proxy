@@ -28,7 +28,6 @@
 #include "source/common/http/header_utility.h"
 #include "source/common/network/utility.h"
 #include "source/common/stream_info/utility.h"
-#include "source/extensions/common/utils.h"
 #include "source/extensions/common/filter_objects.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/common/expr/context.h"
@@ -42,6 +41,23 @@ namespace HttpFilters {
 namespace IstioStats {
 
 namespace {
+
+constexpr absl::string_view NamespaceKey = "/ns/";
+
+absl::optional<absl::string_view> getNamespace(absl::string_view principal) {
+  // The namespace is a substring in principal with format:
+  // "<DOMAIN>/ns/<NAMESPACE>/sa/<SERVICE-ACCOUNT>". '/' is not allowed to
+  // appear in actual content except as delimiter between tokens.
+  size_t begin = principal.find(NamespaceKey);
+  if (begin == absl::string_view::npos) {
+    return {};
+  }
+  begin += NamespaceKey.length();
+  size_t end = principal.find('/', begin);
+  size_t len = (end == std::string::npos ? end : end - begin);
+  return {principal.substr(begin, len)};
+}
+
 constexpr absl::string_view CustomStatNamespace = "istiocustom";
 
 absl::string_view extractString(const ProtobufWkt::Struct& metadata, const std::string& key) {
@@ -1054,7 +1070,7 @@ private:
     // using peer metadata, otherwise.
     absl::string_view peer_namespace;
     if (!peer_san.empty()) {
-      const auto san_namespace = Utils::GetNamespace(peer_san);
+      const auto san_namespace = getNamespace(peer_san);
       if (san_namespace) {
         peer_namespace = san_namespace.value();
       }
