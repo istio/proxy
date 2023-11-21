@@ -18,17 +18,6 @@ workspace(name = "io_istio_proxy")
 
 # http_archive is not a native function since bazel 0.19
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load(
-    "//bazel:repositories.bzl",
-    "istioapi_dependencies",
-)
-
-istioapi_dependencies()
-
-bind(
-    name = "boringssl_crypto",
-    actual = "//external:ssl",
-)
 
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
