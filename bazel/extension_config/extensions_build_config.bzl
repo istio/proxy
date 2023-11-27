@@ -233,6 +233,7 @@ ENVOY_EXTENSIONS = {
     #
 
     "envoy.tracers.opentelemetry.resource_detectors.environment":   "//source/extensions/tracers/opentelemetry/resource_detectors/environment:config",
+    "envoy.tracers.opentelemetry.resource_detectors.dynatrace":     "//source/extensions/tracers/opentelemetry/resource_detectors/dynatrace:config",
 
     #
     # OpenTelemetry tracer samplers
