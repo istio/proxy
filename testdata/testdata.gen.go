@@ -77,7 +77,7 @@ admin:
 {{ .Vars.StatsConfig }}
 dynamic_resources:
   ads_config:
-    api_type: GRPC
+    api_type: DELTA_GRPC
     transport_api_version: V3
     grpc_services:
     - envoy_grpc:
@@ -205,11 +205,7 @@ admin:
 {{ .Vars.StatsConfig }}
 dynamic_resources:
   ads_config:
-{{- if eq .Vars.EnableDelta "true" }}
     api_type: DELTA_GRPC
-{{- else }}
-    api_type: GRPC
-{{- end}}
     transport_api_version: V3
     grpc_services:
     - envoy_grpc:
