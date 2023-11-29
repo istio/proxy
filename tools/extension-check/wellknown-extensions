@@ -1,5 +1,3 @@
-envoy.compression.zstd.compressor
-envoy.compression.zstd.decompressor
 envoy.config.validators.minimum_clusters_validator
 envoy.config_mux.delta_grpc_mux_factory
 envoy.config_mux.sotw_grpc_mux_factory
