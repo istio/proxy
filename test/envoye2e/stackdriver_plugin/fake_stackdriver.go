@@ -31,6 +31,7 @@ import (
 	cloudtracev1 "cloud.google.com/go/trace/apiv1/tracepb"
 	cloudtracev2 "cloud.google.com/go/trace/apiv2/tracepb"
 	"github.com/golang/protobuf/jsonpb" // nolint: depguard // We need the deprecated module since the jsonpb replacement is not backwards compatible.
+	legacyproto "github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
@@ -119,7 +120,7 @@ func (s *MetricServer) ListTimeSeries(context.Context, *monitoringpb.ListTimeSer
 
 // CreateTimeSeries implements CreateTimeSeries method.
 func (s *MetricServer) CreateTimeSeries(ctx context.Context, req *monitoringpb.CreateTimeSeriesRequest) (*empty.Empty, error) {
-	log.Printf("receive CreateTimeSeriesRequest %v", req.String())
+	log.Printf("receive CreateTimeSeriesRequest %v", mustDumpToJson(req))
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	s.listTSResp.TimeSeries = append(s.listTSResp.TimeSeries, req.TimeSeries...)
@@ -139,7 +140,7 @@ func (s *LoggingServer) DeleteLog(context.Context, *loggingpb.DeleteLogRequest) 
 
 // WriteLogEntries implements WriteLogEntries method.
 func (s *LoggingServer) WriteLogEntries(ctx context.Context, req *loggingpb.WriteLogEntriesRequest) (*loggingpb.WriteLogEntriesResponse, error) {
-	log.Printf("receive WriteLogEntriesRequest %v", req.String())
+	log.Printf("receive WriteLogEntriesRequest %v", mustDumpToJson(req))
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	for _, entry := range req.Entries {
@@ -282,9 +283,15 @@ func getID(id string) (uint64, error) {
 	return dec, nil
 }
 
+func mustDumpToJson(msg legacyproto.Message) string {
+	var m jsonpb.Marshaler
+	s, _ := m.MarshalToString(msg)
+	return s
+}
+
 // BatchWriteSpans implements BatchWriteSpans method.
 func (s *TracesServer) BatchWriteSpans(ctx context.Context, req *cloudtracev2.BatchWriteSpansRequest) (*empty.Empty, error) {
-	log.Printf("receive BatchWriteSpansRequest %+v", req.String())
+	log.Printf("receive BatchWriteSpansRequest %+v", mustDumpToJson(req))
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	for _, span := range req.Spans {
