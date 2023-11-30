@@ -20,7 +20,6 @@ load(
     "envoy_cc_library",
     "envoy_cc_test",
     "envoy_extension_package",
-    "envoy_proto_library",
 )
 
 envoy_extension_package()
@@ -84,7 +83,12 @@ envoy_cc_test(
     ],
 )
 
-envoy_proto_library(
+cc_proto_library(
+    name = "config_cc_proto",
+    deps = ["config"],
+)
+
+proto_library(
     name = "config",
     srcs = ["config.proto"],
 )

@@ -1219,11 +1219,12 @@ private:
 
 } // namespace
 
-Http::FilterFactoryCb IstioStatsFilterConfigFactory::createFilterFactoryFromProtoTyped(
-    const stats::PluginConfig& proto_config, const std::string&,
+absl::StatusOr<Http::FilterFactoryCb> IstioStatsFilterConfigFactory::createFilterFactoryFromProto(
+    const Protobuf::Message& proto_config, const std::string&,
     Server::Configuration::FactoryContext& factory_context) {
   factory_context.api().customStatNamespaces().registerStatNamespace(CustomStatNamespace);
-  ConfigSharedPtr config = std::make_shared<Config>(proto_config, factory_context);
+  ConfigSharedPtr config = std::make_shared<Config>(
+      dynamic_cast<const stats::PluginConfig&>(proto_config), factory_context);
   config->recordVersion();
   return [config](Http::FilterChainFactoryCallbacks& callbacks) {
     auto filter = std::make_shared<IstioStatsFilter>(config);
@@ -1237,11 +1238,11 @@ Http::FilterFactoryCb IstioStatsFilterConfigFactory::createFilterFactoryFromProt
 REGISTER_FACTORY(IstioStatsFilterConfigFactory,
                  Server::Configuration::NamedHttpFilterConfigFactory);
 
-Network::FilterFactoryCb IstioStatsNetworkFilterConfigFactory::createFilterFactoryFromProtoTyped(
-    const stats::PluginConfig& proto_config,
-    Server::Configuration::FactoryContext& factory_context) {
+Network::FilterFactoryCb IstioStatsNetworkFilterConfigFactory::createFilterFactoryFromProto(
+    const Protobuf::Message& proto_config, Server::Configuration::FactoryContext& factory_context) {
   factory_context.api().customStatNamespaces().registerStatNamespace(CustomStatNamespace);
-  ConfigSharedPtr config = std::make_shared<Config>(proto_config, factory_context);
+  ConfigSharedPtr config = std::make_shared<Config>(
+      dynamic_cast<const stats::PluginConfig&>(proto_config), factory_context);
   config->recordVersion();
   return [config](Network::FilterManager& filter_manager) {
     filter_manager.addReadFilter(std::make_shared<IstioStatsFilter>(config));

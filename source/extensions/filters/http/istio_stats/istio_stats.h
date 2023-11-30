@@ -17,34 +17,37 @@
 #include "envoy/server/filter_config.h"
 #include "envoy/stream_info/filter_state.h"
 #include "source/extensions/filters/http/istio_stats/config.pb.h"
-#include "source/extensions/filters/http/istio_stats/config.pb.validate.h"
-#include "source/extensions/filters/http/common/factory_base.h"
-#include "source/extensions/filters/network/common/factory_base.h"
 
 namespace Envoy {
 namespace Extensions {
 namespace HttpFilters {
 namespace IstioStats {
 
-class IstioStatsFilterConfigFactory : public Common::FactoryBase<stats::PluginConfig> {
+class IstioStatsFilterConfigFactory : public Server::Configuration::NamedHttpFilterConfigFactory {
 public:
-  IstioStatsFilterConfigFactory() : FactoryBase("envoy.filters.http.istio_stats") {}
+  std::string name() const override { return "envoy.filters.http.istio_stats"; }
 
-private:
-  Http::FilterFactoryCb
-  createFilterFactoryFromProtoTyped(const stats::PluginConfig& proto_config, const std::string&,
-                                    Server::Configuration::FactoryContext&) override;
+  ProtobufTypes::MessagePtr createEmptyConfigProto() override {
+    return std::make_unique<stats::PluginConfig>();
+  }
+
+  absl::StatusOr<Http::FilterFactoryCb>
+  createFilterFactoryFromProto(const Protobuf::Message& proto_config, const std::string&,
+                               Server::Configuration::FactoryContext&) override;
 };
 
 class IstioStatsNetworkFilterConfigFactory
-    : public NetworkFilters::Common::FactoryBase<stats::PluginConfig> {
+    : public Server::Configuration::NamedNetworkFilterConfigFactory {
 public:
-  IstioStatsNetworkFilterConfigFactory() : FactoryBase("envoy.filters.network.istio_stats") {}
+  std::string name() const override { return "envoy.filters.network.istio_stats"; }
 
-private:
-  Network::FilterFactoryCb createFilterFactoryFromProtoTyped(
-      const stats::PluginConfig& proto_config,
-      Server::Configuration::FactoryContext& factory_context) override;
+  ProtobufTypes::MessagePtr createEmptyConfigProto() override {
+    return std::make_unique<stats::PluginConfig>();
+  }
+
+  Network::FilterFactoryCb
+  createFilterFactoryFromProto(const Protobuf::Message& proto_config,
+                               Server::Configuration::FactoryContext& factory_context) override;
 };
 
 } // namespace IstioStats
