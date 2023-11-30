@@ -17,7 +17,6 @@
 #include "source/extensions/filters/http/common/factory_base.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
 #include "source/extensions/filters/http/peer_metadata/config.pb.h"
-#include "source/extensions/filters/http/peer_metadata/config.pb.validate.h"
 #include "source/extensions/common/workload_discovery/api.h"
 #include "source/common/singleton/const_singleton.h"
 #include "extensions/common/context.h"
@@ -142,15 +141,17 @@ private:
   Context ctx_;
 };
 
-class FilterConfigFactory : public Common::FactoryBase<io::istio::http::peer_metadata::Config> {
+class FilterConfigFactory : public Server::Configuration::NamedHttpFilterConfigFactory {
 public:
-  FilterConfigFactory() : FactoryBase("envoy.filters.http.peer_metadata") {}
+  std::string name() const override { return "envoy.filters.http.peer_metadata"; }
 
-private:
-  Http::FilterFactoryCb
-  createFilterFactoryFromProtoTyped(const io::istio::http::peer_metadata::Config&,
-                                    const std::string&,
-                                    Server::Configuration::FactoryContext&) override;
+  ProtobufTypes::MessagePtr createEmptyConfigProto() override {
+    return std::make_unique<io::istio::http::peer_metadata::Config>();
+  }
+
+  absl::StatusOr<Http::FilterFactoryCb>
+  createFilterFactoryFromProto(const Protobuf::Message& proto_config, const std::string&,
+                               Server::Configuration::FactoryContext&) override;
 };
 
 } // namespace PeerMetadata
