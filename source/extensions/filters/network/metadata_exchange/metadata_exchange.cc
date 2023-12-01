@@ -197,7 +197,7 @@ void MetadataExchangeFilter::writeNodeMetadata() {
   }
   if (data.fields_size() > 0) {
     Envoy::ProtobufWkt::Any metadata_any_value;
-    *metadata_any_value.mutable_type_url() = StructTypeUrl;
+    metadata_any_value.set_type_url(StructTypeUrl);
     std::string serialized_data;
     serializeToStringDeterministic(data, &serialized_data);
     *metadata_any_value.mutable_value() = serialized_data;

@@ -103,7 +103,7 @@ TEST_F(MetadataExchangeFilterTest, MetadataExchangeFound) {
   ::Envoy::Buffer::OwnedImpl data;
   MetadataExchangeInitialHeader initial_header;
   Envoy::ProtobufWkt::Any productpage_any_value;
-  *productpage_any_value.mutable_type_url() = "type.googleapis.com/google.protobuf.Struct";
+  productpage_any_value.set_type_url("type.googleapis.com/google.protobuf.Struct");
   *productpage_any_value.mutable_value() = productpage_value_.SerializeAsString();
   ConstructProxyHeaderData(data, productpage_any_value, &initial_header);
   ::Envoy::Buffer::OwnedImpl world{"world"};
