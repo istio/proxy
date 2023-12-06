@@ -224,12 +224,12 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
     case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::
         kWorkloadDiscovery:
       methods.push_back(
-          std::make_unique<XDSMethod>(downstream, factory_context.getServerFactoryContext()));
+          std::make_unique<XDSMethod>(downstream, factory_context.serverFactoryContext()));
       break;
     case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::
         kIstioHeaders:
       methods.push_back(
-          std::make_unique<MXMethod>(downstream, factory_context.getServerFactoryContext()));
+          std::make_unique<MXMethod>(downstream, factory_context.serverFactoryContext()));
       break;
     default:
       break;
@@ -249,7 +249,7 @@ std::vector<PropagationMethodPtr> FilterConfig::buildPropagationMethods(
     case io::istio::http::peer_metadata::Config::PropagationMethod::MethodSpecifierCase::
         kIstioHeaders:
       methods.push_back(std::make_unique<MXPropagationMethod>(
-          downstream, factory_context.getServerFactoryContext(), method.istio_headers()));
+          downstream, factory_context.serverFactoryContext(), method.istio_headers()));
       break;
     default:
       break;

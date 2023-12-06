@@ -54,7 +54,7 @@ ProtobufTypes::MessagePtr MetadataExchangeConfigFactory::createEmptyConfigProto(
 Network::FilterFactoryCb MetadataExchangeConfigFactory::createFilterFactory(
     const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
     Server::Configuration::FactoryContext& context) {
-  return createFilterFactoryHelper(proto_config, context.getServerFactoryContext(),
+  return createFilterFactoryHelper(proto_config, context.serverFactoryContext(),
                                    FilterDirection::Downstream);
 }
 
@@ -71,7 +71,7 @@ ProtobufTypes::MessagePtr MetadataExchangeUpstreamConfigFactory::createEmptyConf
 Network::FilterFactoryCb MetadataExchangeUpstreamConfigFactory::createFilterFactory(
     const envoy::tcp::metadataexchange::config::MetadataExchange& proto_config,
     Server::Configuration::UpstreamFactoryContext& context) {
-  return createFilterFactoryHelper(proto_config, context.getServerFactoryContext(),
+  return createFilterFactoryHelper(proto_config, context.serverFactoryContext(),
                                    FilterDirection::Upstream);
 }
 
