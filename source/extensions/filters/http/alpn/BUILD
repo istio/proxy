@@ -47,7 +47,7 @@ envoy_cc_library(
     deps = [
         ":alpn_filter",
         "@envoy//envoy/registry",
-        "@envoy//source/exe:envoy_common_lib",
+        "@envoy//source/exe:all_extensions_lib",
         "@envoy//source/extensions/filters/http/common:factory_base_lib",
     ],
 )
