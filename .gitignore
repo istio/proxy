@@ -18,3 +18,4 @@ test/envoye2e/http_metadata_exchange/testoutput
 /extensions/common/proxy_expr.h
 /extensions/common/nlohmann_json.hpp
 out/
+.cache
