@@ -82,7 +82,8 @@ enum ResponseFlag {
   NoClusterFound = 0x1000000,
   OverloadManager = 0x2000000,
   DnsResolutionFailed = 0x4000000,
-  LastFlag = DnsResolutionFailed,
+  DropOverLoad = 0x8000000,
+  LastFlag = DropOverLoad,
 };
 
 void appendString(std::string& result, const absl::string_view& append) {
