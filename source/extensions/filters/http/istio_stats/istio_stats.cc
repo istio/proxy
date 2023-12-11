@@ -424,7 +424,7 @@ public:
     if (rotate_interval_ms_ > 0) {
       ASSERT(delete_interval_ms_ < rotate_interval_ms_);
       ASSERT(delete_interval_ms_ >= 1000);
-      Event::Dispatcher& dispatcher = factory_context.mainThreadDispatcher();
+      Event::Dispatcher& dispatcher = factory_context.serverFactoryContext().mainThreadDispatcher();
       rotate_timer_ = dispatcher.createTimer([this] { onRotate(); });
       delete_timer_ = dispatcher.createTimer([this] { onDelete(); });
       rotate_timer_->enableTimer(std::chrono::milliseconds(rotate_interval_ms_));
@@ -468,11 +468,12 @@ private:
 struct Config : public Logger::Loggable<Logger::Id::filter> {
   Config(const stats::PluginConfig& proto_config,
          Server::Configuration::FactoryContext& factory_context)
-      : context_(factory_context.singletonManager().getTyped<Context>(
+      : context_(factory_context.serverFactoryContext().singletonManager().getTyped<Context>(
             SINGLETON_MANAGER_REGISTERED_NAME(Context),
             [&factory_context] {
-              return std::make_shared<Context>(factory_context.serverScope().symbolTable(),
-                                               factory_context.localInfo().node());
+              return std::make_shared<Context>(
+                  factory_context.serverFactoryContext().scope().symbolTable(),
+                  factory_context.serverFactoryContext().localInfo().node());
             })),
         scope_(factory_context, PROTOBUF_GET_MS_OR_DEFAULT(proto_config, rotation_interval, 0),
                PROTOBUF_GET_MS_OR_DEFAULT(proto_config, graceful_deletion_interval,
@@ -1222,7 +1223,8 @@ private:
 absl::StatusOr<Http::FilterFactoryCb> IstioStatsFilterConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message& proto_config, const std::string&,
     Server::Configuration::FactoryContext& factory_context) {
-  factory_context.api().customStatNamespaces().registerStatNamespace(CustomStatNamespace);
+  factory_context.serverFactoryContext().api().customStatNamespaces().registerStatNamespace(
+      CustomStatNamespace);
   ConfigSharedPtr config = std::make_shared<Config>(
       dynamic_cast<const stats::PluginConfig&>(proto_config), factory_context);
   config->recordVersion();
@@ -1240,7 +1242,8 @@ REGISTER_FACTORY(IstioStatsFilterConfigFactory,
 
 Network::FilterFactoryCb IstioStatsNetworkFilterConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message& proto_config, Server::Configuration::FactoryContext& factory_context) {
-  factory_context.api().customStatNamespaces().registerStatNamespace(CustomStatNamespace);
+  factory_context.serverFactoryContext().api().customStatNamespaces().registerStatNamespace(
+      CustomStatNamespace);
   ConfigSharedPtr config = std::make_shared<Config>(
       dynamic_cast<const stats::PluginConfig&>(proto_config), factory_context);
   config->recordVersion();

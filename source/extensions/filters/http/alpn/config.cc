@@ -26,7 +26,8 @@ namespace Alpn {
 absl::StatusOr<Http::FilterFactoryCb>
 AlpnConfigFactory::createFilterFactoryFromProto(const Protobuf::Message& config, const std::string&,
                                                 Server::Configuration::FactoryContext& context) {
-  return createFilterFactory(dynamic_cast<const FilterConfig&>(config), context.clusterManager());
+  return createFilterFactory(dynamic_cast<const FilterConfig&>(config),
+                             context.serverFactoryContext().clusterManager());
 }
 
 ProtobufTypes::MessagePtr AlpnConfigFactory::createEmptyConfigProto() {
