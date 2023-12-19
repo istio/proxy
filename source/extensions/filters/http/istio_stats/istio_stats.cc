@@ -619,18 +619,21 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
 
   // RAII for stream context propagation.
   struct StreamOverrides : public Filters::Common::Expr::StreamActivation {
-    StreamOverrides(Config& parent, Stats::StatNameDynamicPool& pool,
-                    const StreamInfo::StreamInfo& info,
-                    const Http::RequestHeaderMap* request_headers = nullptr,
-                    const Http::ResponseHeaderMap* response_headers = nullptr,
-                    const Http::ResponseTrailerMap* response_trailers = nullptr)
-        : parent_(parent) {
+    StreamOverrides(Config& parent, Stats::StatNameDynamicPool& pool)
+        : parent_(parent), pool_(pool) {}
+
+    void evaluate(const StreamInfo::StreamInfo& info,
+                  const Http::RequestHeaderMap* request_headers = nullptr,
+                  const Http::ResponseHeaderMap* response_headers = nullptr,
+                  const Http::ResponseTrailerMap* response_trailers = nullptr) {
+      evaluated_ = true;
       if (parent_.metric_overrides_) {
         activation_info_ = &info;
         activation_request_headers_ = request_headers;
         activation_response_headers_ = response_headers;
         activation_response_trailers_ = response_trailers;
         const auto& compiled_exprs = parent_.metric_overrides_->compiled_exprs_;
+        expr_values_.clear();
         expr_values_.reserve(compiled_exprs.size());
         for (size_t id = 0; id < compiled_exprs.size(); id++) {
           Protobuf::Arena arena;
@@ -646,7 +649,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
               }
               expr_values_.push_back(std::make_pair(Stats::StatName(), amount));
             } else {
-              expr_values_.push_back(std::make_pair(pool.add(string_value), 0));
+              expr_values_.push_back(std::make_pair(pool_.add(string_value), 0));
             }
           }
         }
@@ -677,6 +680,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
 
     void addCounter(Stats::StatName metric, const Stats::StatNameTagVector& tags,
                     uint64_t amount = 1) {
+      ASSERT(evaluated_);
       if (parent_.metric_overrides_) {
         if (parent_.metric_overrides_->drop_.contains(metric)) {
           return;
@@ -694,6 +698,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
 
     void recordHistogram(Stats::StatName metric, Stats::Histogram::Unit unit,
                          const Stats::StatNameTagVector& tags, uint64_t value) {
+      ASSERT(evaluated_);
       if (parent_.metric_overrides_) {
         if (parent_.metric_overrides_->drop_.contains(metric)) {
           return;
@@ -710,6 +715,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
     }
 
     void recordCustomMetrics() {
+      ASSERT(evaluated_);
       if (parent_.metric_overrides_) {
         for (const auto& [_, metric] : parent_.metric_overrides_->custom_metrics_) {
           const auto tags = parent_.metric_overrides_->overrideTags(metric.name_, {}, expr_values_);
@@ -740,7 +746,9 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
     }
 
     Config& parent_;
+    Stats::StatNameDynamicPool& pool_;
     std::vector<std::pair<Stats::StatName, uint64_t>> expr_values_;
+    bool evaluated_{false};
   };
 
   void recordVersion() {
@@ -775,7 +783,8 @@ class IstioStatsFilter : public Http::PassThroughFilter,
                          public Network::ConnectionCallbacks {
 public:
   IstioStatsFilter(ConfigSharedPtr config)
-      : config_(config), context_(*config->context_), pool_(config->scope()->symbolTable()) {
+      : config_(config), context_(*config->context_), pool_(config->scope()->symbolTable()),
+        stream_(*config_, pool_) {
     tags_.reserve(25);
     switch (config_->reporter()) {
     case Reporter::ServerSidecar:
@@ -830,23 +839,24 @@ public:
     }
     populateFlagsAndConnectionSecurity(info);
 
-    Config::StreamOverrides stream(*config_, pool_, info, request_headers, response_headers,
-                                   response_trailers);
-    stream.addCounter(context_.requests_total_, tags_);
+    // Evaluate the end stream override expressions for HTTP. This may change values for periodic
+    // metrics.
+    stream_.evaluate(info, request_headers, response_headers, response_trailers);
+    stream_.addCounter(context_.requests_total_, tags_);
     auto duration = info.requestComplete();
     if (duration.has_value()) {
-      stream.recordHistogram(context_.request_duration_milliseconds_,
-                             Stats::Histogram::Unit::Milliseconds, tags_,
-                             absl::FromChrono(duration.value()) / absl::Milliseconds(1));
+      stream_.recordHistogram(context_.request_duration_milliseconds_,
+                              Stats::Histogram::Unit::Milliseconds, tags_,
+                              absl::FromChrono(duration.value()) / absl::Milliseconds(1));
     }
     auto meter = info.getDownstreamBytesMeter();
     if (meter) {
-      stream.recordHistogram(context_.request_bytes_, Stats::Histogram::Unit::Bytes, tags_,
-                             meter->wireBytesReceived());
-      stream.recordHistogram(context_.response_bytes_, Stats::Histogram::Unit::Bytes, tags_,
-                             meter->wireBytesSent());
+      stream_.recordHistogram(context_.request_bytes_, Stats::Histogram::Unit::Bytes, tags_,
+                              meter->wireBytesReceived());
+      stream_.recordHistogram(context_.response_bytes_, Stats::Histogram::Unit::Bytes, tags_,
+                              meter->wireBytesSent());
     }
-    stream.recordCustomMetrics();
+    stream_.recordCustomMetrics();
   }
 
   // Network::ReadFilter
@@ -894,6 +904,10 @@ private:
         if (peer_read_ || end_stream) {
           populatePeerInfo(info, info.filterState());
         }
+        if (is_grpc_ && (peer_read_ || end_stream)) {
+          // For periodic HTTP metric, evaluate once when the peer info is read.
+          stream_.evaluate(decoder_callbacks_->streamInfo());
+        }
       }
       if (is_grpc_ && (peer_read_ || end_stream)) {
         const auto* counters =
@@ -901,11 +915,10 @@ private:
                 .filterState()
                 ->getDataReadOnly<GrpcStats::GrpcStatsObject>("envoy.filters.http.grpc_stats");
         if (counters) {
-          Config::StreamOverrides stream(*config_, pool_, decoder_callbacks_->streamInfo());
-          stream.addCounter(context_.request_messages_total_, tags_,
-                            counters->request_message_count - request_message_count_);
-          stream.addCounter(context_.response_messages_total_, tags_,
-                            counters->response_message_count - response_message_count_);
+          stream_.addCounter(context_.request_messages_total_, tags_,
+                             counters->request_message_count - request_message_count_);
+          stream_.addCounter(context_.response_messages_total_, tags_,
+                             counters->response_message_count - response_message_count_);
           request_message_count_ = counters->request_message_count;
           response_message_count_ = counters->response_message_count;
         }
@@ -923,7 +936,6 @@ private:
             ? *upstream_info->upstreamFilterState()
             : info.filterState();
 
-    Config::StreamOverrides stream(*config_, pool_, info);
     if (!peer_read_) {
       peer_read_ = peerInfoRead(config_->reporter(), filter_state);
       // Report connection open once peer info is read or connection is closed.
@@ -931,23 +943,25 @@ private:
         populatePeerInfo(info, filter_state);
         tags_.push_back({context_.request_protocol_, context_.tcp_});
         populateFlagsAndConnectionSecurity(info);
-        stream.addCounter(context_.tcp_connections_opened_total_, tags_);
+        // For TCP, evaluate only once immediately before emitting the first metric.
+        stream_.evaluate(info);
+        stream_.addCounter(context_.tcp_connections_opened_total_, tags_);
       }
     }
     if (peer_read_ || end_stream) {
       auto meter = info.getDownstreamBytesMeter();
       if (meter) {
-        stream.addCounter(context_.tcp_sent_bytes_total_, tags_,
-                          meter->wireBytesSent() - bytes_sent_);
+        stream_.addCounter(context_.tcp_sent_bytes_total_, tags_,
+                           meter->wireBytesSent() - bytes_sent_);
         bytes_sent_ = meter->wireBytesSent();
-        stream.addCounter(context_.tcp_received_bytes_total_, tags_,
-                          meter->wireBytesReceived() - bytes_received_);
+        stream_.addCounter(context_.tcp_received_bytes_total_, tags_,
+                           meter->wireBytesReceived() - bytes_received_);
         bytes_received_ = meter->wireBytesReceived();
       }
     }
     if (end_stream) {
-      stream.addCounter(context_.tcp_connections_closed_total_, tags_);
-      stream.recordCustomMetrics();
+      stream_.addCounter(context_.tcp_connections_closed_total_, tags_);
+      stream_.recordCustomMetrics();
     }
   }
   void onReportTimer() {
@@ -1216,6 +1230,8 @@ private:
   bool is_grpc_{false};
   uint64_t request_message_count_{0};
   uint64_t response_message_count_{0};
+  // Custom expression values are evaluated at most twice: at the start and the end of the stream.
+  Config::StreamOverrides stream_;
 };
 
 } // namespace
