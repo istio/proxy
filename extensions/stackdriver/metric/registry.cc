@@ -274,7 +274,8 @@ getStackdriverOptions(const Wasm::Common::FlatNode& local_node_info,
   .add_column(requestOperationKey())                                                               \
       .add_column(responseCodeKey())                                                               \
       .add_column(apiVersionKey())                                                                 \
-      .add_column(apiNameKey())
+      .add_column(apiNameKey())                                                                    \
+      .add_column(responseFlagKey())
 
 #define ADD_COMMON_TAGS                                                                            \
   .add_column(requestProtocolKey())                                                                \
@@ -408,6 +409,7 @@ TAG_KEY_FUNC(destination_service_name, destinationServiceName)
 TAG_KEY_FUNC(destination_service_namespace, destinationServiceNamespace)
 TAG_KEY_FUNC(destination_port, destinationPort)
 TAG_KEY_FUNC(response_code, desponseCode)
+TAG_KEY_FUNC(response_flag, desponseFlag)
 TAG_KEY_FUNC(source_principal, sourcePrincipal)
 TAG_KEY_FUNC(source_workload_name, sourceWorkloadName)
 TAG_KEY_FUNC(source_workload_namespace, sourceWorkloadNamespace)

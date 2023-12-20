@@ -109,7 +109,9 @@ TagKeyValueList getOutboundTagMap(const ::Wasm::Common::FlatNode& local_node_inf
       {sourceCanonicalServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
       {sourceCanonicalRevisionKey(), unknownIfEmpty(getLocalCanonicalRev(local_node_info))},
-      {proxyVersionKey(), unknownIfEmpty(flatbuffers::GetString(local_node_info.istio_version()))}};
+      {proxyVersionKey(), unknownIfEmpty(flatbuffers::GetString(local_node_info.istio_version()))},
+      {responseFlagKey(), unknownIfEmpty(request_info.response_flag)},
+      };
   return outboundMap;
 }
 
@@ -148,7 +150,9 @@ TagKeyValueList getInboundTagMap(const ::Wasm::Common::FlatNode& local_node_info
       {sourceCanonicalServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
       {sourceCanonicalRevisionKey(), unknownIfEmpty(getPeerCanonicalRev(peer_node_info))},
-      {proxyVersionKey(), unknownIfEmpty(flatbuffers::GetString(local_node_info.istio_version()))}};
+      {proxyVersionKey(), unknownIfEmpty(flatbuffers::GetString(local_node_info.istio_version()))},
+      {responseFlagKey(), unknownIfEmpty(request_info.response_flag)},
+      };
   return inboundMap;
 }
 

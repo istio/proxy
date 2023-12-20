@@ -52,6 +52,7 @@ opencensus::tags::TagKey destinationServiceNameKey();
 opencensus::tags::TagKey destinationServiceNamespaceKey();
 opencensus::tags::TagKey destinationPortKey();
 opencensus::tags::TagKey responseCodeKey();
+opencensus::tags::TagKey responseFlagKey();
 opencensus::tags::TagKey sourcePrincipalKey();
 opencensus::tags::TagKey sourceWorkloadNameKey();
 opencensus::tags::TagKey sourceWorkloadNamespaceKey();
