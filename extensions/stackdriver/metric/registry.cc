@@ -401,6 +401,7 @@ void dropViews(const std::vector<std::string>& dropped_metrics) {
 
 // Tag key functions
 TAG_KEY_FUNC(response_code, responseCode)
+TAG_KEY_FUNC(response_flag, responseFlag)
 TAG_KEY_FUNC(request_operation, requestOperation)
 TAG_KEY_FUNC(request_protocol, requestProtocol)
 TAG_KEY_FUNC(service_authentication_policy, serviceAuthenticationPolicy)
