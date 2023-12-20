@@ -109,8 +109,7 @@ TagKeyValueList getOutboundTagMap(const ::Wasm::Common::FlatNode& local_node_inf
       {sourceCanonicalServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(local_node_info.namespace_()))},
       {sourceCanonicalRevisionKey(), unknownIfEmpty(getLocalCanonicalRev(local_node_info))},
-      {proxyVersionKey(), unknownIfEmpty(flatbuffers::GetString(local_node_info.istio_version()))},
-      {responseFlagKey(), unknownIfEmpty(request_info.response_flag)}};
+      {proxyVersionKey(), unknownIfEmpty(flatbuffers::GetString(local_node_info.istio_version()))}};
   return outboundMap;
 }
 
@@ -149,8 +148,7 @@ TagKeyValueList getInboundTagMap(const ::Wasm::Common::FlatNode& local_node_info
       {sourceCanonicalServiceNamespaceKey(),
        unknownIfEmpty(flatbuffers::GetString(peer_node_info.namespace_()))},
       {sourceCanonicalRevisionKey(), unknownIfEmpty(getPeerCanonicalRev(peer_node_info))},
-      {proxyVersionKey(), unknownIfEmpty(flatbuffers::GetString(local_node_info.istio_version()))},
-      {responseFlagKey(), unknownIfEmpty(request_info.response_flag)}};
+      {proxyVersionKey(), unknownIfEmpty(flatbuffers::GetString(local_node_info.istio_version()))}};
   return inboundMap;
 }
 
@@ -208,6 +206,9 @@ void addHttpSpecificTags(const ::Wasm::Common::RequestInfo& request_info,
                                   ? httpCodeFromGrpc(request_info.grpc_status)
                                   : request_info.response_code;
   tag_map.emplace_back(Metric::responseCodeKey(), std::to_string(response_code));
+
+  const auto& response_flag = request_info.response_flag;
+  tag_map.emplace_back(Metric::responseFlagKey(), response_flag);
 }
 
 TagKeyValueList getMetricTagMap(const TagKeyValueList& input_map,
