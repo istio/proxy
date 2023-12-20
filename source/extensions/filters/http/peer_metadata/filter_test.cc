@@ -41,7 +41,7 @@ public:
   MockSingletonManager() {}
   ~MockSingletonManager() override {}
   MOCK_METHOD(Singleton::InstanceSharedPtr, get,
-              (const std::string& name, Singleton::SingletonFactoryCb cb));
+              (const std::string& name, Singleton::SingletonFactoryCb cb, bool pin));
 };
 class MockWorkloadMetadataProvider
     : public Extensions::Common::WorkloadDiscovery::WorkloadMetadataProvider,
@@ -59,7 +59,7 @@ protected:
     ON_CALL(context_.server_factory_context_, singletonManager())
         .WillByDefault(ReturnRef(singleton_manager_));
     metadata_provider_ = std::make_shared<NiceMock<MockWorkloadMetadataProvider>>();
-    ON_CALL(singleton_manager_, get(HasSubstr("workload_metadata_provider"), _))
+    ON_CALL(singleton_manager_, get(HasSubstr("workload_metadata_provider"), _, _))
         .WillByDefault(Return(metadata_provider_));
   }
   void initialize(const std::string& yaml_config) {
