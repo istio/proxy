@@ -423,6 +423,12 @@ ENVOY_EXTENSIONS = {
     "envoy.config_subscription.aggregated_grpc_collection":       "//source/extensions/config_subscription/grpc:grpc_collection_subscription_lib",
     "envoy.config_subscription.aggregated_delta_grpc_collection": "//source/extensions/config_subscription/grpc:grpc_collection_subscription_lib",
     "envoy.config_subscription.ads_collection":                   "//source/extensions/config_subscription/grpc:grpc_collection_subscription_lib",
+
+    #
+    # cluster specifier plugin
+    #
+
+    "envoy.router.cluster_specifier_plugin.lua": "//source/extensions/router/cluster_specifiers/lua:config",
 }
 
 ENVOY_CONTRIB_EXTENSIONS = {
