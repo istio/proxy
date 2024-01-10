@@ -16,6 +16,7 @@
 
 #include <atomic>
 
+#include "envoy/router/string_accessor.h"
 #include "envoy/registry/registry.h"
 #include "envoy/server/factory_context.h"
 #include "envoy/singleton/manager.h"
@@ -28,7 +29,6 @@
 #include "source/common/http/header_utility.h"
 #include "source/common/network/utility.h"
 #include "source/common/stream_info/utility.h"
-#include "source/extensions/common/filter_objects.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/common/expr/context.h"
 #include "source/extensions/filters/common/expr/evaluator.h"
@@ -1046,10 +1046,10 @@ private:
     switch (config_->reporter()) {
     case Reporter::ServerSidecar:
     case Reporter::ServerGateway: {
-      auto peer_principal = info.filterState().getDataReadOnly<Router::StringAccessor>(
-          Extensions::Common::PeerPrincipalKey);
-      auto local_principal = info.filterState().getDataReadOnly<Router::StringAccessor>(
-          Extensions::Common::LocalPrincipalKey);
+      auto peer_principal =
+          info.filterState().getDataReadOnly<Router::StringAccessor>("io.istio.peer_principal");
+      auto local_principal =
+          info.filterState().getDataReadOnly<Router::StringAccessor>("io.istio.local_principal");
       peer_san = peer_principal ? peer_principal->asString() : "";
       local_san = local_principal ? local_principal->asString() : "";
 
