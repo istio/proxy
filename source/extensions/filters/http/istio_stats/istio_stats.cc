@@ -20,8 +20,6 @@
 #include "envoy/registry/registry.h"
 #include "envoy/server/factory_context.h"
 #include "envoy/singleton/manager.h"
-#include "eval/public/builtin_func_registrar.h"
-#include "eval/public/cel_expr_builder_factory.h"
 #include "extensions/common/metadata_object.h"
 #include "parser/parser.h"
 #include "source/common/grpc/common.h"
@@ -34,6 +32,18 @@
 #include "source/extensions/filters/common/expr/evaluator.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
 #include "source/extensions/filters/http/grpc_stats/grpc_stats_filter.h"
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
+
+#include "eval/public/builtin_func_registrar.h"
+#include "eval/public/cel_expr_builder_factory.h"
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 namespace Envoy {
 namespace Extensions {
