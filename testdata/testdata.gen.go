@@ -798,11 +798,13 @@ filter_chains:
           value:
             on_request_headers:
             - object_key: io.istio.peer_principal
+              factory_key: envoy.string
               format_string:
                 text_format_source:
                   inline_string: "%DOWNSTREAM_PEER_URI_SAN%"
               shared_with_upstream: ONCE
             - object_key: io.istio.local_principal
+              factory_key: envoy.string
               format_string:
                 text_format_source:
                   inline_string: "%DOWNSTREAM_LOCAL_URI_SAN%"
