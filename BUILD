@@ -39,7 +39,7 @@ envoy_cc_binary(
         "//source/extensions/filters/http/alpn:config_lib",
         "//source/extensions/filters/http/istio_stats",
         "//source/extensions/filters/http/peer_metadata:filter_lib",
-        "//source/extensions/filters/network/istio_tlv_authn:config_lib", # Very experimental: ambient/sandwich
+        "//source/extensions/filters/network/istio_tlv_authn:config_lib",  # Very experimental: ambient/sandwich
         "//source/extensions/filters/network/metadata_exchange:config_lib",
         "@envoy//source/exe:envoy_main_entry_lib",
     ],

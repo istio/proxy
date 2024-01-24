@@ -32,7 +32,6 @@ envoy_cc_extension(
     repository = "@envoy",
     deps = [
         ":config_cc_proto",
-        "@envoy//source/common/router:string_accessor_lib",
         "@envoy//envoy/common:hashable_interface",
         "@envoy//envoy/network:filter_interface",
         "@envoy//envoy/registry",
@@ -40,6 +39,7 @@ envoy_cc_extension(
         "@envoy//envoy/stream_info:filter_state_interface",
         "@envoy//source/common/common:hash_lib",
         "@envoy//source/common/network:proxy_protocol_filter_state_lib",
+        "@envoy//source/common/router:string_accessor_lib",
         "@envoy//source/extensions/filters/network/common:factory_base_lib",
     ],
 )
@@ -48,4 +48,3 @@ envoy_proto_library(
     name = "config",
     srcs = ["config.proto"],
 )
-

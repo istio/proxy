@@ -23,8 +23,6 @@
 #include "source/extensions/filters/network/istio_tlv_authn/config.pb.validate.h"
 #include "source/common/router/string_accessor_impl.h"
 
-
-
 namespace Envoy {
 namespace Extensions {
 namespace NetworkFilters {
@@ -53,28 +51,31 @@ const uint8_t principalTlvType = 0xD0;
 
 void IstioTLVAuthnFilter::populate() const {
   Network::Connection& conn = read_callbacks_->connection();
-  const auto* proxy_proto = conn.streamInfo().filterState()->getDataReadOnly<Network::ProxyProtocolFilterState>(Network::ProxyProtocolFilterState::key());
+  const auto* proxy_proto =
+      conn.streamInfo().filterState()->getDataReadOnly<Network::ProxyProtocolFilterState>(
+          Network::ProxyProtocolFilterState::key());
   const auto& tlv_vector = proxy_proto->value().tlv_vector_;
 
-  auto tlv = std::find_if(tlv_vector.begin(), tlv_vector.end(), [](const Network::ProxyProtocolTLV& tlv) {
-    return tlv.type == principalTlvType;
-  });
+  auto tlv =
+      std::find_if(tlv_vector.begin(), tlv_vector.end(), [](const Network::ProxyProtocolTLV& tlv) {
+        return tlv.type == principalTlvType;
+      });
   if (tlv == tlv_vector.end()) {
     return;
   }
 
   ENVOY_LOG(debug, "istio_tlv_authn: setting io.istio.peer_principal from PROXY Protocol TLV");
-  std::string id(tlv->value.begin(), tlv->value.end()); 
+  std::string id(tlv->value.begin(), tlv->value.end());
   auto peer_principal = std::make_shared<Router::StringAccessorImpl>(id);
-  conn.streamInfo().filterState()->setData(PeerPrincipalKey , peer_principal,
+  conn.streamInfo().filterState()->setData(PeerPrincipalKey, peer_principal,
                                            StreamInfo::FilterState::StateType::ReadOnly,
-                                           StreamInfo::FilterState::LifeSpan::Connection,
-                                           shared_);
+                                           StreamInfo::FilterState::LifeSpan::Connection, shared_);
 }
 
-class IstioTLVAuthnConfigFactory : public Common::FactoryBase<io::istio::network::tlv_authn::Config> {
+class IstioTLVAuthnConfigFactory
+    : public Common::FactoryBase<io::istio::network::tlv_authn::Config> {
 public:
-  IstioTLVAuthnConfigFactory () : FactoryBase("io.istio.network.tlv_authn") {}
+  IstioTLVAuthnConfigFactory() : FactoryBase("io.istio.network.tlv_authn") {}
 
 private:
   Network::FilterFactoryCb
@@ -86,7 +87,8 @@ private:
   }
 };
 
-REGISTER_FACTORY(IstioTLVAuthnConfigFactory, Server::Configuration::NamedNetworkFilterConfigFactory);
+REGISTER_FACTORY(IstioTLVAuthnConfigFactory,
+                 Server::Configuration::NamedNetworkFilterConfigFactory);
 
 } // namespace IstioAuthn
 } // namespace NetworkFilters

@@ -25,10 +25,9 @@ namespace Extensions {
 namespace NetworkFilters {
 namespace IstioAuthn {
 
-class IstioTLVAuthnFilter : 
-  public Network::ReadFilter, 
-  public Network::ConnectionCallbacks,
-  public Envoy::Logger::Loggable<Envoy::Logger::Id::filter> {
+class IstioTLVAuthnFilter : public Network::ReadFilter,
+                            public Network::ConnectionCallbacks,
+                            public Envoy::Logger::Loggable<Envoy::Logger::Id::filter> {
 public:
   IstioTLVAuthnFilter(bool shared)
       : shared_(shared ? StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce
