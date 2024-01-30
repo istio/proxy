@@ -34,11 +34,11 @@ bind(
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Commit date: 2024-01-18
-ENVOY_SHA = "83ac87059f0f5e3f87609223afbc196054e7156e"
+ENVOY_SHA = "bd2cc6e71a9416bd87673ffc79b3245492825d97"
 
-ENVOY_SHA256 = "0338d5a541a2c9a1efa966113271a6eca7722dad924755da55f567e5d915df1e"
+ENVOY_SHA256 = "0500062c242838d49d6f6ace522346f7ec1969630658f2090070f72ce5c63c5d"
 
-ENVOY_ORG = "envoyproxy"
+ENVOY_ORG = "istio-private"
 
 ENVOY_REPO = "envoy"
 
