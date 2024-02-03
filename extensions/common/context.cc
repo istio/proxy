@@ -102,9 +102,9 @@ void populateDestinationService(bool outbound, bool use_host_header, RequestInfo
   // oldest service) to get destination service information. Ideally client will
   // forward the canonical host to the server side so that it could accurately
   // identify the intended host.
-  if (getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0", "name"},
+  if (getValue({"xds", "cluster_metadata", "filter_metadata", "istio", "services", "0", "name"},
                &request_info->destination_service_name)) {
-    getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0", "host"},
+    getValue({"xds", "cluster_metadata", "filter_metadata", "istio", "services", "0", "host"},
              &request_info->destination_service_host);
   } else {
     // if cluster metadata cannot be found, fallback to destination service
@@ -193,7 +193,7 @@ std::string_view ProtocolString(Protocol protocol) {
 // Retrieves the traffic direction from the configuration context.
 TrafficDirection getTrafficDirection() {
   int64_t direction;
-  if (getValue({"xds", "listener_direction"}, &direction)) {
+  if (getValue({"listener_direction"}, &direction)) {
     return static_cast<TrafficDirection>(direction);
   }
   return TrafficDirection::Unspecified;
