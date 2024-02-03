@@ -401,8 +401,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   }
 
   direction_ = ::Wasm::Common::getTrafficDirection();
-  LOG_DEBUG(absl::StrCat("Stackdriver plugin is configured for ",
-                         ::Wasm::Common::toStringView(direction_)));
+  LOG_DEBUG(absl::StrCat("Stackdriver plugin is configured for direction: ", direction_));
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
   const ::Wasm::Common::FlatNode& local_node =
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());
