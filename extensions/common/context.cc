@@ -193,6 +193,7 @@ std::string_view ProtocolString(Protocol protocol) {
 // Retrieves the traffic direction from the configuration context.
 TrafficDirection getTrafficDirection() {
   int64_t direction;
+  // TODO: move to use xds.listener_direction
   if (getValue({"listener_direction"}, &direction)) {
     return static_cast<TrafficDirection>(direction);
   }
