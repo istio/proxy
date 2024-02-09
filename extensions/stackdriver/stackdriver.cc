@@ -74,7 +74,7 @@ constexpr char kDryRunAllowShadowEffectiveId[] = "istio_dry_run_allow_shadow_eff
 // is not found in metadata.
 int getMonitoringExportInterval() {
   std::string interval_s = "";
-  if (getValue({"node", "metadata", kMonitoringExportIntervalKey}, &interval_s)) {
+  if (getValue({"xds", "node", "metadata", kMonitoringExportIntervalKey}, &interval_s)) {
     return std::stoi(interval_s);
   }
   return 60;
@@ -84,7 +84,7 @@ int getMonitoringExportInterval() {
 // seconds if interval is not found in metadata.
 int getProxyTickerIntervalMilliseconds() {
   std::string interval_s = "";
-  if (getValue({"node", "metadata", kProxyTickerIntervalKey}, &interval_s)) {
+  if (getValue({"xds", "node", "metadata", kProxyTickerIntervalKey}, &interval_s)) {
     return std::stoi(interval_s) * 1000;
   }
   return kDefaultTickerMilliseconds;
@@ -94,7 +94,7 @@ int getProxyTickerIntervalMilliseconds() {
 // seconds if interval is not found in metadata.
 long int getTcpLogEntryTimeoutNanoseconds() {
   std::string interval_s = "";
-  if (getValue({"node", "metadata", kTcpLogEntryTimeoutKey}, &interval_s)) {
+  if (getValue({"xds", "node", "metadata", kTcpLogEntryTimeoutKey}, &interval_s)) {
     return std::stoi(interval_s) * 1000000000;
   }
   return kDefaultTcpLogEntryTimeoutNanoseconds;
@@ -104,7 +104,7 @@ long int getTcpLogEntryTimeoutNanoseconds() {
 // provided or "0" is provided, emtpy will be returned.
 std::string getSTSPort() {
   std::string sts_port;
-  if (getValue({"node", "metadata", kSTSPortKey}, &sts_port) && sts_port != "0") {
+  if (getValue({"xds", "node", "metadata", kSTSPortKey}, &sts_port) && sts_port != "0") {
     return sts_port;
   }
   return "";
@@ -113,7 +113,7 @@ std::string getSTSPort() {
 // Get file name for the token test override.
 std::string getTokenFile() {
   std::string token_file;
-  if (!getValue({"node", "metadata", kTokenFile}, &token_file)) {
+  if (!getValue({"xds", "node", "metadata", kTokenFile}, &token_file)) {
     return "";
   }
   return token_file;
@@ -122,7 +122,7 @@ std::string getTokenFile() {
 // Get file name for the root CA PEM file test override.
 std::string getCACertFile() {
   std::string ca_cert_file;
-  if (!getValue({"node", "metadata", kCACertFile}, &ca_cert_file)) {
+  if (!getValue({"xds", "node", "metadata", kCACertFile}, &ca_cert_file)) {
     return "";
   }
   return ca_cert_file;
@@ -131,7 +131,7 @@ std::string getCACertFile() {
 // Get secure stackdriver endpoint for e2e testing.
 std::string getSecureEndpoint() {
   std::string secure_endpoint;
-  if (!getValue({"node", "metadata", kSecureStackdriverEndpointKey}, &secure_endpoint)) {
+  if (!getValue({"xds", "node", "metadata", kSecureStackdriverEndpointKey}, &secure_endpoint)) {
     return "";
   }
   return secure_endpoint;
@@ -140,7 +140,7 @@ std::string getSecureEndpoint() {
 // Get insecure stackdriver endpoint for e2e testing.
 std::string getInsecureEndpoint() {
   std::string insecure_endpoint;
-  if (!getValue({"node", "metadata", kInsecureStackdriverEndpointKey}, &insecure_endpoint)) {
+  if (!getValue({"xds", "node", "metadata", kInsecureStackdriverEndpointKey}, &insecure_endpoint)) {
     return "";
   }
   return insecure_endpoint;
@@ -151,7 +151,7 @@ std::string getInsecureEndpoint() {
 // endpoint.
 std::string getMonitoringEndpoint() {
   std::string monitoring_endpoint;
-  if (!getValue({"node", "metadata", kMonitoringEndpointKey}, &monitoring_endpoint)) {
+  if (!getValue({"xds", "node", "metadata", kMonitoringEndpointKey}, &monitoring_endpoint)) {
     return "";
   }
   return monitoring_endpoint;
@@ -160,7 +160,8 @@ std::string getMonitoringEndpoint() {
 // Get GCP project number.
 std::string getProjectNumber() {
   std::string project_number;
-  if (!getValue({"node", "metadata", "PLATFORM_METADATA", kGCPProjectNumberKey}, &project_number)) {
+  if (!getValue({"xds", "node", "metadata", "PLATFORM_METADATA", kGCPProjectNumberKey},
+                &project_number)) {
     return "";
   }
   return project_number;
@@ -400,6 +401,7 @@ bool StackdriverRootContext::configure(size_t configuration_size) {
   }
 
   direction_ = ::Wasm::Common::getTrafficDirection();
+  LOG_DEBUG(absl::StrCat("Stackdriver plugin is configured for direction: ", direction_));
   use_host_header_fallback_ = !config_.disable_host_header_fallback();
   const ::Wasm::Common::FlatNode& local_node =
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info_.data());

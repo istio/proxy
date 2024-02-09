@@ -102,9 +102,9 @@ void populateDestinationService(bool outbound, bool use_host_header, RequestInfo
   // oldest service) to get destination service information. Ideally client will
   // forward the canonical host to the server side so that it could accurately
   // identify the intended host.
-  if (getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0", "name"},
+  if (getValue({"xds", "cluster_metadata", "filter_metadata", "istio", "services", "0", "name"},
                &request_info->destination_service_name)) {
-    getValue({"cluster_metadata", "filter_metadata", "istio", "services", "0", "host"},
+    getValue({"xds", "cluster_metadata", "filter_metadata", "istio", "services", "0", "host"},
              &request_info->destination_service_host);
   } else {
     // if cluster metadata cannot be found, fallback to destination service
@@ -124,8 +124,8 @@ void populateRequestInfo(bool outbound, bool use_host_header_fallback, RequestIn
 
   request_info->is_populated = true;
 
-  getValue({"cluster_name"}, &request_info->upstream_cluster);
-  getValue({"route_name"}, &request_info->route_name);
+  getValue({"xds", "cluster_name"}, &request_info->upstream_cluster);
+  getValue({"xds", "route_name"}, &request_info->route_name);
   // Fill in request info.
   // Get destination service name and host based on cluster name and host
   // header.
@@ -193,6 +193,7 @@ std::string_view ProtocolString(Protocol protocol) {
 // Retrieves the traffic direction from the configuration context.
 TrafficDirection getTrafficDirection() {
   int64_t direction;
+  // TODO: move to use xds.listener_direction
   if (getValue({"listener_direction"}, &direction)) {
     return static_cast<TrafficDirection>(direction);
   }
@@ -215,29 +216,29 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
   std::vector<flatbuffers::Offset<flatbuffers::String>> app_containers;
   std::vector<flatbuffers::Offset<flatbuffers::String>> ip_addrs;
   std::string value;
-  if (getValue({"node", "metadata", "NAME"}, &value)) {
+  if (getValue({"xds", "node", "metadata", "NAME"}, &value)) {
     name = fbb.CreateString(value);
   }
-  if (getValue({"node", "metadata", "NAMESPACE"}, &value)) {
+  if (getValue({"xds", "node", "metadata", "NAMESPACE"}, &value)) {
     namespace_ = fbb.CreateString(value);
   }
-  if (getValue({"node", "metadata", "OWNER"}, &value)) {
+  if (getValue({"xds", "node", "metadata", "OWNER"}, &value)) {
     owner = fbb.CreateString(value);
   }
-  if (getValue({"node", "metadata", "WORKLOAD_NAME"}, &value)) {
+  if (getValue({"xds", "node", "metadata", "WORKLOAD_NAME"}, &value)) {
     workload_name = fbb.CreateString(value);
   }
-  if (getValue({"node", "metadata", "ISTIO_VERSION"}, &value)) {
+  if (getValue({"xds", "node", "metadata", "ISTIO_VERSION"}, &value)) {
     istio_version = fbb.CreateString(value);
   }
-  if (getValue({"node", "metadata", "MESH_ID"}, &value)) {
+  if (getValue({"xds", "node", "metadata", "MESH_ID"}, &value)) {
     mesh_id = fbb.CreateString(value);
   }
-  if (getValue({"node", "metadata", "CLUSTER_ID"}, &value)) {
+  if (getValue({"xds", "node", "metadata", "CLUSTER_ID"}, &value)) {
     cluster_id = fbb.CreateString(value);
   }
   {
-    auto buf = getProperty({"node", "metadata", "LABELS"});
+    auto buf = getProperty({"xds", "node", "metadata", "LABELS"});
     if (buf.has_value()) {
       for (const auto& [key, val] : buf.value()->pairs()) {
         labels.push_back(CreateKeyVal(fbb, fbb.CreateString(key), fbb.CreateString(val)));
@@ -245,7 +246,7 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
     }
   }
   {
-    auto buf = getProperty({"node", "metadata", "PLATFORM_METADATA"});
+    auto buf = getProperty({"xds", "node", "metadata", "PLATFORM_METADATA"});
     if (buf.has_value()) {
       for (const auto& [key, val] : buf.value()->pairs()) {
         platform_metadata.push_back(
@@ -253,13 +254,13 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
       }
     }
   }
-  if (getValue({"node", "metadata", "APP_CONTAINERS"}, &value)) {
+  if (getValue({"xds", "node", "metadata", "APP_CONTAINERS"}, &value)) {
     std::vector<absl::string_view> containers = absl::StrSplit(value, ',');
     for (const auto& container : containers) {
       app_containers.push_back(fbb.CreateString(toStdStringView(container)));
     }
   }
-  if (getValue({"node", "metadata", "INSTANCE_IPS"}, &value)) {
+  if (getValue({"xds", "node", "metadata", "INSTANCE_IPS"}, &value)) {
     std::vector<absl::string_view> ips = absl::StrSplit(value, ',');
     for (const auto& ip : ips) {
       ip_addrs.push_back(fbb.CreateString(toStdStringView(ip)));
@@ -292,7 +293,7 @@ namespace {
 bool extractPeerMetadataFromUpstreamMetadata(const std::string& metadata_type,
                                              flatbuffers::FlatBufferBuilder& fbb) {
   std::string endpoint_labels;
-  if (!getValue({metadata_type, "filter_metadata", "istio", "workload"}, &endpoint_labels)) {
+  if (!getValue({"xds", metadata_type, "filter_metadata", "istio", "workload"}, &endpoint_labels)) {
     return false;
   }
   std::vector<absl::string_view> parts = absl::StrSplit(endpoint_labels, ';');
@@ -555,7 +556,7 @@ bool sanitizeBytes(std::string* buf) {
 // labeling. Using a workload name as a service name could be potentially
 // problematic.
 std::string getServiceNameFallback() {
-  auto buf = getProperty({"node", "metadata", "LABELS"});
+  auto buf = getProperty({"xds", "node", "metadata", "LABELS"});
   if (buf.has_value()) {
     for (const auto& [key, val] : buf.value()->pairs())
       if (key == ::Wasm::Common::kCanonicalServiceLabelName.data()) {
