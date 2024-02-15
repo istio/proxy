@@ -21,6 +21,7 @@
 #include "extensions/stackdriver/common/constants.h"
 #include "google/api/monitored_resource.pb.h"
 #include "grpcpp/grpcpp.h"
+#include "grpcpp/security/tls_certificate_provider.h"
 
 namespace Extensions {
 namespace Stackdriver {
@@ -80,16 +81,19 @@ getStackdriverOptions(const Wasm::Common::FlatNode& local_node_info,
     }
   }
 
-  auto ssl_creds_options = grpc::SslCredentialsOptions();
+  grpc::experimental::TlsChannelCredentialsOptions tls_options;
+  tls_options.set_max_tls_version(grpc_tls_version::TLS1_2);
   if (!stub_option.test_root_pem_path.empty()) {
     std::ifstream file(stub_option.test_root_pem_path);
     if (!file.fail()) {
       std::stringstream file_string;
       file_string << file.rdbuf();
-      ssl_creds_options.pem_root_certs = file_string.str();
+      tls_options.set_certificate_provider(
+          std::make_shared<grpc::experimental::StaticDataCertificateProvider>(file_string.str()));
+      tls_options.watch_root_certs();
     }
   }
-  auto channel_creds = grpc::SslCredentials(ssl_creds_options);
+  auto channel_creds = grpc::experimental::TlsCredentials(tls_options);
 
   if (!stub_option.insecure_endpoint.empty()) {
     auto channel =
