@@ -1,0 +1,47 @@
+---
+title: envoy.tcp.metadataexchange.config
+layout: protoc-gen-docs
+generator: protoc-gen-docs
+number_of_entries: 1
+---
+<h2 id="MetadataExchange">MetadataExchange</h2>
+<section>
+<p>[#protodoc-title: MetadataExchange protocol match and data transfer]
+MetadataExchange protocol match and data transfer</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="MetadataExchange-protocol">
+<td><code>protocol</code></td>
+<td><code>string</code></td>
+<td>
+<p>Protocol that Alpn should support on the server.
+[#comment:TODO(GargNupur): Make it a list.]</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="MetadataExchange-enable_discovery">
+<td><code>enable_discovery</code></td>
+<td><code>bool</code></td>
+<td>
+<p>If true, will attempt to use WDS in case the prefix peer metadata is not available.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>

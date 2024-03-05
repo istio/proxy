@@ -75,7 +75,7 @@ clean:
 
 .PHONY: gen-extensions-doc
 gen-extensions-doc:
-	buf generate --path extensions/
+	buf generate --path extensions/ --path source/extensions/filters
 
 gen:
 	@scripts/gen-testdata.sh
@@ -105,7 +105,7 @@ check:
 	@echo >&2 "Please use \"make lint\" instead."
 	@false
 
-lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts
+lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts gen-extensions-doc
 	@scripts/check-repository.sh
 	@scripts/check-style.sh
 	@scripts/verify-last-flag-matches-upstream.sh
