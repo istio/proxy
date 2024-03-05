@@ -1,0 +1,101 @@
+---
+title: ALPN filter for overriding ALPN for upstream TLS connections.
+layout: protoc-gen-docs
+generator: protoc-gen-docs
+number_of_entries: 3
+---
+<h2 id="FilterConfig">FilterConfig</h2>
+<section>
+<p>FilterConfig is the config for Istio-specific filter.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="FilterConfig-alpn_override">
+<td><code>alpn_override</code></td>
+<td><code><a href="#FilterConfig-AlpnOverride">AlpnOverride[]</a></code></td>
+<td>
+<p>Map from upstream protocol to list of ALPN</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="FilterConfig-AlpnOverride">FilterConfig.AlpnOverride</h2>
+<section>
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="FilterConfig-AlpnOverride-upstream_protocol">
+<td><code>upstream_protocol</code></td>
+<td><code><a href="#FilterConfig-Protocol">Protocol</a></code></td>
+<td>
+<p>Upstream protocol</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="FilterConfig-AlpnOverride-alpn_override">
+<td><code>alpn_override</code></td>
+<td><code>string[]</code></td>
+<td>
+<p>A list of ALPN that will override the ALPN for upstream TLS connections.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="FilterConfig-Protocol">FilterConfig.Protocol</h2>
+<section>
+<p>Upstream protocols</p>
+
+<table class="enum-values">
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr id="FilterConfig-Protocol-HTTP10">
+<td><code>HTTP10</code></td>
+<td>
+</td>
+</tr>
+<tr id="FilterConfig-Protocol-HTTP11">
+<td><code>HTTP11</code></td>
+<td>
+</td>
+</tr>
+<tr id="FilterConfig-Protocol-HTTP2">
+<td><code>HTTP2</code></td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
