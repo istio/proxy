@@ -1,0 +1,202 @@
+---
+title: io.istio.http.peer_metadata
+layout: protoc-gen-docs
+generator: protoc-gen-docs
+number_of_entries: 6
+---
+<h2 id="Config">Config</h2>
+<section>
+<p>Peer metadata provider filter. This filter encapsulates the discovery of the
+peer telemetry attributes for consumption by the telemetry filters.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="Config-downstream_discovery">
+<td><code>downstream_discovery</code></td>
+<td><code><a href="#Config-DiscoveryMethod">DiscoveryMethod[]</a></code></td>
+<td>
+<p>The order of the derivation of the downstream peer metadata, in the precedence order.
+First successful lookup wins.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="Config-upstream_discovery">
+<td><code>upstream_discovery</code></td>
+<td><code><a href="#Config-DiscoveryMethod">DiscoveryMethod[]</a></code></td>
+<td>
+<p>The order of the derivation of the upstream peer metadata, in the precedence order.
+First successful lookup wins.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="Config-downstream_propagation">
+<td><code>downstream_propagation</code></td>
+<td><code><a href="#Config-PropagationMethod">PropagationMethod[]</a></code></td>
+<td>
+<p>Downstream injection of the metadata via a response header.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="Config-upstream_propagation">
+<td><code>upstream_propagation</code></td>
+<td><code><a href="#Config-PropagationMethod">PropagationMethod[]</a></code></td>
+<td>
+<p>Upstream injection of the metadata via a request header.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="Config-shared_with_upstream">
+<td><code>shared_with_upstream</code></td>
+<td><code>bool</code></td>
+<td>
+<p>True to enable sharing with the upstream.</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="Config-Baggage">Config.Baggage</h2>
+<section>
+<p>DEPRECATED.
+This method uses <code>baggage</code> header encoding.</p>
+
+</section>
+<h2 id="Config-WorkloadDiscovery">Config.WorkloadDiscovery</h2>
+<section>
+<p>This method uses the workload metadata xDS. Requires that the bootstrap extension is enabled.
+For downstream discovery, the remote address is the lookup key in xDS.
+For upstream discovery:</p>
+<ul>
+<li>
+<p>If the upstream host address is an IP, this IP is used as the lookup key;</p>
+</li>
+<li>
+<p>If the upstream host address is internal, uses the
+&ldquo;filter_metadata.tunnel.destination&rdquo; dynamic metadata value as the lookup key.</p>
+</li>
+</ul>
+
+</section>
+<h2 id="Config-IstioHeaders">Config.IstioHeaders</h2>
+<section>
+<p>This method uses Istio HTTP metadata exchange headers, e.g. <code>x-envoy-peer-metadata</code>. Removes these headers if found.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="Config-IstioHeaders-skip_external_clusters">
+<td><code>skip_external_clusters</code></td>
+<td><code>bool</code></td>
+<td>
+<p>Strip x-envoy-peer-metadata and x-envoy-peer-metadata-id headers on HTTP requests to services outside the mesh.
+Detects upstream clusters with <code>istio</code> and <code>external</code> filter metadata fields</p>
+
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="Config-DiscoveryMethod">Config.DiscoveryMethod</h2>
+<section>
+<p>An exhaustive list of the derivation methods.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="Config-DiscoveryMethod-baggage" class="oneof oneof-start">
+<td><code>baggage</code></td>
+<td><code><a href="#Config-Baggage">Baggage (oneof)</a></code></td>
+<td>
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="Config-DiscoveryMethod-workload_discovery" class="oneof">
+<td><code>workload_discovery</code></td>
+<td><code><a href="#Config-WorkloadDiscovery">WorkloadDiscovery (oneof)</a></code></td>
+<td>
+</td>
+<td>
+No
+</td>
+</tr>
+<tr id="Config-DiscoveryMethod-istio_headers" class="oneof">
+<td><code>istio_headers</code></td>
+<td><code><a href="#Config-IstioHeaders">IstioHeaders (oneof)</a></code></td>
+<td>
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<h2 id="Config-PropagationMethod">Config.PropagationMethod</h2>
+<section>
+<p>An exhaustive list of the metadata propagation methods.</p>
+
+<table class="message-fields">
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr id="Config-PropagationMethod-istio_headers" class="oneof oneof-start">
+<td><code>istio_headers</code></td>
+<td><code><a href="#Config-IstioHeaders">IstioHeaders (oneof)</a></code></td>
+<td>
+</td>
+<td>
+No
+</td>
+</tr>
+</tbody>
+</table>
+</section>
