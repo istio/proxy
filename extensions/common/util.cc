@@ -54,6 +54,7 @@ constexpr static absl::string_view NO_CLUSTER_FOUND = "NC";
 constexpr static absl::string_view OVERLOAD_MANAGER = "OM";
 constexpr static absl::string_view DNS_RESOLUTION_FAILURE = "DF";
 constexpr static absl::string_view DROP_OVERLOAD = "DO";
+constexpr static absl::string_view DOWNSTREAM_REMOTE_RESET = "DR";
 
 enum ResponseFlag {
   FailedLocalHealthCheck = 0x1,
@@ -84,7 +85,8 @@ enum ResponseFlag {
   OverloadManager = 0x2000000,
   DnsResolutionFailed = 0x4000000,
   DropOverLoad = 0x8000000,
-  LastFlag = DropOverLoad,
+  DownstreamRemoteReset = 0x10000000,
+  LastFlag = DownstreamRemoteReset,
 };
 
 void appendString(std::string& result, const absl::string_view& append) {
@@ -210,6 +212,10 @@ const std::string parseResponseFlag(uint64_t response_flag) {
 
   if (response_flag & DropOverLoad) {
     appendString(result, DROP_OVERLOAD);
+  }
+
+  if (response_flag & DownstreamRemoteReset) {
+    appendString(result, DOWNSTREAM_REMOTE_RESET);
   }
 
   if (response_flag >= (LastFlag << 1)) {

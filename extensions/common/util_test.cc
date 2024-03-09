@@ -44,9 +44,10 @@ TEST(WasmCommonUtilsTest, ParseResponseFlag) {
   // case.
   { EXPECT_EQ("UT,DI,FI", parseResponseFlag(0x604)); }
   { EXPECT_EQ("DPE,DO", parseResponseFlag(0x8040000)); }
+  { EXPECT_EQ("DPE,DO,DR", parseResponseFlag(0x18040000)); }
 
   // Test overflow.
-  { EXPECT_EQ("DPE,DO,402915328", parseResponseFlag(0x18040000)); }
+  { EXPECT_EQ("DPE,DO,DR,939786240", parseResponseFlag(0x38040000)); }
 }
 
 } // namespace
