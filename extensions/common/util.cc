@@ -84,7 +84,8 @@ enum ResponseFlag {
   OverloadManager = 0x2000000,
   DnsResolutionFailed = 0x4000000,
   DropOverLoad = 0x8000000,
-  LastFlag = DropOverLoad,
+  DownstreamRemoteReset = 0x10000000,
+  LastFlag = DownstreamRemoteReset,
 };
 
 void appendString(std::string& result, const absl::string_view& append) {
