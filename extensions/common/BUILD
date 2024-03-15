@@ -123,22 +123,29 @@ envoy_cc_test(
     ],
 )
 
+# TODO: fix this build on mac m1?
 envoy_extension_cc_benchmark_binary(
     name = "proto_util_speed_test",
-    srcs = ["proto_util_speed_test.cc"],
+    srcs = select({
+        "@envoy//bazel:linux": ["proto_util_speed_test.cc"],
+        "//conditions:default": [],
+    }),
     extension_names = ["envoy.wasm.runtime.null"],
     external_deps = [
         "benchmark",
     ],
     repository = "@envoy",
-    deps = [
-        ":metadata_object_lib",
-        ":node_info_fb_cc",
-        ":proto_util",
-        "@envoy//source/common/stream_info:filter_state_lib",
-        "@envoy//source/extensions/filters/common/expr:cel_state_lib",
-        "@envoy//test/test_common:status_utility_lib",
-    ],
+    deps = select({
+        "@envoy//bazel:linux": [
+            ":metadata_object_lib",
+            ":node_info_fb_cc",
+            ":proto_util",
+            "@envoy//source/common/stream_info:filter_state_lib",
+            "@envoy//source/extensions/filters/common/expr:cel_state_lib",
+            "@envoy//test/test_common:status_utility_lib",
+        ],
+        "//conditions:default": [],
+    }),
 )
 
 flatbuffer_library_public(
