@@ -420,6 +420,11 @@ ENVOY_EXTENSIONS = {
     "envoy.load_balancing_policies.cluster_provided":  "//source/extensions/load_balancing_policies/cluster_provided:config",
 
     #
+    # HTTP Early Header Mutation
+    #
+    "envoy.http.early_header_mutation.header_mutation": "//source/extensions/http/early_header_mutation/header_mutation:config",
+
+    #
     # Config Subscription
     #
     "envoy.config_subscription.rest":                             "//source/extensions/config_subscription/rest:http_subscription_lib",
