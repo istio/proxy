@@ -14,7 +14,6 @@ envoy.health_check.event_sinks.file
 envoy.health_checkers.thrift
 envoy.http.custom_response.local_response_policy
 envoy.http.custom_response.redirect_policy
-envoy.http.early_header_mutation.header_mutation
 envoy.matching.inputs.cel_data_input
 envoy.matching.inputs.filter_state
 envoy.matching.matchers.cel_matcher
