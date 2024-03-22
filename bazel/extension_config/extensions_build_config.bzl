@@ -459,12 +459,19 @@ ENVOY_CONTRIB_EXTENSIONS = {
     #
 
     "envoy.filters.network.client_ssl_auth":                    "//contrib/client_ssl_auth/filters/network/source:config",
+    "envoy.filters.network.generic_proxy":                      "//contrib/generic_proxy/filters/network/source:config",
     "envoy.filters.network.golang":                             "//contrib/golang/filters/network/source:config",
     "envoy.filters.network.kafka_broker":                       "//contrib/kafka/filters/network/source:kafka_broker_config_lib",
     "envoy.filters.network.kafka_mesh":                         "//contrib/kafka/filters/network/source/mesh:config_lib",
     "envoy.filters.network.mysql_proxy":                        "//contrib/mysql_proxy/filters/network/source:config",
     "envoy.filters.network.postgres_proxy":                     "//contrib/postgres_proxy/filters/network/source:config",
     "envoy.filters.network.rocketmq_proxy":                     "//contrib/rocketmq_proxy/filters/network/source:config",
+
+    #
+    # Extensions for generic proxy
+    #
+    "envoy.filters.generic.router":                             "//contrib/generic_proxy/filters/network/source/router:config",
+    "envoy.generic_proxy.codecs.dubbo":                         "//contrib/generic_proxy/filters/network/source/codecs/dubbo:config",
 
     #
     # Sip proxy
@@ -500,12 +507,15 @@ ISTIO_DISABLED_EXTENSIONS = [
 ]
 
 ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
+    "envoy.filters.generic.router",
     "envoy.filters.http.golang",
+    "envoy.filters.network.generic_proxy",
     "envoy.filters.network.golang",
     "envoy.filters.network.mysql_proxy",
     "envoy.filters.network.postgres_proxy",
     "envoy.filters.network.sip_proxy",
     "envoy.filters.sip.router",
+    "envoy.generic_proxy.codecs.dubbo",
     "envoy.tls.key_providers.cryptomb",
     "envoy.tls.key_providers.qat",
     "envoy.network.connection_balance.dlb",
