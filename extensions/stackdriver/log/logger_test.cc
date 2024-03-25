@@ -369,9 +369,9 @@ TEST(LoggerTest, TestWriteLogEntryRotation) {
   flatbuffers::FlatBufferBuilder local, peer;
   std::unordered_map<std::string, std::string> extra_labels;
   auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter), extra_labels, 1200);
-
+  const ::Wasm::Common::FlatNode& peer_node_info = peerNodeInfo(peer);
   for (int i = 0; i < 10; i++) {
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false, false);
+    logger->addLogEntry(requestInfo(), peer_node_info, extra_labels, false, false);
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
@@ -421,9 +421,10 @@ TEST(LoggerTest, TestWriteAuditAndLogEntry) {
   flatbuffers::FlatBufferBuilder local, peer;
   std::unordered_map<std::string, std::string> extra_labels;
   auto logger = std::make_unique<Logger>(nodeInfo(local), std::move(exporter), extra_labels);
+  const ::Wasm::Common::FlatNode& peer_node_info = peerNodeInfo(peer);
   for (int i = 0; i < 5; i++) {
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false, false);
-    logger->addLogEntry(requestInfo(), peerNodeInfo(peer), extra_labels, false, true);
+    logger->addLogEntry(requestInfo(), peer_node_info, extra_labels, false, false);
+    logger->addLogEntry(requestInfo(), peer_node_info, extra_labels, false, true);
   }
   EXPECT_CALL(*exporter_ptr, exportLogs(::testing::_, ::testing::_))
       .WillOnce(::testing::Invoke(
