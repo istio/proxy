@@ -1266,7 +1266,8 @@ absl::StatusOr<Http::FilterFactoryCb> IstioStatsFilterConfigFactory::createFilte
 REGISTER_FACTORY(IstioStatsFilterConfigFactory,
                  Server::Configuration::NamedHttpFilterConfigFactory);
 
-Network::FilterFactoryCb IstioStatsNetworkFilterConfigFactory::createFilterFactoryFromProto(
+absl::StatusOr<Network::FilterFactoryCb>
+IstioStatsNetworkFilterConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message& proto_config, Server::Configuration::FactoryContext& factory_context) {
   factory_context.serverFactoryContext().api().customStatNamespaces().registerStatNamespace(
       CustomStatNamespace);
