@@ -29,7 +29,7 @@ namespace MetadataExchange {
 class MetadataExchangeConfigFactory
     : public Server::Configuration::NamedNetworkFilterConfigFactory {
 public:
-  Network::FilterFactoryCb
+  absl::StatusOr<Network::FilterFactoryCb>
   createFilterFactoryFromProto(const Protobuf::Message&,
                                Server::Configuration::FactoryContext&) override;
 

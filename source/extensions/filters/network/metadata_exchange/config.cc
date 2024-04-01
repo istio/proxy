@@ -41,7 +41,8 @@ Network::FilterFactoryCb createFilterFactoryHelper(
 }
 } // namespace
 
-Network::FilterFactoryCb MetadataExchangeConfigFactory::createFilterFactoryFromProto(
+absl::StatusOr<Network::FilterFactoryCb>
+MetadataExchangeConfigFactory::createFilterFactoryFromProto(
     const Protobuf::Message& config, Server::Configuration::FactoryContext& context) {
   return createFilterFactory(
       dynamic_cast<const envoy::tcp::metadataexchange::config::MetadataExchange&>(config), context);

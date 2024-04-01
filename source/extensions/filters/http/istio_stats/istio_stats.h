@@ -45,7 +45,7 @@ public:
     return std::make_unique<stats::PluginConfig>();
   }
 
-  Network::FilterFactoryCb
+  absl::StatusOr<Network::FilterFactoryCb>
   createFilterFactoryFromProto(const Protobuf::Message& proto_config,
                                Server::Configuration::FactoryContext& factory_context) override;
 };
