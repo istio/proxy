@@ -181,10 +181,7 @@ void getMonitoredResource(const std::string& monitored_resource_type,
       auto node_id = getNodeID(local_node_info.instance_ips());
       (*monitored_resource->mutable_labels())[kNodeIDLabel] = node_id;
     }
-    return;
-  }
-
-  if (monitored_resource_type == kGCEInstanceMonitoredResource) {
+  } else if (monitored_resource_type == kGCEInstanceMonitoredResource) {
     // gce_instance
     if (platform_metadata) {
       auto instance_id_label = platform_metadata->LookupByKey(kGCPGCEInstanceIDKey);
@@ -196,6 +193,30 @@ void getMonitoredResource(const std::string& monitored_resource_type,
       if (zone_label) {
         (*monitored_resource->mutable_labels())[kZoneLabel] =
             flatbuffers::GetString(zone_label->value());
+      }
+    }
+  } else if (monitored_resource_type == kCloudRunRevisionMonitoredResource) {
+    // cloud_run_revision
+    if (platform_metadata) {
+      auto location_label = platform_metadata->LookupByKey(kGCPLocationKey);
+      if (location_label) {
+        (*monitored_resource->mutable_labels())[kLocationLabel] =
+            flatbuffers::GetString(location_label->value());
+      }
+      auto cloud_run_service = platform_metadata->LookupByKey(kGCPCRServiceKey);
+      if (cloud_run_service) {
+        (*monitored_resource->mutable_labels())[kGCPCRServiceNameLabel] =
+            flatbuffers::GetString(cloud_run_service->value());
+      }
+      auto cloud_run_revision = platform_metadata->LookupByKey(kGCPCRRevisionKey);
+      if (cloud_run_revision) {
+        (*monitored_resource->mutable_labels())[kGCPCRRevisionNameLabel] =
+            flatbuffers::GetString(cloud_run_revision->value());
+      }
+      auto cloud_run_configuration = platform_metadata->LookupByKey(kGCPCRConfigurationKey);
+      if (cloud_run_configuration) {
+        (*monitored_resource->mutable_labels())[kGCPCRConfigurationNameLabel] =
+            flatbuffers::GetString(cloud_run_configuration->value());
       }
     }
   } else {

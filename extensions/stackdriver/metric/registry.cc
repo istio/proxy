@@ -146,6 +146,10 @@ getStackdriverOptions(const Wasm::Common::FlatNode& local_node_info,
       // if there is instance ID or createdBy key, assume it is a GCE_INSTANCE
       server_type = kGCEInstanceMonitoredResource;
       client_type = kGCEInstanceMonitoredResource;
+    } else if (platform_metadata->LookupByKey(kGCPCRServiceKey)) {
+      // if there is Cloud Run service key, assume it is a Cloud Run service
+      server_type = kCloudRunRevisionMonitoredResource;
+      client_type = kCloudRunRevisionMonitoredResource;
     } else {
       // absent GCE key info, use Generic Node
       server_type = kGenericNode;
