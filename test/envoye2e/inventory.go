@@ -46,6 +46,7 @@ func init() {
 			"TestStackdriverAttributeGen",
 			"TestStackdriverAuditLog",
 			"TestStackdriverCustomAccessLog",
+			"TestStackdriverCloudRun",
 			"TestStackdriverGCEInstances",
 			"TestStackdriverGenericNode",
 			"TestStackdriverMetricExpiry",

@@ -212,8 +212,10 @@ void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
   request_info.tcp_received_bytes = 0;
 }
 
-// Get local node metadata. If mesh id is not filled or does not exist,
+// Get local node metadata. If mesh id is not filled properly or does not exist,
 // fall back to default format `proj-<project-number>`.
+// For Cloud Run services, the mesh name should be "projects/*/locations/global/meshes/<mesh_name>",
+// and for other services, the mesh name should be "proj-<project_number>".
 flatbuffers::DetachedBuffer getLocalNodeMetadata() {
   google::protobuf::Struct node;
   auto local_node_info = ::Wasm::Common::extractLocalNodeFlatBuffer();
@@ -221,7 +223,8 @@ flatbuffers::DetachedBuffer getLocalNodeMetadata() {
       *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info.data()), &node);
   const auto mesh_id_it = node.fields().find("MESH_ID");
   if (mesh_id_it != node.fields().end() && !mesh_id_it->second.string_value().empty() &&
-      absl::StartsWith(mesh_id_it->second.string_value(), "proj-")) {
+      (absl::StartsWith(mesh_id_it->second.string_value(), "proj-") ||
+       absl::StartsWith(mesh_id_it->second.string_value(), "projects/"))) {
     // do nothing
   } else {
     // Insert or update mesh id to default format as it is missing, empty, or
