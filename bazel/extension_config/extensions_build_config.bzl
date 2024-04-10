@@ -118,6 +118,7 @@ ENVOY_EXTENSIONS = {
     "envoy.filters.http.cors":                          "//source/extensions/filters/http/cors:config",
     "envoy.filters.http.composite":                     "//source/extensions/filters/http/composite:config",
     "envoy.filters.http.connect_grpc_bridge":           "//source/extensions/filters/http/connect_grpc_bridge:config",
+    "envoy.filters.http.credential_injector":           "//source/extensions/filters/http/credential_injector:config",
     "envoy.filters.http.csrf":                          "//source/extensions/filters/http/csrf:config",
     "envoy.filters.http.decompressor":                  "//source/extensions/filters/http/decompressor:config",
     "envoy.filters.http.dynamic_forward_proxy":         "//source/extensions/filters/http/dynamic_forward_proxy:config",
@@ -442,6 +443,12 @@ ENVOY_EXTENSIONS = {
     #
 
     "envoy.router.cluster_specifier_plugin.lua": "//source/extensions/router/cluster_specifiers/lua:config",
+
+    #
+    # Injected credentials
+    #
+
+    "envoy.http.injected_credentials.generic":              "//source/extensions/http/injected_credentials/generic:config",
 }
 
 ENVOY_CONTRIB_EXTENSIONS = {
