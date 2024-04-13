@@ -53,6 +53,9 @@ build --cxxopt -Wformat-security
 # Link pthread for flatbuffers
 build --host_linkopt=-pthread
 
+build:clang --host_action_env=CC=
+build:clang --host_action_env=CXX=
+
 # CI sanitizer configuration
 #
 build:clang-asan-ci --config=clang-asan
