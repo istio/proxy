@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/monitoring v1.17.1
 	cloud.google.com/go/trace v1.10.5
 	github.com/cncf/xds/go v0.0.0-20231128003011-0fa0005c9caa
-	github.com/envoyproxy/go-control-plane v0.12.1-0.20240404171054-29bd25a7bb9b
+	github.com/envoyproxy/go-control-plane v0.12.1-0.20240412180038-44f62a49d254
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.6.0
 	github.com/prometheus/client_model v0.6.0
@@ -28,7 +28,7 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v1.0.4 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/planetscale/vtprotobuf v0.5.1-0.20231212170721-e7d721933795 // indirect
+	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
