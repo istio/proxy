@@ -799,6 +799,7 @@ public:
     switch (config_->reporter()) {
     case Reporter::ServerSidecar:
     case Reporter::ServerGateway:
+      // TODO: reporter="app" for gateway
       tags_.push_back({context_.reporter_, context_.destination_});
       break;
     case Reporter::ClientSidecar:
@@ -1056,6 +1057,9 @@ private:
     switch (config_->reporter()) {
     case Reporter::ServerSidecar:
     case Reporter::ServerGateway: {
+      // TODO: for gateways the destination_principal should be the destination workload principal 'echo' not the gateway principal 'spiffe://cluster.local/ns/default/sa/namespace-istio-waypoint'
+      // INFO: For both sidecar and gateways it attempts to get the principal from the filtered state and if this fails it falls back to getting SAN from the SSL connection.
+      // INFO: The SAN is the principal in the case of sidecars and the SAN is the service account in the case of gateways.
       auto peer_principal =
           info.filterState().getDataReadOnly<Router::StringAccessor>("io.istio.peer_principal");
       auto local_principal =
@@ -1132,27 +1136,40 @@ private:
       switch (config_->reporter()) {
       case Reporter::ServerGateway: {
         std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer;
+        // INFO: "wasm.upstream_peer" is the filter state returned 
         const auto* endpoint_object = peerInfo(Reporter::ClientSidecar, filter_state);
         if (endpoint_object) {
           endpoint_peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*endpoint_object));
         }
+        // INFO: correct for gateway case
+        // INFO: tags are assigned is either a property of endpoint_peer (if it exists), a property of the context, or a value from a pool.
         tags_.push_back(
             {context_.destination_workload_,
              endpoint_peer ? pool_.add(endpoint_peer->workload_name_) : context_.unknown_});
+        // INFO: correct for gateway case
         tags_.push_back({context_.destination_workload_namespace_, context_.namespace_});
+        // TODO: for gateways this is being set to the waypoint's principal when it should be the destination workload principal.
+        // INFO: local_san refers to the waypoint info. We should check the endpoint_peer, filter_state or context_ obj for the routing decision which will capture the destination/targetRef context for the gateway case. 
         tags_.push_back({context_.destination_principal_,
                          !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
         // Endpoint encoding does not have app and version.
+        // TODO: fix for gateway case, currently being set to unknown. 
+        // TODO: What should it be? destination_app_ vs destination_service_
         tags_.push_back({context_.destination_app_, context_.unknown_});
+        // TODO: fix for gateway case, currently being set to unknown. 
         tags_.push_back({context_.destination_version_, context_.unknown_});
         auto canonical_name =
             endpoint_peer ? pool_.add(endpoint_peer->canonical_name_) : context_.unknown_;
+        // INFO: correct for gateway case
         tags_.push_back({context_.destination_service_,
                          service_host.empty() ? canonical_name : pool_.add(service_host)});
+        // INFO: correct for gateway case
         tags_.push_back({context_.destination_canonical_service_, canonical_name});
+        // INFO: correct for gateway case
         tags_.push_back(
             {context_.destination_canonical_revision_,
              endpoint_peer ? pool_.add(endpoint_peer->canonical_revision_) : context_.unknown_});
+        // INFO: correct for gateway case
         tags_.push_back({context_.destination_service_name_, service_host_name.empty()
                                                                  ? canonical_name
                                                                  : pool_.add(service_host_name)});
