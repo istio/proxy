@@ -35,7 +35,7 @@ MOUNT_SOURCE="${MOUNT_SOURCE:-${PWD}}"
 MOUNT_DEST="${MOUNT_DEST:-/work}"
 PERSIST_LOCAL_CACHE=${PERSIST_LOCAL_CACHE:-false}
 LOCAL_CACHE_DIRECTORY="${LOCAL_CACHE_DIRECTORY:-${HOME}/.cache}"
-CACHE_MOUNT='--mount "type=volume,source=cache,destination=/home/.cache'
+CACHE_MOUNT='--mount "type=volume,source=cache,destination=/home/.cache"'
 
 
 read -ra DOCKER_RUN_OPTIONS <<< "${DOCKER_RUN_OPTIONS:-}"
@@ -60,9 +60,8 @@ fi
     --env-file <(env | grep -v ${ENV_BLOCKLIST}) \
     -e IN_BUILD_CONTAINER=1 \
     -e TZ="${TIMEZONE:-$TZ}" \
-    "${CACHE_MOUNT}" \
     --mount "type=bind,source=${MOUNT_SOURCE},destination=/work" \
-    --mount "type=bind,source=${HOME}/.cache,destination=/home/.cache" \
+    ${CACHE_MOUNT} \
     --mount "type=volume,source=go,destination=/go" \
     --mount "type=volume,source=gocache,destination=/gocache" \
     --mount "type=volume,source=crates,destination=/home/.cargo/registry" \
