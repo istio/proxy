@@ -170,7 +170,7 @@ struct Context : public Singleton::Instance {
         destination_service_namespace_(pool_.add("destination_service_namespace")),
         destination_canonical_service_(pool_.add("destination_canonical_service")),
         destination_canonical_revision_(pool_.add("destination_canonical_revision")),
-        destination_cluster_(pool_.add("destination_cluster")),
+        destination_cluster_(pool_.add("destination_cluster")), waypoint_(pool_.add("waypoint")),
         request_protocol_(pool_.add("request_protocol")),
         response_flags_(pool_.add("response_flags")),
         connection_security_policy_(pool_.add("connection_security_policy")),
@@ -798,9 +798,10 @@ public:
     tags_.reserve(25);
     switch (config_->reporter()) {
     case Reporter::ServerSidecar:
-    case Reporter::ServerGateway:
-      // TODO: reporter="app" for gateway
       tags_.push_back({context_.reporter_, context_.destination_});
+      break;
+    case Reporter::ServerGateway:
+      tags_.push_back({context_.reporter_, context_.waypoint_});
       break;
     case Reporter::ClientSidecar:
       tags_.push_back({context_.reporter_, context_.source_});
@@ -1057,9 +1058,12 @@ private:
     switch (config_->reporter()) {
     case Reporter::ServerSidecar:
     case Reporter::ServerGateway: {
-      // TODO: for gateways the destination_principal should be the destination workload principal 'echo' not the gateway principal 'spiffe://cluster.local/ns/default/sa/namespace-istio-waypoint'
-      // INFO: For both sidecar and gateways it attempts to get the principal from the filtered state and if this fails it falls back to getting SAN from the SSL connection.
-      // INFO: The SAN is the principal in the case of sidecars and the SAN is the service account in the case of gateways.
+      // TODO: for gateways the destination_principal should be the destination workload principal
+      // 'echo' not the gateway principal
+      // 'spiffe://cluster.local/ns/default/sa/namespace-istio-waypoint' INFO: For both sidecar and
+      // gateways it attempts to get the principal from the filtered state and if this fails it
+      // falls back to getting SAN from the SSL connection. INFO: The SAN is the principal in the
+      // case of sidecars and the SAN is the service account in the case of gateways.
       auto peer_principal =
           info.filterState().getDataReadOnly<Router::StringAccessor>("io.istio.peer_principal");
       auto local_principal =
@@ -1136,28 +1140,31 @@ private:
       switch (config_->reporter()) {
       case Reporter::ServerGateway: {
         std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer;
-        // INFO: "wasm.upstream_peer" is the filter state returned 
+        // INFO: "wasm.upstream_peer" is the filter state returned
         const auto* endpoint_object = peerInfo(Reporter::ClientSidecar, filter_state);
         if (endpoint_object) {
           endpoint_peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*endpoint_object));
         }
         // INFO: correct for gateway case
-        // INFO: tags are assigned is either a property of endpoint_peer (if it exists), a property of the context, or a value from a pool.
+        // INFO: tags are assigned is either a property of endpoint_peer (if it exists), a property
+        // of the context, or a value from a pool.
         tags_.push_back(
             {context_.destination_workload_,
              endpoint_peer ? pool_.add(endpoint_peer->workload_name_) : context_.unknown_});
-        // INFO: correct for gateway case
-        tags_.push_back({context_.destination_workload_namespace_, context_.namespace_});
-        // TODO: for gateways this is being set to the waypoint's principal when it should be the destination workload principal.
-        // INFO: local_san refers to the waypoint info. We should check the endpoint_peer, filter_state or context_ obj for the routing decision which will capture the destination/targetRef context for the gateway case. 
+        tags_.push_back({context_.destination_workload_namespace_,
+                         endpoint_peer && !endpoint_peer->namespace_name_.empty()
+                             ? pool_.add(endpoint_peer->namespace_name_)
+                             : context_.unknown_});
         tags_.push_back({context_.destination_principal_,
                          !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
         // Endpoint encoding does not have app and version.
-        // TODO: fix for gateway case, currently being set to unknown. 
-        // TODO: What should it be? destination_app_ vs destination_service_
-        tags_.push_back({context_.destination_app_, context_.unknown_});
-        // TODO: fix for gateway case, currently being set to unknown. 
-        tags_.push_back({context_.destination_version_, context_.unknown_});
+        tags_.push_back(
+            {context_.destination_app_, endpoint_peer && !endpoint_peer->app_name_.empty()
+                                            ? pool_.add(endpoint_peer->app_name_)
+                                            : context_.unknown_});
+        tags_.push_back({context_.destination_version_, endpoint_peer
+                                                            ? pool_.add(endpoint_peer->app_version_)
+                                                            : context_.unknown_});
         auto canonical_name =
             endpoint_peer ? pool_.add(endpoint_peer->canonical_name_) : context_.unknown_;
         // INFO: correct for gateway case
