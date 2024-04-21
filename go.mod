@@ -6,8 +6,8 @@ require (
 	cloud.google.com/go/logging v1.9.0
 	cloud.google.com/go/monitoring v1.17.1
 	cloud.google.com/go/trace v1.10.5
-	github.com/cncf/xds/go v0.0.0-20231128003011-0fa0005c9caa
-	github.com/envoyproxy/go-control-plane v0.12.1-0.20240412180038-44f62a49d254
+	github.com/cncf/xds/go v0.0.0-20240329184929-0c46c01016dc
+	github.com/envoyproxy/go-control-plane v0.12.1-0.20240419124334-0cebb2f428b3
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.6.0
 	github.com/prometheus/client_model v0.6.0
@@ -15,7 +15,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.1.0
 	go.starlark.net v0.0.0-20240123142251-f86470692795
 	google.golang.org/genproto/googleapis/api v0.0.0-20240205150955-31a09d347014
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240205150955-31a09d347014
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237
 	google.golang.org/grpc v1.62.1
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -23,6 +23,7 @@ require (
 )
 
 require (
+	cel.dev/expr v0.15.0 // indirect
 	cloud.google.com/go/longrunning v0.5.4 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.0.4 // indirect
