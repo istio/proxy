@@ -170,7 +170,7 @@ struct Context : public Singleton::Instance {
         destination_service_namespace_(pool_.add("destination_service_namespace")),
         destination_canonical_service_(pool_.add("destination_canonical_service")),
         destination_canonical_revision_(pool_.add("destination_canonical_revision")),
-        destination_cluster_(pool_.add("destination_cluster")), waypoint_(pool_.add("waypoint")),
+        destination_cluster_(pool_.add("destination_cluster")), 
         request_protocol_(pool_.add("request_protocol")),
         response_flags_(pool_.add("response_flags")),
         connection_security_policy_(pool_.add("connection_security_policy")),
@@ -185,6 +185,7 @@ struct Context : public Singleton::Instance {
         cluster_name_(pool_.add(extractString(node.metadata(), "CLUSTER_ID"))),
         app_name_(pool_.add(extractMapString(node.metadata(), "LABELS", "app"))),
         app_version_(pool_.add(extractMapString(node.metadata(), "LABELS", "version"))),
+        waypoint_(pool_.add("waypoint")),
         istio_build_(pool_.add("istio_build")), component_(pool_.add("component")),
         proxy_(pool_.add("proxy")), tag_(pool_.add("tag")),
         istio_version_(pool_.add(extractString(node.metadata(), "ISTIO_VERSION"))) {
@@ -297,6 +298,7 @@ struct Context : public Singleton::Instance {
   const Stats::StatName cluster_name_;
   const Stats::StatName app_name_;
   const Stats::StatName app_version_;
+  const Stats::StatName waypoint_;
 
   // istio_build metric:
   // Publishes Istio version for the proxy as a gauge, sample data:
@@ -1058,12 +1060,6 @@ private:
     switch (config_->reporter()) {
     case Reporter::ServerSidecar:
     case Reporter::ServerGateway: {
-      // TODO: for gateways the destination_principal should be the destination workload principal
-      // 'echo' not the gateway principal
-      // 'spiffe://cluster.local/ns/default/sa/namespace-istio-waypoint' INFO: For both sidecar and
-      // gateways it attempts to get the principal from the filtered state and if this fails it
-      // falls back to getting SAN from the SSL connection. INFO: The SAN is the principal in the
-      // case of sidecars and the SAN is the service account in the case of gateways.
       auto peer_principal =
           info.filterState().getDataReadOnly<Router::StringAccessor>("io.istio.peer_principal");
       auto local_principal =
@@ -1145,9 +1141,6 @@ private:
         if (endpoint_object) {
           endpoint_peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*endpoint_object));
         }
-        // INFO: correct for gateway case
-        // INFO: tags are assigned is either a property of endpoint_peer (if it exists), a property
-        // of the context, or a value from a pool.
         tags_.push_back(
             {context_.destination_workload_,
              endpoint_peer ? pool_.add(endpoint_peer->workload_name_) : context_.unknown_});
@@ -1156,7 +1149,7 @@ private:
                              ? pool_.add(endpoint_peer->namespace_name_)
                              : context_.unknown_});
         tags_.push_back({context_.destination_principal_,
-                         !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
+                         !peer_san.empty() ? pool_.add(peer_san) : context_.unknown_});
         // Endpoint encoding does not have app and version.
         tags_.push_back(
             {context_.destination_app_, endpoint_peer && !endpoint_peer->app_name_.empty()
@@ -1167,16 +1160,12 @@ private:
                                                             : context_.unknown_});
         auto canonical_name =
             endpoint_peer ? pool_.add(endpoint_peer->canonical_name_) : context_.unknown_;
-        // INFO: correct for gateway case
         tags_.push_back({context_.destination_service_,
                          service_host.empty() ? canonical_name : pool_.add(service_host)});
-        // INFO: correct for gateway case
         tags_.push_back({context_.destination_canonical_service_, canonical_name});
-        // INFO: correct for gateway case
         tags_.push_back(
             {context_.destination_canonical_revision_,
              endpoint_peer ? pool_.add(endpoint_peer->canonical_revision_) : context_.unknown_});
-        // INFO: correct for gateway case
         tags_.push_back({context_.destination_service_name_, service_host_name.empty()
                                                                  ? canonical_name
                                                                  : pool_.add(service_host_name)});
