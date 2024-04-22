@@ -89,9 +89,6 @@ std::string_view AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
 std::string_view TCPConnectionStateString(TCPConnectionState state);
 std::string_view ProtocolString(Protocol protocol);
 
-// RequestInfo represents the information collected from filter stream
-// callbacks. This is used to fill metrics and logs.
-// TODO: do we want to include waypoint specific variables and maintain source and dest as the workloads?
 struct RequestInfo {
   // Start timestamp in nanoseconds.
   int64_t start_time;
