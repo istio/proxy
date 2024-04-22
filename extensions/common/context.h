@@ -89,6 +89,8 @@ std::string_view AuthenticationPolicyString(ServiceAuthenticationPolicy policy);
 std::string_view TCPConnectionStateString(TCPConnectionState state);
 std::string_view ProtocolString(Protocol protocol);
 
+// RequestInfo represents the information collected from filter stream
+// callbacks. This is used to fill metrics and logs.
 struct RequestInfo {
   // Start timestamp in nanoseconds.
   int64_t start_time;

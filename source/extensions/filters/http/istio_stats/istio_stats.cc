@@ -170,7 +170,7 @@ struct Context : public Singleton::Instance {
         destination_service_namespace_(pool_.add("destination_service_namespace")),
         destination_canonical_service_(pool_.add("destination_canonical_service")),
         destination_canonical_revision_(pool_.add("destination_canonical_revision")),
-        destination_cluster_(pool_.add("destination_cluster")), 
+        destination_cluster_(pool_.add("destination_cluster")),
         request_protocol_(pool_.add("request_protocol")),
         response_flags_(pool_.add("response_flags")),
         connection_security_policy_(pool_.add("connection_security_policy")),
@@ -1136,7 +1136,6 @@ private:
       switch (config_->reporter()) {
       case Reporter::ServerGateway: {
         std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer;
-        // INFO: "wasm.upstream_peer" is the filter state returned
         const auto* endpoint_object = peerInfo(Reporter::ClientSidecar, filter_state);
         if (endpoint_object) {
           endpoint_peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*endpoint_object));
@@ -1148,8 +1147,7 @@ private:
                          endpoint_peer && !endpoint_peer->namespace_name_.empty()
                              ? pool_.add(endpoint_peer->namespace_name_)
                              : context_.unknown_});
-        tags_.push_back({context_.destination_principal_,
-                         !peer_san.empty() ? pool_.add(peer_san) : context_.unknown_});
+        tags_.push_back({context_.destination_principal_, !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
         // Endpoint encoding does not have app and version.
         tags_.push_back(
             {context_.destination_app_, endpoint_peer && !endpoint_peer->app_name_.empty()
