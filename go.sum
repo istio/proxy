@@ -15,6 +15,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/envoyproxy/go-control-plane v0.12.1-0.20240412180038-44f62a49d254 h1:mLk9SrirNPIgITUMTPvGXeSs2vIxcDcnEyjlYBORuls=
 github.com/envoyproxy/go-control-plane v0.12.1-0.20240412180038-44f62a49d254/go.mod h1:Dj0RQ153G7gNYzcQCihXUreYTQbuJNuL7IT7v9+jTr4=
+github.com/envoyproxy/go-control-plane v0.12.1-0.20240415211714-57c85e1829e6 h1:hr74TzQHrbbYUij8W5PYKTQexuduz4XY0K3vXpCOM4Q=
+github.com/envoyproxy/go-control-plane v0.12.1-0.20240415211714-57c85e1829e6/go.mod h1:Dj0RQ153G7gNYzcQCihXUreYTQbuJNuL7IT7v9+jTr4=
 github.com/envoyproxy/protoc-gen-validate v1.0.4 h1:gVPz/FMfvh57HdSJQyvBtF00j8JU4zdyUgIUNhlgg0A=
 github.com/envoyproxy/protoc-gen-validate v1.0.4/go.mod h1:qys6tmnRsYrQqIhm2bvKZH4Blx/1gTIZ2UKVY1M+Yew=
 github.com/golang/protobuf v1.5.4 h1:i7eJL8qZTpSEXOPTxNKhASYpMn+8e5Q6AdndVa1dWek=
