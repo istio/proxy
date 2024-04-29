@@ -95,6 +95,7 @@ constexpr char kIstioMetricPrefix[] = "istio.io/service/";
 constexpr char kPodMonitoredResource[] = "k8s_pod";
 constexpr char kContainerMonitoredResource[] = "k8s_container";
 constexpr char kGCEInstanceMonitoredResource[] = "gce_instance";
+constexpr char kCloudRunRevisionMonitoredResource[] = "cloud_run_revision";
 constexpr char kGenericNode[] = "generic_node";
 constexpr char kProjectIDLabel[] = "project_id";
 constexpr char kLocationLabel[] = "location";
@@ -104,8 +105,11 @@ constexpr char kPodNameLabel[] = "pod_name";
 constexpr char kContainerNameLabel[] = "container_name";
 constexpr char kGCEInstanceIDLabel[] = "instance_id";
 constexpr char kZoneLabel[] = "zone";
-constexpr char kNamespaceLabel[] = "namespace"; // used for generic_node
-constexpr char kNodeIDLabel[] = "node_id";      // used for generic_node
+constexpr char kNamespaceLabel[] = "namespace";                       // used for generic_node
+constexpr char kNodeIDLabel[] = "node_id";                            // used for generic_node
+constexpr char kGCPCRServiceNameLabel[] = "service_name";             // used for cloud_run_revision
+constexpr char kGCPCRRevisionNameLabel[] = "revision_name";           // used for cloud_run_revision
+constexpr char kGCPCRConfigurationNameLabel[] = "configuration_name"; // used for cloud_run_revision
 
 // GCP node metadata key
 constexpr char kGCPLocationKey[] = "gcp_location";
@@ -114,6 +118,9 @@ constexpr char kGCPProjectKey[] = "gcp_project";
 constexpr std::string_view kGCPProjectNumberKey = "gcp_project_number";
 constexpr char kGCPGCEInstanceIDKey[] = "gcp_gce_instance_id";
 constexpr std::string_view kGCECreatedByKey = "gcp_gce_instance_created_by";
+constexpr char kGCPCRServiceKey[] = "gcp_cloud_run_service";
+constexpr char kGCPCRRevisionKey[] = "gcp_cloud_run_revision";
+constexpr char kGCPCRConfigurationKey[] = "gcp_cloud_run_configuration";
 
 // Misc
 constexpr char kIstioProxyContainerName[] = "istio-proxy";
