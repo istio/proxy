@@ -5,7 +5,7 @@ metric:
     value: {{ .Vars.RequestCount }}
   label:
   - name: reporter
-    value: destination
+    value: waypoint
   - name: source_workload
     value: productpage-v1
   - name: source_canonical_service
@@ -29,9 +29,9 @@ metric:
   - name: destination_principal
     value: spiffe://cluster.local/ns/default/sa/server
   - name: destination_app
-    value: unknown
+    value: ratings
   - name: destination_version
-    value: unknown
+    value: version-1
   - name: destination_service
     value: server.default.svc.cluster.local
   - name: destination_canonical_service
