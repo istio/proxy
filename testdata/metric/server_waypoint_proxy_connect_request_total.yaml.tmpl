@@ -5,11 +5,11 @@ metric:
     value: {{ .Vars.RequestCount }}
   label:
   - name: reporter
-    value: waypoint
+    value: destination
   - name: source_workload
     value: productpage-v1
   - name: source_canonical_service
-    value: productpage-v1
+    value: unknown
   - name: source_canonical_revision
     value: latest
   - name: source_workload_namespace
@@ -17,11 +17,11 @@ metric:
   - name: source_principal
     value: spiffe://cluster.local/ns/default/sa/client
   - name: source_app
-    value: productpage-v1
+    value: unknown
   - name: source_version
-    value: latest
+    value: unknown
   - name: source_cluster
-    value: Kubernetes
+    value: unknown
   - name: destination_workload
     value: ratings-v1
   - name: destination_workload_namespace
@@ -29,9 +29,9 @@ metric:
   - name: destination_principal
     value: spiffe://cluster.local/ns/default/sa/server
   - name: destination_app
-    value: ratings
+    value: unknown
   - name: destination_version
-    value: version-1
+    value: unknown
   - name: destination_service
     value: server.default.svc.cluster.local
   - name: destination_canonical_service
