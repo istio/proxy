@@ -45,6 +45,8 @@ table FlatNode {
   cluster_id:string;
   // instance ip addresses
   instance_ips:[string];
+  // identity of the proxy
+  identity:string;
 }
 
 root_type FlatNode;

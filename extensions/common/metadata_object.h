@@ -71,11 +71,12 @@ struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
                                   absl::string_view namespace_name, absl::string_view workload_name,
                                   absl::string_view canonical_name,
                                   absl::string_view canonical_revision, absl::string_view app_name,
-                                  absl::string_view app_version, const WorkloadType workload_type)
+                                  absl::string_view app_version, const WorkloadType workload_type,
+                                  absl::string_view identity)
       : instance_name_(instance_name), cluster_name_(cluster_name), namespace_name_(namespace_name),
         workload_name_(workload_name), canonical_name_(canonical_name),
         canonical_revision_(canonical_revision), app_name_(app_name), app_version_(app_version),
-        workload_type_(workload_type) {}
+        workload_type_(workload_type), identity_(identity) {}
 
   static WorkloadMetadataObject fromBaggage(absl::string_view baggage_header_value);
 
@@ -94,6 +95,7 @@ struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
   const std::string app_name_;
   const std::string app_version_;
   const WorkloadType workload_type_;
+  const std::string identity_;
 };
 
 // Convert metadata object to flatbuffer.

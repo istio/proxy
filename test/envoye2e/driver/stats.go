@@ -61,7 +61,7 @@ func (s *Stats) Run(p *Params) error {
 				log.Printf("matched metric %q", metric.GetName())
 				count++
 				continue
-			} else if _, ok := matcher.(*MissingStat); ok && err != nil {
+			} else if _, ok := matcher.(*MissingStat); ok {
 				return fmt.Errorf("found metric that should have been missing: %s", metric.GetName())
 			}
 			log.Printf("metric %q did not match: %v\n", metric.GetName(), err)

@@ -100,7 +100,7 @@ WorkloadMetadataObject WorkloadMetadataObject::fromBaggage(absl::string_view bag
     }
   }
   return WorkloadMetadataObject(instance, cluster, namespace_name, workload, canonical_name,
-                                canonical_revision, app_name, app_version, workload_type);
+                                canonical_revision, app_name, app_version, workload_type, "");
 }
 
 std::string WorkloadMetadataObject::baggage() const {
@@ -183,13 +183,15 @@ std::string_view toStdStringView(absl::string_view view) {
 std::string convertWorkloadMetadataToFlatNode(const WorkloadMetadataObject& obj) {
   flatbuffers::FlatBufferBuilder fbb;
 
-  flatbuffers::Offset<flatbuffers::String> name, cluster, namespace_, workload_name, owner;
+  flatbuffers::Offset<flatbuffers::String> name, cluster, namespace_, workload_name, owner,
+      identity;
   std::vector<flatbuffers::Offset<Wasm::Common::KeyVal>> labels;
 
   name = fbb.CreateString(toStdStringView(obj.instance_name_));
   namespace_ = fbb.CreateString(toStdStringView(obj.namespace_name_));
   cluster = fbb.CreateString(toStdStringView(obj.cluster_name_));
   workload_name = fbb.CreateString(toStdStringView(obj.workload_name_));
+  identity = fbb.CreateString(toStdStringView(obj.identity_));
 
   switch (obj.workload_type_) {
   case WorkloadType::Deployment:
@@ -229,6 +231,7 @@ std::string convertWorkloadMetadataToFlatNode(const WorkloadMetadataObject& obj)
   node.add_workload_name(workload_name);
   node.add_owner(owner);
   node.add_labels(labels_offset);
+  node.add_identity(identity);
   auto data = node.Finish();
   fbb.Finish(data);
   auto fb = fbb.Release();
@@ -240,6 +243,7 @@ WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(const Wasm::Common::Fla
   const absl::string_view cluster = toAbslStringView(node.cluster_id());
   const absl::string_view workload = toAbslStringView(node.workload_name());
   const absl::string_view namespace_name = toAbslStringView(node.namespace_());
+  const absl::string_view identity = toAbslStringView(node.identity());
   const auto* labels = node.labels();
 
   absl::string_view canonical_name;
@@ -294,7 +298,7 @@ WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(const Wasm::Common::Fla
   }
 
   return WorkloadMetadataObject(instance, cluster, namespace_name, workload, canonical_name,
-                                canonical_revision, app_name, app_version, workload_type);
+                                canonical_revision, app_name, app_version, workload_type, identity);
 }
 
 absl::optional<WorkloadMetadataObject>
@@ -305,7 +309,7 @@ convertEndpointMetadata(const std::string& endpoint_encoding) {
   }
   // TODO: we cannot determine workload type from the encoding.
   return absl::make_optional<WorkloadMetadataObject>("", parts[4], parts[1], parts[0], parts[2],
-                                                     parts[3], "", "", WorkloadType::Pod);
+                                                     parts[3], "", "", WorkloadType::Pod, "");
 }
 
 } // namespace Common
