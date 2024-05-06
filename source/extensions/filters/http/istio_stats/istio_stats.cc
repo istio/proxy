@@ -1147,7 +1147,7 @@ private:
                              ? pool_.add(endpoint_peer->namespace_name_)
                              : context_.unknown_});
         tags_.push_back({context_.destination_principal_,
-                         !local_san.empty() ? pool_.add(local_san) : context_.unknown_});
+                         endpoint_peer ? pool_.add(endpoint_peer->identity_) : context_.unknown_});
         // Endpoint encoding does not have app and version.
         tags_.push_back(
             {context_.destination_app_, endpoint_peer && !endpoint_peer->app_name_.empty()

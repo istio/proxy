@@ -24,25 +24,25 @@ using ::testing::NiceMock;
 
 TEST(WorkloadMetadataObjectTest, Hash) {
   WorkloadMetadataObject obj1("foo-pod-12345", "my-cluster", "default", "foo", "foo", "latest",
-                              "foo-app", "v1", WorkloadType::Deployment);
+                              "foo-app", "v1", WorkloadType::Deployment, "");
   WorkloadMetadataObject obj2("foo-pod-12345", "my-cluster", "default", "bar", "baz", "first",
-                              "foo-app", "v1", WorkloadType::Job);
+                              "foo-app", "v1", WorkloadType::Job, "");
 
   EXPECT_EQ(obj1.hash().value(), obj2.hash().value());
 }
 
 TEST(WorkloadMetadataObjectTest, Baggage) {
   WorkloadMetadataObject deploy("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                                "v1alpha3", "foo-app", "v1", WorkloadType::Deployment);
+                                "v1alpha3", "foo-app", "v1", WorkloadType::Deployment, "");
 
   WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                             "v1alpha3", "foo-app", "v1", WorkloadType::Pod);
+                             "v1alpha3", "foo-app", "v1", WorkloadType::Pod, "");
 
   WorkloadMetadataObject cronjob("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                                 "v1alpha3", "foo-app", "v1", WorkloadType::CronJob);
+                                 "v1alpha3", "foo-app", "v1", WorkloadType::CronJob, "");
 
   WorkloadMetadataObject job("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                             "v1alpha3", "foo-app", "v1", WorkloadType::Job);
+                             "v1alpha3", "foo-app", "v1", WorkloadType::Job, "");
 
   EXPECT_EQ(deploy.baggage(), absl::StrCat("k8s.deployment.name=foo,k8s.cluster.name=my-cluster,",
                                            "k8s.namespace.name=default,",
