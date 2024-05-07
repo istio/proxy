@@ -638,6 +638,13 @@ workload_name: ratings-v1
 canonical_name: ratings
 canonical_revision: version-1
 uid: //v1/pod/default/ratings
+service_account: ratings
+trust_domain: cluster.global
+`
+
+const ProductPageMetadata = `
+workload_name: productpage-v1
+uid: //v1/pod/default/productpage
 `
 
 func TestStatsServerWaypointProxy(t *testing.T) {
@@ -684,11 +691,6 @@ func TestStatsServerWaypointProxy(t *testing.T) {
 		t.Fatal(err)
 	}
 }
-
-const ProductPageMetadata = `
-workload_name: productpage-v1
-uid: //v1/pod/default/productpage
-`
 
 func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{

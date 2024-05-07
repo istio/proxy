@@ -29,8 +29,9 @@
 #include "source/extensions/common/workload_discovery/extension.pb.validate.h"
 
 namespace Envoy::Extensions::Common::WorkloadDiscovery {
-
 namespace {
+constexpr absl::string_view DefaultNamespace = "default";
+constexpr absl::string_view DefaultTrustDomain = "cluster.local";
 Istio::Common::WorkloadMetadataObject convert(const istio::workload::Workload& workload) {
   auto workload_type = Istio::Common::WorkloadType::Deployment;
   switch (workload.workload_type()) {
@@ -46,10 +47,23 @@ Istio::Common::WorkloadMetadataObject convert(const istio::workload::Workload& w
   default:
     break;
   }
+
+  absl::string_view ns = workload.namespace_();
+  absl::string_view trust_domain = workload.trust_domain();
+  // Trust domain may be elided if it's equal to "cluster.local"
+  if (trust_domain.empty()) {
+    trust_domain = DefaultTrustDomain;
+  }
+  // The namespace may be elided if it's equal to "default"
+  if (ns.empty()) {
+    ns = DefaultNamespace;
+  }
+  const auto identity = absl::StrCat("spiffe://", trust_domain, "/ns/", workload.namespace_(),
+                                     "/sa/", workload.service_account());
   return Istio::Common::WorkloadMetadataObject(
       workload.name(), workload.cluster_id(), workload.namespace_(), workload.workload_name(),
       workload.canonical_name(), workload.canonical_revision(), workload.canonical_name(),
-      workload.canonical_revision(), workload_type);
+      workload.canonical_revision(), workload_type, identity);
 }
 } // namespace
 
