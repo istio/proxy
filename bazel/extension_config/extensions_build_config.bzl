@@ -449,6 +449,7 @@ ENVOY_EXTENSIONS = {
     #
 
     "envoy.http.injected_credentials.generic":              "//source/extensions/http/injected_credentials/generic:config",
+    "envoy.http.injected_credentials.oauth2":               "//source/extensions/http/injected_credentials/oauth2:config",
 }
 
 ENVOY_CONTRIB_EXTENSIONS = {
