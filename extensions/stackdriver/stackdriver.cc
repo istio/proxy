@@ -217,25 +217,16 @@ void clearTcpMetrics(::Wasm::Common::RequestInfo& request_info) {
 // For Cloud Run services, the mesh name should be "projects/*/locations/global/meshes/<mesh_name>",
 // and for other services, the mesh name should be "proj-<project_number>".
 flatbuffers::DetachedBuffer getLocalNodeMetadata() {
-  google::protobuf::Struct node;
-  auto local_node_info = ::Wasm::Common::extractLocalNodeFlatBuffer();
-  ::Wasm::Common::extractStructFromNodeFlatBuffer(
-      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(local_node_info.data()), &node);
-  const auto mesh_id_it = node.fields().find("MESH_ID");
-  if (mesh_id_it != node.fields().end() && !mesh_id_it->second.string_value().empty() &&
-      (absl::StartsWith(mesh_id_it->second.string_value(), "proj-") ||
-       absl::StartsWith(mesh_id_it->second.string_value(), "projects/"))) {
-    // do nothing
-  } else {
+  return ::Wasm::Common::extractLocalNodeFlatBuffer([](const std::string& mesh_id) -> std::string {
+    if (absl::StartsWith(mesh_id, "proj-") || absl::StartsWith(mesh_id, "projects/")) {
+      // do nothing
+      return mesh_id;
+    }
     // Insert or update mesh id to default format as it is missing, empty, or
     // not properly set.
     auto project_number = getProjectNumber();
-    auto* mesh_id_field = (*node.mutable_fields())["MESH_ID"].mutable_string_value();
-    if (!project_number.empty()) {
-      *mesh_id_field = absl::StrCat("proj-", project_number);
-    }
-  }
-  return ::Wasm::Common::extractNodeFlatBufferFromStruct(node);
+    return absl::StrCat("proj-", project_number);
+  });
 }
 
 bool extractAuthzPolicyName(const std::string& policy, std::string& out_namespace,

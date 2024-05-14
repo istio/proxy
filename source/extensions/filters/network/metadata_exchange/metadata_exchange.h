@@ -23,9 +23,9 @@
 #include "envoy/stats/scope.h"
 #include "envoy/stats/stats_macros.h"
 #include "envoy/stream_info/filter_state.h"
-#include "extensions/common/context.h"
 #include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/proto_util.h"
+#include "extensions/common/metadata_object.h"
 #include "source/common/common/stl_helpers.h"
 #include "source/common/protobuf/protobuf.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
@@ -89,7 +89,7 @@ public:
   static const CelStatePrototype& nodeInfoPrototype() {
     static const CelStatePrototype* const prototype = new CelStatePrototype(
         true, ::Envoy::Extensions::Filters::Common::Expr::CelStateType::FlatBuffers,
-        ::Wasm::Common::nodeInfoSchema(), StreamInfo::FilterState::LifeSpan::Connection);
+        ::Istio::Common::nodeInfoSchema(), StreamInfo::FilterState::LifeSpan::Connection);
     return *prototype;
   }
 

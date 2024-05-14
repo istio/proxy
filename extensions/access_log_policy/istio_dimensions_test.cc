@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "extensions/common/istio_dimensions.h"
+#include "extensions/access_log_policy/istio_dimensions.h"
 
 #include "absl/hash/hash_testing.h"
 #include "gtest/gtest.h"

@@ -17,8 +17,8 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "extensions/access_log_policy/config/v1alpha1/access_log_policy_config.pb.h"
-#include "extensions/common/context.h"
-#include "extensions/common/istio_dimensions.h"
+#include "extensions/stackdriver/context.h"
+#include "extensions/access_log_policy/istio_dimensions.h"
 
 #ifndef NULL_PLUGIN
 

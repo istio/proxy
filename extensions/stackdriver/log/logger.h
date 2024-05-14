@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-#include "extensions/common/context.h"
+#include "extensions/stackdriver/context.h"
 #include "extensions/stackdriver/log/exporter.h"
 #include "google/logging/v2/logging.pb.h"
 

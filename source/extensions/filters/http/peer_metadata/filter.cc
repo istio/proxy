@@ -16,7 +16,6 @@
 
 #include "envoy/registry/registry.h"
 #include "envoy/server/factory_context.h"
-#include "extensions/common/context.h"
 #include "extensions/common/metadata_object.h"
 #include "extensions/common/proto_util.h"
 #include "source/common/common/hash.h"
@@ -43,7 +42,7 @@ public:
 struct CelPrototypeValues {
   const Filters::Common::Expr::CelStatePrototype NodeInfo{
       true, Filters::Common::Expr::CelStateType::FlatBuffers,
-      toAbslStringView(Wasm::Common::nodeInfoSchema()),
+      toAbslStringView(Istio::Common::nodeInfoSchema()),
       // Life span is only needed for Wasm set_property, not in the native filters.
       StreamInfo::FilterState::LifeSpan::FilterChain};
   const Filters::Common::Expr::CelStatePrototype NodeId{
@@ -298,7 +297,8 @@ void FilterConfig::injectUpstream(const StreamInfo::StreamInfo& info,
 
 void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
                                   const std::string& value) const {
-  const absl::string_view key = downstream ? WasmDownstreamPeer : WasmUpstreamPeer;
+  const absl::string_view key =
+      downstream ? Istio::Common::WasmDownstreamPeer : Istio::Common::WasmUpstreamPeer;
   if (!info.filterState()->hasDataWithName(key)) {
     auto node_info = std::make_unique<CelStateHashable>(CelPrototypes::get().NodeInfo);
     node_info->setValue(value);
@@ -310,7 +310,8 @@ void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
   }
   // This is needed because stats filter awaits for the prefix on the wire and checks for the key
   // presence before emitting any telemetry.
-  const absl::string_view id_key = downstream ? WasmDownstreamPeerID : WasmUpstreamPeerID;
+  const absl::string_view id_key =
+      downstream ? Istio::Common::WasmDownstreamPeerID : Istio::Common::WasmUpstreamPeerID;
   if (!info.filterState()->hasDataWithName(id_key)) {
     auto node_id = std::make_unique<Filters::Common::Expr::CelState>(CelPrototypes::get().NodeId);
     node_id->setValue("unknown");

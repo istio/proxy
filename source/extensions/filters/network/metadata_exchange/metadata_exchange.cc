@@ -273,8 +273,8 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   if (key_metadata_id_it != value_struct.fields().end()) {
     Envoy::ProtobufWkt::Value val = key_metadata_id_it->second;
     updatePeerId(config_->filter_direction_ == FilterDirection::Downstream
-                     ? ::Wasm::Common::kDownstreamMetadataIdKey
-                     : ::Wasm::Common::kUpstreamMetadataIdKey,
+                     ? Istio::Common::WasmDownstreamPeerID
+                     : Istio::Common::WasmUpstreamPeerID,
                  val.string_value());
   }
 }
@@ -287,8 +287,8 @@ void MetadataExchangeFilter::updatePeer(const std::string& fb) {
   state->setValue(fb);
 
   auto key = config_->filter_direction_ == FilterDirection::Downstream
-                 ? ::Wasm::Common::kDownstreamMetadataKey
-                 : ::Wasm::Common::kUpstreamMetadataKey;
+                 ? Istio::Common::WasmDownstreamPeer
+                 : Istio::Common::WasmUpstreamPeer;
   read_callbacks_->connection().streamInfo().filterState()->setData(
       absl::StrCat("wasm.", key), std::move(state), StreamInfo::FilterState::StateType::Mutable,
       StreamInfo::FilterState::LifeSpan::Connection);
@@ -315,6 +315,8 @@ void MetadataExchangeFilter::getMetadata(google::protobuf::Struct* metadata) {
 
 std::string MetadataExchangeFilter::getMetadataId() { return local_info_.node().id(); }
 
+constexpr absl::string_view kMetadataNotFoundValue = "envoy.wasm.metadata_exchange.peer_unknown";
+
 void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
   if (config_->metadata_provider_) {
     const Network::Address::InstanceConstSharedPtr peer_address =
@@ -324,14 +326,14 @@ void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
     if (metadata_object) {
       updatePeer(Istio::Common::convertWorkloadMetadataToFlatNode(metadata_object.value()));
       updatePeerId(config_->filter_direction_ == FilterDirection::Downstream
-                       ? ::Wasm::Common::kDownstreamMetadataIdKey
-                       : ::Wasm::Common::kUpstreamMetadataIdKey,
+                       ? Istio::Common::WasmDownstreamPeerID
+                       : Istio::Common::WasmUpstreamPeerID,
                    "unknown");
       config_->stats().metadata_added_.inc();
       return;
     }
   }
-  updatePeerId(::Wasm::Common::kMetadataNotFoundValue, ::Wasm::Common::kMetadataNotFoundValue);
+  updatePeerId(kMetadataNotFoundValue, kMetadataNotFoundValue);
 }
 
 } // namespace MetadataExchange

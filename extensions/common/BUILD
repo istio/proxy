@@ -35,23 +35,6 @@ package(default_visibility = ["//visibility:public"])
 licenses(["notice"])
 
 envoy_cc_library(
-    name = "context",
-    srcs = [
-        "context.cc",
-    ],
-    hdrs = [
-        "context.h",
-        "istio_dimensions.h",
-    ],
-    repository = "@envoy",
-    deps = [
-        ":node_info_fb_cc",
-        ":util",
-        "@proxy_wasm_cpp_host//:null_lib",
-    ],
-)
-
-envoy_cc_library(
     name = "proto_util",
     srcs = [
         "proto_util.cc",
@@ -63,6 +46,7 @@ envoy_cc_library(
     deps = [
         ":node_info_fb_cc",
         ":util",
+        ":metadata_object_lib",
         "@com_google_protobuf//:protobuf",
         "@proxy_wasm_cpp_host//:null_lib",
     ],
@@ -80,14 +64,6 @@ envoy_cc_library(
     deps = [
         "@proxy_wasm_cpp_host//:null_lib",
     ],
-)
-
-envoy_cc_library(
-    name = "istio_dimensions",
-    hdrs = [
-        "istio_dimensions.h",
-    ],
-    repository = "@envoy",
 )
 
 envoy_cc_test(
@@ -109,17 +85,6 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":util",
-    ],
-)
-
-envoy_cc_test(
-    name = "istio_dimensions_test",
-    size = "small",
-    srcs = ["istio_dimensions_test.cc"],
-    external_deps = ["abseil_hash_testing"],
-    repository = "@envoy",
-    deps = [
-        ":istio_dimensions",
     ],
 )
 

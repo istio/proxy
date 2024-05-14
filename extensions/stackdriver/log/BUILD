@@ -36,8 +36,8 @@ envoy_cc_library(
     repository = "@envoy",
     deps = [
         ":exporter",
-        "//extensions/common:context",
         "//extensions/common:util",
+        "//extensions/stackdriver:context",
         "//extensions/stackdriver/common:constants",
         "//extensions/stackdriver/common:utils",
         "@com_google_absl//absl/strings",

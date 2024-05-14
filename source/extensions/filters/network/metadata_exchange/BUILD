@@ -39,7 +39,7 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        "//extensions/common:context",
+        "//extensions/common:metadata_object_lib",
         "//extensions/common:proto_util",
         "//source/extensions/common/workload_discovery:api_lib",
         "//source/extensions/filters/network/metadata_exchange/config:metadata_exchange_cc_proto",

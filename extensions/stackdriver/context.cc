@@ -13,11 +13,10 @@
  * limitations under the License.
  */
 
-#include "extensions/common/context.h"
+#include "extensions/stackdriver/context.h"
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/util.h"
 #include "flatbuffers/util.h"
 
@@ -208,7 +207,8 @@ flatbuffers::DetachedBuffer extractEmptyNodeFlatBuffer() {
   return fbb.Release();
 }
 
-flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
+flatbuffers::DetachedBuffer
+extractLocalNodeFlatBuffer(std::function<std::string(const std::string&)> mesh_id_override) {
   flatbuffers::FlatBufferBuilder fbb;
   flatbuffers::Offset<flatbuffers::String> name, namespace_, owner, workload_name, istio_version,
       mesh_id, cluster_id;
@@ -231,9 +231,9 @@ flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer() {
   if (getValue({"xds", "node", "metadata", "ISTIO_VERSION"}, &value)) {
     istio_version = fbb.CreateString(value);
   }
-  if (getValue({"xds", "node", "metadata", "MESH_ID"}, &value)) {
-    mesh_id = fbb.CreateString(value);
-  }
+  std::string raw_mesh_id;
+  getValue({"xds", "node", "metadata", "MESH_ID"}, &raw_mesh_id);
+  mesh_id = fbb.CreateString(mesh_id_override(raw_mesh_id));
   if (getValue({"xds", "node", "metadata", "CLUSTER_ID"}, &value)) {
     cluster_id = fbb.CreateString(value);
   }
@@ -419,11 +419,6 @@ void populateHTTPRequestInfo(bool outbound, bool use_host_header_fallback,
   getValue({"request", "duration"}, &request_info->duration);
   getValue({"request", "total_size"}, &request_info->request_size);
   getValue({"response", "total_size"}, &request_info->response_size);
-}
-
-std::string_view nodeInfoSchema() {
-  return std::string_view(reinterpret_cast<const char*>(FlatNodeBinarySchema::data()),
-                          FlatNodeBinarySchema::size());
 }
 
 void populateExtendedHTTPRequestInfo(RequestInfo* request_info) {

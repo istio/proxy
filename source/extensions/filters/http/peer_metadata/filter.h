@@ -19,17 +19,11 @@
 #include "source/extensions/filters/http/peer_metadata/config.pb.h"
 #include "source/extensions/common/workload_discovery/api.h"
 #include "source/common/singleton/const_singleton.h"
-#include "extensions/common/context.h"
 
 namespace Envoy {
 namespace Extensions {
 namespace HttpFilters {
 namespace PeerMetadata {
-
-constexpr absl::string_view WasmDownstreamPeer = "wasm.downstream_peer";
-constexpr absl::string_view WasmDownstreamPeerID = "wasm.downstream_peer_id";
-constexpr absl::string_view WasmUpstreamPeer = "wasm.upstream_peer";
-constexpr absl::string_view WasmUpstreamPeerID = "wasm.upstream_peer_id";
 
 struct HeaderValues {
   const Http::LowerCaseString ExchangeMetadataHeader{"x-envoy-peer-metadata"};
