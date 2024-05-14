@@ -14,6 +14,8 @@
 
 #include "extensions/common/metadata_object.h"
 
+#include "envoy/registry/registry.h"
+
 #include "absl/strings/str_join.h"
 #include "source/common/common/hash.h"
 
@@ -292,6 +294,53 @@ convertEndpointMetadata(const std::string& endpoint_encoding) {
   return absl::make_optional<WorkloadMetadataObject>("", parts[4], parts[1], parts[0], parts[2],
                                                      parts[3], "", "", WorkloadType::Pod, "");
 }
+
+class WorkloadMetadataReflection : public Envoy::StreamInfo::FilterState::ObjectReflection {
+public:
+  WorkloadMetadataReflection(const WorkloadMetadataObject* object) : object_(object) {}
+  FieldType getField(absl::string_view field_name) const override {
+    if (field_name == "APP_NAME") {
+      return object_->app_name_;
+    }
+    return {};
+  }
+
+private:
+  const WorkloadMetadataObject* object_;
+};
+
+/**
+ * Registers the filter state object for the dynamic extension support.
+ */
+class WorkloadObjectFactory : public Envoy::StreamInfo::FilterState::ObjectFactory {
+public:
+  std::unique_ptr<Envoy::StreamInfo::FilterState::Object>
+  createFromBytes(absl::string_view) const override {
+    return nullptr;
+  }
+  std::unique_ptr<Envoy::StreamInfo::FilterState::ObjectReflection>
+  reflect(const Envoy::StreamInfo::FilterState::Object* data) const override {
+    const auto* object = dynamic_cast<const WorkloadMetadataObject*>(data);
+    if (object) {
+      return std::make_unique<WorkloadMetadataReflection>(object);
+    }
+    return nullptr;
+  }
+};
+
+class UpstreamPeerFactory : public WorkloadObjectFactory {
+public:
+  std::string name() const override { return std::string(WasmUpstreamPeer); }
+};
+
+REGISTER_FACTORY(UpstreamPeerFactory, Envoy::StreamInfo::FilterState::ObjectFactory);
+
+class DownstreamPeerFactory : public WorkloadObjectFactory {
+public:
+  std::string name() const override { return std::string(WasmDownstreamPeer); }
+};
+
+REGISTER_FACTORY(DownstreamPeerFactory, Envoy::StreamInfo::FilterState::ObjectFactory);
 
 } // namespace Common
 } // namespace Istio

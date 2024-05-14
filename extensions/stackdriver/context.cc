@@ -344,13 +344,6 @@ bool extractPeerMetadataFromUpstreamHostMetadata(flatbuffers::FlatBufferBuilder&
   return extractPeerMetadataFromUpstreamMetadata("upstream_host_metadata", fbb);
 }
 
-namespace {
-// Returns a string view stored in a flatbuffers string.
-std::string_view toStdStringView(absl::string_view view) {
-  return std::string_view(view.data(), view.size());
-}
-} // namespace
-
 std::string convertWorkloadMetadataToFlatNode(const Istio::Common::WorkloadMetadataObject& obj) {
   flatbuffers::FlatBufferBuilder fbb;
 
@@ -366,14 +359,14 @@ std::string convertWorkloadMetadataToFlatNode(const Istio::Common::WorkloadMetad
   owner = fbb.CreateString(obj.owner());
 
   labels.push_back(
-      Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(CanonicalNameLabel),
+      Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(Istio::Common::CanonicalNameLabel),
                                  fbb.CreateString(toStdStringView(obj.canonical_name_))));
   labels.push_back(
-      Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(CanonicalRevisionLabel),
+      Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(Istio::Common::CanonicalRevisionLabel),
                                  fbb.CreateString(toStdStringView(obj.canonical_revision_))));
-  labels.push_back(Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(AppLabel),
+  labels.push_back(Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(Istio::Common::AppLabel),
                                               fbb.CreateString(toStdStringView(obj.app_name_))));
-  labels.push_back(Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(VersionLabel),
+  labels.push_back(Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(Istio::Common::VersionLabel),
                                               fbb.CreateString(toStdStringView(obj.app_version_))));
 
   auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);

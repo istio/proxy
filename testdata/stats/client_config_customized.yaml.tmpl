@@ -20,7 +20,7 @@ metrics:
       source_version: "'_' + node.metadata['LABELS']['app']" # same as above expression
       request_protocol: request.protocol
       destination_version: "'_' + (has(node.metadata.LABELS.version) ? node.metadata.LABELS.version : 'unknown')"
-      destination_service_namespace: "'_' + upstream_peer.labels['app'].value"
+      destination_service_namespace: "'_' + filter_state['wasm.upstream_peer'].APP_NAME"
       destination_app: "cannot _ parse | {{ .N }}"
       destination_workload: "cannot_evaluate"
       route_name: xds.route_name + "," + xds.cluster_name + "," + xds.cluster_metadata.filter_metadata.istio.services[0].name
