@@ -44,17 +44,10 @@ func (capture) Run(p *driver.Params) error {
 func (capture) Cleanup() {}
 
 var Runtimes = []struct {
-	MetadataExchangeFilterCode string
-	StatsFilterCode            string
-	WasmRuntime                string
+	WasmRuntime string
 }{
 	{
 		// native filter
-	},
-	{
-		MetadataExchangeFilterCode: "filename: " + env.GetBazelWorkspaceOrDie() + "/extensions/metadata_exchange.wasm",
-		StatsFilterCode:            "filename: " + env.GetBazelWorkspaceOrDie() + "/extensions/stats.wasm",
-		WasmRuntime:                "envoy.wasm.runtime.v8",
 	},
 }
 
@@ -130,7 +123,6 @@ func enableStats(t *testing.T, vars map[string]string) {
 }
 
 func TestStatsPayload(t *testing.T) {
-	env.EnsureWasmFiles(t)
 	for _, testCase := range TestCases {
 		for _, runtime := range Runtimes {
 			t.Run(testCase.Name+"/"+runtime.WasmRuntime, func(t *testing.T) {
@@ -139,15 +131,12 @@ func TestStatsPayload(t *testing.T) {
 					clientStats[metric] = values
 				}
 				params := driver.NewTestParams(t, map[string]string{
-					"RequestCount":               "10",
-					"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
-					"StatsFilterCode":            runtime.StatsFilterCode,
-					"WasmRuntime":                runtime.WasmRuntime,
-					"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-					"StatsFilterClientConfig":    driver.LoadTestJSON(testCase.ClientConfig),
-					"StatsFilterServerConfig":    driver.LoadTestJSON(testCase.ServerConfig),
-					"ServerClusterName":          testCase.ServerClusterName,
-					"ElideServerMetadata":        fmt.Sprintf("%t", testCase.ElideServerMetadata),
+					"RequestCount":            "10",
+					"StatsConfig":             driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+					"StatsFilterClientConfig": driver.LoadTestJSON(testCase.ClientConfig),
+					"StatsFilterServerConfig": driver.LoadTestJSON(testCase.ServerConfig),
+					"ServerClusterName":       testCase.ServerClusterName,
+					"ElideServerMetadata":     fmt.Sprintf("%t", testCase.ElideServerMetadata),
 				}, envoye2e.ProxyE2ETests)
 				params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 				params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
@@ -184,7 +173,6 @@ func TestStatsPayload(t *testing.T) {
 }
 
 func TestStatsParallel(t *testing.T) {
-	env.EnsureWasmFiles(t)
 	env.SkipTSanASan(t)
 	for _, testCase := range TestCases {
 		t.Run(testCase.Name, func(t *testing.T) {
@@ -192,14 +180,11 @@ func TestStatsParallel(t *testing.T) {
 				t.Skip("Skip parallel testing")
 			}
 			params := driver.NewTestParams(t, map[string]string{
-				"RequestCount":               "1",
-				"MetadataExchangeFilterCode": "filename: " + env.GetBazelWorkspaceOrDie() + "/extensions/metadata_exchange.wasm",
-				"StatsFilterCode":            "filename: " + env.GetBazelWorkspaceOrDie() + "/extensions/stats.wasm",
-				"WasmRuntime":                "envoy.wasm.runtime.v8",
-				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-				"StatsFilterClientConfig":    driver.LoadTestJSON(testCase.ClientConfig),
-				"StatsFilterServerConfig":    driver.LoadTestJSON(testCase.ServerConfig),
-				"ElideServerMetadata":        fmt.Sprintf("%t", testCase.ElideServerMetadata),
+				"RequestCount":            "1",
+				"StatsConfig":             driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"StatsFilterClientConfig": driver.LoadTestJSON(testCase.ClientConfig),
+				"StatsFilterServerConfig": driver.LoadTestJSON(testCase.ServerConfig),
+				"ElideServerMetadata":     fmt.Sprintf("%t", testCase.ElideServerMetadata),
 			}, envoye2e.ProxyE2ETests)
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
@@ -263,21 +248,17 @@ func TestStatsParallel(t *testing.T) {
 }
 
 func TestStatsGrpc(t *testing.T) {
-	env.EnsureWasmFiles(t)
 	env.SkipTSan(t)
 	for _, runtime := range Runtimes {
 		t.Run(runtime.WasmRuntime, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
-				"RequestCount":               "10",
-				"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
-				"StatsFilterCode":            runtime.StatsFilterCode,
-				"WasmRuntime":                runtime.WasmRuntime,
-				"DisableDirectResponse":      "true",
-				"UsingGrpcBackend":           "true",
-				"GrpcResponseStatus":         "7",
-				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
-				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+				"RequestCount":            "10",
+				"DisableDirectResponse":   "true",
+				"UsingGrpcBackend":        "true",
+				"GrpcResponseStatus":      "7",
+				"StatsConfig":             driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"StatsFilterClientConfig": driver.LoadTestJSON("testdata/stats/client_config.yaml"),
+				"StatsFilterServerConfig": driver.LoadTestJSON("testdata/stats/server_config.yaml"),
 			}, envoye2e.ProxyE2ETests)
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
@@ -317,19 +298,15 @@ func TestStatsGrpc(t *testing.T) {
 }
 
 func TestStatsGrpcStream(t *testing.T) {
-	env.EnsureWasmFiles(t)
 	env.SkipTSan(t)
 	for _, runtime := range Runtimes {
 		t.Run(runtime.WasmRuntime, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
-				"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
-				"StatsFilterCode":            runtime.StatsFilterCode,
-				"WasmRuntime":                runtime.WasmRuntime,
-				"DisableDirectResponse":      "true",
-				"UsingGrpcBackend":           "true",
-				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config_grpc.yaml.tmpl"),
-				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config_grpc.yaml.tmpl"),
+				"DisableDirectResponse":   "true",
+				"UsingGrpcBackend":        "true",
+				"StatsConfig":             driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"StatsFilterClientConfig": driver.LoadTestJSON("testdata/stats/client_config_grpc.yaml.tmpl"),
+				"StatsFilterServerConfig": driver.LoadTestJSON("testdata/stats/server_config_grpc.yaml.tmpl"),
 			}, envoye2e.ProxyE2ETests)
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
@@ -439,12 +416,9 @@ func TestAttributeGen(t *testing.T) {
 }
 
 func TestStatsParserRegression(t *testing.T) {
-	env.EnsureWasmFiles(t)
 	env.SkipTSan(t)
 	// This is a regression test for https://github.com/envoyproxy/envoy-wasm/issues/497
 	params := driver.NewTestParams(t, map[string]string{
-		"StatsFilterCode":         "filename: " + env.GetBazelWorkspaceOrDie() + "/extensions/stats.wasm",
-		"WasmRuntime":             "envoy.wasm.runtime.v8",
 		"StatsConfig":             driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
 		"ClientHTTPFilters":       driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl"),
 		"StatsFilterClientConfig": "{}",
@@ -477,19 +451,15 @@ func TestStatsParserRegression(t *testing.T) {
 }
 
 func TestStats403Failure(t *testing.T) {
-	env.EnsureWasmFiles(t)
 	env.SkipTSan(t)
 	for _, runtime := range Runtimes {
 		t.Run(runtime.WasmRuntime, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
-				"RequestCount":               "10",
-				"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
-				"StatsFilterCode":            runtime.StatsFilterCode,
-				"WasmRuntime":                runtime.WasmRuntime,
-				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
-				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
-				"ResponseCode":               "403",
+				"RequestCount":            "10",
+				"StatsConfig":             driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"StatsFilterClientConfig": driver.LoadTestJSON("testdata/stats/client_config.yaml"),
+				"StatsFilterServerConfig": driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+				"ResponseCode":            "403",
 			}, envoye2e.ProxyE2ETests)
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
@@ -525,18 +495,14 @@ func TestStats403Failure(t *testing.T) {
 }
 
 func TestStatsECDS(t *testing.T) {
-	env.EnsureWasmFiles(t)
 	env.SkipTSan(t)
 	for _, runtime := range Runtimes {
 		t.Run(runtime.WasmRuntime, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
-				"RequestCount":               "10",
-				"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
-				"StatsFilterCode":            runtime.StatsFilterCode,
-				"WasmRuntime":                runtime.WasmRuntime,
-				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
-				"StatsFilterServerConfig":    driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+				"RequestCount":            "10",
+				"StatsConfig":             driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"StatsFilterClientConfig": driver.LoadTestJSON("testdata/stats/client_config.yaml"),
+				"StatsFilterServerConfig": driver.LoadTestJSON("testdata/stats/server_config.yaml"),
 			}, envoye2e.ProxyE2ETests)
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
@@ -587,18 +553,14 @@ func TestStatsECDS(t *testing.T) {
 }
 
 func TestStatsEndpointLabels(t *testing.T) {
-	env.EnsureWasmFiles(t)
 	env.SkipTSan(t)
 	for _, runtime := range Runtimes {
 		t.Run(runtime.WasmRuntime, func(t *testing.T) {
 			params := driver.NewTestParams(t, map[string]string{
-				"RequestCount":               "10",
-				"MetadataExchangeFilterCode": runtime.MetadataExchangeFilterCode,
-				"StatsFilterCode":            runtime.StatsFilterCode,
-				"WasmRuntime":                runtime.WasmRuntime,
-				"EnableEndpointMetadata":     "true",
-				"StatsConfig":                driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-				"StatsFilterClientConfig":    driver.LoadTestJSON("testdata/stats/client_config.yaml"),
+				"RequestCount":            "10",
+				"EnableEndpointMetadata":  "true",
+				"StatsConfig":             driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+				"StatsFilterClientConfig": driver.LoadTestJSON("testdata/stats/client_config.yaml"),
 			}, envoye2e.ProxyE2ETests)
 			params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
 			params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
