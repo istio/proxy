@@ -41,7 +41,6 @@ envoy_cc_library(
     deps = [
         ":node_info_fb_cc",
         "//extensions/common:util",
-        "//extensions/common:metadata_object_lib",
         "@proxy_wasm_cpp_host//:null_lib",
     ],
 )

@@ -71,7 +71,6 @@ envoy_cc_library(
     deps = [
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
-        "@envoy//envoy/registry",
         "@envoy//envoy/common:hashable_interface",
         "@envoy//envoy/network:filter_interface",
         "@envoy//envoy/ssl:connection_interface",

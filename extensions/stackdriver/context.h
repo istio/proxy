@@ -17,8 +17,7 @@
 
 #include <set>
 
-#include "extensions/common/metadata_object.h"
-#include "extensions/stackdriver/node_info_generated.h"
+#include "extensions/common/node_info_generated.h"
 #include "flatbuffers/flatbuffers.h"
 
 namespace Wasm {
