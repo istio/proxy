@@ -15,6 +15,8 @@
 #include "extensions/common/metadata_object.h"
 
 #include "absl/strings/str_join.h"
+#include "flatbuffers/flatbuffers.h"
+#include "extensions/common/node_info_bfbs_generated.h"
 #include "source/common/common/hash.h"
 
 namespace Istio {
@@ -168,89 +170,108 @@ absl::optional<uint64_t> WorkloadMetadataObject::hash() const {
   return Envoy::HashUtil::xxHash64(absl::StrCat(instance_name_, "/", namespace_name_));
 }
 
-std::string WorkloadMetadataObject::owner() const {
-  switch (workload_type_) {
+namespace {
+// Returns a string view stored in a flatbuffers string.
+absl::string_view toAbslStringView(const flatbuffers::String* str) {
+  return str ? absl::string_view(str->c_str(), str->size()) : absl::string_view();
+}
+
+std::string_view toStdStringView(absl::string_view view) {
+  return std::string_view(view.data(), view.size());
+}
+} // namespace
+
+std::string convertWorkloadMetadataToFlatNode(const WorkloadMetadataObject& obj) {
+  flatbuffers::FlatBufferBuilder fbb;
+
+  flatbuffers::Offset<flatbuffers::String> name, cluster, namespace_, workload_name, owner,
+      identity;
+  std::vector<flatbuffers::Offset<Wasm::Common::KeyVal>> labels;
+
+  name = fbb.CreateString(toStdStringView(obj.instance_name_));
+  namespace_ = fbb.CreateString(toStdStringView(obj.namespace_name_));
+  cluster = fbb.CreateString(toStdStringView(obj.cluster_name_));
+  workload_name = fbb.CreateString(toStdStringView(obj.workload_name_));
+  identity = fbb.CreateString(toStdStringView(obj.identity_));
+
+  switch (obj.workload_type_) {
   case WorkloadType::Deployment:
-    return absl::StrCat(OwnerPrefix, namespace_name_, "/", DeploymentSuffix, "s/", workload_name_);
+    owner = fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_, "/", DeploymentSuffix,
+                                          "s/", obj.workload_name_));
+    break;
   case WorkloadType::Job:
-    return absl::StrCat(OwnerPrefix, namespace_name_, "/", JobSuffix, "s/", workload_name_);
+    owner = fbb.CreateString(
+        absl::StrCat(OwnerPrefix, obj.namespace_name_, "/", JobSuffix, "s/", obj.workload_name_));
+    break;
   case WorkloadType::CronJob:
-    return absl::StrCat(OwnerPrefix, namespace_name_, "/", CronJobSuffix, "s/", workload_name_);
+    owner = fbb.CreateString(absl::StrCat(OwnerPrefix, obj.namespace_name_, "/", CronJobSuffix,
+                                          "s/", obj.workload_name_));
+    break;
   case WorkloadType::Pod:
-    return absl::StrCat(OwnerPrefix, namespace_name_, "/", PodSuffix, "s/", workload_name_);
+    owner = fbb.CreateString(
+        absl::StrCat(OwnerPrefix, obj.namespace_name_, "/", PodSuffix, "s/", obj.workload_name_));
+    break;
   }
+
+  labels.push_back(
+      Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(CanonicalNameLabel),
+                                 fbb.CreateString(toStdStringView(obj.canonical_name_))));
+  labels.push_back(
+      Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(CanonicalRevisionLabel),
+                                 fbb.CreateString(toStdStringView(obj.canonical_revision_))));
+  labels.push_back(Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(AppLabel),
+                                              fbb.CreateString(toStdStringView(obj.app_name_))));
+  labels.push_back(Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(VersionLabel),
+                                              fbb.CreateString(toStdStringView(obj.app_version_))));
+
+  auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
+  Wasm::Common::FlatNodeBuilder node(fbb);
+  node.add_name(name);
+  node.add_cluster_id(cluster);
+  node.add_namespace_(namespace_);
+  node.add_workload_name(workload_name);
+  node.add_owner(owner);
+  node.add_labels(labels_offset);
+  node.add_identity(identity);
+  auto data = node.Finish();
+  fbb.Finish(data);
+  auto fb = fbb.Release();
+  return std::string(reinterpret_cast<const char*>(fb.data()), fb.size());
 }
 
-void WorkloadMetadataObject::toStruct(google::protobuf::Struct* out) const {
-  if (!instance_name_.empty()) {
-    (*out->mutable_fields())["NAME"].set_string_value(instance_name_);
-  }
-  if (!cluster_name_.empty()) {
-    (*out->mutable_fields())["CLUSTER_ID"].set_string_value(cluster_name_);
-  }
-  if (!namespace_name_.empty()) {
-    (*out->mutable_fields())["NAMESPACE"].set_string_value(namespace_name_);
-  }
-  if (!workload_name_.empty()) {
-    (*out->mutable_fields())["WORKLOAD_NAME"].set_string_value(workload_name_);
-  }
-  (*out->mutable_fields())["OWNER"].set_string_value(owner());
-  auto* map = (*out->mutable_fields())["LABELS"].mutable_struct_value();
-  if (!canonical_name_.empty()) {
-    (*map->mutable_fields())[CanonicalNameLabel].set_string_value(canonical_name_);
-  }
-  if (!canonical_revision_.empty()) {
-    (*map->mutable_fields())[CanonicalRevisionLabel].set_string_value(canonical_revision_);
-  }
-  if (!app_name_.empty()) {
-    (*map->mutable_fields())[AppLabel].set_string_value(app_name_);
-  }
-  if (!app_version_.empty()) {
-    (*map->mutable_fields())[VersionLabel].set_string_value(app_version_);
-  }
-}
+WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(const Wasm::Common::FlatNode& node) {
+  const absl::string_view instance = toAbslStringView(node.name());
+  const absl::string_view cluster = toAbslStringView(node.cluster_id());
+  const absl::string_view workload = toAbslStringView(node.workload_name());
+  const absl::string_view namespace_name = toAbslStringView(node.namespace_());
+  const absl::string_view identity = toAbslStringView(node.identity());
+  const auto* labels = node.labels();
 
-std::shared_ptr<WorkloadMetadataObject>
-convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata) {
-  absl::string_view instance;
-  absl::string_view cluster;
-  absl::string_view workload;
-  absl::string_view namespace_name;
-  absl::string_view identity;
   absl::string_view canonical_name;
   absl::string_view canonical_revision;
   absl::string_view app_name;
   absl::string_view app_version;
-  absl::string_view owner;
+  if (labels) {
+    const auto* name_iter = labels->LookupByKey(CanonicalNameLabel);
+    const auto* name = name_iter ? name_iter->value() : nullptr;
+    canonical_name = toAbslStringView(name);
 
-  for (const auto& it : metadata.fields()) {
-    if (it.first == "NAME") {
-      instance = it.second.string_value();
-    } else if (it.first == "NAMESPACE") {
-      namespace_name = it.second.string_value();
-    } else if (it.first == "OWNER") {
-      owner = it.second.string_value();
-    } else if (it.first == "WORKLOAD_NAME") {
-      workload = it.second.string_value();
-    } else if (it.first == "CLUSTER_ID") {
-      cluster = it.second.string_value();
-    } else if (it.first == "LABELS") {
-      for (const auto& labels_it : it.second.struct_value().fields()) {
-        if (labels_it.first == CanonicalNameLabel) {
-          canonical_name = labels_it.second.string_value();
-        } else if (labels_it.first == CanonicalRevisionLabel) {
-          canonical_revision = labels_it.second.string_value();
-        } else if (labels_it.first == AppLabel) {
-          app_name = labels_it.second.string_value();
-        } else if (labels_it.first == VersionLabel) {
-          app_version = labels_it.second.string_value();
-        }
-      }
-    }
+    const auto* revision_iter = labels->LookupByKey(CanonicalRevisionLabel);
+    const auto* revision = revision_iter ? revision_iter->value() : nullptr;
+    canonical_revision = toAbslStringView(revision);
+
+    const auto* app_iter = labels->LookupByKey(AppLabel);
+    const auto* app = app_iter ? app_iter->value() : nullptr;
+    app_name = toAbslStringView(app);
+
+    const auto* version_iter = labels->LookupByKey(VersionLabel);
+    const auto* version = version_iter ? version_iter->value() : nullptr;
+    app_version = toAbslStringView(version);
   }
 
   WorkloadType workload_type = WorkloadType::Pod;
   // Strip "s/workload_name" and check for workload type.
+  absl::string_view owner = toAbslStringView(node.owner());
   if (owner.size() > workload.size() + 2) {
     owner.remove_suffix(workload.size() + 2);
     size_t last = owner.rfind('/');
@@ -277,9 +298,8 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata) {
     }
   }
 
-  return std::make_shared<WorkloadMetadataObject>(instance, cluster, namespace_name, workload,
-                                                  canonical_name, canonical_revision, app_name,
-                                                  app_version, workload_type, identity);
+  return WorkloadMetadataObject(instance, cluster, namespace_name, workload, canonical_name,
+                                canonical_revision, app_name, app_version, workload_type, identity);
 }
 
 absl::optional<WorkloadMetadataObject>
@@ -291,6 +311,11 @@ convertEndpointMetadata(const std::string& endpoint_encoding) {
   // TODO: we cannot determine workload type from the encoding.
   return absl::make_optional<WorkloadMetadataObject>("", parts[4], parts[1], parts[0], parts[2],
                                                      parts[3], "", "", WorkloadType::Pod, "");
+}
+
+std::string_view nodeInfoSchema() {
+  return std::string_view(reinterpret_cast<const char*>(Wasm::Common::FlatNodeBinarySchema::data()),
+                          Wasm::Common::FlatNodeBinarySchema::size());
 }
 
 } // namespace Common

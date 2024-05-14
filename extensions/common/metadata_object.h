@@ -19,6 +19,7 @@
 #include "envoy/common/hashable.h"
 #include "envoy/ssl/connection.h"
 #include "envoy/stream_info/filter_state.h"
+#include "extensions/common/node_info_generated.h"
 
 namespace Istio {
 namespace Common {
@@ -89,9 +90,6 @@ struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
 
   absl::optional<uint64_t> hash() const override;
 
-  std::string owner() const;
-  void toStruct(google::protobuf::Struct* out) const;
-
   absl::optional<std::string> serializeAsString() const override { return baggage(); }
 
   const std::string instance_name_;
@@ -106,9 +104,11 @@ struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
   const std::string identity_;
 };
 
-// Convert metadata struct to metadata object.
-std::shared_ptr<WorkloadMetadataObject>
-convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata);
+// Convert metadata object to flatbuffer.
+std::string convertWorkloadMetadataToFlatNode(const WorkloadMetadataObject& obj);
+
+// Convert flatbuffer to metadata object.
+WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(const Wasm::Common::FlatNode& node);
 
 // Convert endpoint metadata string to a metadata object.
 // Telemetry metadata is compressed into a semicolon separated string:
@@ -117,6 +117,9 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata);
 // path.
 absl::optional<WorkloadMetadataObject>
 convertEndpointMetadata(const std::string& endpoint_encoding);
+
+// Returns flatbuffer schema for node info.
+std::string_view nodeInfoSchema();
 
 } // namespace Common
 } // namespace Istio

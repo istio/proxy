@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include "extensions/common/node_info_generated.h"
+#include "flatbuffers/flatbuffers.h"
 #include "google/protobuf/struct.pb.h"
 
 /**
@@ -22,6 +24,13 @@
  */
 namespace Wasm {
 namespace Common {
+
+// Extract node info into a flatbuffer from a struct.
+flatbuffers::DetachedBuffer
+extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata);
+
+// Extract struct from a flatbuffer. This is an inverse of the above function.
+void extractStructFromNodeFlatBuffer(const FlatNode& node, google::protobuf::Struct* metadata);
 
 // Serialize deterministically a protobuf to a string.
 bool serializeToStringDeterministic(const google::protobuf::Message& metadata,

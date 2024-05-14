@@ -19,11 +19,6 @@ load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
 )
-load(
-    "@com_github_google_flatbuffers//:build_defs.bzl",
-    "DEFAULT_FLATC_ARGS",
-    "flatbuffer_library_public",
-)
 
 package(default_visibility = ["//visibility:public"])
 
@@ -39,7 +34,7 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        ":node_info_fb_cc",
+        "//extensions/common:node_info_fb_cc",
         "//extensions/common:util",
         "@proxy_wasm_cpp_host//:null_lib",
     ],
@@ -66,28 +61,5 @@ envoy_cc_library(
         "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
         "@proxy_wasm_cpp_host//:null_lib",
         "@proxy_wasm_cpp_sdk//contrib:contrib_lib",
-    ],
-)
-
-flatbuffer_library_public(
-    name = "node_info_fbs",
-    srcs = ["node_info.fbs"],
-    outs = [
-        "node_info_bfbs_generated.h",
-        "node_info_generated.h",
-    ],
-    flatc_args = DEFAULT_FLATC_ARGS + ["--bfbs-gen-embed"],
-    language_flag = "-c",
-)
-
-cc_library(
-    name = "node_info_fb_cc",
-    srcs = [":node_info_fbs"],
-    hdrs = [":node_info_fbs"],
-    features = ["-parse_headers"],
-    linkstatic = True,
-    deps = [
-        "@com_github_google_flatbuffers//:flatbuffers",
-        "@com_github_google_flatbuffers//:runtime_cc",
     ],
 )

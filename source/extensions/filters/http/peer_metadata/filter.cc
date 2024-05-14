@@ -23,12 +23,35 @@
 #include "source/common/http/header_utility.h"
 #include "source/common/http/utility.h"
 #include "source/common/network/utility.h"
-#include "source/common/router/string_accessor_impl.h"
+#include "source/extensions/filters/common/expr/cel_state.h"
 
 namespace Envoy {
 namespace Extensions {
 namespace HttpFilters {
 namespace PeerMetadata {
+
+// Extended peer info that supports "hashing" to enable sharing with the
+// upstream connection via an internal listener.
+class CelStateHashable : public Filters::Common::Expr::CelState, public Hashable {
+public:
+  explicit CelStateHashable(const Filters::Common::Expr::CelStatePrototype& proto)
+      : CelState(proto) {}
+  absl::optional<uint64_t> hash() const override { return HashUtil::xxHash64(value()); }
+};
+
+struct CelPrototypeValues {
+  const Filters::Common::Expr::CelStatePrototype NodeInfo{
+      true, Filters::Common::Expr::CelStateType::FlatBuffers,
+      toAbslStringView(Istio::Common::nodeInfoSchema()),
+      // Life span is only needed for Wasm set_property, not in the native filters.
+      StreamInfo::FilterState::LifeSpan::FilterChain};
+  const Filters::Common::Expr::CelStatePrototype NodeId{
+      true, Filters::Common::Expr::CelStateType::String, absl::string_view(),
+      // Life span is only needed for Wasm set_property, not in the native filters.
+      StreamInfo::FilterState::LifeSpan::FilterChain};
+};
+
+using CelPrototypes = ConstSingleton<CelPrototypeValues>;
 
 class XDSMethod : public DiscoveryMethod {
 public:
@@ -81,7 +104,7 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
   }
   const auto metadata_object = metadata_provider_->GetMetadata(peer_address);
   if (metadata_object) {
-    return std::make_shared<Istio::Common::WorkloadMetadataObject>(metadata_object.value());
+    return Istio::Common::convertWorkloadMetadataToFlatNode(metadata_object.value());
   }
   return {};
 }
@@ -131,7 +154,8 @@ absl::optional<PeerInfo> MXMethod::lookup(absl::string_view id, absl::string_vie
   if (!metadata.ParseFromString(bytes)) {
     return {};
   }
-  const auto out = Istio::Common::convertStructToWorkloadMetadata(metadata);
+  const auto fb = ::Wasm::Common::extractNodeFlatBufferFromStruct(metadata);
+  std::string out(reinterpret_cast<const char*>(fb.data()), fb.size());
   if (max_peer_cache_size_ > 0 && !id.empty()) {
     // do not let the cache grow beyond max cache size.
     if (static_cast<uint32_t>(cache.size()) > max_peer_cache_size_) {
@@ -151,10 +175,11 @@ MXPropagationMethod::MXPropagationMethod(
 
 std::string MXPropagationMethod::computeValue(
     Server::Configuration::ServerFactoryContext& factory_context) const {
-  const auto out =
-      Istio::Common::convertStructToWorkloadMetadata(factory_context.localInfo().node().metadata());
+  const auto fb = ::Wasm::Common::extractNodeFlatBufferFromStruct(
+      factory_context.localInfo().node().metadata());
   google::protobuf::Struct metadata;
-  out->toStruct(&metadata);
+  ::Wasm::Common::extractStructFromNodeFlatBuffer(
+      *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(fb.data()), &metadata);
   std::string metadata_bytes;
   ::Wasm::Common::serializeToStringDeterministic(metadata, &metadata_bytes);
   return Base64::encode(metadata_bytes.data(), metadata_bytes.size());
@@ -271,13 +296,15 @@ void FilterConfig::injectUpstream(const StreamInfo::StreamInfo& info,
 }
 
 void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
-                                  const PeerInfo& value) const {
+                                  const std::string& value) const {
   const absl::string_view key =
       downstream ? Istio::Common::WasmDownstreamPeer : Istio::Common::WasmUpstreamPeer;
   if (!info.filterState()->hasDataWithName(key)) {
-    info.filterState()->setData(key, value, StreamInfo::FilterState::StateType::Mutable,
-                                StreamInfo::FilterState::LifeSpan::FilterChain,
-                                sharedWithUpstream());
+    auto node_info = std::make_unique<CelStateHashable>(CelPrototypes::get().NodeInfo);
+    node_info->setValue(value);
+    info.filterState()->setData(
+        key, std::move(node_info), StreamInfo::FilterState::StateType::Mutable,
+        StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());
   } else {
     ENVOY_LOG(debug, "Duplicate peer metadata, skipping");
   }
@@ -286,10 +313,11 @@ void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
   const absl::string_view id_key =
       downstream ? Istio::Common::WasmDownstreamPeerID : Istio::Common::WasmUpstreamPeerID;
   if (!info.filterState()->hasDataWithName(id_key)) {
-    info.filterState()->setData(id_key, std::make_shared<Router::StringAccessorImpl>("unknown"),
-                                StreamInfo::FilterState::StateType::Mutable,
-                                StreamInfo::FilterState::LifeSpan::FilterChain,
-                                sharedWithUpstream());
+    auto node_id = std::make_unique<Filters::Common::Expr::CelState>(CelPrototypes::get().NodeId);
+    node_id->setValue("unknown");
+    info.filterState()->setData(
+        id_key, std::move(node_id), StreamInfo::FilterState::StateType::Mutable,
+        StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());
   } else {
     ENVOY_LOG(debug, "Duplicate peer id, skipping");
   }
