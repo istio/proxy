@@ -123,16 +123,13 @@ bool peerInfoRead(Reporter reporter, const StreamInfo::FilterState& filter_state
          filter_state.hasDataWithName("envoy.wasm.metadata_exchange.peer_unknown");
 }
 
-const Wasm::Common::FlatNode* peerInfo(Reporter reporter,
-                                       const StreamInfo::FilterState& filter_state) {
+const Istio::Common::WorkloadMetadataObject* peerInfo(Reporter reporter,
+                                                      const StreamInfo::FilterState& filter_state) {
   const auto& filter_state_key =
       reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
           ? "wasm.downstream_peer"
           : "wasm.upstream_peer";
-  const auto* object =
-      filter_state.getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
-          filter_state_key);
-  return object ? flatbuffers::GetRoot<Wasm::Common::FlatNode>(object->value().data()) : nullptr;
+  return filter_state.getDataReadOnly<Istio::Common::WorkloadMetadataObject>(filter_state_key);
 }
 
 // Process-wide context shared with all filter instances.
@@ -1000,7 +997,7 @@ private:
     absl::optional<Istio::Common::WorkloadMetadataObject> peer;
     const auto* object = peerInfo(config_->reporter(), filter_state);
     if (object) {
-      peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*object));
+      peer.emplace(*object);
     } else if (config_->reporter() == Reporter::ClientSidecar) {
       if (auto label_obj = extractEndpointMetadata(info); label_obj) {
         peer.emplace(label_obj.value());
@@ -1138,7 +1135,7 @@ private:
         std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer;
         const auto* endpoint_object = peerInfo(Reporter::ClientSidecar, filter_state);
         if (endpoint_object) {
-          endpoint_peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*endpoint_object));
+          endpoint_peer.emplace(*endpoint_object);
         }
         tags_.push_back(
             {context_.destination_workload_,

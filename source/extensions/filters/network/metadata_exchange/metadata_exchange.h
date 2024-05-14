@@ -23,20 +23,16 @@
 #include "envoy/stats/scope.h"
 #include "envoy/stats/stats_macros.h"
 #include "envoy/stream_info/filter_state.h"
-#include "extensions/common/node_info_bfbs_generated.h"
 #include "extensions/common/proto_util.h"
 #include "extensions/common/metadata_object.h"
 #include "source/common/common/stl_helpers.h"
 #include "source/common/protobuf/protobuf.h"
-#include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/network/metadata_exchange/config/metadata_exchange.pb.h"
 #include "source/extensions/common/workload_discovery/api.h"
 
 namespace Envoy {
 namespace Tcp {
 namespace MetadataExchange {
-
-using ::Envoy::Extensions::Filters::Common::Expr::CelStatePrototype;
 
 /**
  * All MetadataExchange filter stats. @see stats_macros.h
@@ -86,13 +82,6 @@ public:
   // Stats for MetadataExchange Filter.
   MetadataExchangeStats stats_;
 
-  static const CelStatePrototype& nodeInfoPrototype() {
-    static const CelStatePrototype* const prototype = new CelStatePrototype(
-        true, ::Envoy::Extensions::Filters::Common::Expr::CelStateType::FlatBuffers,
-        ::Istio::Common::nodeInfoSchema(), StreamInfo::FilterState::LifeSpan::Connection);
-    return *prototype;
-  }
-
 private:
   MetadataExchangeStats generateStats(const std::string& prefix, Stats::Scope& scope) {
     return MetadataExchangeStats{ALL_METADATA_EXCHANGE_STATS(POOL_COUNTER_PREFIX(scope, prefix))};
@@ -137,7 +126,7 @@ private:
   void tryReadProxyData(Buffer::Instance& data);
 
   // Helper function to share the metadata with other filters.
-  void updatePeer(const std::string& fb);
+  void updatePeer(const std::shared_ptr<Istio::Common::WorkloadMetadataObject>& obj);
   void updatePeerId(absl::string_view key, absl::string_view value);
 
   // Helper function to get Dynamic metadata.

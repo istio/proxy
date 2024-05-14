@@ -344,6 +344,53 @@ bool extractPeerMetadataFromUpstreamHostMetadata(flatbuffers::FlatBufferBuilder&
   return extractPeerMetadataFromUpstreamMetadata("upstream_host_metadata", fbb);
 }
 
+namespace {
+// Returns a string view stored in a flatbuffers string.
+std::string_view toStdStringView(absl::string_view view) {
+  return std::string_view(view.data(), view.size());
+}
+} // namespace
+
+std::string convertWorkloadMetadataToFlatNode(const Istio::Common::WorkloadMetadataObject& obj) {
+  flatbuffers::FlatBufferBuilder fbb;
+
+  flatbuffers::Offset<flatbuffers::String> name, cluster, namespace_, workload_name, owner,
+      identity;
+  std::vector<flatbuffers::Offset<Wasm::Common::KeyVal>> labels;
+
+  name = fbb.CreateString(toStdStringView(obj.instance_name_));
+  namespace_ = fbb.CreateString(toStdStringView(obj.namespace_name_));
+  cluster = fbb.CreateString(toStdStringView(obj.cluster_name_));
+  workload_name = fbb.CreateString(toStdStringView(obj.workload_name_));
+  identity = fbb.CreateString(toStdStringView(obj.identity_));
+  owner = fbb.CreateString(obj.owner());
+
+  labels.push_back(
+      Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(CanonicalNameLabel),
+                                 fbb.CreateString(toStdStringView(obj.canonical_name_))));
+  labels.push_back(
+      Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(CanonicalRevisionLabel),
+                                 fbb.CreateString(toStdStringView(obj.canonical_revision_))));
+  labels.push_back(Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(AppLabel),
+                                              fbb.CreateString(toStdStringView(obj.app_name_))));
+  labels.push_back(Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(VersionLabel),
+                                              fbb.CreateString(toStdStringView(obj.app_version_))));
+
+  auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
+  Wasm::Common::FlatNodeBuilder node(fbb);
+  node.add_name(name);
+  node.add_cluster_id(cluster);
+  node.add_namespace_(namespace_);
+  node.add_workload_name(workload_name);
+  node.add_owner(owner);
+  node.add_labels(labels_offset);
+  node.add_identity(identity);
+  auto data = node.Finish();
+  fbb.Finish(data);
+  auto fb = fbb.Release();
+  return std::string(reinterpret_cast<const char*>(fb.data()), fb.size());
+}
+
 PeerNodeInfo::PeerNodeInfo(const std::string_view peer_metadata_id_key,
                            const std::string_view peer_metadata_key) {
   // Attempt to read from filter_state first.

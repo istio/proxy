@@ -228,6 +228,9 @@ bool extractPeerMetadataFromUpstreamHostMetadata(flatbuffers::FlatBufferBuilder&
 // Returns true if the metadata is found in the upstream cluster metadata.
 bool extractPeerMetadataFromUpstreamClusterMetadata(flatbuffers::FlatBufferBuilder& fbb);
 
+// Convert metadata object to flatbuffer.
+std::string convertWorkloadMetadataToFlatNode(const Istio::Common::WorkloadMetadataObject& obj);
+
 class PeerNodeInfo {
 public:
   explicit PeerNodeInfo(const std::string_view peer_metadata_id_key,

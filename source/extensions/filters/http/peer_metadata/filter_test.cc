@@ -84,16 +84,11 @@ protected:
   void checkPeerNamespace(bool downstream, const std::string& expected) {
     EXPECT_TRUE(stream_info_.filterState()->hasDataWithName(
         downstream ? Istio::Common::WasmDownstreamPeerID : Istio::Common::WasmUpstreamPeerID));
-    const auto* obj = stream_info_.filterState()->getDataReadOnly<Filters::Common::Expr::CelState>(
-        downstream ? Istio::Common::WasmDownstreamPeer : Istio::Common::WasmUpstreamPeer);
+    const auto* obj =
+        stream_info_.filterState()->getDataReadOnly<Istio::Common::WorkloadMetadataObject>(
+            downstream ? Istio::Common::WasmDownstreamPeer : Istio::Common::WasmUpstreamPeer);
     ASSERT_NE(nullptr, obj);
-    Protobuf::Arena arena;
-    auto map = obj->exprValue(&arena, false);
-    ASSERT_TRUE(map.IsMap());
-    auto value =
-        (*map.MapOrDie())[google::api::expr::runtime::CelValue::CreateStringView("namespace")];
-    ASSERT_TRUE(value.has_value());
-    EXPECT_EQ(expected, value.value().StringOrDie().value());
+    EXPECT_EQ(expected, obj->namespace_name_);
   }
   void checkShared(bool expected) {
     EXPECT_EQ(expected,

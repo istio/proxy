@@ -25,6 +25,7 @@
 #include "envoy/stats/scope.h"
 #include "source/common/buffer/buffer_impl.h"
 #include "source/common/protobuf/utility.h"
+#include "source/common/router/string_accessor_impl.h"
 #include "source/extensions/filters/network/metadata_exchange/metadata_exchange_initial_header.h"
 
 namespace Envoy {
@@ -56,18 +57,6 @@ constructProxyHeaderData(const Envoy::ProtobufWkt::Any& proxy_data) {
   auto proxy_data_buffer = std::make_unique<::Envoy::Buffer::OwnedImpl>(proxy_data_str);
   proxy_data_buffer->prepend(initial_header_buffer);
   return proxy_data_buffer;
-}
-
-bool serializeToStringDeterministic(const google::protobuf::Struct& metadata,
-                                    std::string* metadata_bytes) {
-  google::protobuf::io::StringOutputStream md(metadata_bytes);
-  google::protobuf::io::CodedOutputStream mcs(&md);
-
-  mcs.SetSerializationDeterministic(true);
-  if (!metadata.SerializeToCodedStream(&mcs)) {
-    return false;
-  }
-  return true;
 }
 
 } // namespace
@@ -209,7 +198,7 @@ void MetadataExchangeFilter::writeNodeMetadata() {
     Envoy::ProtobufWkt::Any metadata_any_value;
     metadata_any_value.set_type_url(StructTypeUrl);
     std::string serialized_data;
-    serializeToStringDeterministic(data, &serialized_data);
+    ::Wasm::Common::serializeToStringDeterministic(data, &serialized_data);
     *metadata_any_value.mutable_value() = serialized_data;
     std::unique_ptr<::Envoy::Buffer::OwnedImpl> buf = constructProxyHeaderData(metadata_any_value);
     write_callbacks_->injectWriteDataToFilterChain(*buf, false);
@@ -274,9 +263,8 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
       Envoy::MessageUtil::anyConvert<Envoy::ProtobufWkt::Struct>(proxy_data);
   auto key_metadata_it = value_struct.fields().find(ExchangeMetadataHeader);
   if (key_metadata_it != value_struct.fields().end()) {
-    const auto fb =
-        ::Wasm::Common::extractNodeFlatBufferFromStruct(key_metadata_it->second.struct_value());
-    std::string out(reinterpret_cast<const char*>(fb.data()), fb.size());
+    const auto out =
+        Istio::Common::convertStructToWorkloadMetadata(key_metadata_it->second.struct_value());
     updatePeer(out);
   }
   const auto key_metadata_id_it = value_struct.fields().find(ExchangeMetadataHeaderId);
@@ -289,36 +277,25 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   }
 }
 
-void MetadataExchangeFilter::updatePeer(const std::string& fb) {
-  // Filter object captures schema by view, hence the global singleton for the
-  // prototype.
-  auto state = std::make_unique<::Envoy::Extensions::Filters::Common::Expr::CelState>(
-      MetadataExchangeConfig::nodeInfoPrototype());
-  state->setValue(fb);
-
+void MetadataExchangeFilter::updatePeer(
+    const std::shared_ptr<Istio::Common::WorkloadMetadataObject>& obj) {
   auto key = config_->filter_direction_ == FilterDirection::Downstream ? kDownstreamMetadataKey
                                                                        : kUpstreamMetadataKey;
   read_callbacks_->connection().streamInfo().filterState()->setData(
-      absl::StrCat("wasm.", key), std::move(state), StreamInfo::FilterState::StateType::Mutable,
+      absl::StrCat("wasm.", key), obj, StreamInfo::FilterState::StateType::Mutable,
       StreamInfo::FilterState::LifeSpan::Connection);
 }
 
 void MetadataExchangeFilter::updatePeerId(absl::string_view key, absl::string_view value) {
-  CelStatePrototype prototype(
-      /* read_only = */ false, ::Envoy::Extensions::Filters::Common::Expr::CelStateType::String,
-      absl::string_view(), StreamInfo::FilterState::LifeSpan::Connection);
-  auto state = std::make_unique<::Envoy::Extensions::Filters::Common::Expr::CelState>(prototype);
-  state->setValue(value);
   read_callbacks_->connection().streamInfo().filterState()->setData(
-      absl::StrCat("wasm.", key), std::move(state), StreamInfo::FilterState::StateType::Mutable,
-      prototype.life_span_);
+      absl::StrCat("wasm.", key), std::make_shared<Router::StringAccessorImpl>(value),
+      StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::Connection);
 }
 
 void MetadataExchangeFilter::getMetadata(google::protobuf::Struct* metadata) {
   if (local_info_.node().has_metadata()) {
-    const auto fb = ::Wasm::Common::extractNodeFlatBufferFromStruct(local_info_.node().metadata());
-    ::Wasm::Common::extractStructFromNodeFlatBuffer(
-        *flatbuffers::GetRoot<::Wasm::Common::FlatNode>(fb.data()), metadata);
+    const auto out = Istio::Common::convertStructToWorkloadMetadata(local_info_.node().metadata());
+    out->toStruct(metadata);
   }
 }
 
@@ -331,7 +308,7 @@ void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
     ENVOY_LOG(debug, "Look up metadata based on peer address {}", peer_address->asString());
     const auto metadata_object = config_->metadata_provider_->GetMetadata(peer_address);
     if (metadata_object) {
-      updatePeer(Istio::Common::convertWorkloadMetadataToFlatNode(metadata_object.value()));
+      updatePeer(std::make_shared<Istio::Common::WorkloadMetadataObject>(metadata_object.value()));
       updatePeerId(config_->filter_direction_ == FilterDirection::Downstream
                        ? kDownstreamMetadataIdKey
                        : kUpstreamMetadataIdKey,
