@@ -44,6 +44,11 @@ constexpr std::string_view node_metadata_json = R"###(
       "app":"test",
       "version":"v1"
     },
+   "PLATFORM_METADATA":{
+      "gcp_cluster_location":"test_location",
+      "gcp_cluster_name":"test_cluster",
+      "gcp_project":"test_project"
+   },
 }
 )###";
 
@@ -61,6 +66,8 @@ TEST(ProtoUtilTest, extractNodeMetadata) {
   EXPECT_EQ(peer->owner()->string_view(), "test_owner");
   EXPECT_EQ(peer->workload_name()->string_view(), "test_workload");
   EXPECT_EQ(peer->cluster_id()->string_view(), "test-cluster");
+  EXPECT_EQ(peer->platform_metadata()->Get(2)->key()->string_view(), "gcp_project");
+  EXPECT_EQ(peer->platform_metadata()->Get(2)->value()->string_view(), "test_project");
 }
 
 // Test roundtripping

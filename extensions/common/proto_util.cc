@@ -41,7 +41,7 @@ flatbuffers::DetachedBuffer
 extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata) {
   flatbuffers::FlatBufferBuilder fbb;
   flatbuffers::Offset<flatbuffers::String> name, namespace_, owner, workload_name, cluster_id;
-  std::vector<flatbuffers::Offset<KeyVal>> labels;
+  std::vector<flatbuffers::Offset<KeyVal>> labels, platform_metadata;
   for (const auto& it : metadata.fields()) {
     if (it.first == "NAME") {
       name = fbb.CreateString(it.second.string_value());
@@ -63,12 +63,22 @@ extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata) {
                                         fbb.CreateString(labels_it.second.string_value())));
         }
       }
+    } else if (it.first == "PLATFORM_METADATA") {
+      for (const auto& platform_it : it.second.struct_value().fields()) {
+        platform_metadata.push_back(
+            CreateKeyVal(fbb, fbb.CreateString(platform_it.first),
+                         fbb.CreateString(platform_it.second.string_value())));
+      }
     }
   }
   // finish pre-order construction
-  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<KeyVal>>> labels_offset;
+  flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<KeyVal>>> labels_offset,
+      platform_metadata_offset;
   if (labels.size() > 0) {
     labels_offset = fbb.CreateVectorOfSortedTables(&labels);
+  }
+  if (platform_metadata.size() > 0) {
+    platform_metadata_offset = fbb.CreateVectorOfSortedTables(&platform_metadata);
   }
   FlatNodeBuilder node(fbb);
   node.add_name(name);
@@ -77,6 +87,7 @@ extractNodeFlatBufferFromStruct(const google::protobuf::Struct& metadata) {
   node.add_workload_name(workload_name);
   node.add_cluster_id(cluster_id);
   node.add_labels(labels_offset);
+  node.add_platform_metadata(platform_metadata_offset);
   auto data = node.Finish();
   fbb.Finish(data);
   return fbb.Release();
@@ -101,6 +112,13 @@ void extractStructFromNodeFlatBuffer(const FlatNode& node, google::protobuf::Str
   if (node.labels()) {
     auto* map = (*metadata->mutable_fields())["LABELS"].mutable_struct_value();
     for (const auto keyval : *node.labels()) {
+      (*map->mutable_fields())[flatbuffers::GetString(keyval->key())].set_string_value(
+          flatbuffers::GetString(keyval->value()));
+    }
+  }
+  if (node.platform_metadata()) {
+    auto* map = (*metadata->mutable_fields())["PLATFORM_METADATA"].mutable_struct_value();
+    for (const auto keyval : *node.platform_metadata()) {
       (*map->mutable_fields())[flatbuffers::GetString(keyval->key())].set_string_value(
           flatbuffers::GetString(keyval->value()));
     }

@@ -44,9 +44,9 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
+        ":metadata_object_lib",
         ":node_info_fb_cc",
         ":util",
-        ":metadata_object_lib",
         "@com_google_protobuf//:protobuf",
         "@proxy_wasm_cpp_host//:null_lib",
     ],

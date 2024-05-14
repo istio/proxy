@@ -184,7 +184,8 @@ struct Context : public Singleton::Instance {
             extractMapString(node.metadata(), "LABELS", Istio::Common::CanonicalRevisionLabel))),
         cluster_name_(pool_.add(extractString(node.metadata(), "CLUSTER_ID"))),
         app_name_(pool_.add(extractMapString(node.metadata(), "LABELS", Istio::Common::AppLabel))),
-        app_version_(pool_.add(extractMapString(node.metadata(), "LABELS", Istio::Common::VersionLabel))),
+        app_version_(
+            pool_.add(extractMapString(node.metadata(), "LABELS", Istio::Common::VersionLabel))),
         waypoint_(pool_.add("waypoint")), istio_build_(pool_.add("istio_build")),
         component_(pool_.add("component")), proxy_(pool_.add("proxy")), tag_(pool_.add("tag")),
         istio_version_(pool_.add(extractString(node.metadata(), "ISTIO_VERSION"))) {
