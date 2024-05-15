@@ -37,7 +37,7 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        "//extensions/common:context",
+        "//extensions/stackdriver:context",
         "//extensions/stackdriver/common:constants",
         "//extensions/stackdriver/common:utils",
         "//extensions/stackdriver/config/v1alpha1:stackdriver_plugin_config_cc_proto",

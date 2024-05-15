@@ -217,7 +217,8 @@ flatbuffers::DetachedBuffer extractEmptyNodeFlatBuffer();
 // underlying heap-allocated memory. Note that std::string is inappropriate here
 // because its memory is inlined for short strings and causes a misaligned
 // address access.
-flatbuffers::DetachedBuffer extractLocalNodeFlatBuffer();
+flatbuffers::DetachedBuffer
+extractLocalNodeFlatBuffer(std::function<std::string(const std::string&)> mesh_id_override);
 
 // Extract upstream peer metadata from upstream host metadata.
 // Returns true if the metadata is found in the upstream host metadata.
@@ -226,9 +227,6 @@ bool extractPeerMetadataFromUpstreamHostMetadata(flatbuffers::FlatBufferBuilder&
 // Extract upstream peer metadata from upstream cluster metadata.
 // Returns true if the metadata is found in the upstream cluster metadata.
 bool extractPeerMetadataFromUpstreamClusterMetadata(flatbuffers::FlatBufferBuilder& fbb);
-
-// Returns flatbuffer schema for node info.
-std::string_view nodeInfoSchema();
 
 class PeerNodeInfo {
 public:

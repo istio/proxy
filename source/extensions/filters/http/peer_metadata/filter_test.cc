@@ -76,16 +76,16 @@ protected:
     EXPECT_EQ(Http::FilterHeadersStatus::Continue, filter_->encodeHeaders(response_headers_, true));
   }
   void checkNoPeer(bool downstream) {
-    EXPECT_FALSE(stream_info_.filterState()->hasDataWithName(downstream ? WasmDownstreamPeerID
-                                                                        : WasmUpstreamPeerID));
-    EXPECT_FALSE(stream_info_.filterState()->hasDataWithName(downstream ? WasmDownstreamPeer
-                                                                        : WasmUpstreamPeer));
+    EXPECT_FALSE(stream_info_.filterState()->hasDataWithName(
+        downstream ? Istio::Common::WasmDownstreamPeerID : Istio::Common::WasmUpstreamPeerID));
+    EXPECT_FALSE(stream_info_.filterState()->hasDataWithName(
+        downstream ? Istio::Common::WasmDownstreamPeer : Istio::Common::WasmUpstreamPeer));
   }
   void checkPeerNamespace(bool downstream, const std::string& expected) {
-    EXPECT_TRUE(stream_info_.filterState()->hasDataWithName(downstream ? WasmDownstreamPeerID
-                                                                       : WasmUpstreamPeerID));
+    EXPECT_TRUE(stream_info_.filterState()->hasDataWithName(
+        downstream ? Istio::Common::WasmDownstreamPeerID : Istio::Common::WasmUpstreamPeerID));
     const auto* obj = stream_info_.filterState()->getDataReadOnly<Filters::Common::Expr::CelState>(
-        downstream ? WasmDownstreamPeer : WasmUpstreamPeer);
+        downstream ? Istio::Common::WasmDownstreamPeer : Istio::Common::WasmUpstreamPeer);
     ASSERT_NE(nullptr, obj);
     Protobuf::Arena arena;
     auto map = obj->exprValue(&arena, false);

@@ -70,7 +70,7 @@ absl::optional<absl::string_view> getNamespace(absl::string_view principal) {
 
 constexpr absl::string_view CustomStatNamespace = "istiocustom";
 
-absl::string_view extractString(const ProtobufWkt::Struct& metadata, const std::string& key) {
+absl::string_view extractString(const ProtobufWkt::Struct& metadata, absl::string_view key) {
   const auto& it = metadata.fields().find(key);
   if (it == metadata.fields().end()) {
     return {};
@@ -79,7 +79,7 @@ absl::string_view extractString(const ProtobufWkt::Struct& metadata, const std::
 }
 
 absl::string_view extractMapString(const ProtobufWkt::Struct& metadata, const std::string& map_key,
-                                   const std::string& key) {
+                                   absl::string_view key) {
   const auto& it = metadata.fields().find(map_key);
   if (it == metadata.fields().end()) {
     return {};
@@ -179,12 +179,13 @@ struct Context : public Singleton::Instance {
         workload_name_(pool_.add(extractString(node.metadata(), "WORKLOAD_NAME"))),
         namespace_(pool_.add(extractString(node.metadata(), "NAMESPACE"))),
         canonical_name_(pool_.add(
-            extractMapString(node.metadata(), "LABELS", "service.istio.io/canonical-name"))),
+            extractMapString(node.metadata(), "LABELS", Istio::Common::CanonicalNameLabel))),
         canonical_revision_(pool_.add(
-            extractMapString(node.metadata(), "LABELS", "service.istio.io/canonical-revision"))),
+            extractMapString(node.metadata(), "LABELS", Istio::Common::CanonicalRevisionLabel))),
         cluster_name_(pool_.add(extractString(node.metadata(), "CLUSTER_ID"))),
-        app_name_(pool_.add(extractMapString(node.metadata(), "LABELS", "app"))),
-        app_version_(pool_.add(extractMapString(node.metadata(), "LABELS", "version"))),
+        app_name_(pool_.add(extractMapString(node.metadata(), "LABELS", Istio::Common::AppLabel))),
+        app_version_(
+            pool_.add(extractMapString(node.metadata(), "LABELS", Istio::Common::VersionLabel))),
         waypoint_(pool_.add("waypoint")), istio_build_(pool_.add("istio_build")),
         component_(pool_.add("component")), proxy_(pool_.add("proxy")), tag_(pool_.add("tag")),
         istio_version_(pool_.add(extractString(node.metadata(), "ISTIO_VERSION"))) {

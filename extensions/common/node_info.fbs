@@ -22,30 +22,44 @@ table KeyVal {
 
 // NodeInfo represents the information extracted from proxy node metadata.
 table FlatNode {
-  // Name of the node. e.g. in k8s, name is the pod name.
+  // Name of the workload instance. e.g. in k8s, name is the pod name.
   name:string;
-  // Namespace that the node runs in.
+
+  // Namespace that the workload instance runs in.
   namespace:string;
-  // K8s or vm workload attributes.
+
+  // K8s or vm workload attributes on the workload instance.
   labels:[KeyVal];
   owner:string;
   workload_name:string;
-  // Platform metadata uses prefixed keys
-  // GCP uses gcp_* keys
+
+  // DO NOT USE.
+  // Platform metadata uses prefixed keys GCP uses gcp_* keys
   platform_metadata:[KeyVal];
+
+  // DO NOT USE.
   // Version identifier for the proxy.
   istio_version:string;
+
+  // DO NOT USE.
   // Unique identifier for the mesh. Taken from global mesh id parameter (or
   // the configured trust domain when not specified).
   mesh_id:string;
+
+  // DO NOT USE.
   // List of short names for application containers that are using this proxy.
   // This is only used for kubernetes, and is populated by the sidecar injector.
   app_containers:[string];
+
   // Identifier for the cluster to which this workload belongs (for k8s workloads).
   cluster_id:string;
-  // instance ip addresses
+
+  // DO NOT USE.
+  // instance ip addresses.
   instance_ips:[string];
-  // identity of the proxy
+
+  // NOT IMPLEMENTED.
+  // Identity of the proxy.
   identity:string;
 }
 

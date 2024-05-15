@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "extensions/common/context.h"
+#include "extensions/stackdriver/context.h"
 #include "extensions/stackdriver/config/v1alpha1/stackdriver_plugin_config.pb.h"
 #include "opencensus/stats/tag_key.h"
 

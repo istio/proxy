@@ -16,7 +16,7 @@
 #pragma once
 
 #include "absl/strings/str_cat.h"
-#include "extensions/common/context.h"
+#include "extensions/stackdriver/context.h"
 #include "google/api/monitored_resource.pb.h"
 #include "grpcpp/grpcpp.h"
 

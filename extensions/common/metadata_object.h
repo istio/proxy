@@ -24,6 +24,16 @@
 namespace Istio {
 namespace Common {
 
+constexpr absl::string_view WasmDownstreamPeer = "wasm.downstream_peer";
+constexpr absl::string_view WasmDownstreamPeerID = "wasm.downstream_peer_id";
+constexpr absl::string_view WasmUpstreamPeer = "wasm.upstream_peer";
+constexpr absl::string_view WasmUpstreamPeerID = "wasm.upstream_peer_id";
+
+constexpr absl::string_view CanonicalNameLabel = "service.istio.io/canonical-name";
+constexpr absl::string_view CanonicalRevisionLabel = "service.istio.io/canonical-revision";
+constexpr absl::string_view AppLabel = "app";
+constexpr absl::string_view VersionLabel = "version";
+
 enum class WorkloadType {
   Pod,
   Deployment,
@@ -60,10 +70,6 @@ constexpr absl::string_view JobNameToken = "k8s.job.name";
 constexpr absl::string_view CronJobNameToken = "k8s.cronjob.name";
 constexpr absl::string_view AppNameToken = "app.name";
 constexpr absl::string_view AppVersionToken = "app.version";
-
-constexpr absl::string_view kSourceMetadataObjectKey = "ambient.source.workloadMetadata";
-constexpr absl::string_view kSourceMetadataBaggageKey = "ambient.source.workloadMetadataBaggage";
-constexpr absl::string_view kDestinationMetadataObjectKey = "ambient.destination.workloadMetadata";
 
 struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
                                 public Envoy::Hashable {
@@ -111,6 +117,9 @@ WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(const Wasm::Common::Fla
 // path.
 absl::optional<WorkloadMetadataObject>
 convertEndpointMetadata(const std::string& endpoint_encoding);
+
+// Returns flatbuffer schema for node info.
+std::string_view nodeInfoSchema();
 
 } // namespace Common
 } // namespace Istio

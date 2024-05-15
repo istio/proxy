@@ -25,6 +25,22 @@ package(default_visibility = ["//visibility:public"])
 licenses(["notice"])
 
 envoy_cc_library(
+    name = "context",
+    srcs = [
+        "context.cc",
+    ],
+    hdrs = [
+        "context.h",
+    ],
+    repository = "@envoy",
+    deps = [
+        "//extensions/common:node_info_fb_cc",
+        "//extensions/common:util",
+        "@proxy_wasm_cpp_host//:null_lib",
+    ],
+)
+
+envoy_cc_library(
     name = "stackdriver_plugin",
     srcs = [
         "stackdriver.cc",
@@ -35,7 +51,7 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
-        "//extensions/common:context",
+        ":context",
         "//extensions/common:proto_util",
         "//extensions/stackdriver/common:constants",
         "//extensions/stackdriver/config/v1alpha1:stackdriver_plugin_config_cc_proto",

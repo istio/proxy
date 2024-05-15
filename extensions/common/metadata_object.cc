@@ -16,6 +16,7 @@
 
 #include "absl/strings/str_join.h"
 #include "flatbuffers/flatbuffers.h"
+#include "extensions/common/node_info_bfbs_generated.h"
 #include "source/common/common/hash.h"
 
 namespace Istio {
@@ -213,14 +214,14 @@ std::string convertWorkloadMetadataToFlatNode(const WorkloadMetadataObject& obj)
   }
 
   labels.push_back(
-      Wasm::Common::CreateKeyVal(fbb, fbb.CreateString("service.istio.io/canonical-name"),
+      Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(CanonicalNameLabel),
                                  fbb.CreateString(toStdStringView(obj.canonical_name_))));
   labels.push_back(
-      Wasm::Common::CreateKeyVal(fbb, fbb.CreateString("service.istio.io/canonical-revision"),
+      Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(CanonicalRevisionLabel),
                                  fbb.CreateString(toStdStringView(obj.canonical_revision_))));
-  labels.push_back(Wasm::Common::CreateKeyVal(fbb, fbb.CreateString("app"),
+  labels.push_back(Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(AppLabel),
                                               fbb.CreateString(toStdStringView(obj.app_name_))));
-  labels.push_back(Wasm::Common::CreateKeyVal(fbb, fbb.CreateString("version"),
+  labels.push_back(Wasm::Common::CreateKeyVal(fbb, fbb.CreateString(VersionLabel),
                                               fbb.CreateString(toStdStringView(obj.app_version_))));
 
   auto labels_offset = fbb.CreateVectorOfSortedTables(&labels);
@@ -251,19 +252,19 @@ WorkloadMetadataObject convertFlatNodeToWorkloadMetadata(const Wasm::Common::Fla
   absl::string_view app_name;
   absl::string_view app_version;
   if (labels) {
-    const auto* name_iter = labels->LookupByKey("service.istio.io/canonical-name");
+    const auto* name_iter = labels->LookupByKey(CanonicalNameLabel);
     const auto* name = name_iter ? name_iter->value() : nullptr;
     canonical_name = toAbslStringView(name);
 
-    const auto* revision_iter = labels->LookupByKey("service.istio.io/canonical-revision");
+    const auto* revision_iter = labels->LookupByKey(CanonicalRevisionLabel);
     const auto* revision = revision_iter ? revision_iter->value() : nullptr;
     canonical_revision = toAbslStringView(revision);
 
-    const auto* app_iter = labels->LookupByKey("app");
+    const auto* app_iter = labels->LookupByKey(AppLabel);
     const auto* app = app_iter ? app_iter->value() : nullptr;
     app_name = toAbslStringView(app);
 
-    const auto* version_iter = labels->LookupByKey("version");
+    const auto* version_iter = labels->LookupByKey(VersionLabel);
     const auto* version = version_iter ? version_iter->value() : nullptr;
     app_version = toAbslStringView(version);
   }
@@ -310,6 +311,11 @@ convertEndpointMetadata(const std::string& endpoint_encoding) {
   // TODO: we cannot determine workload type from the encoding.
   return absl::make_optional<WorkloadMetadataObject>("", parts[4], parts[1], parts[0], parts[2],
                                                      parts[3], "", "", WorkloadType::Pod, "");
+}
+
+std::string_view nodeInfoSchema() {
+  return std::string_view(reinterpret_cast<const char*>(Wasm::Common::FlatNodeBinarySchema::data()),
+                          Wasm::Common::FlatNodeBinarySchema::size());
 }
 
 } // namespace Common

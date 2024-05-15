@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "extensions/common/context.h"
+#include "extensions/stackdriver/context.h"
 #include "extensions/stackdriver/common/utils.h"
 
 // OpenCensus is full of unused parameters in metric_service.
