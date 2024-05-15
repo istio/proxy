@@ -75,7 +75,7 @@ clean:
 
 .PHONY: gen-extensions-doc
 gen-extensions-doc:
-	buf generate --path extensions/ --path source/extensions/filters
+	buf generate --path source/extensions/filters
 
 gen:
 	@scripts/gen-testdata.sh
