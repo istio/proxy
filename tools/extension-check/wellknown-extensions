@@ -26,3 +26,4 @@ envoy.resource_monitors.downstream_connections
 envoy.route.early_data_policy.default
 envoy.transport_sockets.http_11_proxy
 envoy.upstreams.http.udp
+envoy.tracers.opencensus
