@@ -1,3 +1,8 @@
+load(
+    "@envoy//bazel:envoy_build_system.bzl",
+    "envoy_cc_binary",
+)
+
 # Copyright 2016 Istio Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,10 +20,6 @@
 ################################################################################
 #
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
-load(
-    "@envoy//bazel:envoy_build_system.bzl",
-    "envoy_cc_binary",
-)
 
 exports_files(["LICENSE"])
 
@@ -29,17 +30,18 @@ config_setting(
     },
 )
 
+ISTIO_EXTENSIONS = [
+    "//source/extensions/common/workload_discovery:api_lib",  # Experimental: WIP
+    "//source/extensions/filters/http/alpn:config_lib",
+    "//source/extensions/filters/http/istio_stats",
+    "//source/extensions/filters/http/peer_metadata:filter_lib",
+    "//source/extensions/filters/network/metadata_exchange:config_lib",
+]
+
 envoy_cc_binary(
     name = "envoy",
     repository = "@envoy",
-    deps = [
-        "//extensions/access_log_policy:access_log_policy_lib",
-        "//extensions/stackdriver:stackdriver_plugin",
-        "//source/extensions/common/workload_discovery:api_lib",  # Experimental: WIP
-        "//source/extensions/filters/http/alpn:config_lib",
-        "//source/extensions/filters/http/istio_stats",
-        "//source/extensions/filters/http/peer_metadata:filter_lib",
-        "//source/extensions/filters/network/metadata_exchange:config_lib",
+    deps = ISTIO_EXTENSIONS + [
         "@envoy//source/exe:envoy_main_entry_lib",
     ],
 )
