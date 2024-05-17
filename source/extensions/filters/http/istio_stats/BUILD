@@ -17,15 +17,14 @@
 
 load(
     "@envoy//bazel:envoy_build_system.bzl",
-    "envoy_cc_extension",
-    "envoy_extension_package",
+    "envoy_cc_library",
 )
 
-envoy_extension_package()
+package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])
 
-envoy_cc_extension(
+envoy_cc_library(
     name = "istio_stats",
     srcs = ["istio_stats.cc"],
     hdrs = ["istio_stats.h"],
