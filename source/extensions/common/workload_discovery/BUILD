@@ -18,12 +18,10 @@
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_extension",
-    "envoy_cc_test",
-    "envoy_extension_package",
     "envoy_proto_library",
 )
 
-envoy_extension_package()
+package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])
 
