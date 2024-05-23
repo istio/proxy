@@ -427,11 +427,10 @@ public:
                 uint64_t delete_interval_ms)
       : parent_scope_(factory_context.scope()), active_scope_(parent_scope_.createScope("")),
         tls_scope_(factory_context.serverFactoryContext().threadLocal()),
-        rotate_interval_ms_(rotate_interval_ms),
-        delete_interval_ms_(delete_interval_ms) {
+        rotate_interval_ms_(rotate_interval_ms), delete_interval_ms_(delete_interval_ms) {
 
-    tls_scope_.set([&scope = *active_scope_](Event::Dispatcher&){
-        return std::make_shared<TlsCachedScope>(scope);
+    tls_scope_.set([&scope = *active_scope_](Event::Dispatcher&) {
+      return std::make_shared<TlsCachedScope>(scope);
     });
 
     if (rotate_interval_ms_ > 0) {
@@ -456,8 +455,8 @@ public:
   Stats::Scope& scope() { return tls_scope_->_scope; }
 
 private:
-  struct TlsCachedScope:ThreadLocal::ThreadLocalObject{
-    TlsCachedScope(Stats::Scope& scope):_scope(scope) {};
+  struct TlsCachedScope : ThreadLocal::ThreadLocalObject {
+    TlsCachedScope(Stats::Scope& scope) : _scope(scope){};
     std::reference_wrapper<Stats::Scope> _scope;
   };
 
@@ -466,15 +465,14 @@ private:
     draining_scope_ = active_scope_;
     active_scope_ = parent_scope_.createScope("");
     tls_scope_.runOnAllThreads(
-        [&scope = *active_scope_](OptRef<TlsCachedScope> tls_cache) {
-            tls_cache->_scope = scope;
-         },
-         // Start the delete and rotate timer after the new scope has been propagated to all worker threads.
-         // The RotatingScope instance can go away before the dispatcher has a chance to execute the callback
-         // and the still_alive shared_ptr will be deallocated when the current instance is deallocated.
-         // We rely on a weak_ptr to still_alive flag to determine if the instance is still valid.
+        [&scope = *active_scope_](OptRef<TlsCachedScope> tls_cache) { tls_cache->_scope = scope; },
+        // Start the delete and rotate timer after the new scope has been propagated to all worker
+        // threads. The RotatingScope instance can go away before the dispatcher has a chance to
+        // execute the callback and the still_alive shared_ptr will be deallocated when the current
+        // instance is deallocated. We rely on a weak_ptr to still_alive flag to determine if the
+        // instance is still valid.
         [this, maybe_still_alive = std::weak_ptr<bool>(still_alive_)]() -> void {
-          if(!maybe_still_alive.expired()){
+          if (!maybe_still_alive.expired()) {
             delete_timer_->enableTimer(std::chrono::milliseconds(delete_interval_ms_));
             rotate_timer_->enableTimer(std::chrono::milliseconds(rotate_interval_ms_));
           }
@@ -792,8 +790,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
     tags.push_back({context_->tag_, context_->istio_version_.empty() ? context_->unknown_
                                                                      : context_->istio_version_});
 
-    Stats::Utility::gaugeFromStatNames(scope(),
-                                       {context_->stat_namespace_, context_->istio_build_},
+    Stats::Utility::gaugeFromStatNames(scope(), {context_->stat_namespace_, context_->istio_build_},
                                        Stats::Gauge::ImportMode::Accumulate, tags)
         .set(1);
   }
