@@ -32,6 +32,7 @@ namespace Tcp {
 namespace MetadataExchange {
 namespace {
 
+constexpr std::string_view kMetadataPrefix = "wasm.";
 constexpr std::string_view kUpstreamMetadataIdKey = "upstream_peer_id";
 constexpr std::string_view kUpstreamMetadataKey = "upstream_peer";
 constexpr std::string_view kDownstreamMetadataIdKey = "downstream_peer_id";
@@ -299,8 +300,8 @@ void MetadataExchangeFilter::updatePeer(const std::string& fb) {
   auto key = config_->filter_direction_ == FilterDirection::Downstream ? kDownstreamMetadataKey
                                                                        : kUpstreamMetadataKey;
   read_callbacks_->connection().streamInfo().filterState()->setData(
-      absl::StrCat("wasm.", key), std::move(state), StreamInfo::FilterState::StateType::Mutable,
-      StreamInfo::FilterState::LifeSpan::Connection);
+      absl::StrCat(kMetadataPrefix, key), std::move(state),
+      StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::Connection);
 }
 
 void MetadataExchangeFilter::updatePeerId(absl::string_view key, absl::string_view value) {
@@ -310,8 +311,8 @@ void MetadataExchangeFilter::updatePeerId(absl::string_view key, absl::string_vi
   auto state = std::make_unique<::Envoy::Extensions::Filters::Common::Expr::CelState>(prototype);
   state->setValue(value);
   read_callbacks_->connection().streamInfo().filterState()->setData(
-      absl::StrCat("wasm.", key), std::move(state), StreamInfo::FilterState::StateType::Mutable,
-      prototype.life_span_);
+      absl::StrCat(kMetadataPrefix, key), std::move(state),
+      StreamInfo::FilterState::StateType::Mutable, prototype.life_span_);
 }
 
 void MetadataExchangeFilter::getMetadata(google::protobuf::Struct* metadata) {
