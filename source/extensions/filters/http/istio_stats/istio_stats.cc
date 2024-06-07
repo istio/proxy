@@ -94,7 +94,8 @@ bool peerInfoRead(Reporter reporter, const StreamInfo::FilterState& filter_state
           ? "wasm.downstream_peer_id"
           : "wasm.upstream_peer_id";
   return filter_state.hasDataWithName(filter_state_key) ||
-         filter_state.hasDataWithName("envoy.wasm.metadata_exchange.peer_unknown");
+         filter_state.hasDataWithName(
+             "wasm.envoy.wasm.metadata_exchange.peer_unknown"); // kMetadataPrefix+kMetadataNotFoundValue
 }
 
 const Wasm::Common::FlatNode* peerInfo(Reporter reporter,
