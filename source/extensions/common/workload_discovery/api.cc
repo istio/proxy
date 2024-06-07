@@ -143,11 +143,13 @@ private:
         : Config::SubscriptionBase<istio::workload::Workload>(
               parent.factory_context_.messageValidationVisitor(), "uid"),
           parent_(parent) {
-      subscription_ = parent.factory_context_.clusterManager()
-                          .subscriptionFactory()
-                          .subscriptionFromConfigSource(
-                              parent.config_source_, Grpc::Common::typeUrl(getResourceName()),
-                              *parent.scope_, *this, resource_decoder_, {});
+      subscription_ = THROW_OR_RETURN_VALUE(
+          parent.factory_context_.clusterManager()
+              .subscriptionFactory()
+              .subscriptionFromConfigSource(parent.config_source_,
+                                            Grpc::Common::typeUrl(getResourceName()),
+                                            *parent.scope_, *this, resource_decoder_, {}),
+          Config::SubscriptionPtr);
     }
     void start() { subscription_->start({}); }
 
