@@ -55,5 +55,6 @@ func init() {
 		"TestTCPMetadataExchangeNoAlpn",
 		"TestTCPMetadataExchangeWithConnectionTermination",
 		"TestOtelPayload",
+		"TestTCPMetadataNotFoundReporting",
 	}...)
 }
