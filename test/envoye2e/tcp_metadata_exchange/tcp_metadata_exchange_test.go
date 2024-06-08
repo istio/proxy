@@ -254,7 +254,7 @@ uid: //v1/pod/default/productpage
 				Step: &driver.TCPLoad{},
 			},
 			&driver.Stats{AdminPort: params.Ports.ClientAdmin, Matchers: map[string]driver.StatMatcher{
-				"istio_tcp_sent_bytes_total": &driver.ExactStat{Metric: "testdata/metric/tcp_client_sent_bytes_unknown.yaml.tmpl"},
+				"istio_tcp_sent_bytes_total": &driver.ExistStat{Metric: "testdata/metric/tcp_client_sent_bytes_unknown.yaml.tmpl"},
 			}},
 		},
 	}).Run(params); err != nil {

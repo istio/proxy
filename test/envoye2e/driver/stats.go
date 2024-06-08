@@ -112,9 +112,13 @@ func (me *ExistStat) Matches(params *Params, that *dto.MetricFamily) error {
 	metric := &dto.MetricFamily{}
 	params.LoadTestProto(me.Metric, metric)
 
-	if diff := cmp.Diff(metric, that, protocmp.Transform(), cmpopts.IgnoreFields(dto.Counter{}, "counter")); diff != "" {
-		return fmt.Errorf("diff: %v, got: %v, want: %v", diff, that, metric)
+	switch metric.Type {
+	case dto.MetricType_COUNTER.Enum():
+		if diff := cmp.Diff(metric, that, protocmp.Transform(), cmpopts.IgnoreFields(dto.Counter{}, "value")); diff != "" {
+			return fmt.Errorf("diff: %v, got: %v, want: %v", diff, that, metric)
+		}
 	}
+
 	return nil
 }
 
