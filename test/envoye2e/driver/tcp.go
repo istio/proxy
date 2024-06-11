@@ -221,3 +221,31 @@ func (t *InterceptedTCPConnection) Run(p *Params) error {
 }
 
 func (t *InterceptedTCPConnection) Cleanup() {}
+
+type TCPLoad struct {
+	conn *net.Conn
+}
+
+var _ Step = &TCPLoad{}
+
+func (t *TCPLoad) Run(p *Params) error {
+	conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", p.Ports.ClientPort))
+	if err != nil {
+		return fmt.Errorf("failed to connect to tcp server: %v", err)
+	}
+	t.conn = &conn
+
+	go func() {
+		for {
+			fmt.Fprintf(conn, "ping\n")
+			time.Sleep(1 * time.Second)
+		}
+	}()
+	return nil
+}
+
+func (t *TCPLoad) Cleanup() {
+	if t.conn != nil {
+		(*t.conn).Close()
+	}
+}

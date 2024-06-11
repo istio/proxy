@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -100,6 +101,28 @@ func (me *ExactStat) Matches(params *Params, that *dto.MetricFamily) error {
 }
 
 var _ StatMatcher = &ExactStat{}
+
+// ExistStat matches if the metric exists in the output,
+// but does not compare the Counter.
+type ExistStat struct {
+	Metric string
+}
+
+func (me *ExistStat) Matches(params *Params, that *dto.MetricFamily) error {
+	metric := &dto.MetricFamily{}
+	params.LoadTestProto(me.Metric, metric)
+
+	switch metric.Type {
+	case dto.MetricType_COUNTER.Enum():
+		if diff := cmp.Diff(metric, that, protocmp.Transform(), cmpopts.IgnoreFields(dto.Counter{}, "value")); diff != "" {
+			return fmt.Errorf("diff: %v, got: %v, want: %v", diff, that, metric)
+		}
+	}
+
+	return nil
+}
+
+var _ StatMatcher = &ExistStat{}
 
 type PartialStat struct {
 	Metric string
