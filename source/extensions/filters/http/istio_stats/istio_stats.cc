@@ -1234,8 +1234,11 @@ private:
       tags_.push_back({context_.destination_service_name_, service_host_name.empty()
                                                                ? context_.unknown_
                                                                : pool_.add(service_host_name)});
-      tags_.push_back({context_.destination_service_namespace_,
-                       !service_namespace.empty() ? pool_.add(service_namespace) : context_.unknown_});
+      tags_.push_back({context_.destination_service_namespace_, !service_namespace.empty()
+                                                                    ? pool_.add(service_namespace)
+                                                                    : (peer ?
+                                                                        pool_.add(peer->namespace_name_)
+                                                                        : context_.unknown_)});
       tags_.push_back({context_.destination_cluster_, peer && !peer->cluster_name_.empty()
                                                           ? pool_.add(peer->cluster_name_)
                                                           : context_.unknown_});
