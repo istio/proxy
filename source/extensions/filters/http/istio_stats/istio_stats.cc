@@ -1011,6 +1011,7 @@ private:
     // Compute destination service with client-side fallbacks.
     absl::string_view service_host;
     absl::string_view service_host_name;
+    absl::string_view service_namespace;
     if (!config_->disable_host_header_fallback_) {
       const auto* headers = info.getRequestHeaders();
       if (headers && headers->Host()) {
@@ -1045,6 +1046,10 @@ private:
                   service_host = host_it->second.string_value();
                 }
                 const auto& name_it = service.find("name");
+                const auto& namespace_it = service.find("namespace");
+                if (namespace_it != service.end()) {
+                  service_namespace = namespace_it->second.string_value();
+                }
                 if (name_it != service.end()) {
                   service_host_name = name_it->second.string_value();
                 } else {
@@ -1229,8 +1234,11 @@ private:
       tags_.push_back({context_.destination_service_name_, service_host_name.empty()
                                                                ? context_.unknown_
                                                                : pool_.add(service_host_name)});
-      tags_.push_back({context_.destination_service_namespace_,
-                       !peer_namespace.empty() ? pool_.add(peer_namespace) : context_.unknown_});
+      tags_.push_back(
+          {context_.destination_service_namespace_,
+           !service_namespace.empty()
+               ? pool_.add(service_namespace)
+               : (!peer_namespace.empty() ? pool_.add(peer_namespace) : context_.unknown_)});
       tags_.push_back({context_.destination_cluster_, peer && !peer->cluster_name_.empty()
                                                           ? pool_.add(peer->cluster_name_)
                                                           : context_.unknown_});
