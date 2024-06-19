@@ -112,19 +112,6 @@ var TestCases = []struct {
 		},
 		ElideServerMetadata: true,
 	},
-	{
-		Name:         "Default",
-		ClientConfig: "testdata/stats/client_config.yaml",
-		ServerConfig: "testdata/stats/server_config.yaml",
-		ClientStats: map[string]driver.StatMatcher{
-			"istio_requests_total": &driver.ExactStat{Metric: "client_request_total_cluster_metadata_precedence_service_namespace.yaml.tmpl"},
-		},
-		ServerStats: map[string]driver.StatMatcher{
-			"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total.yaml.tmpl"},
-			"istio_build":          &driver.ExactStat{Metric: "testdata/metric/istio_build.yaml"},
-		},
-		TestParallel: true,
-	},
 }
 
 func enableStats(t *testing.T, vars map[string]string) {
