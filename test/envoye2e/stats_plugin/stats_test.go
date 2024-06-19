@@ -112,6 +112,19 @@ var TestCases = []struct {
 		},
 		ElideServerMetadata: true,
 	},
+	{
+		Name:         "Default",
+		ClientConfig: "testdata/stats/client_config.yaml",
+		ServerConfig: "testdata/stats/server_config.yaml",
+		ClientStats: map[string]driver.StatMatcher{
+			"istio_requests_total": &driver.ExactStat{Metric: "client_request_total_cluster_metadata_precedence_service_namespace.yaml.tmpl"},
+		},
+		ServerStats: map[string]driver.StatMatcher{
+			"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total.yaml.tmpl"},
+			"istio_build":          &driver.ExactStat{Metric: "testdata/metric/istio_build.yaml"},
+		},
+		TestParallel: true,
+	},
 }
 
 func enableStats(t *testing.T, vars map[string]string) {
@@ -762,6 +775,46 @@ func TestStatsExpiry(t *testing.T) {
 			&driver.Stats{AdminPort: params.Ports.ClientAdmin, Matchers: map[string]driver.StatMatcher{
 				"istio_requests_total": &driver.MissingStat{Metric: "istio_requests_total"},
 			}},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStatsDestinationServiceNamespacePrecedence(t *testing.T) {
+	clientStats := map[string]driver.StatMatcher{
+		"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/client_request_total_cluster_metadata_precedence.yaml.tmpl"},
+	}
+	params := driver.NewTestParams(t, map[string]string{
+		"RequestCount":            "10",
+		"StatsConfig":             driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+		"StatsFilterClientConfig": driver.LoadTestJSON("testdata/stats/client_config.yaml"),
+		"StatsFilterServerConfig": driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+	}, envoye2e.ProxyE2ETests)
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	enableStats(t, params.Vars)
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			&driver.Update{
+				Node:      "client",
+				Version:   "0",
+				Clusters:  []string{params.LoadTestData("testdata/cluster/server.yaml.tmpl")},
+				Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")},
+			},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client_cluster_metadata_precedence.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.Repeat{
+				N: 10,
+				Step: &driver.HTTPCall{
+					Port: params.Ports.ClientPort,
+					Body: "hello, world!",
+				},
+			},
+			&driver.Stats{AdminPort: params.Ports.ClientAdmin, Matchers: clientStats},
 		},
 	}).Run(params); err != nil {
 		t.Fatal(err)
