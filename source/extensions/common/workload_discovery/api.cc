@@ -93,8 +93,8 @@ public:
         const uint64_t high = absl::Uint128High64(ipv6->address());
         const uint64_t low = absl::Uint128Low64(ipv6->address());
         std::array<uint8_t, 16> output;
-        absl::little_endian::Store64(&output, high);
-        absl::little_endian::Store64(&output[8], low);
+        absl::little_endian::Store64(&output, low);
+        absl::little_endian::Store64(&output[8], high);
         return tls_->get(std::string(output.begin(), output.end()));
       }
     }
