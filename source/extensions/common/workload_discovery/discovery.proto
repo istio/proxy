@@ -26,6 +26,14 @@ option go_package = "test/envoye2e/workloadapi";
  * 2) append bootstrap extension stub;
  */
 
+// NetworkMode indicates how the addresses of the workload should be treated.
+enum NetworkMode {
+  // STANDARD means that the workload is uniquely identified by its address (within its network).
+  STANDARD = 0;
+  // HOST_NETWORK means the workload has an IP address that is shared by many workloads. The data plane should avoid
+  // attempting to lookup these workloads by IP address (which could return the wrong result).
+  HOST_NETWORK = 1;
+}
 
 // Workload represents a workload - an endpoint (or collection behind a hostname).
 // The xds primary key is "uid" as defined on the workload below.
@@ -193,7 +201,7 @@ message ApplicationTunnel {
     PROXY = 1;
   }
 
-  // A target natively handles this type of traffic.  
+  // A target natively handles this type of traffic.
   Protocol protocol = 1;
 
   // optional: if set, traffic should be sent to this port after the last zTunnel hop
