@@ -16,6 +16,7 @@ package client_test
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -32,10 +33,15 @@ var ProtocolOptions = []struct {
 		Name: "h2",
 		Quic: false,
 	},
-	{
-		Name: "quic",
-		Quic: true,
-	},
+}
+
+func init() {
+	if os.Getenv("ENVOY_OPENSSL") != "1" {
+		ProtocolOptions = append(ProtocolOptions, struct {
+			Name string
+			Quic bool
+		}{Name: "quic", Quic: true})
+	}
 }
 
 func TestBasicTCPFlow(t *testing.T) {

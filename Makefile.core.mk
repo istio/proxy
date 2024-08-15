@@ -32,7 +32,12 @@ BAZEL_STARTUP_ARGS := --client_debug $(BAZEL_STARTUP_ARGS)
 BAZEL_BUILD_ARGS := -s --sandbox_debug --verbose_failures $(BAZEL_BUILD_ARGS)
 endif
 
-BAZEL_CONFIG =
+ifeq ($(ENVOY_OPENSSL),1)
+BAZEL_CONFIG = --config=openssl
+else
+# Enable libc++ and C++20 by default on BoringSSL
+BAZEL_CONFIG = --config=libc++20
+endif
 
 UNAME := $(shell uname)
 ifeq ($(UNAME),Linux)
