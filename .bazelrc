@@ -13,9 +13,6 @@ build:remote --remote_timeout=7200
 # Istio specific Bazel build/test options.
 # ========================================
 
-# Enable libc++ and C++20 by default.
-build:linux --config=libc++20
-
 # put /usr/local/bin before /usr/bin to avoid picking up wrong python3.6 when building envoy.tls.key_providers.cryptomb
 build:linux --action_env=PATH=/usr/lib/llvm/bin:/usr/local/bin:/bin:/usr/bin
 
@@ -69,3 +66,8 @@ build:macos --cxxopt=-Wno-range-loop-analysis
 build:macos --host_cxxopt=-Wno-range-loop-analysis
 build:macos --cxxopt=-Wno-deprecated-declarations
 build:macos --host_cxxopt=-Wno-deprecated-declarations
+
+# OpenSSL build
+build:openssl --config=clang
+build:openssl --action_env=ENVOY_OPENSSL=1
+build:openssl --deleted_packages=@envoy//test/common/quic,@envoy//test/common/quic/platform --@envoy//bazel:http3=false

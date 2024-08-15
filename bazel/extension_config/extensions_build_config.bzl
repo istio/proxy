@@ -1,4 +1,4 @@
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@pick_envoy//:load_envoy.bzl", "OPENSSL_DISABLED_EXTENSIONS")
 
 ENVOY_EXTENSIONS = {
     #
@@ -518,8 +518,8 @@ ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.network.connection_balance.dlb",
 ]
 
-EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_DISABLED_EXTENSIONS] +
-                  [(k,v) for k, v in ENVOY_CONTRIB_EXTENSIONS.items() if k in ISTIO_ENABLED_CONTRIB_EXTENSIONS])
+EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_DISABLED_EXTENSIONS + OPENSSL_DISABLED_EXTENSIONS] +
+                  [(k,v) for k, v in ENVOY_CONTRIB_EXTENSIONS.items() if k in ISTIO_ENABLED_CONTRIB_EXTENSIONS and not k in OPENSSL_DISABLED_EXTENSIONS])
 
 
 # These can be changed to ["//visibility:public"], for  downstream builds which
