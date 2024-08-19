@@ -479,7 +479,8 @@ private:
 struct Config : public Logger::Loggable<Logger::Id::filter> {
   Config(const stats::PluginConfig& proto_config,
          Server::Configuration::FactoryContext& factory_context)
-      : context_(factory_context.serverFactoryContext().singletonManager().getTyped<Context>(
+      : factory_context_(factory_context),
+        context_(factory_context.serverFactoryContext().singletonManager().getTyped<Context>(
             SINGLETON_MANAGER_REGISTERED_NAME(Context),
             [&factory_context] {
               return std::make_shared<Context>(
@@ -768,7 +769,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
     tags.push_back({context_->tag_, context_->istio_version_.empty() ? context_->unknown_
                                                                      : context_->istio_version_});
 
-    Stats::Utility::gaugeFromStatNames(*scope(),
+    Stats::Utility::gaugeFromStatNames(factory_context_.scope(),
                                        {context_->stat_namespace_, context_->istio_build_},
                                        Stats::Gauge::ImportMode::Accumulate, tags)
         .set(1);
@@ -777,6 +778,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
   Reporter reporter() const { return reporter_; }
   Stats::Scope* scope() { return scope_.scope(); }
 
+  Server::Configuration::FactoryContext& factory_context_;
   ContextSharedPtr context_;
   RotatingScope scope_;
   Reporter reporter_;
