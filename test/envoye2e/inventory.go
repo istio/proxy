@@ -34,7 +34,6 @@ func init() {
 		"TestPassthroughCONNECT/h2",
 		"TestHTTPExchange",
 		"TestNativeHTTPExchange",
-		"TestHTTPLocalRatelimit",
 		"TestStats403Failure/#00",
 		"TestStatsECDS/#00",
 		"TestStatsEndpointLabels/#00",
@@ -54,7 +53,6 @@ func init() {
 		"TestTCPMetadataExchange/true",
 		"TestTCPMetadataExchangeNoAlpn",
 		"TestTCPMetadataExchangeWithConnectionTermination",
-		"TestOtelPayload",
 		"TestTCPMetadataNotFoundReporting",
 		"TestStatsDestinationServiceNamespacePrecedence",
 	}...)
