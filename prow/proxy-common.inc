@@ -31,7 +31,8 @@ GOPATH=/home/prow/go
 ROOT=/go/src
 
 # Configure available resources and disable IPv6 tests.
-export BAZEL_BUILD_ARGS="--verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=errors"
+BAZEL_BUILD_ARGS="${BAZEL_BUILD_EXTRA_ARGS:-} --verbose_failures --test_env=ENVOY_IP_TEST_VERSIONS=v4only --test_output=errors"
+export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS# }"
 
 # Override envoy.
 if [[ "${ENVOY_REPOSITORY:-}" && "${ENVOY_PREFIX:-}" ]]; then
