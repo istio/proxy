@@ -799,6 +799,7 @@ func TestStatsExpiry(t *testing.T) {
 			&driver.Sleep{Duration: 4 * time.Second},
 			&driver.Stats{AdminPort: params.Ports.ClientAdmin, Matchers: map[string]driver.StatMatcher{
 				"istio_requests_total": &driver.MissingStat{Metric: "istio_requests_total"},
+				"istio_build":          &driver.ExactStat{Metric: "testdata/metric/istio_build.yaml"},
 			}},
 		},
 	}).Run(params); err != nil {

@@ -493,6 +493,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         disable_host_header_fallback_(proto_config.disable_host_header_fallback()),
         report_duration_(
             PROTOBUF_GET_MS_OR_DEFAULT(proto_config, tcp_reporting_duration, /* 5s */ 5000)) {
+    recordVersion(factory_context);
     reporter_ = Reporter::ClientSidecar;
     switch (proto_config.reporter()) {
     case stats::Reporter::UNSPECIFIED:
@@ -763,13 +764,13 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
     bool evaluated_{false};
   };
 
-  void recordVersion() {
+  void recordVersion(Server::Configuration::FactoryContext& factory_context) {
     Stats::StatNameTagVector tags;
     tags.push_back({context_->component_, context_->proxy_});
     tags.push_back({context_->tag_, context_->istio_version_.empty() ? context_->unknown_
                                                                      : context_->istio_version_});
 
-    Stats::Utility::gaugeFromStatNames(*scope(),
+    Stats::Utility::gaugeFromStatNames(factory_context.scope(),
                                        {context_->stat_namespace_, context_->istio_build_},
                                        Stats::Gauge::ImportMode::Accumulate, tags)
         .set(1);
@@ -1266,7 +1267,6 @@ absl::StatusOr<Http::FilterFactoryCb> IstioStatsFilterConfigFactory::createFilte
       CustomStatNamespace);
   ConfigSharedPtr config = std::make_shared<Config>(
       dynamic_cast<const stats::PluginConfig&>(proto_config), factory_context);
-  config->recordVersion();
   return [config](Http::FilterChainFactoryCallbacks& callbacks) {
     auto filter = std::make_shared<IstioStatsFilter>(config);
     callbacks.addStreamFilter(filter);
@@ -1286,7 +1286,6 @@ IstioStatsNetworkFilterConfigFactory::createFilterFactoryFromProto(
       CustomStatNamespace);
   ConfigSharedPtr config = std::make_shared<Config>(
       dynamic_cast<const stats::PluginConfig&>(proto_config), factory_context);
-  config->recordVersion();
   return [config](Network::FilterManager& filter_manager) {
     filter_manager.addReadFilter(std::make_shared<IstioStatsFilter>(config));
   };
