@@ -57,14 +57,6 @@ build_envoy: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_REL)
 build_envoy: BAZEL_TARGETS = //:envoy
 build_envoy: build
 
-build_envoy_tsan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_TSAN)
-build_envoy_tsan: BAZEL_TARGETS = //:envoy
-build_envoy_tsan: build
-
-build_envoy_asan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
-build_envoy_asan: BAZEL_TARGETS = //:envoy
-build_envoy_asan: build
-
 check_wasm:
 	@true
 
@@ -76,10 +68,7 @@ gen-extensions-doc:
 	buf generate --path source/extensions/filters
 
 test:
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(TEST_ENVOY_TARGET) $(BAZEL_TEST_TARGETS)
-	if [ -n "$(BAZEL_TEST_TARGETS)" ]; then \
-	  bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(BAZEL_TEST_TARGETS); \
-	fi
+	bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(BAZEL_TEST_TARGETS)
 
 test_asan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
 test_asan: test
