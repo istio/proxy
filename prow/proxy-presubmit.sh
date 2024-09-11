@@ -25,7 +25,6 @@ source "${WD}/proxy-common.inc"
 
 echo 'Code Check'
 make lint
-make gen-check
 
 echo 'Bazel Build'
 make build

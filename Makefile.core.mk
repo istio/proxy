@@ -20,8 +20,6 @@ BAZEL_BUILD_ARGS ?=
 BAZEL_TARGETS ?= //...
 # Don't build Debian packages and Docker images in tests.
 BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS}
-E2E_TEST_TARGETS ?= $$(go list ./...)
-E2E_TEST_FLAGS := -p=1 -parallel=1
 HUB ?=
 TAG ?=
 repo_dir := .
@@ -77,61 +75,29 @@ clean:
 gen-extensions-doc:
 	buf generate --path source/extensions/filters
 
-gen:
-	@scripts/gen-testdata.sh
-
-gen-check:
-	@scripts/gen-testdata.sh -c
-
 test:
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(TEST_ENVOY_TARGET) $(BAZEL_TEST_TARGETS)
 	if [ -n "$(BAZEL_TEST_TARGETS)" ]; then \
 	  bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(BAZEL_TEST_TARGETS); \
 	fi
-	if [ -n "$(E2E_TEST_TARGETS)" ]; then \
-	  env ENVOY_DEBUG=$(TEST_ENVOY_DEBUG) ENVOY_PATH=$(shell bazel $(BAZEL_STARTUP_ARGS) info $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) bazel-bin)/envoy $(E2E_TEST_ENVS) GO111MODULE=on go test -timeout 30m $(E2E_TEST_FLAGS) $(E2E_TEST_TARGETS); \
-	fi
 
 test_asan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_ASAN)
-test_asan: E2E_TEST_ENVS = ASAN=true
 test_asan: test
 
 test_tsan: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_TSAN)
-test_tsan: E2E_TEST_ENVS = TSAN=true
-test_tsan: TEST_ENVOY_DEBUG = debug # tsan is too slow for trace
 test_tsan: test
 
 check:
 	@echo >&2 "Please use \"make lint\" instead."
 	@false
 
-lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts gen-extensions-doc
+lint: lint-copyright-banner lint-scripts gen-extensions-doc
 	@scripts/check-repository.sh
 	@scripts/check-style.sh
 	@scripts/verify-last-flag-matches-upstream.sh
 
 protoc = protoc -I common-protos -I extensions
 protoc_gen_docs_plugin := --docs_out=camel_case_fields=false,warnings=true,per_file=true,mode=html_fragment_with_front_matter:$(repo_dir)/
-
-metadata_exchange_path := extensions/metadata_exchange
-metadata_exchange_protos := $(wildcard $(metadata_exchange_path)/*.proto)
-metadata_exchange_docs := $(metadata_exchange_protos:.proto=.pb.html)
-$(metadata_exchange_docs): $(metadata_exchange_protos)
-	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(metadata_exchange_path) $^
-
-stackdriver_path := extensions/stackdriver/config/v1alpha1
-stackdriver_protos := $(wildcard $(stackdriver_path)/*.proto)
-stackdriver_docs := $(stackdriver_protos:.proto=.pb.html)
-$(stackdriver_docs): $(stackdriver_protos)
-	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(stackdriver_path) $^
-
-accesslog_policy_path := extensions/access_log_policy/config/v1alpha1
-accesslog_policy_protos := $(wildcard $(accesslog_policy_path)/*.proto)
-accesslog_policy_docs := $(accesslog_policy_protos:.proto=.pb.html)
-$(accesslog_policy_docs): $(accesslog_policy_protos)
-	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(accesslog_policy_path) $^
-
-extensions-docs:  $(metadata_exchange_docs) $(stackdriver_docs) $(accesslog_policy_docs)
 
 test_release:
 ifeq "$(shell uname -m)" "x86_64"
@@ -157,6 +123,6 @@ exportcache:
 	@chmod +w /work/out/$(TARGET_OS)_$(TARGET_ARCH)/envoy
 	@cp -a $(BAZEL_BIN_PATH)/**/*wasm /work/out/$(TARGET_OS)_$(TARGET_ARCH) &> /dev/null || true
 
-.PHONY: build clean test check extensions-proto
+.PHONY: build clean test check
 
 include common/Makefile.common.mk
