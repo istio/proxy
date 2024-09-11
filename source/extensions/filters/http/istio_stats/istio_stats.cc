@@ -841,13 +841,13 @@ public:
     stream_.evaluate(info, request_headers, response_headers, response_trailers);
 
     // Set the request protocol tag.
-    tags_.push_back({context_.request_protocol_, is_grpc_ ? context_.grpc_ : context_.http_});
+    tags_.emplace_back(context_.request_protocol_, is_grpc_ ? context_.grpc_ : context_.http_);
 
     // Set the response code tag.
     const auto response_code = info.responseCode().value_or(0);
     absl::string_view response_code_string =
         Http::CodeUtility::toString(static_cast<Http::Code>(response_code));
-    tags_.push_back({context_.response_code_, pool_.add(response_code_string)});
+    tags_.emplace_back(context_.response_code_, pool_.add(response_code_string));
 
     // Set gRPC response status if applicable.
     Stats::StatName grpc_response_status = context_.empty_; // Change from string_view to StatName
@@ -860,11 +860,11 @@ public:
       grpc_response_status =
           optional_status ? pool_.add(absl::StrCat(optional_status.value())) : context_.empty_;
     }
-    tags_.push_back({context_.grpc_response_status_, grpc_response_status});
+    tags_.emplace_back(context_.grpc_response_status_, grpc_response_status);
 
     // Populate response flags and connection security details.
-    tags_.push_back(
-        {context_.response_flags_, pool_.add(StreamInfo::ResponseFlagUtils::toShortString(info))});
+    tags_.emplace_back(context_.response_flags_,
+                       pool_.add(StreamInfo::ResponseFlagUtils::toShortString(info)));
 
     populateFlagsAndConnectionSecurity(info);
 
