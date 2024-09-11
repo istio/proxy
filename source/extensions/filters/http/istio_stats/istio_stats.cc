@@ -23,6 +23,7 @@
 #include "extensions/common/metadata_object.h"
 #include "parser/parser.h"
 #include "source/common/grpc/common.h"
+#include "source/common/http/codes.h"
 #include "source/common/http/header_map_impl.h"
 #include "source/common/http/header_utility.h"
 #include "source/common/network/utility.h"
@@ -827,37 +828,47 @@ public:
   // AccessLog::Instance
   void log(const Formatter::HttpFormatterContext& log_context,
            const StreamInfo::StreamInfo& info) override {
+    // Clear the tags vector to ensure we are not appending to existing tags from a previous log
+    // call.
+    tags_.clear();
+
     const Http::RequestHeaderMap* request_headers = &log_context.requestHeaders();
     const Http::ResponseHeaderMap* response_headers = &log_context.responseHeaders();
     const Http::ResponseTrailerMap* response_trailers = &log_context.responseTrailers();
 
-    reportHelper(true);
-    if (is_grpc_) {
-      tags_.push_back({context_.request_protocol_, context_.grpc_});
-    } else {
-      tags_.push_back({context_.request_protocol_, context_.http_});
-    }
+    // Evaluate the end stream override expressions for HTTP. This may change values for periodic
+    // metrics.
+    stream_.evaluate(info, request_headers, response_headers, response_trailers);
 
-    // TODO: copy Http::CodeStatsImpl version for status codes and flags.
-    tags_.push_back(
-        {context_.response_code_, pool_.add(absl::StrCat(info.responseCode().value_or(0)))});
+    // Set the request protocol tag.
+    tags_.push_back({context_.request_protocol_, is_grpc_ ? context_.grpc_ : context_.http_});
+
+    // Set the response code tag.
+    const auto response_code = info.responseCode().value_or(0);
+    absl::string_view response_code_string =
+        Http::CodeUtility::toString(static_cast<Http::Code>(response_code));
+    tags_.push_back({context_.response_code_, pool_.add(response_code_string)});
+
+    // Set gRPC response status if applicable.
+    Stats::StatName grpc_response_status = context_.empty_; // Change from string_view to StatName
     if (is_grpc_) {
-      auto const& optional_status = Grpc::Common::getGrpcStatus(
+      const auto optional_status = Grpc::Common::getGrpcStatus(
           response_trailers ? *response_trailers
                             : *Http::StaticEmptyHeaders::get().response_trailers,
           response_headers ? *response_headers : *Http::StaticEmptyHeaders::get().response_headers,
           info);
-      tags_.push_back(
-          {context_.grpc_response_status_,
-           optional_status ? pool_.add(absl::StrCat(optional_status.value())) : context_.empty_});
-    } else {
-      tags_.push_back({context_.grpc_response_status_, context_.empty_});
+      grpc_response_status =
+          optional_status ? pool_.add(absl::StrCat(optional_status.value())) : context_.empty_;
     }
+    tags_.push_back({context_.grpc_response_status_, grpc_response_status});
+
+    // Populate response flags and connection security details.
+    tags_.push_back(
+        {context_.response_flags_, pool_.add(StreamInfo::ResponseFlagUtils::toShortString(info))});
+
     populateFlagsAndConnectionSecurity(info);
 
-    // Evaluate the end stream override expressions for HTTP. This may change values for periodic
-    // metrics.
-    stream_.evaluate(info, request_headers, response_headers, response_trailers);
+    // Record metrics.
     stream_.addCounter(context_.requests_total_, tags_);
     auto duration = info.requestComplete();
     if (duration.has_value()) {
@@ -872,7 +883,12 @@ public:
       stream_.recordHistogram(context_.response_bytes_, Stats::Histogram::Unit::Bytes, tags_,
                               meter->wireBytesSent());
     }
+
+    // Record custom metrics.
     stream_.recordCustomMetrics();
+
+    // Finalize reporting for this stream (cleanup and disable timer).
+    reportHelper(true);
   }
 
   // Network::ReadFilter

@@ -42,6 +42,7 @@ envoy_cc_library(
         "@envoy//envoy/singleton:manager_interface",
         "@envoy//envoy/stream_info:filter_state_interface",
         "@envoy//source/common/grpc:common_lib",
+        "@envoy//source/common/http:codes_lib",
         "@envoy//source/common/http:header_map_lib",
         "@envoy//source/common/http:header_utility_lib",
         "@envoy//source/common/network:utility_lib",
