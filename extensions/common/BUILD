@@ -96,15 +96,13 @@ envoy_extension_cc_benchmark_binary(
         "//conditions:default": [],
     }),
     extension_names = ["envoy.wasm.runtime.null"],
-    external_deps = [
-        "benchmark",
-    ],
     repository = "@envoy",
     deps = select({
         "@envoy//bazel:linux": [
             ":metadata_object_lib",
             ":node_info_fb_cc",
             ":proto_util",
+            "@com_github_google_benchmark//:benchmark",
             "@envoy//source/common/stream_info:filter_state_lib",
             "@envoy//source/extensions/filters/common/expr:cel_state_lib",
             "@envoy//test/test_common:status_utility_lib",
