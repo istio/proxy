@@ -46,7 +46,6 @@ envoy_cc_library(
         "@envoy//source/common/http:header_utility_lib",
         "@envoy//source/common/network:utility_lib",
         "@envoy//source/common/stream_info:utility_lib",
-        "@envoy//source/extensions/filters/common/expr:cel_state_lib",
         "@envoy//source/extensions/filters/common/expr:context_lib",
         "@envoy//source/extensions/filters/common/expr:evaluator_lib",
         "@envoy//source/extensions/filters/http/common:pass_through_filter_lib",

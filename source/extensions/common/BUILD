@@ -20,32 +20,16 @@ load(
     "envoy_cc_library",
     "envoy_cc_test",
 )
+load(
+    "@com_github_google_flatbuffers//:build_defs.bzl",
+    "DEFAULT_FLATC_ARGS",
+    "flatbuffer_library_public",
+)
+load(
+    "@envoy//test/extensions:extensions_build_system.bzl",
+    "envoy_extension_cc_benchmark_binary",
+)
 
 package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])
-
-envoy_cc_library(
-    name = "metadata_object_lib",
-    srcs = ["metadata_object.cc"],
-    hdrs = ["metadata_object.h"],
-    repository = "@envoy",
-    deps = [
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:optional",
-        "@envoy//envoy/common:hashable_interface",
-        "@envoy//envoy/registry",
-        "@envoy//envoy/stream_info:filter_state_interface",
-        "@envoy//source/common/common:hash_lib",
-    ],
-)
-
-envoy_cc_test(
-    name = "metadata_object_test",
-    srcs = ["metadata_object_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":metadata_object_lib",
-        "@envoy//envoy/registry",
-    ],
-)

@@ -598,7 +598,7 @@ const BackendMetadata = `
 namespace: default
 workload_name: ratings-v1
 canonical_name: ratings
-canonical_revision: version-1
+canonical_revision: v1
 uid: //v1/pod/default/ratings
 service_account: ratings
 trust_domain: cluster.global

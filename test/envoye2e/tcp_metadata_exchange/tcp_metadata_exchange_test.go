@@ -72,8 +72,8 @@ func TestTCPMetadataExchange(t *testing.T) {
 namespace: default
 workload_name: productpage-v1
 workload_type: DEPLOYMENT
-canonical_name: productpage-v1
-canonical_revision: version-1
+canonical_name: productpage
+canonical_revision: v1
 cluster_id: client-cluster
 uid: //v1/pod/default/productpage
 `}, {
@@ -83,7 +83,7 @@ namespace: default
 workload_name: ratings-v1
 workload_type: DEPLOYMENT
 canonical_name: ratings
-canonical_revision: version-1
+canonical_revision: v1
 cluster_id: server-cluster
 uid: //v1/pod/default/ratings
 `},
@@ -240,8 +240,8 @@ func TestTCPMetadataNotFoundReporting(t *testing.T) {
 namespace: default
 workload_name: productpage-v1
 workload_type: DEPLOYMENT
-canonical_name: productpage-v1
-canonical_revision: version-1
+canonical_name: productpage
+canonical_revision: v1
 cluster_id: client-cluster
 uid: //v1/pod/default/productpage
 `},

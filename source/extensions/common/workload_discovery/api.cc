@@ -62,8 +62,7 @@ Istio::Common::WorkloadMetadataObject convert(const istio::workload::Workload& w
                                      "/sa/", workload.service_account());
   return Istio::Common::WorkloadMetadataObject(
       workload.name(), workload.cluster_id(), workload.namespace_(), workload.workload_name(),
-      workload.canonical_name(), workload.canonical_revision(), workload.canonical_name(),
-      workload.canonical_revision(), workload_type, identity);
+      workload.canonical_name(), workload.canonical_revision(), workload_type, identity);
 }
 } // namespace
 

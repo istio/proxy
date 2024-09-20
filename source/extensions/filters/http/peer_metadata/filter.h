@@ -32,8 +32,7 @@ struct HeaderValues {
 
 using Headers = ConstSingleton<HeaderValues>;
 
-// Peer info in the flatbuffers format.
-using PeerInfo = std::string;
+using PeerInfo = Istio::Common::WorkloadMetadataObject;
 
 struct Context {
   bool request_peer_id_received_{false};
@@ -62,7 +61,7 @@ private:
   absl::optional<PeerInfo> lookup(absl::string_view id, absl::string_view value) const;
   const bool downstream_;
   struct MXCache : public ThreadLocal::ThreadLocalObject {
-    absl::flat_hash_map<std::string, std::string> cache_;
+    absl::flat_hash_map<std::string, PeerInfo> cache_;
   };
   mutable ThreadLocal::TypedSlot<MXCache> tls_;
   const int64_t max_peer_cache_size_{500};
@@ -114,7 +113,7 @@ private:
                : StreamInfo::StreamSharingMayImpactPooling::None;
   }
   void discover(StreamInfo::StreamInfo&, bool downstream, Http::HeaderMap&, Context&) const;
-  void setFilterState(StreamInfo::StreamInfo&, bool downstream, const std::string& value) const;
+  void setFilterState(StreamInfo::StreamInfo&, bool downstream, const PeerInfo& value) const;
   const bool shared_with_upstream_;
   const std::vector<DiscoveryMethodPtr> downstream_discovery_;
   const std::vector<DiscoveryMethodPtr> upstream_discovery_;

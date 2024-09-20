@@ -14,7 +14,6 @@
 
 #include "source/extensions/filters/http/peer_metadata/filter.h"
 
-#include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/common/network/address_impl.h"
 #include "test/common/stream_info/test_util.h"
 #include "test/mocks/stream_info/mocks.h"
@@ -77,23 +76,13 @@ protected:
   }
   void checkNoPeer(bool downstream) {
     EXPECT_FALSE(stream_info_.filterState()->hasDataWithName(
-        downstream ? Istio::Common::WasmDownstreamPeerID : Istio::Common::WasmUpstreamPeerID));
-    EXPECT_FALSE(stream_info_.filterState()->hasDataWithName(
-        downstream ? Istio::Common::WasmDownstreamPeer : Istio::Common::WasmUpstreamPeer));
+        downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer));
   }
   void checkPeerNamespace(bool downstream, const std::string& expected) {
-    EXPECT_TRUE(stream_info_.filterState()->hasDataWithName(
-        downstream ? Istio::Common::WasmDownstreamPeerID : Istio::Common::WasmUpstreamPeerID));
-    const auto* obj = stream_info_.filterState()->getDataReadOnly<Filters::Common::Expr::CelState>(
-        downstream ? Istio::Common::WasmDownstreamPeer : Istio::Common::WasmUpstreamPeer);
+    const auto* obj = stream_info_.filterState()->getDataReadOnly<WorkloadMetadataObject>(
+        downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer);
     ASSERT_NE(nullptr, obj);
-    Protobuf::Arena arena;
-    auto map = obj->exprValue(&arena, false);
-    ASSERT_TRUE(map.IsMap());
-    auto value =
-        (*map.MapOrDie())[google::api::expr::runtime::CelValue::CreateStringView("namespace")];
-    ASSERT_TRUE(value.has_value());
-    EXPECT_EQ(expected, value.value().StringOrDie().value());
+    EXPECT_EQ(expected, obj->namespace_name_);
   }
   void checkShared(bool expected) {
     EXPECT_EQ(expected,

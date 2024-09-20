@@ -23,20 +23,16 @@
 #include "envoy/stats/scope.h"
 #include "envoy/stats/stats_macros.h"
 #include "envoy/stream_info/filter_state.h"
-#include "extensions/common/node_info_bfbs_generated.h"
-#include "extensions/common/proto_util.h"
-#include "extensions/common/metadata_object.h"
 #include "source/common/common/stl_helpers.h"
 #include "source/common/protobuf/protobuf.h"
-#include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/network/metadata_exchange/config/metadata_exchange.pb.h"
 #include "source/extensions/common/workload_discovery/api.h"
+
+#include "extensions/common/metadata_object.h"
 
 namespace Envoy {
 namespace Tcp {
 namespace MetadataExchange {
-
-using ::Envoy::Extensions::Filters::Common::Expr::CelStatePrototype;
 
 /**
  * All MetadataExchange filter stats. @see stats_macros.h
@@ -86,13 +82,6 @@ public:
   // Stats for MetadataExchange Filter.
   MetadataExchangeStats stats_;
 
-  static const CelStatePrototype& nodeInfoPrototype() {
-    static const CelStatePrototype* const prototype = new CelStatePrototype(
-        true, ::Envoy::Extensions::Filters::Common::Expr::CelStateType::FlatBuffers,
-        ::Istio::Common::nodeInfoSchema(), StreamInfo::FilterState::LifeSpan::Connection);
-    return *prototype;
-  }
-
 private:
   MetadataExchangeStats generateStats(const std::string& prefix, Stats::Scope& scope) {
     return MetadataExchangeStats{ALL_METADATA_EXCHANGE_STATS(POOL_COUNTER_PREFIX(scope, prefix))};
@@ -117,7 +106,6 @@ public:
   Network::FilterStatus onWrite(Buffer::Instance& data, bool end_stream) override;
   void initializeReadFilterCallbacks(Network::ReadFilterCallbacks& callbacks) override {
     read_callbacks_ = &callbacks;
-    // read_callbacks_->connection().addConnectionCallbacks(*this);
   }
   void initializeWriteFilterCallbacks(Network::WriteFilterCallbacks& callbacks) override {
     write_callbacks_ = &callbacks;
@@ -137,11 +125,7 @@ private:
   void tryReadProxyData(Buffer::Instance& data);
 
   // Helper function to share the metadata with other filters.
-  void updatePeer(const std::string& fb);
-  void updatePeerId(absl::string_view key, absl::string_view value);
-
-  // Helper function to get Dynamic metadata.
-  void getMetadata(google::protobuf::Struct* metadata);
+  void updatePeer(const Istio::Common::WorkloadMetadataObject& obj);
 
   // Helper function to get metadata id.
   std::string getMetadataId();
@@ -163,7 +147,7 @@ private:
   const std::string ExchangeMetadataHeader = "x-envoy-peer-metadata";
   const std::string ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
 
-  // Type url of google::protobug::struct.
+  // Type url of google::protobuf::struct.
   const std::string StructTypeUrl = "type.googleapis.com/google.protobuf.Struct";
 
   // Captures the state machine of what is going on in the filter.
