@@ -107,7 +107,7 @@ absl::optional<std::string> WorkloadMetadataObject::serializeAsString() const {
 }
 
 absl::optional<uint64_t> WorkloadMetadataObject::hash() const {
-  return Envoy::HashUtil::xxHash64(absl::StrCat(instance_name_, "/", namespace_name_));
+  return Envoy::HashUtil::xxHash64(*serializeAsString());
 }
 
 google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataObject& obj) {

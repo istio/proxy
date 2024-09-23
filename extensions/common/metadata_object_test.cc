@@ -24,15 +24,6 @@ namespace Common {
 
 using ::testing::NiceMock;
 
-TEST(WorkloadMetadataObjectTest, Hash) {
-  WorkloadMetadataObject obj1("foo-pod-12345", "my-cluster", "default", "foo", "foo", "latest",
-                              WorkloadType::Deployment, "");
-  WorkloadMetadataObject obj2("foo-pod-12345", "my-cluster", "default", "bar", "baz", "first",
-                              WorkloadType::Job, "");
-
-  EXPECT_EQ(obj1.hash().value(), obj2.hash().value());
-}
-
 TEST(WorkloadMetadataObjectTest, Baggage) {
   WorkloadMetadataObject deploy("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
                                 "v1alpha3", WorkloadType::Deployment, "");
@@ -69,6 +60,7 @@ void checkStructConversion(const Envoy::StreamInfo::FilterState::Object& data) {
   auto pb = convertWorkloadMetadataToStruct(obj);
   auto obj2 = convertStructToWorkloadMetadata(pb);
   EXPECT_EQ(obj2->serializeAsString(), obj.serializeAsString());
+  EXPECT_EQ(obj2->hash(), obj.hash());
 }
 
 TEST(WorkloadMetadataObjectTest, Conversion) {
