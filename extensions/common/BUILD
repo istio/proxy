@@ -20,119 +20,10 @@ load(
     "envoy_cc_library",
     "envoy_cc_test",
 )
-load(
-    "@com_github_google_flatbuffers//:build_defs.bzl",
-    "DEFAULT_FLATC_ARGS",
-    "flatbuffer_library_public",
-)
-load(
-    "@envoy//test/extensions:extensions_build_system.bzl",
-    "envoy_extension_cc_benchmark_binary",
-)
 
 package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])
-
-envoy_cc_library(
-    name = "proto_util",
-    srcs = [
-        "proto_util.cc",
-    ],
-    hdrs = [
-        "proto_util.h",
-    ],
-    repository = "@envoy",
-    deps = [
-        ":metadata_object_lib",
-        ":node_info_fb_cc",
-        ":util",
-        "@com_google_protobuf//:protobuf",
-        "@proxy_wasm_cpp_host//:null_lib",
-    ],
-)
-
-envoy_cc_library(
-    name = "util",
-    srcs = [
-        "util.cc",
-    ],
-    hdrs = [
-        "util.h",
-    ],
-    repository = "@envoy",
-    deps = [
-        "@proxy_wasm_cpp_host//:null_lib",
-    ],
-)
-
-envoy_cc_test(
-    name = "proto_util_test",
-    size = "small",
-    srcs = ["proto_util_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":node_info_fb_cc",
-        ":proto_util",
-        "@com_google_protobuf//:protobuf",
-    ],
-)
-
-envoy_cc_test(
-    name = "util_test",
-    size = "small",
-    srcs = ["util_test.cc"],
-    repository = "@envoy",
-    deps = [
-        ":util",
-    ],
-)
-
-# TODO: fix this build on mac m1?
-envoy_extension_cc_benchmark_binary(
-    name = "proto_util_speed_test",
-    srcs = select({
-        "@envoy//bazel:linux": ["proto_util_speed_test.cc"],
-        "//conditions:default": [],
-    }),
-    extension_names = ["envoy.wasm.runtime.null"],
-    repository = "@envoy",
-    deps = select({
-        "@envoy//bazel:linux": [
-            ":metadata_object_lib",
-            ":node_info_fb_cc",
-            ":proto_util",
-            "@com_github_google_benchmark//:benchmark",
-            "@envoy//source/common/stream_info:filter_state_lib",
-            "@envoy//source/extensions/filters/common/expr:cel_state_lib",
-            "@envoy//test/test_common:status_utility_lib",
-        ],
-        "//conditions:default": [],
-    }),
-)
-
-flatbuffer_library_public(
-    name = "node_info_fbs",
-    srcs = ["node_info.fbs"],
-    outs = [
-        "node_info_bfbs_generated.h",
-        "node_info_generated.h",
-    ],
-    flatc_args = DEFAULT_FLATC_ARGS + ["--bfbs-gen-embed"],
-    language_flag = "-c",
-)
-
-cc_library(
-    name = "node_info_fb_cc",
-    srcs = [":node_info_fbs"],
-    hdrs = [":node_info_fbs"],
-    features = ["-parse_headers"],
-    linkstatic = True,
-    deps = [
-        "@com_github_google_flatbuffers//:flatbuffers",
-        "@com_github_google_flatbuffers//:runtime_cc",
-    ],
-)
 
 envoy_cc_library(
     name = "metadata_object_lib",
@@ -140,13 +31,10 @@ envoy_cc_library(
     hdrs = ["metadata_object.h"],
     repository = "@envoy",
     deps = [
-        ":node_info_fb_cc",
-        "@com_github_google_flatbuffers//:flatbuffers",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
         "@envoy//envoy/common:hashable_interface",
-        "@envoy//envoy/network:filter_interface",
-        "@envoy//envoy/ssl:connection_interface",
+        "@envoy//envoy/registry",
         "@envoy//envoy/stream_info:filter_state_interface",
         "@envoy//source/common/common:hash_lib",
     ],
@@ -158,6 +46,6 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":metadata_object_lib",
-        "@envoy//test/mocks/ssl:ssl_mocks",
+        "@envoy//envoy/registry",
     ],
 )

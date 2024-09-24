@@ -14,13 +14,13 @@ metrics:
   - name: requests_total
     dimensions:
       configurable_metric_a: "'gateway'"
-      source_workload: "'_' + node.metadata['WORKLOAD_NAME']"
-      source_workload_namespace: "'_' + node.metadata['NAMESPACE']"
-      source_app: "'_' + node.metadata['LABELS']['app']"
-      source_version: "'_' + node.metadata['LABELS']['app']" # same as above expression
+      source_workload: "'_' + xds.node.metadata['WORKLOAD_NAME']"
+      source_workload_namespace: "'_' + xds.node.metadata['NAMESPACE']"
+      source_app: "'_' + xds.node.metadata['LABELS'].app"
+      source_version: "'_' + xds.node.metadata['LABELS'].app" # same as above expression
       request_protocol: request.protocol
-      destination_version: "'_' + (has(node.metadata.LABELS.version) ? node.metadata.LABELS.version : 'unknown')"
-      destination_service_namespace: "'_' + upstream_peer.labels['app'].value"
+      destination_version: "'_' + xds.node.metadata.LABELS.version"
+      destination_service_namespace: "'_' + filter_state.upstream_peer.service"
       destination_app: "cannot _ parse | {{ .N }}"
       destination_workload: "cannot_evaluate"
       route_name: xds.route_name + "," + xds.cluster_name + "," + xds.cluster_metadata.filter_metadata.istio.services[0].name

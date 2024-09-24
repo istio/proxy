@@ -27,7 +27,6 @@
 #include "source/common/http/header_utility.h"
 #include "source/common/network/utility.h"
 #include "source/common/stream_info/utility.h"
-#include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/common/expr/context.h"
 #include "source/extensions/filters/common/expr/evaluator.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
@@ -117,29 +116,26 @@ enum class Reporter {
 bool peerInfoRead(Reporter reporter, const StreamInfo::FilterState& filter_state) {
   const auto& filter_state_key =
       reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
-          ? "wasm.downstream_peer_id"
-          : "wasm.upstream_peer_id";
+          ? Istio::Common::DownstreamPeer
+          : Istio::Common::UpstreamPeer;
   return filter_state.hasDataWithName(filter_state_key) ||
-         filter_state.hasDataWithName(
-             "wasm.envoy.wasm.metadata_exchange.peer_unknown"); // kMetadataPrefix+kMetadataNotFoundValue
+         filter_state.hasDataWithName(Istio::Common::NoPeer);
 }
 
-const Wasm::Common::FlatNode* peerInfo(Reporter reporter,
-                                       const StreamInfo::FilterState& filter_state) {
+const Istio::Common::WorkloadMetadataObject* peerInfo(Reporter reporter,
+                                                      const StreamInfo::FilterState& filter_state) {
   const auto& filter_state_key =
       reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
-          ? "wasm.downstream_peer"
-          : "wasm.upstream_peer";
-  const auto* object =
-      filter_state.getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
-          filter_state_key);
-  return object ? flatbuffers::GetRoot<Wasm::Common::FlatNode>(object->value().data()) : nullptr;
+          ? Istio::Common::DownstreamPeer
+          : Istio::Common::UpstreamPeer;
+  return filter_state.getDataReadOnly<Istio::Common::WorkloadMetadataObject>(filter_state_key);
 }
 
 // Process-wide context shared with all filter instances.
 struct Context : public Singleton::Instance {
-  explicit Context(Stats::SymbolTable& symbol_table, const envoy::config::core::v3::Node& node)
-      : pool_(symbol_table), node_(node), stat_namespace_(pool_.add(CustomStatNamespace)),
+  explicit Context(Stats::SymbolTable& symbol_table, const LocalInfo::LocalInfo& local_info)
+      : pool_(symbol_table), local_info_(local_info),
+        stat_namespace_(pool_.add(CustomStatNamespace)),
         requests_total_(pool_.add("istio_requests_total")),
         request_duration_milliseconds_(pool_.add("istio_request_duration_milliseconds")),
         request_bytes_(pool_.add("istio_request_bytes")),
@@ -177,19 +173,20 @@ struct Context : public Singleton::Instance {
         connection_security_policy_(pool_.add("connection_security_policy")),
         response_code_(pool_.add("response_code")),
         grpc_response_status_(pool_.add("grpc_response_status")),
-        workload_name_(pool_.add(extractString(node.metadata(), "WORKLOAD_NAME"))),
-        namespace_(pool_.add(extractString(node.metadata(), "NAMESPACE"))),
-        canonical_name_(pool_.add(
-            extractMapString(node.metadata(), "LABELS", Istio::Common::CanonicalNameLabel))),
-        canonical_revision_(pool_.add(
-            extractMapString(node.metadata(), "LABELS", Istio::Common::CanonicalRevisionLabel))),
-        cluster_name_(pool_.add(extractString(node.metadata(), "CLUSTER_ID"))),
-        app_name_(pool_.add(extractMapString(node.metadata(), "LABELS", Istio::Common::AppLabel))),
-        app_version_(
-            pool_.add(extractMapString(node.metadata(), "LABELS", Istio::Common::VersionLabel))),
+        workload_name_(pool_.add(extractString(local_info.node().metadata(), "WORKLOAD_NAME"))),
+        namespace_(pool_.add(extractString(local_info.node().metadata(), "NAMESPACE"))),
+        canonical_name_(pool_.add(extractMapString(local_info.node().metadata(), "LABELS",
+                                                   Istio::Common::CanonicalNameLabel))),
+        canonical_revision_(pool_.add(extractMapString(local_info.node().metadata(), "LABELS",
+                                                       Istio::Common::CanonicalRevisionLabel))),
+        app_name_(pool_.add(
+            extractMapString(local_info.node().metadata(), "LABELS", Istio::Common::AppNameLabel))),
+        app_version_(pool_.add(extractMapString(local_info.node().metadata(), "LABELS",
+                                                Istio::Common::AppVersionLabel))),
+        cluster_name_(pool_.add(extractString(local_info.node().metadata(), "CLUSTER_ID"))),
         waypoint_(pool_.add("waypoint")), istio_build_(pool_.add("istio_build")),
         component_(pool_.add("component")), proxy_(pool_.add("proxy")), tag_(pool_.add("tag")),
-        istio_version_(pool_.add(extractString(node.metadata(), "ISTIO_VERSION"))) {
+        istio_version_(pool_.add(extractString(local_info.node().metadata(), "ISTIO_VERSION"))) {
     all_metrics_ = {
         {"requests_total", requests_total_},
         {"request_duration_milliseconds", request_duration_milliseconds_},
@@ -232,7 +229,7 @@ struct Context : public Singleton::Instance {
   }
 
   Stats::StatNamePool pool_;
-  const envoy::config::core::v3::Node& node_;
+  const LocalInfo::LocalInfo& local_info_;
   absl::flat_hash_map<std::string, Stats::StatName> all_metrics_;
   absl::flat_hash_map<std::string, Stats::StatName> all_tags_;
 
@@ -296,9 +293,9 @@ struct Context : public Singleton::Instance {
   const Stats::StatName namespace_;
   const Stats::StatName canonical_name_;
   const Stats::StatName canonical_revision_;
-  const Stats::StatName cluster_name_;
   const Stats::StatName app_name_;
   const Stats::StatName app_version_;
+  const Stats::StatName cluster_name_;
   const Stats::StatName waypoint_;
 
   // istio_build metric:
@@ -486,7 +483,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
             [&factory_context] {
               return std::make_shared<Context>(
                   factory_context.serverFactoryContext().scope().symbolTable(),
-                  factory_context.serverFactoryContext().localInfo().node());
+                  factory_context.serverFactoryContext().localInfo());
             })),
         scope_(factory_context, PROTOBUF_GET_MS_OR_DEFAULT(proto_config, rotation_interval, 0),
                PROTOBUF_GET_MS_OR_DEFAULT(proto_config, graceful_deletion_interval,
@@ -642,6 +639,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
                   const Http::ResponseTrailerMap* response_trailers = nullptr) {
       evaluated_ = true;
       if (parent_.metric_overrides_) {
+        local_info_ = &parent_.context_->local_info_;
         activation_info_ = &info;
         activation_request_headers_ = request_headers;
         activation_response_headers_ = response_headers;
@@ -669,27 +667,6 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         }
         resetActivation();
       }
-    }
-
-    absl::optional<CelValue> FindValue(absl::string_view name,
-                                       Protobuf::Arena* arena) const override {
-      auto obj = StreamActivation::FindValue(name, arena);
-      if (obj) {
-        return obj;
-      }
-      if (name == "node") {
-        return Filters::Common::Expr::CelProtoWrapper::CreateMessage(&parent_.context_->node_,
-                                                                     arena);
-      }
-      if (activation_info_) {
-        const auto* obj = activation_info_->filterState()
-                              .getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
-                                  absl::StrCat("wasm.", name));
-        if (obj) {
-          return obj->exprValue(arena, false);
-        }
-      }
-      return {};
     }
 
     void addCounter(Stats::StatName metric, const Stats::StatNameTagVector& tags,
@@ -1002,7 +979,7 @@ private:
     absl::optional<Istio::Common::WorkloadMetadataObject> peer;
     const auto* object = peerInfo(config_->reporter(), filter_state);
     if (object) {
-      peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*object));
+      peer.emplace(*object);
     } else if (config_->reporter() == Reporter::ClientSidecar) {
       if (auto label_obj = extractEndpointMetadata(info); label_obj) {
         peer.emplace(label_obj.value());
@@ -1146,7 +1123,7 @@ private:
         std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer;
         const auto* endpoint_object = peerInfo(Reporter::ClientSidecar, filter_state);
         if (endpoint_object) {
-          endpoint_peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*endpoint_object));
+          endpoint_peer.emplace(*endpoint_object);
         }
         tags_.push_back(
             {context_.destination_workload_,
