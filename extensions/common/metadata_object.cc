@@ -27,6 +27,8 @@ static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_BAGGAGE_TOKENS =
     {ClusterNameToken, BaggageToken::ClusterName},
     {ServiceNameToken, BaggageToken::ServiceName},
     {ServiceVersionToken, BaggageToken::ServiceVersion},
+    {AppNameToken, BaggageToken::AppName},
+    {AppVersionToken, BaggageToken::AppVersion},
     {WorkloadNameToken, BaggageToken::WorkloadName},
     {WorkloadTypeToken, BaggageToken::WorkloadType},
     {InstanceNameToken, BaggageToken::InstanceName},
@@ -103,6 +105,18 @@ absl::optional<std::string> WorkloadMetadataObject::serializeAsString() const {
     parts.push_back("=");
     parts.push_back(canonical_revision_);
   }
+  if (!app_name_.empty()) {
+    parts.push_back(",");
+    parts.push_back(AppNameToken);
+    parts.push_back("=");
+    parts.push_back(app_name_);
+  }
+  if (!app_version_.empty()) {
+    parts.push_back(",");
+    parts.push_back(AppVersionToken);
+    parts.push_back("=");
+    parts.push_back(app_version_);
+  }
   return absl::StrJoin(parts, "");
 }
 
@@ -131,6 +145,12 @@ google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataO
   if (!obj.canonical_revision_.empty()) {
     (*labels->mutable_fields())[CanonicalRevisionLabel].set_string_value(obj.canonical_revision_);
   }
+  if (!obj.app_name_.empty()) {
+    (*labels->mutable_fields())[AppNameLabel].set_string_value(obj.app_name_);
+  }
+  if (!obj.app_version_.empty()) {
+    (*labels->mutable_fields())[AppVersionLabel].set_string_value(obj.app_version_);
+  }
   std::string owner = absl::StrCat(OwnerPrefix, obj.namespace_name_, "/",
                                    toSuffix(obj.workload_type_), "s/", obj.workload_name_);
   (*metadata.mutable_fields())["OWNER"].set_string_value(owner);
@@ -141,7 +161,7 @@ google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataO
 std::unique_ptr<WorkloadMetadataObject>
 convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata) {
   absl::string_view instance, namespace_name, owner, workload, cluster, canonical_name,
-      canonical_revision;
+      canonical_revision, app_name, app_version;
   for (const auto& it : metadata.fields()) {
     if (it.first == "NAME") {
       instance = it.second.string_value();
@@ -159,6 +179,10 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata) {
           canonical_name = labels_it.second.string_value();
         } else if (labels_it.first == CanonicalRevisionLabel) {
           canonical_revision = labels_it.second.string_value();
+        } else if (labels_it.first == AppNameLabel) {
+          app_name = labels_it.second.string_value();
+        } else if (labels_it.first == AppVersionLabel) {
+          app_version = labels_it.second.string_value();
         }
       }
     }
@@ -174,8 +198,8 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata) {
   }
 
   return std::make_unique<WorkloadMetadataObject>(instance, cluster, namespace_name, workload,
-                                                  canonical_name, canonical_revision, workload_type,
-                                                  "");
+                                                  canonical_name, canonical_revision, app_name,
+                                                  app_version, workload_type, "");
 }
 
 absl::optional<WorkloadMetadataObject>
@@ -186,7 +210,7 @@ convertEndpointMetadata(const std::string& endpoint_encoding) {
   }
   // TODO: we cannot determine workload type from the encoding.
   return absl::make_optional<WorkloadMetadataObject>("", parts[4], parts[1], parts[0], parts[2],
-                                                     parts[3], WorkloadType::Pod, "");
+                                                     parts[3], "", "", WorkloadType::Pod, "");
 }
 
 std::string serializeToStringDeterministic(const google::protobuf::Struct& metadata) {
@@ -217,6 +241,10 @@ public:
         return object_->canonical_name_;
       case BaggageToken::ServiceVersion:
         return object_->canonical_revision_;
+      case BaggageToken::AppName:
+        return object_->app_name_;
+      case BaggageToken::AppVersion:
+        return object_->app_version_;
       case BaggageToken::WorkloadName:
         return object_->workload_name_;
       case BaggageToken::WorkloadType:
@@ -240,6 +268,8 @@ WorkloadMetadataObjectFactory::createFromBytes(absl::string_view data) const {
   absl::string_view namespace_name;
   absl::string_view canonical_name;
   absl::string_view canonical_revision;
+  absl::string_view app_name;
+  absl::string_view app_version;
   WorkloadType workload_type = WorkloadType::Pod;
   std::vector<absl::string_view> properties = absl::StrSplit(data, ',');
   for (absl::string_view property : properties) {
@@ -259,6 +289,12 @@ WorkloadMetadataObjectFactory::createFromBytes(absl::string_view data) const {
       case BaggageToken::ServiceVersion:
         canonical_revision = parts.second;
         break;
+      case BaggageToken::AppName:
+        app_name = parts.second;
+        break;
+      case BaggageToken::AppVersion:
+        app_version = parts.second;
+        break;
       case BaggageToken::WorkloadName:
         workload = parts.second;
         break;
@@ -272,8 +308,8 @@ WorkloadMetadataObjectFactory::createFromBytes(absl::string_view data) const {
     }
   }
   return std::make_unique<WorkloadMetadataObject>(instance, cluster, namespace_name, workload,
-                                                  canonical_name, canonical_revision, workload_type,
-                                                  "");
+                                                  canonical_name, canonical_revision, app_name,
+                                                  app_version, workload_type, "");
 }
 
 std::unique_ptr<Envoy::StreamInfo::FilterState::ObjectReflection>

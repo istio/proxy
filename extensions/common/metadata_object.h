@@ -36,6 +36,8 @@ constexpr absl::string_view NoPeer = "peer_not_found";
 // Special labels used in the peer metadata.
 constexpr absl::string_view CanonicalNameLabel = "service.istio.io/canonical-name";
 constexpr absl::string_view CanonicalRevisionLabel = "service.istio.io/canonical-revision";
+constexpr absl::string_view AppNameLabel = "app";
+constexpr absl::string_view AppVersionLabel = "version";
 
 enum class WorkloadType {
   Pod,
@@ -56,6 +58,8 @@ enum class BaggageToken {
   ClusterName,
   ServiceName,
   ServiceVersion,
+  AppName,
+  AppVersion,
   WorkloadName,
   WorkloadType,
   InstanceName,
@@ -64,7 +68,9 @@ enum class BaggageToken {
 constexpr absl::string_view NamespaceNameToken = "namespace";
 constexpr absl::string_view ClusterNameToken = "cluster";
 constexpr absl::string_view ServiceNameToken = "service";
-constexpr absl::string_view ServiceVersionToken = "version";
+constexpr absl::string_view ServiceVersionToken = "revision";
+constexpr absl::string_view AppNameToken = "app";
+constexpr absl::string_view AppVersionToken = "version";
 constexpr absl::string_view WorkloadNameToken = "workload";
 constexpr absl::string_view WorkloadTypeToken = "type";
 constexpr absl::string_view InstanceNameToken = "name";
@@ -74,12 +80,13 @@ struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
   explicit WorkloadMetadataObject(absl::string_view instance_name, absl::string_view cluster_name,
                                   absl::string_view namespace_name, absl::string_view workload_name,
                                   absl::string_view canonical_name,
-                                  absl::string_view canonical_revision,
-                                  const WorkloadType workload_type, absl::string_view identity)
+                                  absl::string_view canonical_revision, absl::string_view app_name,
+                                  absl::string_view app_version, const WorkloadType workload_type,
+                                  absl::string_view identity)
       : instance_name_(instance_name), cluster_name_(cluster_name), namespace_name_(namespace_name),
         workload_name_(workload_name), canonical_name_(canonical_name),
-        canonical_revision_(canonical_revision), workload_type_(workload_type),
-        identity_(identity) {}
+        canonical_revision_(canonical_revision), app_name_(app_name), app_version_(app_version),
+        workload_type_(workload_type), identity_(identity) {}
 
   absl::optional<uint64_t> hash() const override;
   absl::optional<std::string> serializeAsString() const override;
@@ -90,6 +97,8 @@ struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
   const std::string workload_name_;
   const std::string canonical_name_;
   const std::string canonical_revision_;
+  const std::string app_name_;
+  const std::string app_version_;
   const WorkloadType workload_type_;
   const std::string identity_;
 };
