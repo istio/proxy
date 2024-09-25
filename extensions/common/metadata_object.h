@@ -120,6 +120,9 @@ convertEndpointMetadata(const std::string& endpoint_encoding);
 
 std::string serializeToStringDeterministic(const google::protobuf::Struct& metadata);
 
+// Convert from baggage encoding.
+std::unique_ptr<WorkloadMetadataObject> convertBaggageToWorkloadMetadata(absl::string_view data);
+
 class WorkloadMetadataObjectFactory : public Envoy::StreamInfo::FilterState::ObjectFactory {
 public:
   std::unique_ptr<Envoy::StreamInfo::FilterState::Object>
