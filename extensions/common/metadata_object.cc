@@ -260,8 +260,7 @@ private:
   const WorkloadMetadataObject* object_;
 };
 
-std::unique_ptr<Envoy::StreamInfo::FilterState::Object>
-WorkloadMetadataObjectFactory::createFromBytes(absl::string_view data) const {
+std::unique_ptr<WorkloadMetadataObject> convertBaggageToWorkloadMetadata(absl::string_view data) {
   absl::string_view instance;
   absl::string_view cluster;
   absl::string_view workload;
@@ -310,6 +309,11 @@ WorkloadMetadataObjectFactory::createFromBytes(absl::string_view data) const {
   return std::make_unique<WorkloadMetadataObject>(instance, cluster, namespace_name, workload,
                                                   canonical_name, canonical_revision, app_name,
                                                   app_version, workload_type, "");
+}
+
+std::unique_ptr<Envoy::StreamInfo::FilterState::Object>
+WorkloadMetadataObjectFactory::createFromBytes(absl::string_view data) const {
+  return convertBaggageToWorkloadMetadata(data);
 }
 
 std::unique_ptr<Envoy::StreamInfo::FilterState::ObjectReflection>
