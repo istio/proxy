@@ -68,9 +68,9 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
       Envoy::Registry::FactoryRegistry<Envoy::StreamInfo::FilterState::ObjectFactory>::getFactory(
           DownstreamPeer);
   {
-    auto obj = factory->createFromBytes(absl::StrCat(
-        "type=deployment,workload=foo,cluster=my-cluster,",
-        "namespace=default,service=foo-service,revision=v1alpha3,", "app=foo-app,version=latest"));
+    auto obj = factory->createFromBytes(
+        "type=deployment,workload=foo,cluster=my-cluster,"
+        "namespace=default,service=foo-service,revision=v1alpha3,app=foo-app,version=latest");
     auto r = factory->reflect(obj.get());
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("service")), "foo-service");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("revision")), "v1alpha3");
@@ -115,9 +115,8 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
   }
 
   {
-    auto obj = factory->createFromBytes(
-        absl::StrCat("type=cronjob,workload=foo-cronjob,cluster=my-cluster,",
-                     "namespace=test,service=foo-service,revision=v1beta4"));
+    auto obj = factory->createFromBytes("type=cronjob,workload=foo-cronjob,cluster=my-cluster,"
+                                        "namespace=test,service=foo-service,revision=v1beta4");
     auto r = factory->reflect(obj.get());
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("service")), "foo-service");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("revision")), "v1beta4");
@@ -141,12 +140,20 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("cluster")), "");
     checkStructConversion(*obj);
   }
+
+  {
+    auto obj = factory->createFromBytes("namespace=default");
+    auto r = factory->reflect(obj.get());
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("namespace")), "default");
+    checkStructConversion(*obj);
+  }
 }
 
 TEST(WorkloadMetadataObjectTest, ConvertFromEmpty) {
   google::protobuf::Struct node;
   auto obj = convertStructToWorkloadMetadata(node);
-  EXPECT_EQ(obj->serializeAsString(), "type=pod");
+  EXPECT_EQ(obj->serializeAsString(), "");
+  checkStructConversion(*obj);
 }
 
 TEST(WorkloadMetadataObjectTest, ConvertFromEndpointMetadata) {
@@ -156,7 +163,7 @@ TEST(WorkloadMetadataObjectTest, ConvertFromEndpointMetadata) {
   EXPECT_EQ(absl::nullopt, convertEndpointMetadata("a;b;c;d"));
   auto obj = convertEndpointMetadata("foo-pod;default;foo-service;v1;my-cluster");
   ASSERT_TRUE(obj.has_value());
-  EXPECT_EQ(obj->serializeAsString(), "type=pod,workload=foo-pod,cluster=my-cluster,"
+  EXPECT_EQ(obj->serializeAsString(), "workload=foo-pod,cluster=my-cluster,"
                                       "namespace=default,service=foo-service,revision=v1");
 }
 
