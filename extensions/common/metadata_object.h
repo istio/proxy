@@ -40,6 +40,7 @@ constexpr absl::string_view AppNameLabel = "app";
 constexpr absl::string_view AppVersionLabel = "version";
 
 enum class WorkloadType {
+  Unknown,
   Pod,
   Deployment,
   Job,
@@ -75,13 +76,21 @@ constexpr absl::string_view WorkloadNameToken = "workload";
 constexpr absl::string_view WorkloadTypeToken = "type";
 constexpr absl::string_view InstanceNameToken = "name";
 
-struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
-                                public Envoy::Hashable {
+constexpr absl::string_view InstanceMetadataField = "NAME";
+constexpr absl::string_view NamespaceMetadataField = "NAMESPACE";
+constexpr absl::string_view ClusterMetadataField = "CLUSTER_ID";
+constexpr absl::string_view OwnerMetadataField = "OWNER";
+constexpr absl::string_view WorkloadMetadataField = "WORKLOAD_NAME";
+constexpr absl::string_view LabelsMetadataField = "LABELS";
+
+class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
+                               public Envoy::Hashable {
+public:
   explicit WorkloadMetadataObject(absl::string_view instance_name, absl::string_view cluster_name,
                                   absl::string_view namespace_name, absl::string_view workload_name,
                                   absl::string_view canonical_name,
                                   absl::string_view canonical_revision, absl::string_view app_name,
-                                  absl::string_view app_version, const WorkloadType workload_type,
+                                  absl::string_view app_version, WorkloadType workload_type,
                                   absl::string_view identity)
       : instance_name_(instance_name), cluster_name_(cluster_name), namespace_name_(namespace_name),
         workload_name_(workload_name), canonical_name_(canonical_name),
@@ -90,6 +99,7 @@ struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
 
   absl::optional<uint64_t> hash() const override;
   absl::optional<std::string> serializeAsString() const override;
+  absl::optional<std::string> owner() const;
 
   const std::string instance_name_;
   const std::string cluster_name_;
@@ -102,6 +112,9 @@ struct WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
   const WorkloadType workload_type_;
   const std::string identity_;
 };
+
+// Parse owner field from kubernetes to detect the workload type.
+WorkloadType parseOwner(absl::string_view owner, absl::string_view workload);
 
 // Convert a metadata object to a struct.
 google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataObject& obj);
