@@ -42,14 +42,6 @@ static absl::flat_hash_map<absl::string_view, WorkloadType> ALL_WORKLOAD_TOKENS 
     {CronJobSuffix, WorkloadType::CronJob},
 };
 
-WorkloadType fromSuffix(absl::string_view suffix) {
-  const auto it = ALL_WORKLOAD_TOKENS.find(suffix);
-  if (it != ALL_WORKLOAD_TOKENS.end()) {
-    return it->second;
-  }
-  return WorkloadType::Unknown;
-}
-
 absl::optional<absl::string_view> toSuffix(WorkloadType workload_type) {
   switch (workload_type) {
   case WorkloadType::Deployment:
@@ -110,6 +102,14 @@ absl::optional<std::string> WorkloadMetadataObject::owner() const {
     return absl::StrCat(OwnerPrefix, namespace_name_, "/", *suffix, "s/", workload_name_);
   }
   return {};
+}
+
+WorkloadType fromSuffix(absl::string_view suffix) {
+  const auto it = ALL_WORKLOAD_TOKENS.find(suffix);
+  if (it != ALL_WORKLOAD_TOKENS.end()) {
+    return it->second;
+  }
+  return WorkloadType::Unknown;
 }
 
 WorkloadType parseOwner(absl::string_view owner, absl::string_view workload) {
@@ -215,41 +215,35 @@ std::string serializeToStringDeterministic(const google::protobuf::Struct& metad
   return out;
 }
 
-class WorkloadMetadataObjectReflection : public Envoy::StreamInfo::FilterState::ObjectReflection {
-public:
-  WorkloadMetadataObjectReflection(const WorkloadMetadataObject* object) : object_(object) {}
-  FieldType getField(absl::string_view field_name) const override {
-    const auto it = ALL_BAGGAGE_TOKENS.find(field_name);
-    if (it != ALL_BAGGAGE_TOKENS.end()) {
-      switch (it->second) {
-      case BaggageToken::NamespaceName:
-        return object_->namespace_name_;
-      case BaggageToken::ClusterName:
-        return object_->cluster_name_;
-      case BaggageToken::ServiceName:
-        return object_->canonical_name_;
-      case BaggageToken::ServiceVersion:
-        return object_->canonical_revision_;
-      case BaggageToken::AppName:
-        return object_->app_name_;
-      case BaggageToken::AppVersion:
-        return object_->app_version_;
-      case BaggageToken::WorkloadName:
-        return object_->workload_name_;
-      case BaggageToken::WorkloadType:
-        if (const auto value = toSuffix(object_->workload_type_); value.has_value()) {
-          return *value;
-        }
-      case BaggageToken::InstanceName:
-        return object_->instance_name_;
+WorkloadMetadataObject::FieldType
+WorkloadMetadataObject::getField(absl::string_view field_name) const {
+  const auto it = ALL_BAGGAGE_TOKENS.find(field_name);
+  if (it != ALL_BAGGAGE_TOKENS.end()) {
+    switch (it->second) {
+    case BaggageToken::NamespaceName:
+      return namespace_name_;
+    case BaggageToken::ClusterName:
+      return cluster_name_;
+    case BaggageToken::ServiceName:
+      return canonical_name_;
+    case BaggageToken::ServiceVersion:
+      return canonical_revision_;
+    case BaggageToken::AppName:
+      return app_name_;
+    case BaggageToken::AppVersion:
+      return app_version_;
+    case BaggageToken::WorkloadName:
+      return workload_name_;
+    case BaggageToken::WorkloadType:
+      if (const auto value = toSuffix(workload_type_); value.has_value()) {
+        return *value;
       }
+    case BaggageToken::InstanceName:
+      return instance_name_;
     }
-    return {};
   }
-
-private:
-  const WorkloadMetadataObject* object_;
-};
+  return {};
+}
 
 std::unique_ptr<WorkloadMetadataObject> convertBaggageToWorkloadMetadata(absl::string_view data) {
   absl::string_view instance;
@@ -301,34 +295,6 @@ std::unique_ptr<WorkloadMetadataObject> convertBaggageToWorkloadMetadata(absl::s
                                                   canonical_name, canonical_revision, app_name,
                                                   app_version, workload_type, "");
 }
-
-std::unique_ptr<Envoy::StreamInfo::FilterState::Object>
-WorkloadMetadataObjectFactory::createFromBytes(absl::string_view data) const {
-  return convertBaggageToWorkloadMetadata(data);
-}
-
-std::unique_ptr<Envoy::StreamInfo::FilterState::ObjectReflection>
-WorkloadMetadataObjectFactory::reflect(const Envoy::StreamInfo::FilterState::Object* data) const {
-  const auto* object = dynamic_cast<const WorkloadMetadataObject*>(data);
-  if (object) {
-    return std::make_unique<WorkloadMetadataObjectReflection>(object);
-  }
-  return nullptr;
-}
-
-class DownstreamPeerObjectFactory : public WorkloadMetadataObjectFactory {
-public:
-  std::string name() const override { return std::string(DownstreamPeer); }
-};
-
-REGISTER_FACTORY(DownstreamPeerObjectFactory, Envoy::StreamInfo::FilterState::ObjectFactory);
-
-class UpstreamPeerObjectFactory : public WorkloadMetadataObjectFactory {
-public:
-  std::string name() const override { return std::string(UpstreamPeer); }
-};
-
-REGISTER_FACTORY(UpstreamPeerObjectFactory, Envoy::StreamInfo::FilterState::ObjectFactory);
 
 } // namespace Common
 } // namespace Istio
