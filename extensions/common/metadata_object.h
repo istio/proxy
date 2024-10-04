@@ -100,6 +100,9 @@ public:
   absl::optional<uint64_t> hash() const override;
   absl::optional<std::string> serializeAsString() const override;
   absl::optional<std::string> owner() const;
+  bool hasFieldSupport() const override { return true; }
+  using Envoy::StreamInfo::FilterState::Object::FieldType;
+  FieldType getField(absl::string_view) const override;
 
   const std::string instance_name_;
   const std::string cluster_name_;
@@ -112,6 +115,9 @@ public:
   const WorkloadType workload_type_;
   const std::string identity_;
 };
+
+// Parse string workload type.
+WorkloadType fromSuffix(absl::string_view suffix);
 
 // Parse owner field from kubernetes to detect the workload type.
 WorkloadType parseOwner(absl::string_view owner, absl::string_view workload);
@@ -135,14 +141,6 @@ std::string serializeToStringDeterministic(const google::protobuf::Struct& metad
 
 // Convert from baggage encoding.
 std::unique_ptr<WorkloadMetadataObject> convertBaggageToWorkloadMetadata(absl::string_view data);
-
-class WorkloadMetadataObjectFactory : public Envoy::StreamInfo::FilterState::ObjectFactory {
-public:
-  std::unique_ptr<Envoy::StreamInfo::FilterState::Object>
-  createFromBytes(absl::string_view data) const override;
-  std::unique_ptr<Envoy::StreamInfo::FilterState::ObjectReflection>
-  reflect(const Envoy::StreamInfo::FilterState::Object* data) const override;
-};
 
 } // namespace Common
 } // namespace Istio
