@@ -16,6 +16,7 @@
 
 #include "envoy/registry/registry.h"
 #include "source/common/common/hash.h"
+#include "source/common/protobuf/utility.h"
 
 #include "absl/strings/str_join.h"
 
@@ -59,7 +60,18 @@ absl::optional<absl::string_view> toSuffix(WorkloadType workload_type) {
 
 } // namespace
 
-absl::optional<std::string> WorkloadMetadataObject::serializeAsString() const {
+Envoy::ProtobufTypes::MessagePtr WorkloadMetadataObject::serializeAsProto() const {
+  auto message = std::make_unique<Envoy::ProtobufWkt::Struct>();
+  auto& fields = *message->mutable_fields();
+  const auto parts = serializeAsPairs();
+  for (const auto& p : parts) {
+    fields[std::string(p.first)] = Envoy::ValueUtil::stringValue(std::string(p.second));
+  }
+  return message;
+}
+
+std::vector<std::pair<absl::string_view, absl::string_view>>
+WorkloadMetadataObject::serializeAsPairs() const {
   std::vector<std::pair<absl::string_view, absl::string_view>> parts;
   const auto suffix = toSuffix(workload_type_);
   if (suffix) {
@@ -89,6 +101,11 @@ absl::optional<std::string> WorkloadMetadataObject::serializeAsString() const {
   if (!app_version_.empty()) {
     parts.push_back({AppVersionToken, app_version_});
   }
+  return parts;
+}
+
+absl::optional<std::string> WorkloadMetadataObject::serializeAsString() const {
+  const auto parts = serializeAsPairs();
   return absl::StrJoin(parts, ",", absl::PairFormatter("="));
 }
 
