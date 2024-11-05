@@ -17,6 +17,8 @@
 #include "envoy/common/hashable.h"
 #include "envoy/stream_info/filter_state.h"
 
+#include "source/common/protobuf/protobuf.h"
+
 #include "absl/strings/str_split.h"
 #include "absl/types/optional.h"
 
@@ -98,6 +100,8 @@ public:
         workload_type_(workload_type), identity_(identity) {}
 
   absl::optional<uint64_t> hash() const override;
+  Envoy::ProtobufTypes::MessagePtr serializeAsProto() const override;
+  std::vector<std::pair<absl::string_view, absl::string_view>> serializeAsPairs() const;
   absl::optional<std::string> serializeAsString() const override;
   absl::optional<std::string> owner() const;
   bool hasFieldSupport() const override { return true; }
