@@ -22,6 +22,7 @@
 namespace Istio {
 namespace Common {
 
+using Envoy::Protobuf::util::MessageDifferencer;
 using ::testing::NiceMock;
 
 TEST(WorkloadMetadataObjectTest, Baggage) {
@@ -60,6 +61,7 @@ void checkStructConversion(const Envoy::StreamInfo::FilterState::Object& data) {
   auto pb = convertWorkloadMetadataToStruct(obj);
   auto obj2 = convertStructToWorkloadMetadata(pb);
   EXPECT_EQ(obj2->serializeAsString(), obj.serializeAsString());
+  MessageDifferencer::Equals(*(obj2->serializeAsProto()), *(obj.serializeAsProto()));
   EXPECT_EQ(obj2->hash(), obj.hash());
 }
 
