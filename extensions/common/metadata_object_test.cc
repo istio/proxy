@@ -23,6 +23,7 @@ namespace Istio {
 namespace Common {
 
 using ::testing::NiceMock;
+using Envoy::Protobuf::util::MessageDifferencer;
 
 TEST(WorkloadMetadataObjectTest, Baggage) {
   WorkloadMetadataObject deploy("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
@@ -60,6 +61,7 @@ void checkStructConversion(const Envoy::StreamInfo::FilterState::Object& data) {
   auto pb = convertWorkloadMetadataToStruct(obj);
   auto obj2 = convertStructToWorkloadMetadata(pb);
   EXPECT_EQ(obj2->serializeAsString(), obj.serializeAsString());
+  MessageDifferencer::Equals(*(obj2->serializeAsProto()), *(obj.serializeAsProto()));
   EXPECT_EQ(obj2->hash(), obj.hash());
 }
 
