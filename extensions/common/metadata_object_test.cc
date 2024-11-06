@@ -22,8 +22,8 @@
 namespace Istio {
 namespace Common {
 
-using ::testing::NiceMock;
 using Envoy::Protobuf::util::MessageDifferencer;
+using ::testing::NiceMock;
 
 TEST(WorkloadMetadataObjectTest, Baggage) {
   WorkloadMetadataObject deploy("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
