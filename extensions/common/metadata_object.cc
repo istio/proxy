@@ -14,9 +14,7 @@
 
 #include "extensions/common/metadata_object.h"
 
-#include "envoy/registry/registry.h"
 #include "source/common/common/hash.h"
-#include "source/common/protobuf/utility.h"
 
 #include "absl/strings/str_join.h"
 
@@ -62,10 +60,33 @@ absl::optional<absl::string_view> toSuffix(WorkloadType workload_type) {
 
 Envoy::ProtobufTypes::MessagePtr WorkloadMetadataObject::serializeAsProto() const {
   auto message = std::make_unique<Envoy::ProtobufWkt::Struct>();
-  auto& fields = *message->mutable_fields();
-  const auto parts = serializeAsPairs();
-  for (const auto& p : parts) {
-    fields[std::string(p.first)] = Envoy::ValueUtil::stringValue(std::string(p.second));
+  if (!instance_name_.empty()) {
+    (*message->mutable_fields())[InstanceMetadataField].set_string_value(instance_name_);
+  }
+  if (!namespace_name_.empty()) {
+    (*message->mutable_fields())[NamespaceMetadataField].set_string_value(namespace_name_);
+  }
+  if (!workload_name_.empty()) {
+    (*message->mutable_fields())[WorkloadMetadataField].set_string_value(workload_name_);
+  }
+  if (!cluster_name_.empty()) {
+    (*message->mutable_fields())[ClusterMetadataField].set_string_value(cluster_name_);
+  }
+  auto* labels = (*message->mutable_fields())[LabelsMetadataField].mutable_struct_value();
+  if (!canonical_name_.empty()) {
+    (*labels->mutable_fields())[CanonicalNameLabel].set_string_value(canonical_name_);
+  }
+  if (!canonical_revision_.empty()) {
+    (*labels->mutable_fields())[CanonicalRevisionLabel].set_string_value(canonical_revision_);
+  }
+  if (!app_name_.empty()) {
+    (*labels->mutable_fields())[AppNameLabel].set_string_value(app_name_);
+  }
+  if (!app_version_.empty()) {
+    (*labels->mutable_fields())[AppVersionLabel].set_string_value(app_version_);
+  }
+  if (const auto owner = this->owner(); owner.has_value()) {
+    (*message->mutable_fields())[OwnerMetadataField].set_string_value(*owner);
   }
   return message;
 }
