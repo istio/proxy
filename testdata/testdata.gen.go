@@ -12,6 +12,7 @@
 // listener/tcp_client.yaml.tmpl
 // listener/tcp_passthrough.yaml.tmpl
 // listener/tcp_server.yaml.tmpl
+// listener/tcp_waypoint_server.yaml.tmpl
 // listener/terminate_connect.yaml.tmpl
 package testdata
 
@@ -746,7 +747,11 @@ filter_chains:
       type_url: envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
       value:
         stat_prefix: outbound_tcp
+        {{- if .Vars.ServerClusterName }}
+        cluster: {{ .Vars.ServerClusterName}}
+        {{- else }}
         cluster: outbound|9080|tcp|server.default.svc.cluster.local
+        {{- end }}
 `)
 
 func listenerTcp_clientYamlTmplBytes() ([]byte, error) {
@@ -843,6 +848,52 @@ func listenerTcp_serverYamlTmpl() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "listener/tcp_server.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _listenerTcp_waypoint_serverYamlTmpl = []byte(`{{- if ne .Vars.ServerListeners "" }}
+{{ .Vars.ServerListeners }}
+{{- else }}
+{{- if ne .Vars.ServerInternalAddress "" }}
+name: {{ .Vars.ServerInternalAddress }}
+{{- else }}
+name: server
+{{- end }}
+traffic_direction: INBOUND
+{{- if ne .Vars.ServerInternalAddress "" }}
+internal_listener: {}
+{{- else }}
+address:
+  socket_address:
+    address: 127.0.0.2
+    port_value: {{ .Ports.ServerPort }}
+{{- end }}
+filter_chains:
+- filters:
+{{ .Vars.ServerNetworkFilters | fill | indent 2 }}
+  - name: tcp_proxy
+    typed_config:
+      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+      value:
+        stat_prefix: server_inbound_tcp
+        cluster: server-inbound-cluster
+{{ .Vars.ServerListenerTLSContext | indent 2 }}
+{{- end }}
+`)
+
+func listenerTcp_waypoint_serverYamlTmplBytes() ([]byte, error) {
+	return _listenerTcp_waypoint_serverYamlTmpl, nil
+}
+
+func listenerTcp_waypoint_serverYamlTmpl() (*asset, error) {
+	bytes, err := listenerTcp_waypoint_serverYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "listener/tcp_waypoint_server.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1051,6 +1102,7 @@ var _bindata = map[string]func() (*asset, error){
 	"listener/tcp_client.yaml.tmpl":                          listenerTcp_clientYamlTmpl,
 	"listener/tcp_passthrough.yaml.tmpl":                     listenerTcp_passthroughYamlTmpl,
 	"listener/tcp_server.yaml.tmpl":                          listenerTcp_serverYamlTmpl,
+	"listener/tcp_waypoint_server.yaml.tmpl":                 listenerTcp_waypoint_serverYamlTmpl,
 	"listener/terminate_connect.yaml.tmpl":                   listenerTerminate_connectYamlTmpl,
 }
 
@@ -1103,14 +1155,15 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"stats.yaml.tmpl":                              &bintree{bootstrapStatsYamlTmpl, map[string]*bintree{}},
 	}},
 	"listener": &bintree{nil, map[string]*bintree{
-		"client.yaml.tmpl":             &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
-		"client_passthrough.yaml.tmpl": &bintree{listenerClient_passthroughYamlTmpl, map[string]*bintree{}},
-		"internal_outbound.yaml.tmpl":  &bintree{listenerInternal_outboundYamlTmpl, map[string]*bintree{}},
-		"server.yaml.tmpl":             &bintree{listenerServerYamlTmpl, map[string]*bintree{}},
-		"tcp_client.yaml.tmpl":         &bintree{listenerTcp_clientYamlTmpl, map[string]*bintree{}},
-		"tcp_passthrough.yaml.tmpl":    &bintree{listenerTcp_passthroughYamlTmpl, map[string]*bintree{}},
-		"tcp_server.yaml.tmpl":         &bintree{listenerTcp_serverYamlTmpl, map[string]*bintree{}},
-		"terminate_connect.yaml.tmpl":  &bintree{listenerTerminate_connectYamlTmpl, map[string]*bintree{}},
+		"client.yaml.tmpl":              &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
+		"client_passthrough.yaml.tmpl":  &bintree{listenerClient_passthroughYamlTmpl, map[string]*bintree{}},
+		"internal_outbound.yaml.tmpl":   &bintree{listenerInternal_outboundYamlTmpl, map[string]*bintree{}},
+		"server.yaml.tmpl":              &bintree{listenerServerYamlTmpl, map[string]*bintree{}},
+		"tcp_client.yaml.tmpl":          &bintree{listenerTcp_clientYamlTmpl, map[string]*bintree{}},
+		"tcp_passthrough.yaml.tmpl":     &bintree{listenerTcp_passthroughYamlTmpl, map[string]*bintree{}},
+		"tcp_server.yaml.tmpl":          &bintree{listenerTcp_serverYamlTmpl, map[string]*bintree{}},
+		"tcp_waypoint_server.yaml.tmpl": &bintree{listenerTcp_waypoint_serverYamlTmpl, map[string]*bintree{}},
+		"terminate_connect.yaml.tmpl":   &bintree{listenerTerminate_connectYamlTmpl, map[string]*bintree{}},
 	}},
 }}
 

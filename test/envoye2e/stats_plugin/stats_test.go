@@ -728,6 +728,79 @@ func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 	}
 }
 
+func TestTCPStatsServerWaypointProxyCONNECT(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{
+		"EnableDelta":             "true",
+		"EnableMetadataDiscovery": "true",
+		"DisableDirectResponse":   "true",
+		"ConnectionCount":         "10",
+		"StatsFilterServerConfig": driver.LoadTestJSON("testdata/stats/server_waypoint_proxy_config.yaml"),
+	}, envoye2e.ProxyE2ETests)
+	params.Vars["ServerClusterName"] = "internal_outbound"
+	params.Vars["ServerInternalAddress"] = "internal_inbound"
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_waypoint_proxy_node_metadata.json.tmpl")
+	params.Vars["ServerNetworkFilters"] = driver.LoadTestData("testdata/filters/mx_waypoint_tcp.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
+	params.Vars["EnableTunnelEndpointMetadata"] = "true"
+	params.Vars["EnableOriginalDstPortOverride"] = "true"
+
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			&driver.Update{
+				Node: "client", Version: "0",
+				Clusters: []string{
+					driver.LoadTestData("testdata/cluster/internal_outbound.yaml.tmpl"),
+					driver.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
+				},
+				Listeners: []string{
+					driver.LoadTestData("testdata/listener/tcp_client.yaml.tmpl"),
+					driver.LoadTestData("testdata/listener/internal_outbound.yaml.tmpl"),
+				},
+				Secrets: []string{
+					driver.LoadTestData("testdata/secret/client.yaml.tmpl"),
+				},
+			},
+			&driver.Update{
+				Node: "server", Version: "0",
+				Clusters: []string{
+					driver.LoadTestData("testdata/cluster/internal_inbound.yaml.tmpl"),
+				},
+				Listeners: []string{
+					driver.LoadTestData("testdata/listener/terminate_connect.yaml.tmpl"),
+					driver.LoadTestData("testdata/listener/tcp_waypoint_server.yaml.tmpl"),
+				},
+				Secrets: []string{
+					driver.LoadTestData("testdata/secret/server.yaml.tmpl"),
+				},
+			},
+			&driver.UpdateWorkloadMetadata{Workloads: []driver.WorkloadMetadata{{
+				Address:  "127.0.0.1",
+				Metadata: ProductPageMetadata,
+			}, {
+				Address:  "127.0.0.3",
+				Metadata: BackendMetadata,
+			}}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.TCPServer{Prefix: "hello"},
+			&driver.Repeat{
+				N:    10,
+				Step: &driver.TCPConnection{},
+			},
+			&driver.Stats{
+				AdminPort: params.Ports.ServerAdmin,
+				Matchers: map[string]driver.StatMatcher{
+					"istio_tcp_connections_opened_total": &driver.ExactStat{Metric: "testdata/metric/server_waypoint_proxy_connect_request_total.yaml.tmpl"},
+				},
+			},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStatsExpiry(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"RequestCount":            "1",
