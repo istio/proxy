@@ -1,0 +1,29 @@
+{{- if ne .Vars.ServerListeners "" }}
+{{ .Vars.ServerListeners }}
+{{- else }}
+{{- if ne .Vars.ServerInternalAddress "" }}
+name: {{ .Vars.ServerInternalAddress }}
+{{- else }}
+name: server
+{{- end }}
+traffic_direction: INBOUND
+{{- if ne .Vars.ServerInternalAddress "" }}
+internal_listener: {}
+{{- else }}
+address:
+  socket_address:
+    address: 127.0.0.2
+    port_value: {{ .Ports.ServerPort }}
+{{- end }}
+filter_chains:
+- filters:
+{{ .Vars.ServerNetworkFilters | fill | indent 2 }}
+  - name: tcp_proxy
+    typed_config:
+      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+      value:
+        stat_prefix: server_inbound_tcp
+        cluster: server-inbound-cluster
+{{ .Vars.ServerListenerTLSContext | indent 2 }}
+{{- end }}
