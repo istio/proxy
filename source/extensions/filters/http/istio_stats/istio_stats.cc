@@ -1101,7 +1101,7 @@ private:
       if (peer_san.empty()) {
         auto endpoint_object = peerInfo(config_->reporter(), filter_state);
         if (endpoint_object) {
-          endpoint_peer.emplace(convertFlatNodeToWorkloadMetadata(*endpoint_object));
+          endpoint_peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*endpoint_object));
           peer_san = endpoint_peer->identity_;
         }
       }
