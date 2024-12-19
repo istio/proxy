@@ -25,6 +25,8 @@
 #include "envoy/stats/scope.h"
 #include "source/common/buffer/buffer_impl.h"
 #include "source/common/protobuf/utility.h"
+#include "source/common/network/utility.h"
+#include "source/common/network/filter_state_dst_address.h"
 #include "source/extensions/filters/network/metadata_exchange/metadata_exchange_initial_header.h"
 #include "source/common/stream_info/bool_accessor_impl.h"
 
@@ -272,14 +274,64 @@ std::string MetadataExchangeFilter::getMetadataId() { return local_info_.node().
 
 void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
   if (config_->metadata_provider_) {
+    Network::Address::InstanceConstSharedPtr upstream_peer;
+    const StreamInfo::StreamInfo& info = read_callbacks_->connection().streamInfo();
+    if (info.upstreamInfo()) {
+      auto upstream_host = info.upstreamInfo().value().get().upstreamHost();
+      if (upstream_host) {
+        const auto& ep_metadata = upstream_host->metadata();
+        if (ep_metadata) {
+          const auto& filter_metadata = ep_metadata->filter_metadata();
+          const auto& it = filter_metadata.find("envoy.filters.listener.original_dst");
+          if (it != filter_metadata.end()) {
+            const auto& destination_it = it->second.fields().find("local");
+            if (destination_it != it->second.fields().end()) {
+              upstream_peer = Network::Utility::parseInternetAddressAndPortNoThrow(
+                  destination_it->second.string_value(), /*v6only=*/false);
+            }
+          }
+        }
+      }
+    }
+    // Get our metadata differently based on the direction of the filter
+    auto downstream_peer_address = [&]() -> Network::Address::InstanceConstSharedPtr {
+      if (upstream_peer) {
+        // Query upstream peer data and save it in metadata for stats
+        const auto metadata_object = config_->metadata_provider_->GetMetadata(upstream_peer);
+        if (metadata_object) {
+          ENVOY_LOG(debug, "Metadata found for upstream peer address {}",
+                    upstream_peer->asString());
+          read_callbacks_->connection().streamInfo().filterState()->setData(
+              Istio::Common::UpstreamPeer,
+              std::make_shared<Istio::Common::WorkloadMetadataObject>(metadata_object.value()),
+              StreamInfo::FilterState::StateType::Mutable,
+              StreamInfo::FilterState::LifeSpan::Connection);
+        }
+      }
+
+      // Regardless, return the downstream address for downstream metadata
+      return read_callbacks_->connection().connectionInfoProvider().remoteAddress();
+    };
+
+    auto upstream_peer_address = [&]() -> Network::Address::InstanceConstSharedPtr {
+      if (upstream_peer) {
+        return upstream_peer;
+      }
+      ENVOY_LOG(debug, "Upstream peer address is null. Fall back to localAddress");
+      return read_callbacks_->connection().connectionInfoProvider().localAddress();
+    };
     const Network::Address::InstanceConstSharedPtr peer_address =
-        read_callbacks_->connection().connectionInfoProvider().remoteAddress();
+        config_->filter_direction_ == FilterDirection::Downstream ? downstream_peer_address()
+                                                                  : upstream_peer_address();
     ENVOY_LOG(debug, "Look up metadata based on peer address {}", peer_address->asString());
     const auto metadata_object = config_->metadata_provider_->GetMetadata(peer_address);
     if (metadata_object) {
+      ENVOY_LOG(debug, "Metadata found for peer address {}", peer_address->asString());
       updatePeer(metadata_object.value());
       config_->stats().metadata_added_.inc();
       return;
+    } else {
+      ENVOY_LOG(debug, "Metadata not found for peer address {}", peer_address->asString());
     }
   }
   read_callbacks_->connection().streamInfo().filterState()->setData(
