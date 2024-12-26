@@ -20,69 +20,57 @@ path.</p>
 <thead>
 <tr>
 <th>Field</th>
-<th>Type</th>
 <th>Description</th>
-<th>Required</th>
 </tr>
 </thead>
 <tbody>
 <tr id="MetricConfig-dimensions">
-<td><code>dimensions</code></td>
-<td><code>map&lt;string,&nbsp;string&gt;</code></td>
+<td><div class="field"><div class="name"><code><a href="#MetricConfig-dimensions">dimensions</a></code></div>
+<div class="type">map&lt;string,&nbsp;string&gt;</div>
+</div></td>
 <td>
 <p>(Optional) Collection of tag names and tag expressions to include in the
 metric. Conflicts are resolved by the tag name by overriding previously
 supplied values.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="MetricConfig-name">
-<td><code>name</code></td>
-<td><code>string</code></td>
+<td><div class="field"><div class="name"><code><a href="#MetricConfig-name">name</a></code></div>
+<div class="type">string</div>
+</div></td>
 <td>
 <p>(Optional) Metric name to restrict the override to a metric. If not
 specified, applies to all.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="MetricConfig-tags_to_remove">
-<td><code>tags_to_remove</code></td>
-<td><code>string[]</code></td>
+<td><div class="field"><div class="name"><code><a href="#MetricConfig-tags_to_remove">tags_to_remove</a></code></div>
+<div class="type">string[]</div>
+</div></td>
 <td>
 <p>(Optional) A list of tags to remove.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="MetricConfig-match">
-<td><code>match</code></td>
-<td><code>string</code></td>
+<td><div class="field"><div class="name"><code><a href="#MetricConfig-match">match</a></code></div>
+<div class="type">string</div>
+</div></td>
 <td>
 <p>NOT IMPLEMENTED. (Optional) Conditional enabling the override.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="MetricConfig-drop">
-<td><code>drop</code></td>
-<td><code>bool</code></td>
+<td><div class="field"><div class="name"><code><a href="#MetricConfig-drop">drop</a></code></div>
+<div class="type">bool</div>
+</div></td>
 <td>
 <p>(Optional) If this is set to true, the metric(s) selected by this
 configuration will not be generated or reported.</p>
 
-</td>
-<td>
-No
 </td>
 </tr>
 </tbody>
@@ -94,43 +82,35 @@ No
 <thead>
 <tr>
 <th>Field</th>
-<th>Type</th>
 <th>Description</th>
-<th>Required</th>
 </tr>
 </thead>
 <tbody>
 <tr id="MetricDefinition-name">
-<td><code>name</code></td>
-<td><code>string</code></td>
+<td><div class="field"><div class="name"><code><a href="#MetricDefinition-name">name</a></code></div>
+<div class="type">string</div>
+</div></td>
 <td>
 <p>Metric name.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="MetricDefinition-value">
-<td><code>value</code></td>
-<td><code>string</code></td>
+<td><div class="field"><div class="name"><code><a href="#MetricDefinition-value">value</a></code></div>
+<div class="type">string</div>
+</div></td>
 <td>
 <p>Metric value expression.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="MetricDefinition-type">
-<td><code>type</code></td>
-<td><code><a href="#MetricType">MetricType</a></code></td>
+<td><div class="field"><div class="name"><code><a href="#MetricDefinition-type">type</a></code></div>
+<div class="type"><a href="#MetricType">MetricType</a></div>
+</div></td>
 <td>
 <p>Metric type.</p>
 
-</td>
-<td>
-No
 </td>
 </tr>
 </tbody>
@@ -142,92 +122,76 @@ No
 <thead>
 <tr>
 <th>Field</th>
-<th>Type</th>
 <th>Description</th>
-<th>Required</th>
 </tr>
 </thead>
 <tbody>
 <tr id="PluginConfig-disable_host_header_fallback">
-<td><code>disable_host_header_fallback</code></td>
-<td><code>bool</code></td>
+<td><div class="field"><div class="name"><code><a href="#PluginConfig-disable_host_header_fallback">disable_host_header_fallback</a></code></div>
+<div class="type">bool</div>
+</div></td>
 <td>
-<p>Optional: Disable using host header as a fallback if destination service is
+<p>Disable using host header as a fallback if destination service is
 not available from the controlplane. Disable the fallback if the host
 header originates outsides the mesh, like at ingress.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="PluginConfig-tcp_reporting_duration">
-<td><code>tcp_reporting_duration</code></td>
-<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td><div class="field"><div class="name"><code><a href="#PluginConfig-tcp_reporting_duration">tcp_reporting_duration</a></code></div>
+<div class="type"><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></div>
+</div></td>
 <td>
-<p>Optional. Allows configuration of the time between calls out to for TCP
+<p>Allows configuration of the time between calls out to for TCP
 metrics reporting. The default duration is <code>5s</code>.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="PluginConfig-metrics">
-<td><code>metrics</code></td>
-<td><code><a href="#MetricConfig">MetricConfig[]</a></code></td>
+<td><div class="field"><div class="name"><code><a href="#PluginConfig-metrics">metrics</a></code></div>
+<div class="type"><a href="#MetricConfig">MetricConfig[]</a></div>
+</div></td>
 <td>
 <p>Metric overrides.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="PluginConfig-definitions">
-<td><code>definitions</code></td>
-<td><code><a href="#MetricDefinition">MetricDefinition[]</a></code></td>
+<td><div class="field"><div class="name"><code><a href="#PluginConfig-definitions">definitions</a></code></div>
+<div class="type"><a href="#MetricDefinition">MetricDefinition[]</a></div>
+</div></td>
 <td>
 <p>Metric definitions.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="PluginConfig-reporter">
-<td><code>reporter</code></td>
-<td><code><a href="#Reporter">Reporter</a></code></td>
+<td><div class="field"><div class="name"><code><a href="#PluginConfig-reporter">reporter</a></code></div>
+<div class="type"><a href="#Reporter">Reporter</a></div>
+</div></td>
 <td>
 <p>Proxy deployment type.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="PluginConfig-rotation_interval">
-<td><code>rotation_interval</code></td>
-<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td><div class="field"><div class="name"><code><a href="#PluginConfig-rotation_interval">rotation_interval</a></code></div>
+<div class="type"><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></div>
+</div></td>
 <td>
 <p>Metric scope rotation interval. Set to 0 to disable the metric scope rotation.
 Defaults to 0.</p>
 
 </td>
-<td>
-No
-</td>
 </tr>
 <tr id="PluginConfig-graceful_deletion_interval">
-<td><code>graceful_deletion_interval</code></td>
-<td><code><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></code></td>
+<td><div class="field"><div class="name"><code><a href="#PluginConfig-graceful_deletion_interval">graceful_deletion_interval</a></code></div>
+<div class="type"><a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#duration">Duration</a></div>
+</div></td>
 <td>
 <p>Metric expiry graceful deletion interval. No-op if the metric rotation is disabled.
 Defaults to 5m. Must be &gt;=1s.</p>
 
-</td>
-<td>
-No
 </td>
 </tr>
 </tbody>
@@ -244,17 +208,17 @@ No
 </thead>
 <tbody>
 <tr id="MetricType-COUNTER">
-<td><code>COUNTER</code></td>
+<td><code><a href="#MetricType-COUNTER">COUNTER</a></code></td>
 <td>
 </td>
 </tr>
 <tr id="MetricType-GAUGE">
-<td><code>GAUGE</code></td>
+<td><code><a href="#MetricType-GAUGE">GAUGE</a></code></td>
 <td>
 </td>
 </tr>
 <tr id="MetricType-HISTOGRAM">
-<td><code>HISTOGRAM</code></td>
+<td><code><a href="#MetricType-HISTOGRAM">HISTOGRAM</a></code></td>
 <td>
 </td>
 </tr>
@@ -274,7 +238,7 @@ No
 </thead>
 <tbody>
 <tr id="Reporter-UNSPECIFIED">
-<td><code>UNSPECIFIED</code></td>
+<td><code><a href="#Reporter-UNSPECIFIED">UNSPECIFIED</a></code></td>
 <td>
 <p>Default value is inferred from the listener direction, as either client or
 server sidecar.</p>
@@ -282,7 +246,7 @@ server sidecar.</p>
 </td>
 </tr>
 <tr id="Reporter-SERVER_GATEWAY">
-<td><code>SERVER_GATEWAY</code></td>
+<td><code><a href="#Reporter-SERVER_GATEWAY">SERVER_GATEWAY</a></code></td>
 <td>
 <p>Shared server gateway, e.g. &ldquo;waypoint&rdquo;.</p>
 
