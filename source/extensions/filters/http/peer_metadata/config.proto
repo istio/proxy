@@ -75,4 +75,13 @@ message Config {
 
   // True to enable sharing with the upstream.
   bool shared_with_upstream = 5;
+
+  // Additional labels to be added to the peer metadata.
+  // By default, following labels are added:
+  // - service.istio.io/canonical-name
+  // - service.istio.io/canonical-revision
+  // - app
+  // - version
+  // if you want to add more labels, you can specify them here.
+  repeated string additional_labels = 6;
 }

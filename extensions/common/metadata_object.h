@@ -19,7 +19,6 @@
 
 #include "source/common/protobuf/protobuf.h"
 
-#include "absl/strings/str_split.h"
 #include "absl/types/optional.h"
 
 #include "google/protobuf/struct.pb.h"
@@ -86,6 +85,7 @@ constexpr absl::string_view WorkloadMetadataField = "WORKLOAD_NAME";
 constexpr absl::string_view LabelsMetadataField = "LABELS";
 
 class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
+                               public Envoy::Logger::Loggable<Envoy::Logger::Id::filter>,
                                public Envoy::Hashable {
 public:
   explicit WorkloadMetadataObject(absl::string_view instance_name, absl::string_view cluster_name,
@@ -107,6 +107,8 @@ public:
   bool hasFieldSupport() const override { return true; }
   using Envoy::StreamInfo::FilterState::Object::FieldType;
   FieldType getField(absl::string_view) const override;
+  void setLabels(std::vector<std::pair<std::string, std::string>> labels) { labels_ = labels; }
+  std::vector<std::pair<std::string, std::string>> getLabels() const { return labels_; }
 
   const std::string instance_name_;
   const std::string cluster_name_;
@@ -118,6 +120,7 @@ public:
   const std::string app_version_;
   const WorkloadType workload_type_;
   const std::string identity_;
+  std::vector<std::pair<std::string, std::string>> labels_;
 };
 
 // Parse string workload type.
@@ -132,6 +135,10 @@ google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataO
 // Convert struct to a metadata object.
 std::unique_ptr<WorkloadMetadataObject>
 convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata);
+
+std::unique_ptr<WorkloadMetadataObject>
+convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
+                                const absl::flat_hash_set<std::string>& additional_labels);
 
 // Convert endpoint metadata string to a metadata object.
 // Telemetry metadata is compressed into a semicolon separated string:

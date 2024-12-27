@@ -385,6 +385,20 @@ TEST_F(PeerMetadataTest, DownstreamMXPropagation) {
   checkNoPeer(false);
 }
 
+TEST_F(PeerMetadataTest, DownstreamMXPropagationWithAdditionalLabels) {
+  initialize(R"EOF(
+    downstream_propagation:
+      - istio_headers: {}
+    additional_labels:
+      - foo
+      - bar
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
 TEST_F(PeerMetadataTest, DownstreamMXDiscoveryPropagation) {
   request_headers_.setReference(Headers::get().ExchangeMetadataHeaderId, "test-pod");
   request_headers_.setReference(Headers::get().ExchangeMetadataHeader, SampleIstioHeader);

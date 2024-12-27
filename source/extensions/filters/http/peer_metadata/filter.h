@@ -79,12 +79,14 @@ using PropagationMethodPtr = std::unique_ptr<PropagationMethod>;
 class MXPropagationMethod : public PropagationMethod {
 public:
   MXPropagationMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context,
+                      const absl::flat_hash_set<std::string>& additional_labels,
                       const io::istio::http::peer_metadata::Config_IstioHeaders&);
   void inject(const StreamInfo::StreamInfo&, Http::HeaderMap&, Context&) const override;
 
 private:
   const bool downstream_;
-  std::string computeValue(Server::Configuration::ServerFactoryContext&) const;
+  std::string computeValue(const absl::flat_hash_set<std::string>&,
+                           Server::Configuration::ServerFactoryContext&) const;
   const std::string id_;
   const std::string value_;
   const bool skip_external_clusters_;
@@ -106,7 +108,10 @@ private:
       bool downstream, Server::Configuration::FactoryContext&) const;
   std::vector<PropagationMethodPtr> buildPropagationMethods(
       const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::PropagationMethod>&,
-      bool downstream, Server::Configuration::FactoryContext&) const;
+      const absl::flat_hash_set<std::string>& additional_labels, bool downstream,
+      Server::Configuration::FactoryContext&) const;
+  absl::flat_hash_set<std::string>
+  buildAdditionalLabels(const Protobuf::RepeatedPtrField<std::string>&) const;
   StreamInfo::StreamSharingMayImpactPooling sharedWithUpstream() const {
     return shared_with_upstream_
                ? StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce

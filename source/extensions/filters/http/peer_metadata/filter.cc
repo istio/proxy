@@ -139,15 +139,17 @@ absl::optional<PeerInfo> MXMethod::lookup(absl::string_view id, absl::string_vie
 
 MXPropagationMethod::MXPropagationMethod(
     bool downstream, Server::Configuration::ServerFactoryContext& factory_context,
+    const absl::flat_hash_set<std::string>& additional_labels,
     const io::istio::http::peer_metadata::Config_IstioHeaders& istio_headers)
     : downstream_(downstream), id_(factory_context.localInfo().node().id()),
-      value_(computeValue(factory_context)),
+      value_(computeValue(additional_labels, factory_context)),
       skip_external_clusters_(istio_headers.skip_external_clusters()) {}
 
 std::string MXPropagationMethod::computeValue(
+    const absl::flat_hash_set<std::string>& additional_labels,
     Server::Configuration::ServerFactoryContext& factory_context) const {
-  const auto obj =
-      Istio::Common::convertStructToWorkloadMetadata(factory_context.localInfo().node().metadata());
+  const auto obj = Istio::Common::convertStructToWorkloadMetadata(
+      factory_context.localInfo().node().metadata(), additional_labels);
   const google::protobuf::Struct metadata = Istio::Common::convertWorkloadMetadataToStruct(*obj);
   const std::string metadata_bytes = Istio::Common::serializeToStringDeterministic(metadata);
   return Base64::encode(metadata_bytes.data(), metadata_bytes.size());
@@ -175,10 +177,12 @@ FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
           buildDiscoveryMethods(config.downstream_discovery(), true, factory_context)),
       upstream_discovery_(
           buildDiscoveryMethods(config.upstream_discovery(), false, factory_context)),
-      downstream_propagation_(
-          buildPropagationMethods(config.downstream_propagation(), true, factory_context)),
-      upstream_propagation_(
-          buildPropagationMethods(config.upstream_propagation(), false, factory_context)) {}
+      downstream_propagation_(buildPropagationMethods(
+          config.downstream_propagation(), buildAdditionalLabels(config.additional_labels()), true,
+          factory_context)),
+      upstream_propagation_(buildPropagationMethods(
+          config.upstream_propagation(), buildAdditionalLabels(config.additional_labels()), false,
+          factory_context)) {}
 
 std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
     const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::DiscoveryMethod>&
@@ -208,21 +212,32 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
 std::vector<PropagationMethodPtr> FilterConfig::buildPropagationMethods(
     const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::PropagationMethod>&
         config,
-    bool downstream, Server::Configuration::FactoryContext& factory_context) const {
+    const absl::flat_hash_set<std::string>& additional_labels, bool downstream,
+    Server::Configuration::FactoryContext& factory_context) const {
   std::vector<PropagationMethodPtr> methods;
   methods.reserve(config.size());
   for (const auto& method : config) {
     switch (method.method_specifier_case()) {
     case io::istio::http::peer_metadata::Config::PropagationMethod::MethodSpecifierCase::
         kIstioHeaders:
-      methods.push_back(std::make_unique<MXPropagationMethod>(
-          downstream, factory_context.serverFactoryContext(), method.istio_headers()));
+      methods.push_back(
+          std::make_unique<MXPropagationMethod>(downstream, factory_context.serverFactoryContext(),
+                                                additional_labels, method.istio_headers()));
       break;
     default:
       break;
     }
   }
   return methods;
+}
+
+absl::flat_hash_set<std::string>
+FilterConfig::buildAdditionalLabels(const Protobuf::RepeatedPtrField<std::string>& labels) const {
+  absl::flat_hash_set<std::string> result;
+  for (const auto& label : labels) {
+    result.emplace(label);
+  }
+  return result;
 }
 
 void FilterConfig::discoverDownstream(StreamInfo::StreamInfo& info, Http::RequestHeaderMap& headers,

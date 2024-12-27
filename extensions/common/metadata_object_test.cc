@@ -65,6 +65,20 @@ void checkStructConversion(const Envoy::StreamInfo::FilterState::Object& data) {
   EXPECT_EQ(obj2->hash(), obj.hash());
 }
 
+TEST(WorkloadMetadataObjectTest, ConversionWithLabels) {
+  WorkloadMetadataObject deploy("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
+                                "v1alpha3", "", "", WorkloadType::Deployment, "");
+  deploy.setLabels({{"label1", "value1"}, {"label2", "value2"}});
+  auto pb = convertWorkloadMetadataToStruct(deploy);
+  auto obj1 = convertStructToWorkloadMetadata(pb, {"label1", "label2"});
+  EXPECT_EQ(obj1->getLabels().size(), 2);
+  auto obj2 = convertStructToWorkloadMetadata(pb, {"label1"});
+  EXPECT_EQ(obj2->getLabels().size(), 1);
+  absl::flat_hash_set<std::string> empty;
+  auto obj3 = convertStructToWorkloadMetadata(pb, empty);
+  EXPECT_EQ(obj3->getLabels().size(), 0);
+}
+
 TEST(WorkloadMetadataObjectTest, Conversion) {
   {
     const auto r = convertBaggageToWorkloadMetadata(

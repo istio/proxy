@@ -101,6 +101,11 @@ WorkloadMetadataObject::serializeAsPairs() const {
   if (!app_version_.empty()) {
     parts.push_back({AppVersionToken, app_version_});
   }
+  if (!labels_.empty()) {
+    for (const auto& l : labels_) {
+      parts.push_back({absl::string_view(l.first), absl::string_view(l.second)});
+    }
+  }
   return parts;
 }
 
@@ -168,6 +173,11 @@ google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataO
   if (!obj.app_version_.empty()) {
     (*labels->mutable_fields())[AppVersionLabel].set_string_value(obj.app_version_);
   }
+  if (!obj.getLabels().empty()) {
+    for (const auto& lbl : obj.getLabels()) {
+      (*labels->mutable_fields())[std::string(lbl.first)].set_string_value(std::string(lbl.second));
+    }
+  }
   if (const auto owner = obj.owner(); owner.has_value()) {
     (*metadata.mutable_fields())[OwnerMetadataField].set_string_value(*owner);
   }
@@ -177,8 +187,15 @@ google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataO
 // Convert struct to a metadata object.
 std::unique_ptr<WorkloadMetadataObject>
 convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata) {
+  return convertStructToWorkloadMetadata(metadata, {});
+}
+
+std::unique_ptr<WorkloadMetadataObject>
+convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
+                                const absl::flat_hash_set<std::string>& additional_labels) {
   absl::string_view instance, namespace_name, owner, workload, cluster, canonical_name,
       canonical_revision, app_name, app_version;
+  std::vector<std::pair<std::string, std::string>> labels;
   for (const auto& it : metadata.fields()) {
     if (it.first == InstanceMetadataField) {
       instance = it.second.string_value();
@@ -200,13 +217,19 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata) {
           app_name = labels_it.second.string_value();
         } else if (labels_it.first == AppVersionLabel) {
           app_version = labels_it.second.string_value();
+        } else if (!additional_labels.empty() &&
+                   additional_labels.contains(std::string(labels_it.first))) {
+          labels.push_back(
+              {std::string(labels_it.first), std::string(labels_it.second.string_value())});
         }
       }
     }
   }
-  return std::make_unique<WorkloadMetadataObject>(instance, cluster, namespace_name, workload,
-                                                  canonical_name, canonical_revision, app_name,
-                                                  app_version, parseOwner(owner, workload), "");
+  auto obj = std::make_unique<WorkloadMetadataObject>(instance, cluster, namespace_name, workload,
+                                                      canonical_name, canonical_revision, app_name,
+                                                      app_version, parseOwner(owner, workload), "");
+  obj->setLabels(labels);
+  return obj;
 }
 
 absl::optional<WorkloadMetadataObject>
@@ -257,6 +280,13 @@ WorkloadMetadataObject::getField(absl::string_view field_name) const {
       }
     case BaggageToken::InstanceName:
       return instance_name_;
+    }
+  }
+  if (!labels_.empty()) {
+    for (const auto& l : labels_) {
+      if (l.first == std::string(field_name)) {
+        return l.second;
+      }
     }
   }
   return {};

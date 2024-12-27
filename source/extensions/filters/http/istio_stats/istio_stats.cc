@@ -651,6 +651,13 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
           Protobuf::Arena arena;
           auto eval_status = compiled_exprs[id].first->Evaluate(*this, &arena);
           if (!eval_status.ok() || eval_status.value().IsError()) {
+            if (!eval_status.ok()) {
+              ENVOY_LOG(debug, "Failed to evaluate metric expression: {}", eval_status.status());
+            }
+            if (eval_status.value().IsError()) {
+              ENVOY_LOG(debug, "Failed to evaluate metric expression: {}",
+                        eval_status.value().ErrorOrDie()->message());
+            }
             expr_values_.push_back(std::make_pair(parent_.context_->unknown_, 0));
           } else {
             const auto string_value = Filters::Common::Expr::print(eval_status.value());
