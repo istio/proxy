@@ -85,7 +85,6 @@ constexpr absl::string_view WorkloadMetadataField = "WORKLOAD_NAME";
 constexpr absl::string_view LabelsMetadataField = "LABELS";
 
 class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
-                               public Envoy::Logger::Loggable<Envoy::Logger::Id::filter>,
                                public Envoy::Hashable {
 public:
   explicit WorkloadMetadataObject(absl::string_view instance_name, absl::string_view cluster_name,

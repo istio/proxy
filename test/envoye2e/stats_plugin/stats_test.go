@@ -881,3 +881,50 @@ func TestStatsDestinationServiceNamespacePrecedence(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestAdditionalLabels(t *testing.T) {
+	env.SkipTSan(t)
+	params := driver.NewTestParams(t, map[string]string{
+		"RequestCount":            "10",
+		"StatsFilterClientConfig": driver.LoadTestJSON("testdata/stats/client_additional_labels.yaml"),
+		"StatsFilterServerConfig": driver.LoadTestJSON("testdata/stats/server_additional_labels.yaml"),
+		"ResponseCodeClass":       "2xx",
+	}, envoye2e.ProxyE2ETests)
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_native_inbound_labels.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stats_inbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/mx_native_outbound_labels.yaml.tmpl") + "\n" +
+		driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			&driver.Update{Node: "client", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")}},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.Repeat{
+				N: 10,
+				Step: &driver.HTTPCall{
+					Port: params.Ports.ClientPort,
+					Body: "hello, world!",
+				},
+			},
+			&driver.Stats{
+				AdminPort: params.Ports.ServerAdmin,
+				Matchers: map[string]driver.StatMatcher{
+					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total_labels.yaml.tmpl"},
+				},
+			},
+			&driver.Stats{
+				AdminPort: params.Ports.ClientAdmin,
+				Matchers: map[string]driver.StatMatcher{
+					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/client_request_total_labels.yaml.tmpl"},
+				},
+			},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}

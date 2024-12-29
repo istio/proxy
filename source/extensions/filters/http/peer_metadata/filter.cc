@@ -81,8 +81,10 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
   return metadata_provider_->GetMetadata(peer_address);
 }
 
-MXMethod::MXMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context)
-    : downstream_(downstream), tls_(factory_context.threadLocal()) {
+MXMethod::MXMethod(bool downstream, const absl::flat_hash_set<std::string> additional_labels,
+                   Server::Configuration::ServerFactoryContext& factory_context)
+    : downstream_(downstream), tls_(factory_context.threadLocal()),
+      additional_labels_(additional_labels) {
   tls_.set([](Event::Dispatcher&) { return std::make_shared<MXCache>(); });
 }
 
@@ -126,7 +128,7 @@ absl::optional<PeerInfo> MXMethod::lookup(absl::string_view id, absl::string_vie
   if (!metadata.ParseFromString(bytes)) {
     return {};
   }
-  const auto out = Istio::Common::convertStructToWorkloadMetadata(metadata);
+  auto out = Istio::Common::convertStructToWorkloadMetadata(metadata, additional_labels_);
   if (max_peer_cache_size_ > 0 && !id.empty()) {
     // do not let the cache grow beyond max cache size.
     if (static_cast<uint32_t>(cache.size()) > max_peer_cache_size_) {
@@ -173,10 +175,12 @@ void MXPropagationMethod::inject(const StreamInfo::StreamInfo& info, Http::Heade
 FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
                            Server::Configuration::FactoryContext& factory_context)
     : shared_with_upstream_(config.shared_with_upstream()),
-      downstream_discovery_(
-          buildDiscoveryMethods(config.downstream_discovery(), true, factory_context)),
-      upstream_discovery_(
-          buildDiscoveryMethods(config.upstream_discovery(), false, factory_context)),
+      downstream_discovery_(buildDiscoveryMethods(config.downstream_discovery(),
+                                                  buildAdditionalLabels(config.additional_labels()),
+                                                  true, factory_context)),
+      upstream_discovery_(buildDiscoveryMethods(config.upstream_discovery(),
+                                                buildAdditionalLabels(config.additional_labels()),
+                                                false, factory_context)),
       downstream_propagation_(buildPropagationMethods(
           config.downstream_propagation(), buildAdditionalLabels(config.additional_labels()), true,
           factory_context)),
@@ -187,7 +191,8 @@ FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
 std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
     const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::DiscoveryMethod>&
         config,
-    bool downstream, Server::Configuration::FactoryContext& factory_context) const {
+    const absl::flat_hash_set<std::string>& additional_labels, bool downstream,
+    Server::Configuration::FactoryContext& factory_context) const {
   std::vector<DiscoveryMethodPtr> methods;
   methods.reserve(config.size());
   for (const auto& method : config) {
@@ -199,8 +204,8 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
       break;
     case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::
         kIstioHeaders:
-      methods.push_back(
-          std::make_unique<MXMethod>(downstream, factory_context.serverFactoryContext()));
+      methods.push_back(std::make_unique<MXMethod>(downstream, additional_labels,
+                                                   factory_context.serverFactoryContext()));
       break;
     default:
       break;

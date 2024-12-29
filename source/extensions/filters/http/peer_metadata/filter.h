@@ -52,7 +52,8 @@ using DiscoveryMethodPtr = std::unique_ptr<DiscoveryMethod>;
 
 class MXMethod : public DiscoveryMethod {
 public:
-  MXMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context);
+  MXMethod(bool downstream, const absl::flat_hash_set<std::string> additional_labels,
+           Server::Configuration::ServerFactoryContext& factory_context);
   absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
                                           Context&) const override;
   void remove(Http::HeaderMap&) const override;
@@ -64,6 +65,7 @@ private:
     absl::flat_hash_map<std::string, PeerInfo> cache_;
   };
   mutable ThreadLocal::TypedSlot<MXCache> tls_;
+  const absl::flat_hash_set<std::string> additional_labels_;
   const int64_t max_peer_cache_size_{500};
 };
 
@@ -105,7 +107,8 @@ public:
 private:
   std::vector<DiscoveryMethodPtr> buildDiscoveryMethods(
       const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::DiscoveryMethod>&,
-      bool downstream, Server::Configuration::FactoryContext&) const;
+      const absl::flat_hash_set<std::string>& additional_labels, bool downstream,
+      Server::Configuration::FactoryContext&) const;
   std::vector<PropagationMethodPtr> buildPropagationMethods(
       const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::PropagationMethod>&,
       const absl::flat_hash_set<std::string>& additional_labels, bool downstream,

@@ -270,7 +270,8 @@ TEST_F(PeerMetadataTest, DownstreamFallbackSecond) {
 
 TEST(MXMethod, Cache) {
   NiceMock<Server::Configuration::MockServerFactoryContext> context;
-  MXMethod method(true, context);
+  absl::flat_hash_set<std::string> additional_labels;
+  MXMethod method(true, additional_labels, context);
   NiceMock<StreamInfo::MockStreamInfo> stream_info;
   Http::TestRequestHeaderMapImpl request_headers;
   const int32_t max = 1000;

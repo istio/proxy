@@ -282,6 +282,8 @@ WorkloadMetadataObject::getField(absl::string_view field_name) const {
       return instance_name_;
     }
   }
+  // This is a workaround for FilterStateObjectWrapper.
+  // The field name is the label key.
   if (!labels_.empty()) {
     for (const auto& l : labels_) {
       if (l.first == std::string(field_name)) {
