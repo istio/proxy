@@ -34,6 +34,7 @@ func init() {
 		"TestPassthroughCONNECT/h2",
 		"TestHTTPExchange",
 		"TestNativeHTTPExchange",
+		"TestHTTPExchangeAdditionalLabels",
 		"TestStats403Failure/#00",
 		"TestStatsECDS/#00",
 		"TestStatsEndpointLabels/#00",
