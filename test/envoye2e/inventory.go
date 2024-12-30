@@ -73,6 +73,7 @@ func init() {
 			"TestStatsEndpointLabels/#00",
 			"TestStatsServerWaypointProxy",
 			"TestStatsServerWaypointProxyCONNECT",
+			"TestTCPStatsServerWaypointProxyCONNECT",
 			"TestStatsGrpc/envoy.wasm.runtime.v8",
 			"TestStatsGrpc/#00",
 			"TestStatsGrpcStream/envoy.wasm.runtime.v8",
