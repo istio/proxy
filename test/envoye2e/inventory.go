@@ -40,6 +40,7 @@ func init() {
 		"TestStatsEndpointLabels/#00",
 		"TestStatsServerWaypointProxy",
 		"TestStatsServerWaypointProxyCONNECT",
+		"TestTCPStatsServerWaypointProxyCONNECT",
 		"TestStatsGrpc/#00",
 		"TestStatsGrpcStream/#00",
 		"TestStatsParallel/Default",
