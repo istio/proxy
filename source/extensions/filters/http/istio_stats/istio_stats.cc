@@ -28,6 +28,7 @@
 #include "source/common/network/utility.h"
 #include "source/common/stream_info/utility.h"
 #include "source/extensions/filters/common/expr/context.h"
+#include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/common/expr/evaluator.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
 #include "source/extensions/filters/http/grpc_stats/grpc_stats_filter.h"
@@ -128,7 +129,33 @@ const Istio::Common::WorkloadMetadataObject* peerInfo(Reporter reporter,
       reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
           ? Istio::Common::DownstreamPeer
           : Istio::Common::UpstreamPeer;
-  return filter_state.getDataReadOnly<Istio::Common::WorkloadMetadataObject>(filter_state_key);
+  // This's a workaround before FilterStateObject support operation like `.labels['role']`.
+  // The workaround is to use CelState to store the peer metadata.
+  // Rebuild the WorkloadMetadataObject from the CelState.
+  const auto* cel_state =
+      filter_state.getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
+          filter_state_key);
+  if (!cel_state) {
+    return nullptr;
+  }
+
+  ProtobufWkt::Struct obj;
+  if (!obj.ParseFromString(absl::string_view(cel_state->value().data()))) {
+    return nullptr;
+  }
+
+  auto peer_info = std::make_unique<Istio::Common::WorkloadMetadataObject>(
+      extractString(obj, Istio::Common::InstanceNameToken),
+      extractString(obj, Istio::Common::ClusterNameToken),
+      extractString(obj, Istio::Common::NamespaceNameToken),
+      extractString(obj, Istio::Common::WorkloadNameToken),
+      extractString(obj, Istio::Common::ServiceNameToken),
+      extractString(obj, Istio::Common::ServiceVersionToken),
+      extractString(obj, Istio::Common::AppNameToken),
+      extractString(obj, Istio::Common::AppVersionToken),
+      Istio::Common::fromSuffix(extractString(obj, Istio::Common::WorkloadTypeToken)), "");
+
+  return peer_info.release();
 }
 
 // Process-wide context shared with all filter instances.
@@ -312,8 +339,6 @@ struct Context : public Singleton::Instance {
 using ContextSharedPtr = std::shared_ptr<Context>;
 
 SINGLETON_MANAGER_REGISTRATION(Context)
-
-using google::api::expr::runtime::CelValue;
 
 // Instructions on dropping, creating, and overriding labels.
 // This is not the "hot path" of the metrics system and thus, fairly
@@ -776,6 +801,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
 using ConfigSharedPtr = std::shared_ptr<Config>;
 
 class IstioStatsFilter : public Http::PassThroughFilter,
+                         public Logger::Loggable<Logger::Id::filter>,
                          public AccessLog::Instance,
                          public Network::ReadFilter,
                          public Network::ConnectionCallbacks {
@@ -902,6 +928,7 @@ private:
         const auto& info = decoder_callbacks_->streamInfo();
         peer_read_ = peerInfoRead(config_->reporter(), info.filterState());
         if (peer_read_ || end_stream) {
+          ENVOY_LOG(trace, "Populating peer metadata from HTTP MX.");
           populatePeerInfo(info, info.filterState());
         }
         if (is_grpc_ && (peer_read_ || end_stream)) {
@@ -940,6 +967,7 @@ private:
       peer_read_ = peerInfoRead(config_->reporter(), filter_state);
       // Report connection open once peer info is read or connection is closed.
       if (peer_read_ || end_stream) {
+        ENVOY_LOG(trace, "Populating peer metadata from TCP MX.");
         populatePeerInfo(info, filter_state);
         tags_.push_back({context_.request_protocol_, context_.tcp_});
         populateFlagsAndConnectionSecurity(info);

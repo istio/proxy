@@ -79,11 +79,23 @@ protected:
         downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer));
   }
   void checkPeerNamespace(bool downstream, const std::string& expected) {
-    const auto* obj = stream_info_.filterState()->getDataReadOnly<WorkloadMetadataObject>(
-        downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer);
-    ASSERT_NE(nullptr, obj);
-    EXPECT_EQ(expected, obj->namespace_name_);
+    const auto* cel_state =
+        stream_info_.filterState()
+            ->getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
+                downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer);
+    ProtobufWkt::Struct obj;
+    ASSERT_TRUE(obj.ParseFromString(cel_state->value().data()));
+    EXPECT_EQ(expected, extractString(obj, "namespace"));
   }
+
+  absl::string_view extractString(const ProtobufWkt::Struct& metadata, absl::string_view key) {
+    const auto& it = metadata.fields().find(key);
+    if (it == metadata.fields().end()) {
+      return {};
+    }
+    return it->second.string_value();
+  }
+
   void checkShared(bool expected) {
     EXPECT_EQ(expected,
               stream_info_.filterState()->objectsSharedWithUpstreamConnection()->size() > 0);

@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/http/common/factory_base.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
 #include "source/extensions/filters/http/peer_metadata/config.pb.h"
@@ -24,6 +25,9 @@ namespace Envoy {
 namespace Extensions {
 namespace HttpFilters {
 namespace PeerMetadata {
+
+using ::Envoy::Extensions::Filters::Common::Expr::CelStatePrototype;
+using ::Envoy::Extensions::Filters::Common::Expr::CelStateType;
 
 struct HeaderValues {
   const Http::LowerCaseString ExchangeMetadataHeader{"x-envoy-peer-metadata"};
@@ -103,6 +107,13 @@ public:
   void discoverUpstream(StreamInfo::StreamInfo&, Http::ResponseHeaderMap&, Context&) const;
   void injectDownstream(const StreamInfo::StreamInfo&, Http::ResponseHeaderMap&, Context&) const;
   void injectUpstream(const StreamInfo::StreamInfo&, Http::RequestHeaderMap&, Context&) const;
+
+  static const CelStatePrototype& peerInfoPrototype() {
+    static const CelStatePrototype* const prototype = new CelStatePrototype(
+        true, CelStateType::Protobuf, "type.googleapis.com/google.protobuf.Struct",
+        StreamInfo::FilterState::LifeSpan::FilterChain);
+    return *prototype;
+  }
 
 private:
   std::vector<DiscoveryMethodPtr> buildDiscoveryMethods(

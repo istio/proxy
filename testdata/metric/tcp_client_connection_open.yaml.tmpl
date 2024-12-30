@@ -55,3 +55,7 @@ metric:
     value: "-"
   - name: connection_security_policy
     value: unknown
+{{- if eq .Vars.EnableAdditionalLabels "true" }}
+  - name: role
+    value: unknown
+{{- end }}

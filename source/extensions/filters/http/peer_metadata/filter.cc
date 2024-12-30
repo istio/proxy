@@ -29,6 +29,8 @@ namespace Extensions {
 namespace HttpFilters {
 namespace PeerMetadata {
 
+using ::Envoy::Extensions::Filters::Common::Expr::CelState;
+
 class XDSMethod : public DiscoveryMethod {
 public:
   XDSMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context)
@@ -288,8 +290,12 @@ void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
   const absl::string_view key =
       downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer;
   if (!info.filterState()->hasDataWithName(key)) {
+    // Use CelState to allow operation filter_state.upstream_peer.labels['role']
+    auto pb = value.serializeAsProto();
+    auto peer_info = std::make_unique<CelState>(FilterConfig::peerInfoPrototype());
+    peer_info->setValue(pb->SerializeAsString());
     info.filterState()->setData(
-        key, std::make_shared<PeerInfo>(value), StreamInfo::FilterState::StateType::Mutable,
+        key, std::move(peer_info), StreamInfo::FilterState::StateType::Mutable,
         StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());
   } else {
     ENVOY_LOG(debug, "Duplicate peer metadata, skipping");

@@ -33,6 +33,9 @@
 namespace Envoy {
 namespace Tcp {
 namespace MetadataExchange {
+
+using ::Envoy::Extensions::Filters::Common::Expr::CelState;
+
 namespace {
 
 // Sentinel key in the filter state, indicating that the peer metadata is
@@ -60,9 +63,11 @@ std::unique_ptr<Buffer::OwnedImpl> constructProxyHeaderData(const ProtobufWkt::A
 MetadataExchangeConfig::MetadataExchangeConfig(
     const std::string& stat_prefix, const std::string& protocol,
     const FilterDirection filter_direction, bool enable_discovery,
+    const absl::flat_hash_set<std::string> additional_labels,
     Server::Configuration::ServerFactoryContext& factory_context, Stats::Scope& scope)
     : scope_(scope), stat_prefix_(stat_prefix), protocol_(protocol),
-      filter_direction_(filter_direction), stats_(generateStats(stat_prefix, scope)) {
+      filter_direction_(filter_direction), stats_(generateStats(stat_prefix, scope)),
+      additional_labels_(additional_labels) {
   if (enable_discovery) {
     metadata_provider_ = Extensions::Common::WorkloadDiscovery::GetProvider(factory_context);
   }
@@ -181,9 +186,10 @@ void MetadataExchangeFilter::writeNodeMetadata() {
   if (conn_state_ != WriteMetadata) {
     return;
   }
-
+  ENVOY_LOG(trace, "Writing metadata to the connection.");
   ProtobufWkt::Struct data;
-  const auto obj = Istio::Common::convertStructToWorkloadMetadata(local_info_.node().metadata());
+  const auto obj = Istio::Common::convertStructToWorkloadMetadata(local_info_.node().metadata(),
+                                                                  config_->additional_labels_);
   *(*data.mutable_fields())[ExchangeMetadataHeader].mutable_struct_value() =
       Istio::Common::convertWorkloadMetadataToStruct(*obj);
   std::string metadata_id = getMetadataId();
@@ -257,17 +263,26 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   ProtobufWkt::Struct value_struct = MessageUtil::anyConvert<ProtobufWkt::Struct>(proxy_data);
   auto key_metadata_it = value_struct.fields().find(ExchangeMetadataHeader);
   if (key_metadata_it != value_struct.fields().end()) {
-    updatePeer(
-        *Istio::Common::convertStructToWorkloadMetadata(key_metadata_it->second.struct_value()));
+    updatePeer(*Istio::Common::convertStructToWorkloadMetadata(
+        key_metadata_it->second.struct_value(), config_->additional_labels_));
   }
 }
 
-void MetadataExchangeFilter::updatePeer(const Istio::Common::WorkloadMetadataObject& obj) {
+void MetadataExchangeFilter::updatePeer(const Istio::Common::WorkloadMetadataObject& value) {
+  updatePeer(value, config_->filter_direction_);
+}
+
+void MetadataExchangeFilter::updatePeer(const Istio::Common::WorkloadMetadataObject& value,
+                                        FilterDirection direction) {
+  auto filter_state_key = direction == FilterDirection::Downstream ? Istio::Common::DownstreamPeer
+                                                                   : Istio::Common::UpstreamPeer;
+  auto pb = value.serializeAsProto();
+  auto peer_info = std::make_shared<CelState>(MetadataExchangeConfig::peerInfoPrototype());
+  peer_info->setValue(absl::string_view(pb->SerializeAsString()));
+
   read_callbacks_->connection().streamInfo().filterState()->setData(
-      config_->filter_direction_ == FilterDirection::Downstream ? Istio::Common::DownstreamPeer
-                                                                : Istio::Common::UpstreamPeer,
-      std::make_shared<Istio::Common::WorkloadMetadataObject>(obj),
-      StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::Connection);
+      filter_state_key, std::move(peer_info), StreamInfo::FilterState::StateType::Mutable,
+      StreamInfo::FilterState::LifeSpan::Connection);
 }
 
 std::string MetadataExchangeFilter::getMetadataId() { return local_info_.node().id(); }
@@ -313,11 +328,7 @@ void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
         if (metadata_object) {
           ENVOY_LOG(debug, "Metadata found for upstream peer address {}",
                     upstream_peer->asString());
-          read_callbacks_->connection().streamInfo().filterState()->setData(
-              Istio::Common::UpstreamPeer,
-              std::make_shared<Istio::Common::WorkloadMetadataObject>(metadata_object.value()),
-              StreamInfo::FilterState::StateType::Mutable,
-              StreamInfo::FilterState::LifeSpan::Connection);
+          updatePeer(metadata_object.value(), FilterDirection::Upstream);
         }
       }
 
@@ -338,7 +349,7 @@ void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
     ENVOY_LOG(debug, "Look up metadata based on peer address {}", peer_address->asString());
     const auto metadata_object = config_->metadata_provider_->GetMetadata(peer_address);
     if (metadata_object) {
-      ENVOY_LOG(debug, "Metadata found for peer address {}", peer_address->asString());
+      ENVOY_LOG(trace, "Metadata found for peer address {}", peer_address->asString());
       updatePeer(metadata_object.value());
       config_->stats().metadata_added_.inc();
       return;

@@ -62,11 +62,42 @@ absl::optional<absl::string_view> toSuffix(WorkloadType workload_type) {
 
 Envoy::ProtobufTypes::MessagePtr WorkloadMetadataObject::serializeAsProto() const {
   auto message = std::make_unique<Envoy::ProtobufWkt::Struct>();
-  auto& fields = *message->mutable_fields();
-  const auto parts = serializeAsPairs();
-  for (const auto& p : parts) {
-    fields[std::string(p.first)] = Envoy::ValueUtil::stringValue(std::string(p.second));
+  const auto suffix = toSuffix(workload_type_);
+  if (suffix) {
+    (*message->mutable_fields())[WorkloadTypeToken].set_string_value(*suffix);
   }
+  if (!workload_name_.empty()) {
+    (*message->mutable_fields())[WorkloadNameToken].set_string_value(workload_name_);
+  }
+  if (!cluster_name_.empty()) {
+    (*message->mutable_fields())[InstanceNameToken].set_string_value(instance_name_);
+  }
+  if (!cluster_name_.empty()) {
+    (*message->mutable_fields())[ClusterNameToken].set_string_value(cluster_name_);
+  }
+  if (!namespace_name_.empty()) {
+    (*message->mutable_fields())[NamespaceNameToken].set_string_value(namespace_name_);
+  }
+  if (!canonical_name_.empty()) {
+    (*message->mutable_fields())[ServiceNameToken].set_string_value(canonical_name_);
+  }
+  if (!canonical_revision_.empty()) {
+    (*message->mutable_fields())[ServiceVersionToken].set_string_value(canonical_revision_);
+  }
+  if (!app_name_.empty()) {
+    (*message->mutable_fields())[AppNameToken].set_string_value(app_name_);
+  }
+  if (!app_version_.empty()) {
+    (*message->mutable_fields())[AppVersionToken].set_string_value(app_version_);
+  }
+
+  if (!labels_.empty()) {
+    auto* labels = (*message->mutable_fields())[LabelsToken].mutable_struct_value();
+    for (const auto& l : labels_) {
+      (*labels->mutable_fields())[std::string(l.first)].set_string_value(std::string(l.second));
+    }
+  }
+
   return message;
 }
 
@@ -103,7 +134,7 @@ WorkloadMetadataObject::serializeAsPairs() const {
   }
   if (!labels_.empty()) {
     for (const auto& l : labels_) {
-      parts.push_back({absl::string_view(l.first), absl::string_view(l.second)});
+      parts.push_back({absl::StrCat("labels[]", l.first), absl::string_view(l.second)});
     }
   }
   return parts;
@@ -280,15 +311,6 @@ WorkloadMetadataObject::getField(absl::string_view field_name) const {
       }
     case BaggageToken::InstanceName:
       return instance_name_;
-    }
-  }
-  // This is a workaround for FilterStateObjectWrapper.
-  // The field name is the label key.
-  if (!labels_.empty()) {
-    for (const auto& l : labels_) {
-      if (l.first == std::string(field_name)) {
-        return l.second;
-      }
     }
   }
   return {};

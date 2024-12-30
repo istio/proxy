@@ -57,3 +57,7 @@ metric:
     value: "-"
   - name: connection_security_policy
     value: mutual_tls
+{{- if eq .Vars.EnableAdditionalLabels "true" }}
+  - name: role
+    value: client
+{{- end }}

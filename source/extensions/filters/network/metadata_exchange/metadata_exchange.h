@@ -25,6 +25,7 @@
 #include "envoy/stream_info/filter_state.h"
 #include "source/common/common/stl_helpers.h"
 #include "source/common/protobuf/protobuf.h"
+#include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/network/metadata_exchange/config/metadata_exchange.pb.h"
 #include "source/extensions/common/workload_discovery/api.h"
 
@@ -33,6 +34,9 @@
 namespace Envoy {
 namespace Tcp {
 namespace MetadataExchange {
+
+using ::Envoy::Extensions::Filters::Common::Expr::CelStatePrototype;
+using ::Envoy::Extensions::Filters::Common::Expr::CelStateType;
 
 /**
  * All MetadataExchange filter stats. @see stats_macros.h
@@ -64,6 +68,7 @@ class MetadataExchangeConfig {
 public:
   MetadataExchangeConfig(const std::string& stat_prefix, const std::string& protocol,
                          const FilterDirection filter_direction, bool enable_discovery,
+                         const absl::flat_hash_set<std::string> additional_labels,
                          Server::Configuration::ServerFactoryContext& factory_context,
                          Stats::Scope& scope);
 
@@ -81,6 +86,14 @@ public:
   Extensions::Common::WorkloadDiscovery::WorkloadMetadataProviderSharedPtr metadata_provider_;
   // Stats for MetadataExchange Filter.
   MetadataExchangeStats stats_;
+  const absl::flat_hash_set<std::string> additional_labels_;
+
+  static const CelStatePrototype& peerInfoPrototype() {
+    static const CelStatePrototype* const prototype = new CelStatePrototype(
+        true, CelStateType::Protobuf, "type.googleapis.com/google.protobuf.Struct",
+        StreamInfo::FilterState::LifeSpan::Connection);
+    return *prototype;
+  }
 
 private:
   MetadataExchangeStats generateStats(const std::string& prefix, Stats::Scope& scope) {
@@ -125,6 +138,7 @@ private:
   void tryReadProxyData(Buffer::Instance& data);
 
   // Helper function to share the metadata with other filters.
+  void updatePeer(const Istio::Common::WorkloadMetadataObject& obj, FilterDirection direction);
   void updatePeer(const Istio::Common::WorkloadMetadataObject& obj);
 
   // Helper function to get metadata id.

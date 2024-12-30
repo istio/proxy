@@ -31,9 +31,16 @@ Network::FilterFactoryCb createFilterFactoryHelper(
     Server::Configuration::ServerFactoryContext& context, FilterDirection filter_direction) {
   ASSERT(!proto_config.protocol().empty());
 
+  absl::flat_hash_set<std::string> additional_labels;
+  if (!proto_config.additional_labels().empty()) {
+    for (const auto& label : proto_config.additional_labels()) {
+      additional_labels.emplace(label);
+    }
+  }
+
   MetadataExchangeConfigSharedPtr filter_config(std::make_shared<MetadataExchangeConfig>(
       StatPrefix, proto_config.protocol(), filter_direction, proto_config.enable_discovery(),
-      context, context.scope()));
+      additional_labels, context, context.scope()));
   return [filter_config, &context](Network::FilterManager& filter_manager) -> void {
     filter_manager.addFilter(
         std::make_shared<MetadataExchangeFilter>(filter_config, context.localInfo()));

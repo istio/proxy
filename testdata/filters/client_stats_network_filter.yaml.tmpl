@@ -18,4 +18,10 @@
     type_url: type.googleapis.com/stats.PluginConfig
     value:
       tcp_reporting_duration: 1s
+      {{- if eq .Vars.EnableAdditionalLabels "true" }}
+      metrics:
+      - name: tcp_connections_opened_total
+        dimensions:
+          role: filter_state.upstream_peer.labels['role']
+      {{- end }}
 {{ end }}
