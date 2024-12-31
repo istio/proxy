@@ -1111,17 +1111,17 @@ private:
       if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
         peer_san = ssl_info->uriSanPeerCertificate()[0];
       }
-      // This won't work for sidecar/ingress -> ambient becuase of the CONNECT
-      // tunnel.
-      if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
-        local_san = ssl_info->uriSanLocalCertificate()[0];
-      }
       if (peer_san.empty()) {
         std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer;
         const auto* endpoint_object = peerInfo(config_->reporter(), filter_state);
         if (endpoint_object) {
           peer_san = endpoint_object->identity_;
         }
+      }
+      // This won't work for sidecar/ingress -> ambient becuase of the CONNECT
+      // tunnel.
+      if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
+        local_san = ssl_info->uriSanLocalCertificate()[0];
       }
       break;
     }
