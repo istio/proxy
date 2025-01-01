@@ -769,6 +769,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
 using ConfigSharedPtr = std::shared_ptr<Config>;
 
 class IstioStatsFilter : public Http::PassThroughFilter,
+                         public Logger::Loggable<Logger::Id::filter>,
                          public AccessLog::Instance,
                          public Network::ReadFilter,
                          public Network::ConnectionCallbacks {
@@ -933,6 +934,7 @@ private:
       peer_read_ = peerInfoRead(config_->reporter(), filter_state);
       // Report connection open once peer info is read or connection is closed.
       if (peer_read_ || end_stream) {
+        ENVOY_LOG(trace, "Reading peer metadata from TCP MX.");
         populatePeerInfo(info, filter_state);
         tags_.push_back({context_.request_protocol_, context_.tcp_});
         populateFlagsAndConnectionSecurity(info);
@@ -979,8 +981,10 @@ private:
     absl::optional<Istio::Common::WorkloadMetadataObject> peer;
     const auto* object = peerInfo(config_->reporter(), filter_state);
     if (object) {
+      ENVOY_LOG(trace, "Found peer metadata: {}", object->serializeAsString().value());
       peer.emplace(*object);
     } else if (config_->reporter() == Reporter::ClientSidecar) {
+      ENVOY_LOG(trace, "extractEndpointMetadata");
       if (auto label_obj = extractEndpointMetadata(info); label_obj) {
         peer.emplace(label_obj.value());
       }

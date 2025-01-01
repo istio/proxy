@@ -100,10 +100,10 @@ uid: //v1/pod/default/ratings
 						Step: &driver.TCPConnection{},
 					},
 					&driver.Stats{AdminPort: params.Ports.ClientAdmin, Matchers: map[string]driver.StatMatcher{
-						"istio_tcp_connections_closed_total": &driver.ExactStat{Metric: "testdata/metric/tcp_client_connection_close.yaml.tmpl"},
-						"istio_tcp_connections_opened_total": &driver.ExactStat{Metric: "testdata/metric/tcp_client_connection_open.yaml.tmpl"},
-						"istio_tcp_received_bytes_total":     &driver.ExactStat{Metric: "testdata/metric/tcp_client_received_bytes.yaml.tmpl"},
-						"istio_tcp_sent_bytes_total":         &driver.ExactStat{Metric: "testdata/metric/tcp_client_sent_bytes.yaml.tmpl"},
+						"istio_tcp_connections_closed_total":  &driver.ExactStat{Metric: "testdata/metric/tcp_client_connection_close.yaml.tmpl"},
+						"istio_tcp_connections_opened_total1": &driver.ExactStat{Metric: "testdata/metric/tcp_client_connection_open.yaml.tmpl"},
+						"istio_tcp_received_bytes_total":      &driver.ExactStat{Metric: "testdata/metric/tcp_client_received_bytes.yaml.tmpl"},
+						"istio_tcp_sent_bytes_total":          &driver.ExactStat{Metric: "testdata/metric/tcp_client_sent_bytes.yaml.tmpl"},
 					}},
 					&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
 						"istio_tcp_connections_closed_total": &driver.ExactStat{Metric: "testdata/metric/tcp_server_connection_close.yaml.tmpl"},
