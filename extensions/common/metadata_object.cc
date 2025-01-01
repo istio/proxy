@@ -90,6 +90,9 @@ Envoy::ProtobufTypes::MessagePtr WorkloadMetadataObject::serializeAsProto() cons
   if (!app_version_.empty()) {
     (*message->mutable_fields())[AppVersionToken].set_string_value(app_version_);
   }
+  if (!identity_.empty()) {
+    (*message->mutable_fields())[IdentityToken].set_string_value(identity_);
+  }
 
   if (!labels_.empty()) {
     auto* labels = (*message->mutable_fields())[LabelsToken].mutable_struct_value();

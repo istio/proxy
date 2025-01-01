@@ -77,6 +77,7 @@ constexpr absl::string_view WorkloadNameToken = "workload";
 constexpr absl::string_view WorkloadTypeToken = "type";
 constexpr absl::string_view InstanceNameToken = "name";
 constexpr absl::string_view LabelsToken = "labels";
+constexpr absl::string_view IdentityToken = "identity";
 
 constexpr absl::string_view InstanceMetadataField = "NAME";
 constexpr absl::string_view NamespaceMetadataField = "NAMESPACE";

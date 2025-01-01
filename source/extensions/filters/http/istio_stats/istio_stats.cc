@@ -123,8 +123,8 @@ bool peerInfoRead(Reporter reporter, const StreamInfo::FilterState& filter_state
          filter_state.hasDataWithName(Istio::Common::NoPeer);
 }
 
-const Istio::Common::WorkloadMetadataObject* peerInfo(Reporter reporter,
-                                                      const StreamInfo::FilterState& filter_state) {
+std::optional<Istio::Common::WorkloadMetadataObject>
+peerInfo(Reporter reporter, const StreamInfo::FilterState& filter_state) {
   const auto& filter_state_key =
       reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
           ? Istio::Common::DownstreamPeer
@@ -136,15 +136,15 @@ const Istio::Common::WorkloadMetadataObject* peerInfo(Reporter reporter,
       filter_state.getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
           filter_state_key);
   if (!cel_state) {
-    return nullptr;
+    return {};
   }
 
   ProtobufWkt::Struct obj;
   if (!obj.ParseFromString(absl::string_view(cel_state->value().data()))) {
-    return nullptr;
+    return {};
   }
 
-  auto peer_info = std::make_unique<Istio::Common::WorkloadMetadataObject>(
+  Istio::Common::WorkloadMetadataObject peer_info(
       extractString(obj, Istio::Common::InstanceNameToken),
       extractString(obj, Istio::Common::ClusterNameToken),
       extractString(obj, Istio::Common::NamespaceNameToken),
@@ -153,9 +153,10 @@ const Istio::Common::WorkloadMetadataObject* peerInfo(Reporter reporter,
       extractString(obj, Istio::Common::ServiceVersionToken),
       extractString(obj, Istio::Common::AppNameToken),
       extractString(obj, Istio::Common::AppVersionToken),
-      Istio::Common::fromSuffix(extractString(obj, Istio::Common::WorkloadTypeToken)), "");
+      Istio::Common::fromSuffix(extractString(obj, Istio::Common::WorkloadTypeToken)),
+      extractString(obj, Istio::Common::IdentityToken));
 
-  return peer_info.release();
+  return peer_info;
 }
 
 // Process-wide context shared with all filter instances.
@@ -1012,9 +1013,9 @@ private:
                         const StreamInfo::FilterState& filter_state) {
     // Compute peer info with client-side fallbacks.
     absl::optional<Istio::Common::WorkloadMetadataObject> peer;
-    const auto* object = peerInfo(config_->reporter(), filter_state);
+    auto object = peerInfo(config_->reporter(), filter_state);
     if (object) {
-      peer.emplace(*object);
+      peer.emplace(object.value());
     } else if (config_->reporter() == Reporter::ClientSidecar) {
       if (auto label_obj = extractEndpointMetadata(info); label_obj) {
         peer.emplace(label_obj.value());
@@ -1156,9 +1157,9 @@ private:
       switch (config_->reporter()) {
       case Reporter::ServerGateway: {
         std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer;
-        const auto* endpoint_object = peerInfo(Reporter::ClientSidecar, filter_state);
+        auto endpoint_object = peerInfo(Reporter::ClientSidecar, filter_state);
         if (endpoint_object) {
-          endpoint_peer.emplace(*endpoint_object);
+          endpoint_peer.emplace(endpoint_object.value());
         }
         tags_.push_back(
             {context_.destination_workload_,

@@ -293,7 +293,7 @@ void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
     // Use CelState to allow operation filter_state.upstream_peer.labels['role']
     auto pb = value.serializeAsProto();
     auto peer_info = std::make_unique<CelState>(FilterConfig::peerInfoPrototype());
-    peer_info->setValue(pb->SerializeAsString());
+    peer_info->setValue(absl::string_view(pb->SerializeAsString()));
     info.filterState()->setData(
         key, std::move(peer_info), StreamInfo::FilterState::StateType::Mutable,
         StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());
