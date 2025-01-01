@@ -55,7 +55,7 @@ func TestBasicTCPFlow(t *testing.T) {
 			&driver.Update{
 				Node:      "server",
 				Version:   "0",
-				Clusters:  []string{driver.LoadTestData("testdata/cluster/tcp_server.yaml.tmpl")},
+			Clusters:  []string{driver.LoadTestData("testdata/cluster/tcp_server.yaml.tmpl")},
 				Listeners: []string{driver.LoadTestData("testdata/listener/tcp_server.yaml.tmpl")},
 			},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
