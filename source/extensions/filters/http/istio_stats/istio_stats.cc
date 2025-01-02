@@ -140,7 +140,7 @@ peerInfo(Reporter reporter, const StreamInfo::FilterState& filter_state) {
   }
 
   ProtobufWkt::Struct obj;
-  if (!obj.ParseFromString(absl::string_view(cel_state->value().data()))) {
+  if (!obj.ParseFromString(absl::string_view(cel_state->value()))) {
     return {};
   }
 
