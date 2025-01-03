@@ -57,6 +57,7 @@ envoy_cc_library(
         "@envoy//source/common/protobuf",
         "@envoy//source/common/protobuf:utility_lib",
         "@envoy//source/common/stream_info:bool_accessor_lib",
+        "@envoy//source/extensions/filters/common/expr:cel_state_lib",
     ],
 )
 

@@ -56,9 +56,12 @@ class MetadataExchangeFilterTest : public testing::Test {
 public:
   MetadataExchangeFilterTest() { ENVOY_LOG_MISC(info, "test"); }
 
-  void initialize() {
+  void initialize() { initialize(absl::flat_hash_set<std::string>()); }
+
+  void initialize(absl::flat_hash_set<std::string> additional_labels) {
     config_ = std::make_shared<MetadataExchangeConfig>(
-        stat_prefix_, "istio2", FilterDirection::Downstream, false, context_, *scope_.rootScope());
+        stat_prefix_, "istio2", FilterDirection::Downstream, false, additional_labels, context_,
+        *scope_.rootScope());
     filter_ = std::make_unique<MetadataExchangeFilter>(config_, local_info_);
     filter_->initializeReadFilterCallbacks(read_filter_callbacks_);
     filter_->initializeWriteFilterCallbacks(write_filter_callbacks_);
@@ -96,6 +99,29 @@ public:
 
 TEST_F(MetadataExchangeFilterTest, MetadataExchangeFound) {
   initialize();
+  initializeStructValues();
+
+  EXPECT_CALL(read_filter_callbacks_.connection_, nextProtocol()).WillRepeatedly(Return("istio2"));
+
+  ::Envoy::Buffer::OwnedImpl data;
+  MetadataExchangeInitialHeader initial_header;
+  Envoy::ProtobufWkt::Any productpage_any_value;
+  productpage_any_value.set_type_url("type.googleapis.com/google.protobuf.Struct");
+  *productpage_any_value.mutable_value() = productpage_value_.SerializeAsString();
+  ConstructProxyHeaderData(data, productpage_any_value, &initial_header);
+  ::Envoy::Buffer::OwnedImpl world{"world"};
+  data.add(world);
+
+  EXPECT_EQ(Envoy::Network::FilterStatus::Continue, filter_->onData(data, false));
+  EXPECT_EQ(data.toString(), "world");
+
+  EXPECT_EQ(0UL, config_->stats().initial_header_not_found_.value());
+  EXPECT_EQ(0UL, config_->stats().header_not_found_.value());
+  EXPECT_EQ(1UL, config_->stats().alpn_protocol_found_.value());
+}
+
+TEST_F(MetadataExchangeFilterTest, MetadataExchangeAdditionalLabels) {
+  initialize({"role"});
   initializeStructValues();
 
   EXPECT_CALL(read_filter_callbacks_.connection_, nextProtocol()).WillRepeatedly(Return("istio2"));

@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/http/common/factory_base.h"
 #include "source/extensions/filters/http/common/pass_through_filter.h"
 #include "source/extensions/filters/http/peer_metadata/config.pb.h"
@@ -24,6 +25,9 @@ namespace Envoy {
 namespace Extensions {
 namespace HttpFilters {
 namespace PeerMetadata {
+
+using ::Envoy::Extensions::Filters::Common::Expr::CelStatePrototype;
+using ::Envoy::Extensions::Filters::Common::Expr::CelStateType;
 
 struct HeaderValues {
   const Http::LowerCaseString ExchangeMetadataHeader{"x-envoy-peer-metadata"};
@@ -52,7 +56,8 @@ using DiscoveryMethodPtr = std::unique_ptr<DiscoveryMethod>;
 
 class MXMethod : public DiscoveryMethod {
 public:
-  MXMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context);
+  MXMethod(bool downstream, const absl::flat_hash_set<std::string> additional_labels,
+           Server::Configuration::ServerFactoryContext& factory_context);
   absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
                                           Context&) const override;
   void remove(Http::HeaderMap&) const override;
@@ -64,6 +69,7 @@ private:
     absl::flat_hash_map<std::string, PeerInfo> cache_;
   };
   mutable ThreadLocal::TypedSlot<MXCache> tls_;
+  const absl::flat_hash_set<std::string> additional_labels_;
   const int64_t max_peer_cache_size_{500};
 };
 
@@ -79,12 +85,14 @@ using PropagationMethodPtr = std::unique_ptr<PropagationMethod>;
 class MXPropagationMethod : public PropagationMethod {
 public:
   MXPropagationMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context,
+                      const absl::flat_hash_set<std::string>& additional_labels,
                       const io::istio::http::peer_metadata::Config_IstioHeaders&);
   void inject(const StreamInfo::StreamInfo&, Http::HeaderMap&, Context&) const override;
 
 private:
   const bool downstream_;
-  std::string computeValue(Server::Configuration::ServerFactoryContext&) const;
+  std::string computeValue(const absl::flat_hash_set<std::string>&,
+                           Server::Configuration::ServerFactoryContext&) const;
   const std::string id_;
   const std::string value_;
   const bool skip_external_clusters_;
@@ -100,13 +108,24 @@ public:
   void injectDownstream(const StreamInfo::StreamInfo&, Http::ResponseHeaderMap&, Context&) const;
   void injectUpstream(const StreamInfo::StreamInfo&, Http::RequestHeaderMap&, Context&) const;
 
+  static const CelStatePrototype& peerInfoPrototype() {
+    static const CelStatePrototype* const prototype = new CelStatePrototype(
+        true, CelStateType::Protobuf, "type.googleapis.com/google.protobuf.Struct",
+        StreamInfo::FilterState::LifeSpan::FilterChain);
+    return *prototype;
+  }
+
 private:
   std::vector<DiscoveryMethodPtr> buildDiscoveryMethods(
       const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::DiscoveryMethod>&,
-      bool downstream, Server::Configuration::FactoryContext&) const;
+      const absl::flat_hash_set<std::string>& additional_labels, bool downstream,
+      Server::Configuration::FactoryContext&) const;
   std::vector<PropagationMethodPtr> buildPropagationMethods(
       const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::PropagationMethod>&,
-      bool downstream, Server::Configuration::FactoryContext&) const;
+      const absl::flat_hash_set<std::string>& additional_labels, bool downstream,
+      Server::Configuration::FactoryContext&) const;
+  absl::flat_hash_set<std::string>
+  buildAdditionalLabels(const Protobuf::RepeatedPtrField<std::string>&) const;
   StreamInfo::StreamSharingMayImpactPooling sharedWithUpstream() const {
     return shared_with_upstream_
                ? StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce

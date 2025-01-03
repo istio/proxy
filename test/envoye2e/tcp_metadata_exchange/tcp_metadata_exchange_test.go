@@ -120,6 +120,68 @@ uid: //v1/pod/default/ratings
 	}
 }
 
+func TestTCPMXAdditionalLabels(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{
+		"DisableDirectResponse": "true",
+		"StatsConfig":           driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+	}, envoye2e.ProxyE2ETests)
+	mxStats := map[string]driver.StatMatcher{
+		"envoy_metadata_exchange_metadata_added": &driver.ExactStat{Metric: "testdata/metric/tcp_server_mx_stats_metadata_added.yaml.tmpl"},
+	}
+	params.Vars["AlpnProtocol"] = "mx-protocol"
+	mxStats["envoy_metadata_exchange_alpn_protocol_found"] = &driver.ExactStat{Metric: "testdata/metric/tcp_server_mx_stats_alpn_found.yaml.tmpl"}
+	params.Vars["EnableAdditionalLabels"] = "true"
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
+		params.LoadTestData("testdata/filters/server_stats_network_filter.yaml.tmpl")
+	params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
+	params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/client_stats_network_filter.yaml.tmpl")
+	params.Vars["ClientClusterTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
+	params.Vars["ServerListenerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
+
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			&driver.Update{
+				Node:      "client",
+				Version:   "0",
+				Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_client.yaml.tmpl")},
+				Listeners: []string{params.LoadTestData("testdata/listener/tcp_client.yaml.tmpl")},
+			},
+			&driver.Update{
+				Node:      "server",
+				Version:   "0",
+				Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_server.yaml.tmpl")},
+				Listeners: []string{params.LoadTestData("testdata/listener/tcp_server.yaml.tmpl")},
+			},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.TCPServer{Prefix: "hello"},
+			&driver.Repeat{
+				N:    10,
+				Step: &driver.TCPConnection{},
+			},
+			&driver.Stats{AdminPort: params.Ports.ClientAdmin, Matchers: map[string]driver.StatMatcher{
+				"istio_tcp_connections_closed_total": &driver.ExactStat{Metric: "testdata/metric/tcp_client_connection_close.yaml.tmpl"},
+				"istio_tcp_connections_opened_total": &driver.ExactStat{Metric: "testdata/metric/tcp_client_connection_open.yaml.tmpl"},
+				"istio_tcp_received_bytes_total":     &driver.ExactStat{Metric: "testdata/metric/tcp_client_received_bytes.yaml.tmpl"},
+				"istio_tcp_sent_bytes_total":         &driver.ExactStat{Metric: "testdata/metric/tcp_client_sent_bytes.yaml.tmpl"},
+			}},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				"istio_tcp_connections_closed_total": &driver.ExactStat{Metric: "testdata/metric/tcp_server_connection_close.yaml.tmpl"},
+				"istio_tcp_connections_opened_total": &driver.ExactStat{Metric: "testdata/metric/tcp_server_connection_open.yaml.tmpl"},
+				"istio_tcp_received_bytes_total":     &driver.ExactStat{Metric: "testdata/metric/tcp_server_received_bytes.yaml.tmpl"},
+				"istio_tcp_sent_bytes_total":         &driver.ExactStat{Metric: "testdata/metric/tcp_server_sent_bytes.yaml.tmpl"},
+			}},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: mxStats},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestTCPMetadataExchangeNoAlpn(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"DisableDirectResponse": "true",

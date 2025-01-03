@@ -1,11 +1,11 @@
-name: istio_tcp_connections_opened_total
+name: istio_requests_total
 type: COUNTER
 metric:
 - counter:
-    value: 10
+    value: {{ .Vars.RequestCount }}
   label:
   - name: reporter
-    value: source
+    value: destination
   - name: source_workload
     value: productpage-v1
   - name: source_canonical_service
@@ -15,7 +15,7 @@ metric:
   - name: source_workload_namespace
     value: default
   - name: source_principal
-    value: spiffe://cluster.local/ns/default/sa/client
+    value: unknown
   - name: source_app
     value: productpage
   - name: source_version
@@ -27,16 +27,11 @@ metric:
   - name: destination_workload_namespace
     value: default
   - name: destination_principal
-    value: spiffe://cluster.local/ns/default/sa/server
+    value: unknown
   - name: destination_app
     value: ratings
-{{- if eq .Vars.AppVersionFallback "true" }}
-  - name: destination_version
-    value: version-1
-{{- else }}
   - name: destination_version
     value: v1
-{{- end }}
   - name: destination_service
     value: server.default.svc.cluster.local
   - name: destination_canonical_service
@@ -50,12 +45,18 @@ metric:
   - name: destination_cluster
     value: server-cluster
   - name: request_protocol
-    value: tcp
+    {{- if .Vars.GrpcResponseStatus }}
+    value: grpc
+    {{- else }}
+    value: http
+    {{- end }}
+  - name: response_code
+    value: "200"
+  - name: grpc_response_status
+    value: "{{ .Vars.GrpcResponseStatus }}"
   - name: response_flags
     value: "-"
   - name: connection_security_policy
-    value: unknown
-{{- if eq .Vars.EnableAdditionalLabels "true" }}
+    value: none
   - name: role
-    value: unknown
-{{- end }}
+    value: client

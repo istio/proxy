@@ -62,11 +62,45 @@ absl::optional<absl::string_view> toSuffix(WorkloadType workload_type) {
 
 Envoy::ProtobufTypes::MessagePtr WorkloadMetadataObject::serializeAsProto() const {
   auto message = std::make_unique<Envoy::ProtobufWkt::Struct>();
-  auto& fields = *message->mutable_fields();
-  const auto parts = serializeAsPairs();
-  for (const auto& p : parts) {
-    fields[std::string(p.first)] = Envoy::ValueUtil::stringValue(std::string(p.second));
+  const auto suffix = toSuffix(workload_type_);
+  if (suffix) {
+    (*message->mutable_fields())[WorkloadTypeToken].set_string_value(*suffix);
   }
+  if (!workload_name_.empty()) {
+    (*message->mutable_fields())[WorkloadNameToken].set_string_value(workload_name_);
+  }
+  if (!cluster_name_.empty()) {
+    (*message->mutable_fields())[InstanceNameToken].set_string_value(instance_name_);
+  }
+  if (!cluster_name_.empty()) {
+    (*message->mutable_fields())[ClusterNameToken].set_string_value(cluster_name_);
+  }
+  if (!namespace_name_.empty()) {
+    (*message->mutable_fields())[NamespaceNameToken].set_string_value(namespace_name_);
+  }
+  if (!canonical_name_.empty()) {
+    (*message->mutable_fields())[ServiceNameToken].set_string_value(canonical_name_);
+  }
+  if (!canonical_revision_.empty()) {
+    (*message->mutable_fields())[ServiceVersionToken].set_string_value(canonical_revision_);
+  }
+  if (!app_name_.empty()) {
+    (*message->mutable_fields())[AppNameToken].set_string_value(app_name_);
+  }
+  if (!app_version_.empty()) {
+    (*message->mutable_fields())[AppVersionToken].set_string_value(app_version_);
+  }
+  if (!identity_.empty()) {
+    (*message->mutable_fields())[IdentityToken].set_string_value(identity_);
+  }
+
+  if (!labels_.empty()) {
+    auto* labels = (*message->mutable_fields())[LabelsToken].mutable_struct_value();
+    for (const auto& l : labels_) {
+      (*labels->mutable_fields())[std::string(l.first)].set_string_value(std::string(l.second));
+    }
+  }
+
   return message;
 }
 
@@ -100,6 +134,11 @@ WorkloadMetadataObject::serializeAsPairs() const {
   }
   if (!app_version_.empty()) {
     parts.push_back({AppVersionToken, app_version_});
+  }
+  if (!labels_.empty()) {
+    for (const auto& l : labels_) {
+      parts.push_back({absl::StrCat("labels[]", l.first), absl::string_view(l.second)});
+    }
   }
   return parts;
 }
@@ -168,6 +207,11 @@ google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataO
   if (!obj.app_version_.empty()) {
     (*labels->mutable_fields())[AppVersionLabel].set_string_value(obj.app_version_);
   }
+  if (!obj.getLabels().empty()) {
+    for (const auto& lbl : obj.getLabels()) {
+      (*labels->mutable_fields())[std::string(lbl.first)].set_string_value(std::string(lbl.second));
+    }
+  }
   if (const auto owner = obj.owner(); owner.has_value()) {
     (*metadata.mutable_fields())[OwnerMetadataField].set_string_value(*owner);
   }
@@ -177,8 +221,15 @@ google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataO
 // Convert struct to a metadata object.
 std::unique_ptr<WorkloadMetadataObject>
 convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata) {
+  return convertStructToWorkloadMetadata(metadata, {});
+}
+
+std::unique_ptr<WorkloadMetadataObject>
+convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
+                                const absl::flat_hash_set<std::string>& additional_labels) {
   absl::string_view instance, namespace_name, owner, workload, cluster, canonical_name,
       canonical_revision, app_name, app_version;
+  std::vector<std::pair<std::string, std::string>> labels;
   for (const auto& it : metadata.fields()) {
     if (it.first == InstanceMetadataField) {
       instance = it.second.string_value();
@@ -200,13 +251,19 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata) {
           app_name = labels_it.second.string_value();
         } else if (labels_it.first == AppVersionLabel) {
           app_version = labels_it.second.string_value();
+        } else if (!additional_labels.empty() &&
+                   additional_labels.contains(std::string(labels_it.first))) {
+          labels.push_back(
+              {std::string(labels_it.first), std::string(labels_it.second.string_value())});
         }
       }
     }
   }
-  return std::make_unique<WorkloadMetadataObject>(instance, cluster, namespace_name, workload,
-                                                  canonical_name, canonical_revision, app_name,
-                                                  app_version, parseOwner(owner, workload), "");
+  auto obj = std::make_unique<WorkloadMetadataObject>(instance, cluster, namespace_name, workload,
+                                                      canonical_name, canonical_revision, app_name,
+                                                      app_version, parseOwner(owner, workload), "");
+  obj->setLabels(labels);
+  return obj;
 }
 
 absl::optional<WorkloadMetadataObject>

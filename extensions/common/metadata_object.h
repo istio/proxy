@@ -19,7 +19,6 @@
 
 #include "source/common/protobuf/protobuf.h"
 
-#include "absl/strings/str_split.h"
 #include "absl/types/optional.h"
 
 #include "google/protobuf/struct.pb.h"
@@ -77,6 +76,8 @@ constexpr absl::string_view AppVersionToken = "version";
 constexpr absl::string_view WorkloadNameToken = "workload";
 constexpr absl::string_view WorkloadTypeToken = "type";
 constexpr absl::string_view InstanceNameToken = "name";
+constexpr absl::string_view LabelsToken = "labels";
+constexpr absl::string_view IdentityToken = "identity";
 
 constexpr absl::string_view InstanceMetadataField = "NAME";
 constexpr absl::string_view NamespaceMetadataField = "NAMESPACE";
@@ -107,6 +108,8 @@ public:
   bool hasFieldSupport() const override { return true; }
   using Envoy::StreamInfo::FilterState::Object::FieldType;
   FieldType getField(absl::string_view) const override;
+  void setLabels(std::vector<std::pair<std::string, std::string>> labels) { labels_ = labels; }
+  std::vector<std::pair<std::string, std::string>> getLabels() const { return labels_; }
 
   const std::string instance_name_;
   const std::string cluster_name_;
@@ -118,6 +121,7 @@ public:
   const std::string app_version_;
   const WorkloadType workload_type_;
   const std::string identity_;
+  std::vector<std::pair<std::string, std::string>> labels_;
 };
 
 // Parse string workload type.
@@ -132,6 +136,10 @@ google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataO
 // Convert struct to a metadata object.
 std::unique_ptr<WorkloadMetadataObject>
 convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata);
+
+std::unique_ptr<WorkloadMetadataObject>
+convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
+                                const absl::flat_hash_set<std::string>& additional_labels);
 
 // Convert endpoint metadata string to a metadata object.
 // Telemetry metadata is compressed into a semicolon separated string:
