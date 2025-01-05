@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/cncf/xds/go v0.0.0-20240723142845-024c85f92f20
-	github.com/envoyproxy/go-control-plane v0.13.3-0.20241223225832-3bbb1657744f
+	github.com/envoyproxy/go-control-plane v0.13.4-0.20250103204741-5ffae0c409f2
 	github.com/envoyproxy/go-control-plane/envoy v1.32.2
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.6.0
