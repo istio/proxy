@@ -1113,7 +1113,7 @@ private:
       }
       if (peer_san.empty()) {
         std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer;
-        const auto* endpoint_object = peerInfo(config_->reporter(), filter_state);
+        const auto endpoint_object = peerInfo(config_->reporter(), filter_state);
         if (endpoint_object) {
           peer_san = endpoint_object->identity_;
         }
