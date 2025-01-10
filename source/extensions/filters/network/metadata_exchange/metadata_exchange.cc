@@ -369,7 +369,7 @@ void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
           ENVOY_LOG(debug, "Metadata found for upstream peer address {}",
                     upstream_peer->asString());
           read_callbacks_->connection().streamInfo().filterState()->setData(
-              kUpstreamMet,
+              kUpstreamMetadataIdKey,
               std::make_shared<Istio::Common::WorkloadMetadataObject>(metadata_object.value()),
               StreamInfo::FilterState::StateType::Mutable,
               StreamInfo::FilterState::LifeSpan::Connection);
