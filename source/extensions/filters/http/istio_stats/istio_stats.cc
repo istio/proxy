@@ -538,7 +538,6 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
     default:
       break;
     }
-
     if (proto_config.metrics_size() > 0 || proto_config.definitions_size() > 0) {
       metric_overrides_ = std::make_unique<MetricOverrides>(context_, scope()->symbolTable());
       for (const auto& definition : proto_config.definitions()) {
@@ -1108,14 +1107,15 @@ private:
     case Reporter::ClientSidecar: {
       const Ssl::ConnectionInfoConstSharedPtr ssl_info =
           info.upstreamInfo() ? info.upstreamInfo()->upstreamSslConnection() : nullptr;
+      std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer;
       if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
         peer_san = ssl_info->uriSanPeerCertificate()[0];
       }
       if (peer_san.empty()) {
-        std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer;
-        const auto endpoint_object = peerInfo(config_->reporter(), filter_state);
+        auto endpoint_object = peerInfo(config_->reporter(), filter_state);
         if (endpoint_object) {
-          peer_san = endpoint_object.value().identity_;
+          endpoint_peer.emplace(endpoint_object.value());
+          peer_san = endpoint_peer->identity_;
         }
       }
       // This won't work for sidecar/ingress -> ambient becuase of the CONNECT
