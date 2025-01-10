@@ -1076,7 +1076,7 @@ private:
       }
     }
 
-    absl::string_view peer_san;
+    std::string peer_san;
     absl::string_view local_san;
     switch (config_->reporter()) {
     case Reporter::ServerSidecar:
