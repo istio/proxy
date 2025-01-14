@@ -23,27 +23,27 @@ metric:
   - name: source_cluster
     value: unknown
   - name: destination_workload
-    value: ratings-v1
+    value: unknown
   - name: destination_workload_namespace
     value: default
   - name: destination_principal
-    value: spiffe://cluster.global/ns/default/sa/ratings
+    value: spiffe://cluster.local/ns/default/sa/default
   - name: destination_app
-    value: ratings
+    value: unknown
   - name: destination_version
-    value: version-1
+    value: unknown
   - name: destination_service
     value: server.default.svc.cluster.local
   - name: destination_canonical_service
-    value: ratings
+    value: unknown
   - name: destination_canonical_revision
-    value: version-1
+    value: unknown
   - name: destination_service_name
     value: server
   - name: destination_service_namespace
     value: default
   - name: destination_cluster
-    value: ratings-cluster
+    value: unknown
   - name: request_protocol
     {{- if .Vars.GrpcResponseStatus }}
     value: grpc

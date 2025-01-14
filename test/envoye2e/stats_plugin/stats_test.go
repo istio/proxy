@@ -602,6 +602,14 @@ canonical_revision: version-1
 uid: //v1/pod/default/ratings
 service_account: ratings
 trust_domain: cluster.global
+cluster_id: ratings-cluster
+`
+
+// A mostly empty metadata.
+// All workloads are guaranteed to have a UID and ought to have a namespace as well.
+const EmptyMetadata = `
+uid: //v1/pod/default/ratings
+namespace: default
 `
 
 const ProductPageMetadata = `
@@ -655,6 +663,15 @@ func TestStatsServerWaypointProxy(t *testing.T) {
 }
 
 func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
+	t.Run("full metadata", func(t *testing.T) {
+		runStatsServerWaypointProxyCONNECT(t, BackendMetadata, "testdata/metric/server_waypoint_proxy_connect_request_total.yaml.tmpl")
+	})
+	t.Run("empty metadata", func(t *testing.T) {
+		runStatsServerWaypointProxyCONNECT(t, EmptyMetadata, "testdata/metric/server_waypoint_proxy_connect_emptymeta_request_total.yaml.tmpl")
+	})
+}
+
+func runStatsServerWaypointProxyCONNECT(t *testing.T, backendMetadata string, metricResult string) {
 	params := driver.NewTestParams(t, map[string]string{
 		"RequestCount":            "10",
 		"EnableDelta":             "true",
@@ -704,7 +721,7 @@ func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 				Metadata: ProductPageMetadata,
 			}, {
 				Address:  "127.0.0.3",
-				Metadata: BackendMetadata,
+				Metadata: backendMetadata,
 			}}},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
 			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
@@ -719,7 +736,7 @@ func TestStatsServerWaypointProxyCONNECT(t *testing.T) {
 			&driver.Stats{
 				AdminPort: params.Ports.ServerAdmin,
 				Matchers: map[string]driver.StatMatcher{
-					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_waypoint_proxy_connect_request_total.yaml.tmpl"},
+					"istio_requests_total": &driver.ExactStat{Metric: metricResult},
 				},
 			},
 		},

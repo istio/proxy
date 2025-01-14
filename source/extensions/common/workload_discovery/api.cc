@@ -31,6 +31,7 @@
 namespace Envoy::Extensions::Common::WorkloadDiscovery {
 namespace {
 constexpr absl::string_view DefaultNamespace = "default";
+constexpr absl::string_view DefaultServiceAccount = "default";
 constexpr absl::string_view DefaultTrustDomain = "cluster.local";
 Istio::Common::WorkloadMetadataObject convert(const istio::workload::Workload& workload) {
   auto workload_type = Istio::Common::WorkloadType::Deployment;
@@ -50,6 +51,7 @@ Istio::Common::WorkloadMetadataObject convert(const istio::workload::Workload& w
 
   absl::string_view ns = workload.namespace_();
   absl::string_view trust_domain = workload.trust_domain();
+  absl::string_view service_account = workload.service_account();
   // Trust domain may be elided if it's equal to "cluster.local"
   if (trust_domain.empty()) {
     trust_domain = DefaultTrustDomain;
@@ -58,10 +60,14 @@ Istio::Common::WorkloadMetadataObject convert(const istio::workload::Workload& w
   if (ns.empty()) {
     ns = DefaultNamespace;
   }
-  const auto identity = absl::StrCat("spiffe://", trust_domain, "/ns/", workload.namespace_(),
-                                     "/sa/", workload.service_account());
+  // The service account may be elided if it's equal to "default"
+  if (service_account.empty()) {
+    service_account = DefaultServiceAccount;
+  }
+  const auto identity =
+      absl::StrCat("spiffe://", trust_domain, "/ns/", ns, "/sa/", service_account);
   return Istio::Common::WorkloadMetadataObject(
-      workload.name(), workload.cluster_id(), workload.namespace_(), workload.workload_name(),
+      workload.name(), workload.cluster_id(), ns, workload.workload_name(),
       workload.canonical_name(), workload.canonical_revision(), workload.canonical_name(),
       workload.canonical_revision(), workload_type, identity);
 }

@@ -1126,33 +1126,46 @@ private:
           endpoint_peer.emplace(*endpoint_object);
         }
         tags_.push_back(
-            {context_.destination_workload_,
-             endpoint_peer ? pool_.add(endpoint_peer->workload_name_) : context_.unknown_});
+            {context_.destination_workload_, endpoint_peer && !endpoint_peer->workload_name_.empty()
+                                                 ? pool_.add(endpoint_peer->workload_name_)
+                                                 : context_.unknown_});
         tags_.push_back({context_.destination_workload_namespace_,
                          endpoint_peer && !endpoint_peer->namespace_name_.empty()
                              ? pool_.add(endpoint_peer->namespace_name_)
                              : context_.unknown_});
-        tags_.push_back({context_.destination_principal_,
-                         endpoint_peer ? pool_.add(endpoint_peer->identity_) : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_principal_, endpoint_peer && !endpoint_peer->identity_.empty()
+                                                  ? pool_.add(endpoint_peer->identity_)
+                                                  : context_.unknown_});
         // Endpoint encoding does not have app and version.
         tags_.push_back(
             {context_.destination_app_, endpoint_peer && !endpoint_peer->app_name_.empty()
                                             ? pool_.add(endpoint_peer->app_name_)
                                             : context_.unknown_});
-        tags_.push_back({context_.destination_version_, endpoint_peer
-                                                            ? pool_.add(endpoint_peer->app_version_)
-                                                            : context_.unknown_});
-        auto canonical_name =
-            endpoint_peer ? pool_.add(endpoint_peer->canonical_name_) : context_.unknown_;
-        tags_.push_back({context_.destination_service_,
-                         service_host.empty() ? canonical_name : pool_.add(service_host)});
-        tags_.push_back({context_.destination_canonical_service_, canonical_name});
         tags_.push_back(
-            {context_.destination_canonical_revision_,
-             endpoint_peer ? pool_.add(endpoint_peer->canonical_revision_) : context_.unknown_});
+            {context_.destination_version_, endpoint_peer && !endpoint_peer->app_version_.empty()
+                                                ? pool_.add(endpoint_peer->app_version_)
+                                                : context_.unknown_});
+        tags_.push_back({context_.destination_service_,
+                         service_host.empty() ? context_.unknown_ : pool_.add(service_host)});
+        tags_.push_back({context_.destination_canonical_service_,
+                         endpoint_peer && !endpoint_peer->canonical_name_.empty()
+                             ? pool_.add(endpoint_peer->canonical_name_)
+                             : context_.unknown_});
+        tags_.push_back({context_.destination_canonical_revision_,
+                         endpoint_peer && !endpoint_peer->canonical_revision_.empty()
+                             ? pool_.add(endpoint_peer->canonical_revision_)
+                             : context_.unknown_});
         tags_.push_back({context_.destination_service_name_, service_host_name.empty()
-                                                                 ? canonical_name
+                                                                 ? context_.unknown_
                                                                  : pool_.add(service_host_name)});
+        tags_.push_back({context_.destination_service_namespace_, !service_namespace.empty()
+                                                                      ? pool_.add(service_namespace)
+                                                                      : context_.unknown_});
+        tags_.push_back(
+            {context_.destination_cluster_, endpoint_peer && !endpoint_peer->cluster_name_.empty()
+                                                ? pool_.add(endpoint_peer->cluster_name_)
+                                                : context_.unknown_});
         break;
       }
       default:
@@ -1170,10 +1183,10 @@ private:
         tags_.push_back({context_.destination_service_name_, service_host_name.empty()
                                                                  ? context_.canonical_name_
                                                                  : pool_.add(service_host_name)});
+        tags_.push_back({context_.destination_cluster_, context_.cluster_name_});
+        tags_.push_back({context_.destination_service_namespace_, context_.namespace_});
         break;
       }
-      tags_.push_back({context_.destination_service_namespace_, context_.namespace_});
-      tags_.push_back({context_.destination_cluster_, context_.cluster_name_});
 
       break;
     }
