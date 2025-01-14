@@ -1219,8 +1219,8 @@ private:
         tags_.push_back({context_.destination_service_name_, service_host_name.empty()
                                                                  ? context_.canonical_name_
                                                                  : pool_.add(service_host_name)});
-        tags_.push_back({context_.destination_cluster_, context_.cluster_name_});
         tags_.push_back({context_.destination_service_namespace_, context_.namespace_});
+        tags_.push_back({context_.destination_cluster_, context_.cluster_name_});
         break;
       }
 
