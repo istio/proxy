@@ -43,7 +43,7 @@ metric:
   - name: destination_service_namespace
     value: default
   - name: destination_cluster
-    value: server-cluster
+    value: ratings-cluster
   - name: request_protocol
     {{- if .Vars.GrpcResponseStatus }}
     value: grpc
