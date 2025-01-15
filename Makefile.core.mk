@@ -109,29 +109,6 @@ lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts gen-extension
 	@scripts/check-repository.sh
 	@scripts/check-style.sh
 
-protoc = protoc -I common-protos -I extensions
-protoc_gen_docs_plugin := --docs_out=camel_case_fields=false,warnings=true,per_file=true,mode=html_fragment_with_front_matter:$(repo_dir)/
-
-metadata_exchange_path := extensions/metadata_exchange
-metadata_exchange_protos := $(wildcard $(metadata_exchange_path)/*.proto)
-metadata_exchange_docs := $(metadata_exchange_protos:.proto=.pb.html)
-$(metadata_exchange_docs): $(metadata_exchange_protos)
-	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(metadata_exchange_path) $^
-
-stackdriver_path := extensions/stackdriver/config/v1alpha1
-stackdriver_protos := $(wildcard $(stackdriver_path)/*.proto)
-stackdriver_docs := $(stackdriver_protos:.proto=.pb.html)
-$(stackdriver_docs): $(stackdriver_protos)
-	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(stackdriver_path) $^
-
-accesslog_policy_path := extensions/access_log_policy/config/v1alpha1
-accesslog_policy_protos := $(wildcard $(accesslog_policy_path)/*.proto)
-accesslog_policy_docs := $(accesslog_policy_protos:.proto=.pb.html)
-$(accesslog_policy_docs): $(accesslog_policy_protos)
-	@$(protoc) -I ./extensions $(protoc_gen_docs_plugin)$(accesslog_policy_path) $^
-
-extensions-docs:  $(metadata_exchange_docs) $(stackdriver_docs) $(accesslog_policy_docs)
-
 test_release:
 ifeq "$(shell uname -m)" "x86_64"
 	export BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
