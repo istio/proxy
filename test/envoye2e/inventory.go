@@ -60,5 +60,6 @@ func init() {
 		"TestStatsDestinationServiceNamespacePrecedence",
 		"TestAdditionalLabels",
 		"TestTCPMXAdditionalLabels",
+		"TestStatsClientSidecarCONNECT",
 	}...)
 }

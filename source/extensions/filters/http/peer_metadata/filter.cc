@@ -80,6 +80,7 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
       }
     }
   }
+  ENVOY_LOG_MISC(debug, "Peer address: {}", peer_address->asString());
   return metadata_provider_->GetMetadata(peer_address);
 }
 
