@@ -57,5 +57,8 @@ func init() {
 		"TestOtelPayload",
 		"TestTCPMetadataNotFoundReporting",
 		"TestStatsDestinationServiceNamespacePrecedence",
+		"TestAdditionalLabels",
+		"TestTCPMXAdditionalLabels",
+		"TestStatsClientSidecarCONNECT",
 	}...)
 }
