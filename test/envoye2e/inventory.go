@@ -57,5 +57,8 @@ func init() {
 		"TestTCPMetadataExchangeWithConnectionTermination",
 		"TestTCPMetadataNotFoundReporting",
 		"TestStatsDestinationServiceNamespacePrecedence",
+		"TestAdditionalLabels",
+		"TestTCPMXAdditionalLabels",
+		"TestStatsClientSidecarCONNECT",
 	}...)
 }

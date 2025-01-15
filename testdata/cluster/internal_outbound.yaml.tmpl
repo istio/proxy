@@ -1,4 +1,11 @@
 name: internal_outbound
+metadata:
+  filter_metadata:
+    istio:
+      services:
+        - host: server.default.svc.cluster.local
+          name: server
+          namespace: default
 load_assignment:
   cluster_name: internal_outbound
   endpoints:
@@ -12,6 +19,8 @@ load_assignment:
         filter_metadata:
           envoy.filters.listener.original_dst:
             local: 127.0.0.2:{{ .Ports.ServerPort }}
+          istio:
+            workload: ratings-v1;default;ratings;version-1;server-cluster
 {{- end }}
 transport_socket:
   name: envoy.transport_sockets.internal_upstream
