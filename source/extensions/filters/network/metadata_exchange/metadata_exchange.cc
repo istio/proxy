@@ -377,9 +377,20 @@ void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
               MetadataExchangeConfig::nodeInfoPrototype());
           state->setValue(fb);
           read_callbacks_->connection().streamInfo().filterState()->setData(
-              absl::StrCat(kMetadataPrefix, kUpstreamMetadataIdKey), std::move(state),
+              absl::StrCat(kMetadataPrefix, kUpstreamMetadataKey), std::move(state),
               StreamInfo::FilterState::StateType::Mutable,
               StreamInfo::FilterState::LifeSpan::Connection);
+
+          CelStatePrototype prototype(
+              false, ::Envoy::Extensions::Filters::Common::Expr::CelStateType::String,
+              absl::string_view(), StreamInfo::FilterState::LifeSpan::Connection);
+          auto id_state = std::make_unique<::Envoy::Extensions::Filters::Common::Expr::CelState>(prototype);
+          id_state->setValue("unknown");
+          read_callbacks_->connection().streamInfo().filterState()->setData(
+              absl::StrCat(kMetadataPrefix, kUpstreamMetadataIdKey), std::move(id_state),
+              StreamInfo::FilterState::StateType::Mutable,
+              StreamInfo::FilterState::LifeSpan::Connection);
+          config_->stats().metadata_added_.inc();
         }
       }
 
