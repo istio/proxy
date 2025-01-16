@@ -384,7 +384,8 @@ void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
           CelStatePrototype prototype(
               false, ::Envoy::Extensions::Filters::Common::Expr::CelStateType::String,
               absl::string_view(), StreamInfo::FilterState::LifeSpan::Connection);
-          auto id_state = std::make_unique<::Envoy::Extensions::Filters::Common::Expr::CelState>(prototype);
+          auto id_state =
+              std::make_unique<::Envoy::Extensions::Filters::Common::Expr::CelState>(prototype);
           id_state->setValue("unknown");
           read_callbacks_->connection().streamInfo().filterState()->setData(
               absl::StrCat(kMetadataPrefix, kUpstreamMetadataIdKey), std::move(id_state),
