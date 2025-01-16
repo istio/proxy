@@ -1078,7 +1078,7 @@ private:
       if (peer_san.empty()) {
         auto endpoint_object = peerInfo(config_->reporter(), filter_state);
         if (endpoint_object) {
-          endpoint_peer.emplace(endpoint_object.value());
+          endpoint_peer.emplace(*endpoint_object);
           peer_san = endpoint_peer->identity_;
         }
       }
