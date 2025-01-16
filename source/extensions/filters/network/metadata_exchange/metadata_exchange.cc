@@ -16,6 +16,7 @@
 #include "source/extensions/filters/network/metadata_exchange/metadata_exchange.h"
 
 #include <cstdint>
+#include <memory>
 #include <string>
 
 #include "absl/base/internal/endian.h"
@@ -368,9 +369,15 @@ void MetadataExchangeFilter::setMetadataNotFoundFilterState() {
         if (metadata_object) {
           ENVOY_LOG(debug, "Metadata found for upstream peer address {}",
                     upstream_peer->asString());
+          const std::string fb =
+              Istio::Common::convertWorkloadMetadataToFlatNode(metadata_object.value());
+          // Filter object captures schema by view, hence the global singleton for the
+          // prototype.
+          auto state = std::make_unique<::Envoy::Extensions::Filters::Common::Expr::CelState>(
+              MetadataExchangeConfig::nodeInfoPrototype());
+          state->setValue(fb);
           read_callbacks_->connection().streamInfo().filterState()->setData(
-              kUpstreamMetadataIdKey,
-              std::make_shared<Istio::Common::WorkloadMetadataObject>(metadata_object.value()),
+              absl::StrCat(kMetadataPrefix, kUpstreamMetadataIdKey), std::move(state),
               StreamInfo::FilterState::StateType::Mutable,
               StreamInfo::FilterState::LifeSpan::Connection);
         }
