@@ -96,7 +96,7 @@ private:
   const std::string id_;
   const std::string value_;
   const bool skip_external_clusters_;
-  bool skipMXHeaders(const StreamInfo::StreamInfo&) const;
+  bool skipMXHeaders(const bool, const StreamInfo::StreamInfo&) const;
 };
 
 class FilterConfig : public Logger::Loggable<Logger::Id::filter> {

@@ -162,10 +162,8 @@ std::string MXPropagationMethod::computeValue(
 
 void MXPropagationMethod::inject(const StreamInfo::StreamInfo& info, Http::HeaderMap& headers,
                                  Context& ctx) const {
-  if (skip_external_clusters_) {
-    if (skipMXHeaders(info)) {
-      return;
-    }
+  if (skipMXHeaders(skip_external_clusters_, info)) {
+    return;
   }
   if (!downstream_ || ctx.request_peer_id_received_) {
     headers.setReference(Headers::get().ExchangeMetadataHeaderId, id_);
@@ -309,19 +307,34 @@ Http::FilterHeadersStatus Filter::decodeHeaders(Http::RequestHeaderMap& headers,
   return Http::FilterHeadersStatus::Continue;
 }
 
-bool MXPropagationMethod::skipMXHeaders(const StreamInfo::StreamInfo& info) const {
+bool MXPropagationMethod::skipMXHeaders(const bool skip_external_clusters,
+                                        const StreamInfo::StreamInfo& info) const {
+  // We skip metadata in two cases.
+  // 1. skip_external_clusters is enabled, and we detect the upstream as external.
   const auto& cluster_info = info.upstreamClusterInfo();
   if (cluster_info && cluster_info.value()) {
     const auto& cluster_name = cluster_info.value()->name();
-    if (cluster_name == "PassthroughCluster") {
+    // PassthroughCluster is always considered external
+    if (skip_external_clusters && cluster_name == "PassthroughCluster") {
       return true;
     }
     const auto& filter_metadata = cluster_info.value()->metadata().filter_metadata();
     const auto& it = filter_metadata.find("istio");
+    // Otherwise, cluster must be tagged as external
     if (it != filter_metadata.end()) {
-      const auto& skip_mx = it->second.fields().find("external");
+      if (skip_external_clusters) {
+        const auto& skip_mx = it->second.fields().find("external");
+        if (skip_mx != it->second.fields().end()) {
+          if (skip_mx->second.bool_value()) {
+            return true;
+          }
+        }
+      }
+      const auto& skip_mx = it->second.fields().find("disable_mx");
       if (skip_mx != it->second.fields().end()) {
-        return skip_mx->second.bool_value();
+        if (skip_mx->second.bool_value()) {
+          return true;
+        }
       }
     }
   }
