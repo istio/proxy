@@ -357,7 +357,7 @@ ENVOY_EXTENSIONS = {
     # QUIC extensions
     #
 
-    "envoy.quic.deterministic_connection_id_generator": "//source/extensions/quic/connection_id_generator:envoy_deterministic_connection_id_generator_config",
+    "envoy.quic.deterministic_connection_id_generator": "//source/extensions/quic/connection_id_generator/deterministic:envoy_deterministic_connection_id_generator_config",
     "envoy.quic.crypto_stream.server.quiche":           "//source/extensions/quic/crypto_stream:envoy_quic_default_crypto_server_stream",
     "envoy.quic.proof_source.filter_chain":             "//source/extensions/quic/proof_source:envoy_quic_default_proof_source",
 
@@ -513,7 +513,7 @@ ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.filters.network.postgres_proxy",
     "envoy.filters.network.sip_proxy",
     "envoy.filters.sip.router",
-    "envoy.tls.key_providers.cryptomb",
+    # "envoy.tls.key_providers.cryptomb", # TODO: reenabled this later.
     "envoy.tls.key_providers.qat",
     "envoy.network.connection_balance.dlb",
 ]
