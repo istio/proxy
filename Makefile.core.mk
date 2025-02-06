@@ -53,6 +53,8 @@ TEST_ENVOY_TARGET ?= //:envoy
 TEST_ENVOY_DEBUG ?= trace
 
 build:
+	python --version
+	python3 --version
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(BAZEL_TARGETS)
 
 build_envoy: BAZEL_CONFIG_CURRENT = $(BAZEL_CONFIG_REL)
@@ -84,6 +86,8 @@ gen-check:
 	@scripts/gen-testdata.sh -c
 
 test:
+	python --version
+	python3 --version
 	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(TEST_ENVOY_TARGET) $(BAZEL_TEST_TARGETS)
 	if [ -n "$(BAZEL_TEST_TARGETS)" ]; then \
 	  bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(BAZEL_TEST_TARGETS); \
