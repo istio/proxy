@@ -6,11 +6,11 @@ toolchain go1.23.4
 
 require (
 	github.com/cncf/xds/go v0.0.0-20240905190251-b4127c9b8d78
-	github.com/envoyproxy/go-control-plane v0.13.5-0.20250129071740-454f8a02b0a2
-	github.com/envoyproxy/go-control-plane/envoy v1.32.3
+	github.com/envoyproxy/go-control-plane v0.13.5-0.20250207140015-90270e3c85fd
+	github.com/envoyproxy/go-control-plane/envoy v1.32.4
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.6.0
-	github.com/prometheus/client_model v0.6.0
+	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.46.0
 	go.opentelemetry.io/proto/otlp v1.1.0
 	go.starlark.net v0.0.0-20240123142251-f86470692795
