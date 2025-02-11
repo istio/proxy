@@ -102,7 +102,9 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
       }
     }
   }
-
+  if (!peer_address) {
+    return {};
+  }
   ENVOY_LOG_MISC(debug, "Peer address: {}", peer_address->asString());
   const auto metadata_object = metadata_provider_->GetMetadata(peer_address);
   if (metadata_object) {
