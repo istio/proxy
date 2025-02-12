@@ -1063,7 +1063,7 @@ private:
       }
     }
 
-    absl::string_view peer_san;
+    std::string peer_san;
     absl::string_view local_san;
     switch (config_->reporter()) {
     case Reporter::ServerSidecar:
@@ -1094,9 +1094,19 @@ private:
     case Reporter::ClientSidecar: {
       const Ssl::ConnectionInfoConstSharedPtr ssl_info =
           info.upstreamInfo() ? info.upstreamInfo()->upstreamSslConnection() : nullptr;
+      std::optional<Istio::Common::WorkloadMetadataObject> endpoint_peer;
       if (ssl_info && !ssl_info->uriSanPeerCertificate().empty()) {
         peer_san = ssl_info->uriSanPeerCertificate()[0];
       }
+      if (peer_san.empty()) {
+        auto endpoint_object = peerInfo(config_->reporter(), filter_state);
+        if (endpoint_object) {
+          endpoint_peer.emplace(Istio::Common::convertFlatNodeToWorkloadMetadata(*endpoint_object));
+          peer_san = endpoint_peer->identity_;
+        }
+      }
+      // This won't work for sidecar/ingress -> ambient becuase of the CONNECT
+      // tunnel.
       if (ssl_info && !ssl_info->uriSanLocalCertificate().empty()) {
         local_san = ssl_info->uriSanLocalCertificate()[0];
       }
