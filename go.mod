@@ -1,15 +1,15 @@
 module istio.io/proxy
 
-go 1.22.8
+go 1.23
 
-toolchain go1.23.4
+toolchain go1.24.0
 
 require (
 	github.com/cncf/xds/go v0.0.0-20240905190251-b4127c9b8d78
-	github.com/envoyproxy/go-control-plane v0.13.5-0.20250211152746-ef139ef8ea6b
+	github.com/envoyproxy/go-control-plane v0.13.5-0.20250222065939-bc66c00604c0
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4
 	github.com/golang/protobuf v1.5.4
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.46.0
 	go.opentelemetry.io/proto/otlp v1.1.0
