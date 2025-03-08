@@ -249,6 +249,8 @@ public:
         });
   }
 
+  void onWorkerThreadInitialized() override{};
+
 private:
   Server::Configuration::ServerFactoryContext& factory_context_;
   const istio::workload::BootstrapExtension config_;
