@@ -48,8 +48,8 @@ esac
 
 wget -nv ${LLVM_BASE_URL}/${LLVM_ARTIFACT}.tar.xz
 tar -xJf ${LLVM_ARTIFACT}.tar.xz -C /tmp
-mkdir -p ${LLVM_DIRECTORY}
 rm -rf "${LLVM_DIRECTORY:?}/"
+mkdir -p ${LLVM_DIRECTORY}
 mv /tmp/${LLVM_ARCHIVE}/* ${LLVM_DIRECTORY}/
 
 make test_release
