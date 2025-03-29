@@ -24,4 +24,31 @@ WD=$(cd "$WD" || exit 1 ; pwd)
 source "${WD}/proxy-common.inc"
 
 echo 'Test building release artifacts'
+
+echo 'Test with llvm 18.1.8'
+
+LLVM_VERSION=18.1.8
+LLVM_BASE_URL=https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}
+LLVM_DIRECTORY=/usr/lib/llvm
+
+case $(uname -m) in
+    x86_64)
+        LLVM_ARCHIVE=clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-18.04
+        LLVM_ARTIFACT=clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-18.04
+        ;;
+    aarch64)
+        LLVM_ARCHIVE=clang+llvm-${LLVM_VERSION}-aarch64-linux-gnu
+        LLVM_ARTIFACT=clang+llvm-${LLVM_VERSION}-aarch64-linux-gnu
+        ;;
+    *) 
+        echo "unsupported architecture"; 
+        exit 1 
+        ;;
+esac
+
+wget -nv ${LLVM_BASE_URL}/${LLVM_ARTIFACT}.tar.xz
+tar -xJf ${LLVM_ARTIFACT}.tar.xz -C /tmp
+mkdir -p ${LLVM_DIRECTORY}
+mv /tmp/${LLVM_ARCHIVE}/* ${LLVM_DIRECTORY}/
+
 make test_release
