@@ -174,7 +174,7 @@ linters:
         text: 'SA1019: grpc.WithReturnConnectionError'
       - path: (.+)\.go$
         text: composite literal uses unkeyed fields
-      # TODO: remove following in the future
+      # TODO: remove following rule in the future
       - linters:
           - staticcheck
         text: 'QF'
