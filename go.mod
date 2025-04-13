@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/cncf/xds/go v0.0.0-20241223141626-cff3c89139a3
-	github.com/envoyproxy/go-control-plane v0.13.5-0.20250405152605-3d52a2c138ee
+	github.com/envoyproxy/go-control-plane v0.13.5-0.20250411033633-fceb350c06ca
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.7.0
@@ -13,7 +13,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.1.0
 	go.starlark.net v0.0.0-20240123142251-f86470692795
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f
-	google.golang.org/grpc v1.71.0
+	google.golang.org/grpc v1.71.1
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.4.0
