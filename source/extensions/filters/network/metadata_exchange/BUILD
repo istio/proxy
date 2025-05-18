@@ -43,7 +43,6 @@ envoy_cc_library(
         "//source/extensions/common/workload_discovery:api_lib",
         "//source/extensions/filters/network/metadata_exchange/config:metadata_exchange_cc_proto",
         "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/base:endian",
         "@com_google_absl//absl/strings",
         "@envoy//envoy/local_info:local_info_interface",
         "@envoy//envoy/network:connection_interface",
