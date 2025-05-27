@@ -202,6 +202,7 @@ ENVOY_EXTENSIONS = {
     # Resource monitors
     #
 
+    "envoy.resource_monitors.cpu_utilization":          "//source/extensions/resource_monitors/cpu_utilization:config",
     "envoy.resource_monitors.fixed_heap":               "//source/extensions/resource_monitors/fixed_heap:config",
     "envoy.resource_monitors.injected_resource":        "//source/extensions/resource_monitors/injected_resource:config",
     "envoy.resource_monitors.downstream_connections":   "//source/extensions/resource_monitors/downstream_connections:config",
