@@ -23,9 +23,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Commit date: 2025-05-29
-ENVOY_SHA = "4453ce1f809ec502fb2cbe0363cf5c6a971f3836"
+ENVOY_SHA = "0c00c8960e845c0b089039908f9692b6dd50ce1e"
 
-ENVOY_SHA256 = "acae6120cd3e1d54ddbb03aa691a3013884281ff4e300b2b3d910b023642d2da"
+ENVOY_SHA256 = "1d73c51684af4ca45db6505be0e1c554feee09ba25d8b007a4e8146e7d39ea14"
 
 ENVOY_ORG = "envoyproxy"
 
