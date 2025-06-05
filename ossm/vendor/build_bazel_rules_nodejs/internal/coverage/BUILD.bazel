@@ -1,0 +1,29 @@
+load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_binary")
+
+
+exports_files([
+    "lcov_merger-js.js",
+])
+
+nodejs_binary(
+    name = "lcov_merger_js",
+    entry_point = "lcov_merger.js",
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "lcov_merger_sh",
+    srcs = ["lcov_merger.sh"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "package_contents",
+    srcs = glob([
+        "*.sh",
+        "*.js",
+    ]) + [
+        "BUILD.bazel",
+    ],
+    visibility = ["//:__pkg__"],
+)

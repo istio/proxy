@@ -1,0 +1,18 @@
+load("@rules_proto_grpc//fsharp:defs.bzl", "fsharp_proto_library")
+
+fsharp_proto_library(
+    name = "person_fsharp_proto.dll",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+    deps = ["place_fsharp_proto.dll"],
+)
+
+fsharp_proto_library(
+    name = "place_fsharp_proto.dll",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+    deps = ["thing_fsharp_proto.dll"],
+)
+
+fsharp_proto_library(
+    name = "thing_fsharp_proto.dll",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

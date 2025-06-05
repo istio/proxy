@@ -1,0 +1,18 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:resolve py bar //somewhere/bar
+# gazelle:resolve py third_party.foo //third_party/foo
+
+py_library(
+    name = "dependency_resolution_order",
+    srcs = ["__init__.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//baz",
+        "//somewhere/bar",
+        "//third_party",
+        "//third_party/foo",
+        "@gazelle_python_test//other_pip_dep",
+        "@gazelle_python_test//some_foo",
+    ],
+)

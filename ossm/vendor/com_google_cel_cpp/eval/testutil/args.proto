@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package google.api.expr.runtime;
+option cc_enable_arenas = true;
+
+// Message representing errors
+// during CEL evaluation.
+message Argument {
+  oneof arg_kind {
+    bool bool_value = 1;
+    int64 int64_value = 2;
+    uint64 uint64_value = 3;
+
+    float float_value = 4;
+    double double_value = 5;
+
+    string string_value = 6;
+    bytes bytes_value = 7;
+
+    google.protobuf.Duration duration = 8;
+    google.protobuf.Timestamp timestamp = 9;
+  }
+
+  TestMessage message_value = 12;
+
+  repeated int32 int32_list = 101;
+  repeated int64 int64_list = 102;
+
+  repeated uint32 uint32_list = 103;
+  repeated uint64 uint64_list = 104;
+
+  repeated float float_list = 105;
+  repeated double double_list = 106;
+
+  repeated string string_list = 107;
+  repeated string cord_list = 108 [ctype = CORD];
+  repeated bytes bytes_list = 109;
+
+  repeated bool bool_list = 110;
+
+  repeated TestEnum enum_list = 111;
+  repeated TestMessage message_list = 112;
+
+  map<int64, int32> int64_int32_map = 201;
+  map<uint64, int32> uint64_int32_map = 202;
+  map<string, int32> string_int32_map = 203;
+}

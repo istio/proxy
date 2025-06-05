@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "flags",
+    srcs = [
+        "flags.go",
+        "proto_legacy_disable.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/flags",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":flags",
+    visibility = ["//:__subpackages__"],
+)

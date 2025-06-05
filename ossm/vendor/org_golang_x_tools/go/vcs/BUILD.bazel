@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "vcs",
+    srcs = [
+        "discovery.go",
+        "env.go",
+        "http.go",
+        "vcs.go",
+    ],
+    importpath = "golang.org/x/tools/go/vcs",
+    visibility = ["//visibility:public"],
+    deps = ["@org_golang_x_sys//execabs:go_default_library"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":vcs",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "vcs_test",
+    srcs = ["vcs_test.go"],
+    embed = [":vcs"],
+)

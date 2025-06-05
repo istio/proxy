@@ -1,0 +1,9 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_generation_mode file
+
+py_library(
+    name = "setup",
+    srcs = ["setup.py"],
+    visibility = ["//:__subpackages__"],
+)

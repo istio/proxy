@@ -1,0 +1,15 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+exports_files(
+    [
+        "simple.h",
+    ],
+    visibility = ["//test/integration:__pkg__"],
+)
+
+cc_library(
+    name = "simple",
+    srcs = ["simple.cc"],
+    hdrs = ["simple.h"],
+    visibility = ["//test/integration:__pkg__"],
+)

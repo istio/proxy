@@ -1,0 +1,3 @@
+load(":normalize_name_tests.bzl", "normalize_name_test_suite")
+
+normalize_name_test_suite(name = "normalize_name_tests")

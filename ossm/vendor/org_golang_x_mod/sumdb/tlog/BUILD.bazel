@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tlog",
+    srcs = [
+        "note.go",
+        "tile.go",
+        "tlog.go",
+    ],
+    importpath = "golang.org/x/mod/sumdb/tlog",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tlog",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "tlog_test",
+    srcs = [
+        "ct_test.go",
+        "note_test.go",
+        "tile_test.go",
+        "tlog_test.go",
+    ],
+    embed = [":tlog"],
+)

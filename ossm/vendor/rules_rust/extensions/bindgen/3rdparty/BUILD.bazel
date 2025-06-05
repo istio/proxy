@@ -1,0 +1,71 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
+load("//:repositories.bzl", "BINDGEN_VERSION")
+
+_BINDGEN_CLI_PACKAGES = {
+    "clap": crate.spec(
+        version = "4.3.3",
+    ),
+    "clap_complete": crate.spec(
+        version = "4.3.1",
+    ),
+    "env_logger": crate.spec(
+        version = "0.10.0",
+    ),
+}
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "bindgen": [crate.annotation(
+            gen_build_script = True,
+        )],
+        "clang-sys": [crate.annotation(
+            gen_build_script = True,
+        )],
+        "libc": [crate.annotation(
+            gen_build_script = True,
+        )],
+        "winapi": [crate.annotation(
+            gen_build_script = True,
+        )],
+    },
+    cargo_lockfile = "Cargo.Bazel.lock",
+    generate_build_scripts = False,
+    mode = "remote",
+    packages = dict({
+        "bindgen": crate.spec(
+            default_features = False,
+            features = ["runtime"],
+            version = BINDGEN_VERSION,
+        ),
+        "bindgen-cli": crate.spec(
+            default_features = False,
+            features = ["runtime"],
+            version = BINDGEN_VERSION,
+        ),
+        "clang-sys": crate.spec(
+            # Should match the version of llvm-project being used.
+            features = ["clang_14_0"],
+            version = "1.6.1",
+        ),
+    }.items() + _BINDGEN_CLI_PACKAGES.items()),
+    repository_name = "rules_rust_bindgen_deps",
+    tags = ["manual"],
+)
+
+alias(
+    name = "bindgen",
+    actual = "@rules_rust_bindgen__bindgen-cli-{}//:bindgen-cli".format(BINDGEN_VERSION),
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = [
+        "//3rdparty/crates:crates.bzl",
+        "//3rdparty/crates:defs.bzl",
+    ],
+    visibility = ["//:__pkg__"],
+)

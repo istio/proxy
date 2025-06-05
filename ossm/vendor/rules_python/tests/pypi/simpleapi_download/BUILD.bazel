@@ -1,0 +1,5 @@
+load("simpleapi_download_tests.bzl", "simpleapi_download_test_suite")
+
+simpleapi_download_test_suite(
+    name = "simpleapi_download_tests",
+)

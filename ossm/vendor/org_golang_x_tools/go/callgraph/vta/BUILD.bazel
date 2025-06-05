@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "vta",
+    srcs = [
+        "graph.go",
+        "propagation.go",
+        "utils.go",
+        "vta.go",
+    ],
+    importpath = "golang.org/x/tools/go/callgraph/vta",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/callgraph",
+        "//go/callgraph/vta/internal/trie",
+        "//go/ssa",
+        "//go/types/typeutil",
+        "//internal/typeparams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":vta",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "vta_test",
+    srcs = [
+        "graph_test.go",
+        "helpers_test.go",
+        "propagation_test.go",
+        "vta_go117_test.go",
+        "vta_test.go",
+    ],
+    embed = [":vta"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/analysistest",
+        "//go/analysis/passes/buildssa",
+        "//go/callgraph",
+        "//go/callgraph/cha",
+        "//go/loader",
+        "//go/ssa",
+        "//go/ssa/ssautil",
+        "//go/types/typeutil",
+        "//internal/typeparams",
+    ],
+)

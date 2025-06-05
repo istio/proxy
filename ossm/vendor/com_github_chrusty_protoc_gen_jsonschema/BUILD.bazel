@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@bazel_gazelle//:def.bzl", "gazelle")
+
+# gazelle:prefix github.com/chrusty/protoc-gen-jsonschema
+# gazelle:go_generate_proto false
+# gazelle:proto disable
+gazelle(name = "gazelle")
+
+# adding rule to update deps
+gazelle(
+    name = "gazelle-update-repos",
+    args = [
+        "-from_file=go.mod",
+        "-to_macro=deps.bzl%go_dependencies",
+        "-prune",
+    ],
+    command = "update-repos",
+)
+
+go_library(
+    name = "protoc-gen-jsonschema",
+    srcs = ["options.pb.go"],
+    importpath = "github.com/chrusty/protoc-gen-jsonschema",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@org_golang_google_protobuf//reflect/protoreflect",
+        "@org_golang_google_protobuf//runtime/protoimpl",
+        "@org_golang_google_protobuf//types/descriptorpb",
+    ],
+)
+
+exports_files(["deps.bzl"])

@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package rules_python;
+
+import "proto/pricetag.proto";
+
+message TestMessage {
+  uint32 index = 1;
+  PriceTag pricetag = 2;
+}

@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "typesinternal",
+    srcs = [
+        "errorcode.go",
+        "errorcode_string.go",
+        "types.go",
+        "types_118.go",
+    ],
+    importpath = "golang.org/x/tools/internal/typesinternal",
+    visibility = ["//:__subpackages__"],
+    deps = ["//go/types/objectpath"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":typesinternal",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "typesinternal_test",
+    srcs = ["errorcode_test.go"],
+)

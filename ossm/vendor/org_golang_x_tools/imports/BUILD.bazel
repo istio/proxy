@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "imports",
+    srcs = ["forward.go"],
+    importpath = "golang.org/x/tools/imports",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/gocommand",
+        "//internal/imports",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":imports",
+    visibility = ["//visibility:public"],
+)

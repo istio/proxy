@@ -1,0 +1,47 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_binary")
+
+
+
+bzl_library(
+    name = "bzl",
+    srcs = glob(["*.bzl"]),
+    visibility = ["//visibility:public"],
+)
+
+# Exported to be consumed for generating stardoc.
+exports_files(["npm_install.bzl"])
+
+filegroup(
+    name = "generate_build_file",
+    srcs = [
+        "index.js",
+    ],
+    visibility = ["//internal:__subpackages__"],
+)
+
+filegroup(
+    name = "package_contents",
+    srcs = glob(
+        include = ["*"],
+        exclude = ["test"],
+    ),
+    visibility = ["//:__pkg__"],
+)
+
+nodejs_binary(
+    name = "browserify-wrapped",
+    data = [
+        "//third_party/npm/node_modules/@babel/core",
+        "//third_party/npm/node_modules/@babel/plugin-transform-modules-commonjs",
+        "//third_party/npm/node_modules/babelify",
+        "//third_party/npm/node_modules/base64-js",
+        "//third_party/npm/node_modules/browserify",
+        "//third_party/npm/node_modules/ieee754",
+        "//third_party/npm/node_modules/named-amd",
+    ],
+    entry_point = ":browserify-wrapped.js",
+    # TODO: figure out why browserify isn't resolved properly
+    templated_args = ["--bazel_patch_module_resolver"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,36 @@
+load(":current_toolchain_files_test.bzl", "current_toolchain_files_test")
+
+exports_files([
+    "current_toolchain_files_test.sh",
+])
+
+# Executable targets will output a pattern similar to the following
+# cargo 1.53.0 (4369396ce 2021-04-27)
+# Also Note, rustc_srcs is too big for this test
+_FILES = {
+    "cargo": ("executable", r"^cargo [0-9\.]\+\(-nightly\)\? ([0-9a-z]\+ [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\})"),
+    "clippy": ("executable", r"^clippy [0-9\.]\+ ([0-9a-z]\+ [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\})"),
+    "rust_stdlib": ("files", r"\.rlib"),
+    "rustc": ("executable", r"^rustc [0-9\.]\+\(-nightly\)\? ([0-9a-z]\+ [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\})"),
+    "rustc_lib": ("files", r"rustc_driver"),
+    "rustdoc": ("executable", r"^rustdoc [0-9\.]\+\(\-nightly\)\? ([0-9a-z]\+ [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\})"),
+    "rustfmt": ("executable", r"^rustfmt [0-9\.]\+\-\(stable\|nightly\) ([0-9a-z]\+ [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\})"),
+}
+
+# Test that all toolchain tools consumable (executables are executable and filegroups contain expected sources)
+[
+    current_toolchain_files_test(
+        name = tool + "_test",
+        kind = kind,
+        pattern = pattern,
+        # TOOO: Windows requires use of bash which is not guaranteed to be available.
+        # The test runner should ideally be rewritten in rust so that windows could
+        # be tested.
+        target_compatible_with = select({
+            "@platforms//os:windows": ["@platforms//:incompatible"],
+            "//conditions:default": [],
+        }),
+        tool = "//rust/toolchain:current_{}_files".format(tool),
+    )
+    for tool, (kind, pattern) in _FILES.items()
+]

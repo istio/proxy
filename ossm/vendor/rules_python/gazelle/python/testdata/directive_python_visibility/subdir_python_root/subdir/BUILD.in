@@ -1,0 +1,6 @@
+# The default visibility is "//$python_root$:__subpackages" so the generated
+# target will also have "//subdir_python_root:__subpackages__" in the visibility
+# attribute.
+#
+# gazelle:python_visibility //$python_root$/anywhere:__pkg__
+# gazelle:python_visibility //$python_root$/and/also:here

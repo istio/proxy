@@ -1,0 +1,90 @@
+# Copyright 2024 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+    visibility = ["//python/uv:__pkg__"],
+)
+
+bzl_library(
+    name = "current_toolchain_bzl",
+    srcs = ["current_toolchain.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+)
+
+bzl_library(
+    name = "lock_bzl",
+    srcs = ["lock.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+    deps = [
+        "//python:py_binary_bzl",
+        "//python/private:bzlmod_enabled_bzl",
+        "@bazel_skylib//rules:write_file",
+    ],
+)
+
+bzl_library(
+    name = "toolchain_types_bzl",
+    srcs = ["toolchain_types.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+)
+
+bzl_library(
+    name = "uv_bzl",
+    srcs = ["uv.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+    deps = [":uv_repositories_bzl"],
+)
+
+bzl_library(
+    name = "uv_repositories_bzl",
+    srcs = ["uv_repositories.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+    deps = [
+        ":toolchain_types_bzl",
+        ":uv_toolchains_repo_bzl",
+        ":versions_bzl",
+    ],
+)
+
+bzl_library(
+    name = "uv_toolchain_bzl",
+    srcs = ["uv_toolchain.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+    deps = [":uv_toolchain_info_bzl"],
+)
+
+bzl_library(
+    name = "uv_toolchain_info_bzl",
+    srcs = ["uv_toolchain_info.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+)
+
+bzl_library(
+    name = "uv_toolchains_repo_bzl",
+    srcs = ["uv_toolchains_repo.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+    deps = [
+        "//python/private:text_util_bzl",
+    ],
+)
+
+bzl_library(
+    name = "versions_bzl",
+    srcs = ["versions.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+)

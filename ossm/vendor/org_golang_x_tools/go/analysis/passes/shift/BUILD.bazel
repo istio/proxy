@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "shift",
+    srcs = [
+        "dead.go",
+        "shift.go",
+    ],
+    importpath = "golang.org/x/tools/go/analysis/passes/shift",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/inspect",
+        "//go/analysis/passes/internal/analysisutil",
+        "//go/ast/inspector",
+        "//internal/typeparams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":shift",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "shift_test",
+    srcs = ["shift_test.go"],
+    deps = [
+        ":shift",
+        "//go/analysis/analysistest",
+        "//internal/typeparams",
+    ],
+)

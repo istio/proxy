@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "referrers_lib",
+    srcs = ["main.go"],
+    importpath = "golang.org/x/tools/cmd/guru/testdata/src/referrers",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "referrers",
+    embed = [":referrers_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "referrers_test",
+    srcs = [
+        "ext_test.go",
+        "int_test.go",
+    ],
+    embed = [":referrers_lib"],
+)

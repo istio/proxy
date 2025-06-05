@@ -1,0 +1,10 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+exports_files(["globals.bzl"])
+
+# This keeps stardoc happy if globals.bzl is pulled into a repository.
+bzl_library(
+    name = "globals",
+    srcs = ["globals.bzl"],
+    visibility = ["//visibility:public"],
+)

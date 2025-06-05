@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message vector3f_demo {
+    bool field = 1;
+}

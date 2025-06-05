@@ -1,0 +1,14 @@
+[package]
+edition = "2018"
+name = "wasmsign-bazel"
+version = "0.1.2"
+
+[lib]
+path = "fake_lib.rs"
+
+[dependencies]
+wasmsign = {git = "https://github.com/jedisct1/wasmsign", revision = "fa4d5598f778390df09be94232972b5b865a56b8"}
+
+# Ready to upgrade to wasmsign2:
+# Which generates: //bazel/cargo/wasmsign/remote:wasmsign2-cli__wasmsign2
+#wasmsign2-cli = {git = "https://github.com/wasm-signatures/wasmsign2", revision = "07c60eee7f4c655d5a91404f5a9ffd97316d01f1"}

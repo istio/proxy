@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "buildtag",
+    srcs = [
+        "buildtag.go",
+        "buildtag_old.go",
+    ],
+    importpath = "golang.org/x/tools/go/analysis/passes/buildtag",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/internal/analysisutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":buildtag",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "buildtag_test",
+    srcs = ["buildtag_test.go"],
+    deps = [
+        ":buildtag",
+        "//go/analysis",
+        "//go/analysis/analysistest",
+    ],
+)

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "b/c/c.proto";
+
+package a.b;
+
+message B {
+    string name = 1;
+
+    google.protobuf.Empty empty = 2;
+
+    a.b.c.C c = 3;
+}

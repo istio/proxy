@@ -1,0 +1,78 @@
+load(
+    "//cargo:defs.bzl",
+    "cargo_build_script",
+)
+load("//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_test(
+    name = "conflicting_deps_test",
+    srcs = ["tests/manifest_dir.rs"],
+    compile_data = ["src/manifest_dir_file.txt"],
+    edition = "2018",
+)
+
+rust_library(
+    name = "arbitrary_env_lib",
+    srcs = ["tests/arbitrary_env_lib.rs"],
+    edition = "2018",
+    rustc_env = {
+        "USER_DEFINED_KEY": "USER_DEFINED_VALUE",
+    },
+)
+
+rust_test(
+    name = "arbitrary_env_lib_test",
+    crate = ":arbitrary_env_lib",
+    edition = "2018",
+)
+
+rust_library(
+    name = "arbitrary_env_lib_in_test",
+    srcs = ["tests/arbitrary_env_lib.rs"],
+    edition = "2018",
+    rustc_env = {
+        "USER_DEFINED_KEY": "DIFFERENT_USER_DEFINED_VALUE",
+    },
+)
+
+rust_test(
+    name = "arbitrary_env_lib_test_in_test",
+    crate = ":arbitrary_env_lib_in_test",
+    edition = "2018",
+    rustc_env = {
+        "USER_DEFINED_KEY": "USER_DEFINED_VALUE",
+    },
+)
+
+rust_test(
+    name = "arbitrary_env_test",
+    srcs = ["tests/arbitrary_env.rs"],
+    edition = "2018",
+    rustc_env = {
+        "USER_DEFINED_KEY": "USER_DEFINED_VALUE",
+    },
+)
+
+rust_test(
+    # Intentionally uses a mix of -s and _s because those normalisations are part of what is being tested.
+    name = "cargo_env-vars_test",
+    srcs = ["tests/cargo.rs"],
+    edition = "2018",
+    deps = [":cargo_build_script_env-vars_bs"],
+)
+
+rust_test(
+    name = "cargo-env-vars-custom-crate-name-test",
+    srcs = ["tests/custom_crate_name.rs"],
+    crate_name = "custom_crate_name",
+    edition = "2018",
+    deps = [":cargo_build_script_env-vars_bs"],
+)
+
+cargo_build_script(
+    name = "cargo_build_script_env-vars_bs",
+    srcs = ["src/build.rs"],
+    edition = "2018",
+)

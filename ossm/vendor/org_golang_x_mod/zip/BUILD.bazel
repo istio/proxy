@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "zip",
+    srcs = ["zip.go"],
+    importpath = "golang.org/x/mod/zip",
+    visibility = ["//visibility:public"],
+    deps = ["//module"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":zip",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "zip_test",
+    srcs = [
+        "vendor_test.go",
+        "zip_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":zip"],
+    deps = [
+        "//module",
+        "//sumdb/dirhash",
+        "@org_golang_x_tools//txtar:go_default_library",
+    ],
+)

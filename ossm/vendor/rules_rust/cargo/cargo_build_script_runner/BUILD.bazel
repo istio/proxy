@@ -1,0 +1,28 @@
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+
+rust_library(
+    name = "cargo_build_script_output_parser",
+    srcs = ["lib.rs"],
+    edition = "2018",
+)
+
+rust_test(
+    name = "test",
+    crate = ":cargo_build_script_output_parser",
+    edition = "2018",
+)
+
+rust_binary(
+    name = "cargo_build_script_runner",
+    srcs = ["bin.rs"],
+    edition = "2018",
+    visibility = ["//visibility:public"],
+    deps = [":cargo_build_script_output_parser"],
+)
+
+rust_test(
+    name = "bin_test",
+    crate = ":cargo_build_script_runner",
+    edition = "2018",
+    deps = [":cargo_build_script_runner"],
+)

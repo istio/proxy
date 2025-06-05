@@ -1,0 +1,23 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+
+exports_files([
+    "index.js",
+])
+
+filegroup(
+    name = "package_contents",
+    srcs = glob([
+        "*.bzl",
+        "*.js",
+    ]) + [
+        "BUILD.bazel",
+    ],
+    visibility = ["//:__pkg__"],
+)
+
+bzl_library(
+    name = "bzl",
+    srcs = glob(["*.bzl"]),
+    visibility = ["//visibility:public"],
+)

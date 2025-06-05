@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testtext",
+    srcs = [
+        "codesize.go",
+        "flag.go",
+        "gc.go",
+        "go1_6.go",
+        "go1_7.go",
+        "text.go",
+    ],
+    importpath = "golang.org/x/text/internal/testtext",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/gen"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testtext",
+    visibility = ["//:__subpackages__"],
+)

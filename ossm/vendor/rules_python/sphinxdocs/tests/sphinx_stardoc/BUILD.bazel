@@ -1,0 +1,103 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//python:py_test.bzl", "py_test")
+load("//python/private:util.bzl", "IS_BAZEL_7_OR_HIGHER")  # buildifier: disable=bzl-visibility
+load("//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
+load("//sphinxdocs:sphinx_stardoc.bzl", "sphinx_stardoc", "sphinx_stardocs")
+
+# We only build for Linux and Mac because:
+# 1. The actual doc process only runs on Linux
+# 2. Mac is a common development platform, and is close enough to Linux
+#    it's feasible to make work.
+# Making CI happy under Windows is too much of a headache, though, so we don't
+# bother with that.
+_TARGET_COMPATIBLE_WITH = select({
+    "@platforms//os:linux": [],
+    "@platforms//os:macos": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+}) if IS_BAZEL_7_OR_HIGHER else ["@platforms//:incompatible"]
+
+sphinx_docs(
+    name = "docs",
+    srcs = glob(
+        include = [
+            "*.md",
+        ],
+    ),
+    config = "conf.py",
+    formats = [
+        "html",
+    ],
+    renamed_srcs = {
+        "//sphinxdocs/inventories:bazel_inventory": "bazel_inventory.inv",
+    },
+    sphinx = ":sphinx-build",
+    strip_prefix = package_name() + "/",
+    target_compatible_with = _TARGET_COMPATIBLE_WITH,
+    deps = [
+        ":bzl_function",
+        ":bzl_providers",
+        ":simple_bzl_docs",
+    ],
+)
+
+sphinx_stardocs(
+    name = "simple_bzl_docs",
+    srcs = [
+        ":bzl_rule_bzl",
+        ":bzl_typedef_bzl",
+    ],
+    target_compatible_with = _TARGET_COMPATIBLE_WITH,
+)
+
+sphinx_stardoc(
+    name = "bzl_function",
+    src = ":bzl_function.bzl",
+    target_compatible_with = _TARGET_COMPATIBLE_WITH,
+    deps = [":func_and_providers_bzl"],
+)
+
+sphinx_stardoc(
+    name = "bzl_providers",
+    src = ":bzl_providers.bzl",
+    prefix = "addprefix_",
+    target_compatible_with = _TARGET_COMPATIBLE_WITH,
+    deps = [":func_and_providers_bzl"],
+)
+
+# A bzl_library with multiple sources
+bzl_library(
+    name = "func_and_providers_bzl",
+    srcs = [
+        "bzl_function.bzl",
+        "bzl_providers.bzl",
+    ],
+)
+
+bzl_library(
+    name = "bzl_rule_bzl",
+    srcs = ["bzl_rule.bzl"],
+    deps = [":func_and_providers_bzl"],
+)
+
+bzl_library(
+    name = "bzl_typedef_bzl",
+    srcs = ["bzl_typedef.bzl"],
+)
+
+sphinx_build_binary(
+    name = "sphinx-build",
+    tags = ["manual"],  # Only needed as part of sphinx doc building
+    deps = [
+        "//sphinxdocs/src/sphinx_bzl",
+        "@dev_pip//myst_parser",
+        "@dev_pip//sphinx",
+        "@dev_pip//typing_extensions",  # Needed by sphinx_stardoc
+    ],
+)
+
+py_test(
+    name = "sphinx_output_test",
+    srcs = ["sphinx_output_test.py"],
+    data = [":docs"],
+    deps = ["@dev_pip//absl_py"],
+)

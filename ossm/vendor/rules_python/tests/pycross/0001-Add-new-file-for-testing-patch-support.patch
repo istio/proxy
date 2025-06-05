@@ -1,0 +1,17 @@
+From b2ebe6fe67ff48edaf2ae937d24b1f0b67c16f81 Mon Sep 17 00:00:00 2001
+From: Philipp Schrader <philipp.schrader@gmail.com>
+Date: Thu, 28 Sep 2023 09:02:44 -0700
+Subject: [PATCH] Add new file for testing patch support
+
+---
+ site-packages/numpy/file_added_via_patch.txt | 1 +
+ 1 file changed, 1 insertion(+)
+ create mode 100644 site-packages/numpy/file_added_via_patch.txt
+
+diff --git a/site-packages/numpy/file_added_via_patch.txt b/site-packages/numpy/file_added_via_patch.txt
+new file mode 100644
+index 0000000..9d947a4
+--- /dev/null
++++ b/site-packages/numpy/file_added_via_patch.txt
+@@ -0,0 +1 @@
++Hello from a patch!

@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "test_proto",
+    srcs = [
+        "ext.proto",
+        "test.proto",
+        "test_import.proto",
+        "test_public.proto",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/enums:enums_proto",
+        "//internal/testprotos/test/weak1:weak1_proto",
+        "//internal/testprotos/test/weak2:weak2_proto",
+    ],
+)
+
+go_proto_library(
+    name = "test_go_proto",
+    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/test",
+    proto = ":test_proto",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/enums",
+        "//internal/testprotos/test/weak1",
+        "//internal/testprotos/test/weak2",
+    ],
+)
+
+go_library(
+    name = "test",
+    embed = [":test_go_proto"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/test",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":test",
+    visibility = ["//:__subpackages__"],
+)

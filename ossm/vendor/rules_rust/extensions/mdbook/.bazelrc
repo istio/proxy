@@ -1,0 +1,81 @@
+###############################################################################
+## Bazel Configuration Flags
+##
+## `.bazelrc` is a Bazel configuration file.
+## https://bazel.build/docs/best-practices#bazelrc-file
+###############################################################################
+
+# https://bazel.build/reference/command-line-reference#flag--enable_platform_specific_config
+common --enable_platform_specific_config
+
+# Enable the only currently supported report type
+# https://bazel.build/reference/command-line-reference#flag--combined_report
+coverage --combined_report=lcov
+
+# Avoid fully cached builds reporting no coverage and failing CI
+# https://bazel.build/reference/command-line-reference#flag--experimental_fetch_all_coverage_outputs
+coverage --experimental_fetch_all_coverage_outputs
+
+# Required for some of the tests
+# https://bazel.build/reference/command-line-reference#flag--experimental_cc_shared_library
+common --experimental_cc_shared_library
+
+###############################################################################
+## Unique configuration groups
+###############################################################################
+
+# Enable use of the nightly toolchains.
+build:nightly --@rules_rust//rust/toolchain/channel=nightly
+
+# Enable rustfmt for all targets in the workspace
+build:rustfmt --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
+build:rustfmt --output_groups=+rustfmt_checks
+
+# Enable clippy for all targets in the workspace
+build:clippy --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+build:clippy --output_groups=+clippy_checks
+
+# Enable unpretty for all targets in the workspace
+build:unpretty --aspects=@rules_rust//rust:defs.bzl%rust_unpretty_aspect
+build:unpretty --output_groups=+rust_unpretty
+
+# `unpretty` requires the nightly toolchain. See tracking issue:
+# https://github.com/rust-lang/rust/issues/43364
+build:unpretty --config=nightly
+
+###############################################################################
+## Incompatibility flags
+###############################################################################
+
+# https://github.com/bazelbuild/bazel/issues/8195
+build --incompatible_disallow_empty_glob=true
+
+# https://github.com/bazelbuild/bazel/issues/12821
+build --nolegacy_external_runfiles
+
+# Required for cargo_build_script support before Bazel 7
+build --incompatible_merge_fixed_and_default_shell_env
+
+###############################################################################
+## Bzlmod
+###############################################################################
+
+# A configuration for disabling bzlmod.
+common:no-bzlmod --noenable_bzlmod --enable_workspace
+
+# Disable the bzlmod lockfile, so we don't accidentally commit MODULE.bazel.lock
+common --lockfile_mode=off
+
+# Allow bazel configuration flags to locate the core rules to avoid adding local
+# override paths to the `MODULE.bazel` file and breaking downstream consumers.
+common --override_module=rules_rust=../../
+
+###############################################################################
+## Custom user flags
+##
+## This should always be the last thing in the `.bazelrc` file to ensure
+## consistent behavior when setting flags in that file as `.bazelrc` files are
+## evaluated top to bottom.
+###############################################################################
+
+try-import %workspace%/user.bazelrc

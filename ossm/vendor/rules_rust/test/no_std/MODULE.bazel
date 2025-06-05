@@ -1,0 +1,30 @@
+module(
+    name = "rules_rust_test_no_std",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.55.6")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../..",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2021",
+    versions = [
+        "nightly/2024-10-17",
+        "1.82.0",
+    ],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.spec(
+    package = "libc_alloc",
+    version = "1.0.3",
+)
+crate.from_specs(name = "no_std_crate_index")
+use_repo(crate, "no_std_crate_index")

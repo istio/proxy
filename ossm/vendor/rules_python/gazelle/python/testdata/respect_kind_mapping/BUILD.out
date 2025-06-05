@@ -1,0 +1,20 @@
+load(":mytest.bzl", "my_test")
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:map_kind py_test my_test :mytest.bzl
+
+py_library(
+    name = "respect_kind_mapping",
+    srcs = [
+        "__init__.py",
+        "foo.py",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+my_test(
+    name = "respect_kind_mapping_test",
+    srcs = ["__test__.py"],
+    main = "__test__.py",
+    deps = [":respect_kind_mapping"],
+)

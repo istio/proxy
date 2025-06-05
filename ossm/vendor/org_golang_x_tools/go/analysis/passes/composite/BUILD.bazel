@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "composite",
+    srcs = [
+        "composite.go",
+        "whitelist.go",
+    ],
+    importpath = "golang.org/x/tools/go/analysis/passes/composite",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/inspect",
+        "//go/ast/inspector",
+        "//internal/typeparams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":composite",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "composite_test",
+    srcs = ["composite_test.go"],
+    deps = [
+        ":composite",
+        "//go/analysis/analysistest",
+        "//internal/typeparams",
+    ],
+)

@@ -1,0 +1,3 @@
+# Prettier config file. For more opitons see https://prettier.io/docs/en/options
+tabWidth = 4
+trailingComma = "all"

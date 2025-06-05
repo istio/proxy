@@ -1,0 +1,12 @@
+load("@rules_proto_grpc//objc:defs.bzl", "objc_grpc_library")
+
+objc_grpc_library(
+    name = "thing_objc_grpc",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)
+
+objc_grpc_library(
+    name = "greeter_objc_grpc",
+    protos = ["@rules_proto_grpc//example/proto:greeter_grpc"],
+    deps = ["thing_objc_grpc"],
+)

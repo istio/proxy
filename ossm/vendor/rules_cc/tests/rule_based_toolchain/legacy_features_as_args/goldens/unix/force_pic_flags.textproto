@@ -1,0 +1,10 @@
+enabled: false
+flag_sets {
+  actions: "c++-link-executable"
+  actions: "lto-index-for-executable"
+  flag_groups {
+    expand_if_available: "force_pic"
+    flags: "-pie"
+  }
+}
+name: "force_pic_flags_test"

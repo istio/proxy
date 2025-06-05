@@ -1,0 +1,14 @@
+load("//rust:defs.bzl", "rust_test")
+
+[
+    rust_test(
+        name = "proc_macro_{}_integration_test".format(edition),
+        srcs = ["proc_macro_{}_test.rs".format(edition)],
+        edition = edition,
+        proc_macro_deps = ["//test/unit/proc_macro:proc_macro_{}".format(edition)],
+    )
+    for edition in [
+        "2015",
+        "2018",
+    ]
+]

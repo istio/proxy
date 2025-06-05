@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "one",
+    srcs = ["one.go"],
+    importpath = "golang.org/x/tools/cmd/fiximports/testdata/src/new.com/one",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":one",
+    visibility = ["//visibility:public"],
+)

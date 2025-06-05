@@ -1,0 +1,21 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load(":rustfmt_integration_test_suite.bzl", "rustfmt_integration_test_suite")
+
+exports_files([
+    "test_rustfmt.toml",
+])
+
+write_file(
+    name = "srcs/generated/generated",
+    out = "srcs/generated/generated.rs",
+    content = """\
+pub fn greeting() {
+    println!("Guten tag!");
+}
+""".splitlines(),
+    newline = "unix",
+)
+
+rustfmt_integration_test_suite(
+    name = "rustfmt_integration_test_suite",
+)

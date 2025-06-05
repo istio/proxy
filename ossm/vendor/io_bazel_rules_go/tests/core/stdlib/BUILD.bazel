@@ -1,0 +1,11 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+load(":stdlib_files.bzl", "stdlib_files")
+
+go_test(
+    name = "buildid_test",
+    srcs = ["buildid_test.go"],
+    data = [":stdlib_files"],
+    deps = ["//go/runfiles"],
+)
+
+stdlib_files(name = "stdlib_files")

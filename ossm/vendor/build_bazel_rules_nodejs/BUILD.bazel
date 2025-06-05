@@ -1,0 +1,62 @@
+# Copyright 2017 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@build_bazel_rules_nodejs//:index.bzl", "COMMON_REPLACEMENTS", "pkg_npm")
+# defaults.bzl not included in distribution
+# load("//:tools/defaults.bzl", "codeowners", "pkg_tar")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    ".bazelci/presubmit.yml",
+    ".bazelversion",
+    "common.bazelrc",
+    "tsconfig.json",
+    "package.json",
+    "bootstrap.js",
+    "LICENSE",
+])
+
+exports_files(
+    [
+        "providers.bzl",
+        "index.for_docs.bzl",
+    ],
+    visibility = ["//docs:__subpackages__"],
+)
+
+bzl_library(
+    name = "bzl",
+    srcs = [
+        "index.bzl",
+        "providers.bzl",
+        "version.bzl",
+        
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/common:bzl",
+        "//internal/generated_file_test:bzl",
+        "//internal/js_library:bzl",
+        "//internal/linker:bzl",
+        "//internal/node:bzl",
+        "//internal/pkg_npm:bzl",
+        "//internal/pkg_web:bzl",
+        "//internal/providers:bzl",
+        "@rules_nodejs//nodejs/private/providers:bzl",
+    ],
+)
+
+

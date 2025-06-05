@@ -1,0 +1,15 @@
+# In order to support both Unixen and Windows, different styles of compiler
+# flags must be used.
+#
+# This .bazelrc file specifies different compiler flags for Linux/Darwin versus
+# Windows.
+#
+# This bazelrc defines the `DD_USE_ABSEIL_FOR_ENVOY` preprocessor macro, and so
+# the resulting library will use `absl::string_view` and `absl::optional`
+# instead of their standard (`std`) equivalents.
+
+build --enable_platform_specific_config
+
+build:linux --cxxopt='-std=c++17' --cxxopt='-Wall' --cxxopt='-Wextra' --cxxopt='-pedantic' --cxxopt='-DDD_USE_ABSEIL_FOR_ENVOY'
+build:macos --cxxopt='-std=c++17' --cxxopt='-Wall' --cxxopt='-Wextra' --cxxopt='-pedantic' --cxxopt='-DDD_USE_ABSEIL_FOR_ENVOY'
+build:windows --cxxopt='/std:c++17' --cxxopt='/DDD_USE_ABSEIL_FOR_ENVOY' --linkopt='ws2_32.lib'

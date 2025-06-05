@@ -1,0 +1,15 @@
+load("//python/private:util.bzl", "IS_BAZEL_7_OR_HIGHER")  # buildifier: disable=bzl-visibility
+load("//tests/support:sh_py_run_test.bzl", "py_reconfig_test")
+
+_SUPPORTS_BOOTSTRAP_SCRIPT = select({
+    "@platforms//os:windows": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+}) if IS_BAZEL_7_OR_HIGHER else ["@platforms//:incompatible"]
+
+py_reconfig_test(
+    name = "nested_dir_test",
+    srcs = ["nested_dir_test.py"],
+    bootstrap_impl = "script",
+    main = "nested_dir_test.py",
+    target_compatible_with = _SUPPORTS_BOOTSTRAP_SCRIPT,
+)

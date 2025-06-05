@@ -1,0 +1,71 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load("//:defs.bzl", "rust_prost_library", "rust_prost_toolchain")
+load(":transition.bzl", "extra_toolchain_wrapper")
+
+package(default_visibility = ["//private/tests:__subpackages__"])
+
+proto_library(
+    name = "a_proto",
+    srcs = [
+        "a.proto",
+    ],
+    strip_import_prefix = "/private/tests/transitive_dependencies",
+    deps = [
+        "//private/tests/transitive_dependencies/b:b_proto",
+        "//private/tests/types:types_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+rust_prost_library(
+    name = "a_rs_proto",
+    proto = ":a_proto",
+)
+
+rust_test(
+    name = "a_test",
+    srcs = ["a_test.rs"],
+    edition = "2021",
+    deps = [
+        ":a_rs_proto",
+        # Add b_proto as a dependency directly to ensure compatibility with `a.proto`'s imports.
+        "//private/tests/transitive_dependencies/b:b_rs_proto",
+    ],
+)
+
+# Test with transitively included dependencies.
+extra_toolchain_wrapper(
+    name = "a_rs_proto_with_transitive_deps",
+    dep = ":a_rs_proto",
+    toolchain = ":prost_toolchain_transitive_includes_enabled",
+)
+
+rust_test(
+    name = "transitive_deps_test",
+    srcs = ["transitive_deps_test.rs"],
+    edition = "2021",
+    deps = [
+        ":a_rs_proto_with_transitive_deps",
+    ],
+)
+
+toolchain(
+    name = "prost_toolchain_transitive_includes_enabled",
+    toolchain = ":prost_toolchain_transitive_includes_enabled_impl",
+    toolchain_type = "//:toolchain_type",
+)
+
+rust_prost_toolchain(
+    name = "prost_toolchain_transitive_includes_enabled_impl",
+    # This is the important delta from the default toolchain.
+    include_transitive_deps = True,
+    prost_plugin = "//private/3rdparty/crates:protoc-gen-prost__protoc-gen-prost",
+    prost_plugin_flag = "--plugin=protoc-gen-prost=%s",
+    prost_runtime = "//private:prost_runtime",
+    prost_types = "//private/3rdparty/crates:prost-types",
+    tonic_plugin = "//private/3rdparty/crates:protoc-gen-tonic__protoc-gen-tonic",
+    tonic_plugin_flag = "--plugin=protoc-gen-tonic=%s",
+    tonic_runtime = "//private:tonic_runtime",
+)

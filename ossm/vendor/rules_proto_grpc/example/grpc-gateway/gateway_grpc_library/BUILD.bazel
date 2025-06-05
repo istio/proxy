@@ -1,0 +1,7 @@
+load("@rules_proto_grpc//grpc-gateway:defs.bzl", "gateway_grpc_library")
+
+gateway_grpc_library(
+    name = "api_gateway_library",
+    importpath = "github.com/rules-proto-grpc/rules_proto_grpc/grpc-gateway/examples/api",
+    protos = ["@rules_proto_grpc//grpc-gateway/example/api:api_proto"],
+)

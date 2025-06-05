@@ -1,0 +1,23 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//grpc-gateway:defs.bzl", "gateway_grpc_library", "gateway_openapiv2_compile")
+
+proto_library(
+    name = "api_proto",
+    srcs = [
+        "api.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = ["@go_googleapis//google/api:annotations_proto"],
+)
+
+gateway_grpc_library(
+    name = "go_default_library",
+    importpath = "github.com/rules-proto-grpc/rules_proto_grpc/grpc-gateway/examples/api",
+    protos = ["api_proto"],
+    visibility = ["//visibility:public"],
+)
+
+gateway_openapiv2_compile(
+    name = "api_openapiv2",
+    protos = ["api_proto"],
+)

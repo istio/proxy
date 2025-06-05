@@ -1,0 +1,63 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+filegroup(
+    name = "bzl_files",
+    srcs = glob(["*.bzl"]),
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "parse",
+    srcs = ["parse.bzl"],
+)
+
+bzl_library(
+    name = "util",
+    srcs = ["util.bzl"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":parse",
+        "@bazel_features_version//:version",
+    ],
+)
+
+bzl_library(
+    name = "globals",
+    srcs = ["globals.bzl"],
+    visibility = ["//:__subpackages__"],
+)
+
+bzl_library(
+    name = "globals_repo",
+    srcs = ["globals_repo.bzl"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":parse",
+    ],
+)
+
+bzl_library(
+    name = "version_repo",
+    srcs = ["version_repo.bzl"],
+    visibility = ["//:__subpackages__"],
+)
+
+bzl_library(
+    name = "repos",
+    srcs = ["repos.bzl"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":globals",
+        ":globals_repo",
+        ":version_repo",
+    ],
+)
+
+bzl_library(
+    name = "extensions",
+    srcs = ["extensions.bzl"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":repos",
+    ],
+)

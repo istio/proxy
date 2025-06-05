@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "github.com/rules-proto-grpc/rules_proto_grpc/test_workspaces/go_fixer";
+
+import "google/api/annotations.proto";
+import "no_service.proto";
+
+service Demo {
+    rpc Demo (demo) returns (demo) {
+        option (google.api.http) = {
+            post: "/Demo"
+            body: "*"
+        };
+    };
+}

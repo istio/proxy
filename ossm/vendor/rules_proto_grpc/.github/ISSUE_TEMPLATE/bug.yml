@@ -1,0 +1,79 @@
+name: Bug Report
+description: File a bug report
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        To report an issue, please complete the following details. If you have a feature request or
+        new plugin request, please open a regular issue.
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: Describe the issue, including the expected and observed behaviour.
+      placeholder: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log Output
+      description: Please copy and paste any relevant log output.
+      render: plain text
+  - type: input
+    id: version
+    attributes:
+      label: rules_proto_grpc Version
+      description: What version or versions of rules_proto_grpc are you seeing the issue with?
+    validations:
+      required: yes
+  - type: input
+    id: bazel_version
+    attributes:
+      label: Bazel Version
+      description: What version of Bazel are you using?
+    validations:
+      required: yes
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      description: What OS are you using?
+    validations:
+      required: yes
+  - type: markdown
+    attributes:
+      value: |
+        Providing a demo project that recreates the issue will help enormously with tracing the
+        problem. If you have a simple demonstration, please paste them below or make a sample
+        repository and provide a link.
+  - type: input
+    id: demo_repo
+    attributes:
+      label: Link to Demo Repo
+      description: If you have a demo repo for the issue, please link it here.
+  - type: textarea
+    id: demo_workspace
+    attributes:
+      label: WORKSPACE Content
+      description: Please paste a demo WORKSPACE file if you have one.
+      render: Starlark
+  - type: textarea
+    id: demo_build
+    attributes:
+      label: BUILD Content
+      description: Please paste a demo BUILD file if you have one.
+      render: Starlark
+  - type: textarea
+    id: demo_proto
+    attributes:
+      label: Proto Content
+      description: Please paste a demo .proto file if you have one.
+      render: protobuf
+  - type: textarea
+    id: demo_other
+    attributes:
+      label: Any Other Content
+      description: Please paste any other demo files if you have them.
+      render: plain text

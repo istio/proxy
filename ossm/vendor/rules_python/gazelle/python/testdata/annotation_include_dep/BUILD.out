@@ -1,0 +1,53 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+
+# gazelle:python_generation_mode file
+
+py_library(
+    name = "__init__",
+    srcs = ["__init__.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":module1",
+        ":module2",
+        "//foo/bar:baz",
+        "//hello:world",
+        "@gazelle_python_test//foo",
+        "@star_wars//rebel_alliance/luke:skywalker",
+    ],
+)
+
+py_library(
+    name = "module1",
+    srcs = ["module1.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_library(
+    name = "module2",
+    srcs = ["module2.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//checking/py_binary/from/if:works",
+        "//foo:bar",
+    ],
+)
+
+py_binary(
+    name = "annotation_include_dep_bin",
+    srcs = ["__main__.py"],
+    main = "__main__.py",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":module2",
+        "//checking/py_binary/from/__main__:works",
+    ],
+)
+
+py_test(
+    name = "module2_test",
+    srcs = ["module2_test.py"],
+    deps = [
+        ":module2",
+        "//checking/py_test/works:too",
+    ],
+)

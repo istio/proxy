@@ -1,0 +1,18 @@
+syntax = "proto3";
+package samples;
+import "options.proto";
+
+enum OptionIgnoredEnum {
+    option (protoc.gen.jsonschema.enum_options).ignore = true;
+    VALUE_0 = 0;
+    VALUE_1 = 1;
+    VALUE_2 = 2;
+    VALUE_3 = 3;
+}
+
+enum UnignoredEnum {
+    VALUE_4 = 0;
+    VALUE_5 = 1;
+    VALUE_6 = 2;
+    VALUE_7 = 3;
+}

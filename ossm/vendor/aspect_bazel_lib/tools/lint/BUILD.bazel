@@ -1,0 +1,28 @@
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+native_binary(
+    name = "vale_bin",
+    src = select({
+        "//platforms/config:linux_x86_64": "@vale_Linux_64-bit//:vale",
+        "//platforms/config:macos_aarch64": "@vale_macOS_arm64//:vale",
+        "//platforms/config:macos_x86_64": "@vale_macOS_64-bit//:vale",
+    }),
+    out = "vale_bin",
+)
+
+# Take care to keep the StylesPath entry in /.vale.ini working:
+# - the editor sees tools/lint/vale in the source tree
+# - the linting aspect sees bazel-bin/tools/lint/vale
+copy_to_directory(
+    name = "vale_styles",
+    srcs = [
+        "vale",
+        "@vale_Google//:Google",
+    ],
+    out = "vale",
+    include_external_repositories = ["vale_*"],
+    replace_prefixes = {"vale/": ""},
+)

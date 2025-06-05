@@ -1,0 +1,17 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_buf//buf:defs.bzl", "buf_lint_test")
+
+proto_library(
+    name = "pets_v1_proto",
+    srcs = ["pets.proto"],
+    strip_import_prefix = "/petapis",
+    visibility = ["//visibility:public"],
+    deps = ["//fooapis/foo/v1:foo_v1_proto"],
+)
+
+buf_lint_test(
+    name = "pets_v1_proto_lint",
+    config = "//:buf.yaml",
+    module = "petapis",
+    targets = [":pets_v1_proto"],
+)

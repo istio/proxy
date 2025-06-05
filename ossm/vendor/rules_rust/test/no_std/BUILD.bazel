@@ -1,0 +1,47 @@
+load("@no_std_crate_index//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_shared_library",
+)
+
+rust_shared_library(
+    name = "lib",
+    srcs = [
+        "lib.rs",
+        "no_std.rs",
+    ],
+    crate_features = select({
+        "@rules_rust//rust/settings:is_no_std": [],
+        "//conditions:default": ["std"],
+    }),
+    edition = "2021",
+    deps = ["custom_alloc"],
+)
+
+rust_library(
+    name = "custom_alloc",
+    srcs = ["alloc.rs"],
+    aliases = aliases(),
+    deps = all_crate_deps(normal = True),
+)
+
+cc_library(
+    name = "nostartfiles",
+    linkopts = ["-nostartfiles"],
+)
+
+rust_binary(
+    name = "main",
+    srcs = ["main.rs"],
+    aliases = aliases(),
+    deps = all_crate_deps(normal = True) + [":nostartfiles"],
+)
+
+cc_test(
+    name = "no_std_cc_test",
+    srcs = ["main.c"],
+    deps = [":lib"],
+)

@@ -1,0 +1,36 @@
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: ${{ github.workspace }}
+      GOBIN: ${{ github.workspace }}/bin
+    defaults:
+      run:
+        working-directory: ${{ env.GOPATH }}/src/github.com/lyft/protoc-gen-star
+    name: protoc version 3.17.0
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+          path: ${{ env.GOPATH }}/src/github.com/lyft/protoc-gen-star
+      - name: Set Up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.17'
+      - run: mkdir -p $GOPATH/bin
+      - run: wget "https://github.com/protocolbuffers/protobuf/releases/download/v3.17.0/protoc-3.17.0-linux-x86_64.zip" -O /tmp/protoc.zip
+      - run: unzip /tmp/protoc.zip -d /tmp
+      - run: sudo mv /tmp/bin/protoc /usr/local/bin/protoc
+      - run: sudo mv /tmp/include/google /usr/local/include/google
+      - name: Generate Testdata
+        run: make testdata
+      - name: Run Tests
+        run: make tests
+

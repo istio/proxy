@@ -1,0 +1,19 @@
+local_repository(
+    name = "rules_buf",
+    path = "../..",
+)
+
+load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_toolchains")
+
+rules_buf_dependencies()
+
+rules_buf_toolchains(
+    sha256 = "f7e50b227bf171158ff4a80d22f274d0195487b618e0c4a57b3b0741a52453c2",
+    version = "v1.32.1",
+)
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
+rules_proto_dependencies()
+
+rules_proto_toolchains()

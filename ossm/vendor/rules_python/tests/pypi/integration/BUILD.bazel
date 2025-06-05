@@ -1,0 +1,20 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_python_publish_deps//:requirements.bzl", "all_requirements")
+load(":transitions.bzl", "transition_rule")
+
+build_test(
+    name = "all_requirements_build_test",
+    targets = all_requirements,
+)
+
+# Rule that transitions dependencies to be built from sdist
+transition_rule(
+    name = "all_requirements_from_sdist",
+    testonly = True,
+    deps = all_requirements,
+)
+
+build_test(
+    name = "all_requirements_from_sdist_build_test",
+    targets = ["all_requirements_from_sdist"],
+)

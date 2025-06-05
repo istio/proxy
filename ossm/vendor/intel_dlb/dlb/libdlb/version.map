@@ -1,0 +1,58 @@
+LIBDLB_1 {
+    global:
+
+/* Standard interfaces */
+    dlb_open;
+    dlb_close;
+    dlb_get_num_resources;
+    dlb_create_sched_domain;
+    dlb_attach_sched_domain;
+    dlb_detach_sched_domain;
+    dlb_create_ldb_credit_pool;
+    dlb_create_dir_credit_pool;
+    dlb_create_credit_pool;
+    dlb_create_ldb_queue;
+    dlb_create_dir_queue;
+    dlb_create_ldb_port;
+    dlb_create_dir_port;
+    dlb_attach_ldb_port;
+    dlb_attach_dir_port;
+    dlb_detach_port;
+    dlb_link_queue;
+    dlb_unlink_queue;
+    dlb_enable_port_sched;
+    dlb_disable_port_sched;
+    dlb_enable_port;
+    dlb_disable_port;
+    dlb_start_sched_domain;
+    dlb_reset_sched_domain;
+    dlb_launch_domain_alert_thread;
+    dlb_send;
+    dlb_release;
+    dlb_forward;
+    dlb_pop_cq;
+    dlb_recv;
+    dlb_recv_no_pop;
+    dlb_set_wait_profile;
+    dlb_get_wait_profile;
+    dlb_get_dev_capabilities;
+    dlb_set_ldb_sequence_number_allocation;
+    dlb_get_ldb_sequence_number_allocation;
+    dlb_get_num_ldb_sequence_number_groups;
+    dlb_get_min_ldb_sequence_number_allocation;
+    dlb_get_ldb_sequence_number_occupancy;
+    dlb_enable_cq_weight;
+    dlb_enable_cq_epoll;
+    dlb_get_xstats;
+
+/* Advanced interfaces */
+    dlb_adv_send;
+    dlb_adv_create_sched_domain;
+
+/* Misc interfaces */
+    dlb_monitor_perf;
+    dlb_measure_sched_counts;
+    dlb_adv_read_queue_depth_counter;
+    dlb_adv_reset_queue_depth_counter;
+    local: *;
+};

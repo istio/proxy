@@ -1,0 +1,18 @@
+[package]
+name = "nested_build_dependencies"
+version = "0.0.0"
+edition = "2021"
+
+# Required to satisfy cargo but no `lib.rs` is expected to
+# exist within test data.
+[lib]
+path = "lib.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+num-traits = "0.2.19"
+syn = "2.0.77"
+
+[dev-dependencies]
+proc-macro-error-attr = "=1.0.4"

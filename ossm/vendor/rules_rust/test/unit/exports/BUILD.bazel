@@ -1,0 +1,5 @@
+load(":exports_test.bzl", "exports_test_suite")
+
+exports_test_suite(
+    name = "exports_test_suite",
+)

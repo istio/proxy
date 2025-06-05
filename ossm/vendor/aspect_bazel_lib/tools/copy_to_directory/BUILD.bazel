@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "copy_to_directory_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/bazel-contrib/bazel-lib/tools/copy_to_directory",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tools/common",
+        "@com_github_bmatcuk_doublestar_v4//:doublestar",
+        "@org_golang_x_exp//maps",
+    ],
+)
+
+go_binary(
+    name = "copy_to_directory",
+    embed = [":copy_to_directory_lib"],
+    visibility = ["//visibility:public"],
+)

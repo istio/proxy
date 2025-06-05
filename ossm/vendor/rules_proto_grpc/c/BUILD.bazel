@@ -1,0 +1,21 @@
+load("//:defs.bzl", "proto_plugin")
+
+proto_plugin(
+    name = "upb_plugin",
+    outputs = [
+        "{protopath}.upb.h",
+        "{protopath}.upb.c",
+    ],
+    tool = "@upb//upbc:protoc-gen-upb",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "upbdefs_plugin",
+    outputs = [
+        "{protopath}.upbdefs.h",
+        "{protopath}.upbdefs.c",
+    ],
+    tool = "@upb//upbc:protoc-gen-upbdefs",
+    visibility = ["//visibility:public"],
+)

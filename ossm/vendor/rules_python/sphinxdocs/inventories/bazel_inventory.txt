@@ -1,0 +1,145 @@
+# Sphinx inventory version 2
+# Project: Bazel
+# Version: 7.3.0
+# The remainder of this file is compressed using zlib
+Action bzl:type 1 rules/lib/Action -
+CcInfo bzl:provider 1 rules/lib/providers/CcInfo -
+CcInfo.linking_context bzl:provider-field 1 rules/lib/providers/CcInfo#linking_context -
+ExecutionInfo bzl:type 1 rules/lib/providers/ExecutionInfo -
+File bzl:type 1 rules/lib/File -
+Label bzl:type 1 rules/lib/Label -
+Name bzl:type 1 concepts/labels#target-names -
+RBE bzl:obj 1 remote/rbe -
+RunEnvironmentInfo bzl:type 1 rules/lib/providers/RunEnvironmentInfo -
+Target bzl:type 1 rules/lib/builtins/Target -
+ToolchainInfo bzl:type 1 rules/lib/providers/ToolchainInfo.html -
+attr.bool bzl:type 1 rules/lib/toplevel/attr#bool -
+attr.int bzl:type 1 rules/lib/toplevel/attr#int -
+attr.label bzl:type 1 rules/lib/toplevel/attr#label -
+attr.label_list bzl:type 1 rules/lib/toplevel/attr#label_list -
+attr.string bzl:type 1 rules/lib/toplevel/attr#string -
+attr.string_list bzl:type 1 rules/lib/toplevel/attr#string_list -
+bool bzl:type 1 rules/lib/bool -
+callable bzl:type 1 rules/lib/core/function -
+config_common.FeatureFlagInfo bzl:type 1 rules/lib/toplevel/config_common#FeatureFlagInfo -
+config_common.toolchain_type bzl:function 1 rules/lib/toplevel/config_common#toolchain_type -
+ctx.actions bzl:obj 1 rules/lib/builtins/ctx#actions -
+ctx.aspect_ids bzl:obj 1 rules/lib/builtins/ctx#aspect_ids -
+ctx.attr bzl:obj 1 rules/lib/builtins/ctx#attr -
+ctx.bin_dir bzl:obj 1 rules/lib/builtins/ctx#bin_dir -
+ctx.build_file_path bzl:obj 1 rules/lib/builtins/ctx#build_file_path -
+ctx.build_setting_value bzl:obj 1 rules/lib/builtins/ctx#build_setting_value -
+ctx.configuration bzl:obj 1 rules/lib/builtins/ctx#configuration -
+ctx.coverage_instrumented bzl:function 1 rules/lib/builtins/ctx#coverage_instrumented -
+ctx.created_actions bzl:function 1 rules/lib/builtins/ctx#created_actions -
+ctx.disabled_features bzl:obj 1 rules/lib/builtins/ctx#disabled_features -
+ctx.exec_groups bzl:obj 1 rules/lib/builtins/ctx#exec_groups -
+ctx.executable bzl:obj 1 rules/lib/builtins/ctx#executable -
+ctx.expand_location bzl:function 1 rules/lib/builtins/ctx#expand_location -
+ctx.expand_location bzl:function 1 rules/lib/builtins/ctx#expand_location - -
+ctx.expand_make_variables bzl:function 1 rules/lib/builtins/ctx#expand_make_variables -
+ctx.features bzl:obj 1 rules/lib/builtins/ctx#features -
+ctx.file bzl:obj 1 rules/lib/builtins/ctx#file -
+ctx.files bzl:obj 1 rules/lib/builtins/ctx#files -
+ctx.fragments bzl:obj 1 rules/lib/builtins/ctx#fragments -
+ctx.genfiles_dir bzl:obj 1 rules/lib/builtins/ctx#genfiles_dir -
+ctx.info_file bzl:obj 1 rules/lib/builtins/ctx#info_file -
+ctx.label bzl:obj 1 rules/lib/builtins/ctx#label -
+ctx.outputs bzl:obj 1 rules/lib/builtins/ctx#outputs -
+ctx.resolve_command bzl:function 1 rules/lib/builtins/ctx#resolve_command -
+ctx.resolve_tools bzl:function 1 rules/lib/builtins/ctx#resolve_tools -
+ctx.rule bzl:obj 1 rules/lib/builtins/ctx#rule -
+ctx.runfiles bzl:function 1 rules/lib/builtins/ctx#runfiles -
+ctx.split_attr bzl:obj 1 rules/lib/builtins/ctx#split_attr -
+ctx.super bzl:obj 1 rules/lib/builtins/ctx#super -
+ctx.target_platform_has_constraint bzl:function 1 rules/lib/builtins/ctx#target_platform_has_constraint -
+ctx.toolchains bzl:obj 1 rules/lib/builtins/ctx#toolchains -
+ctx.var bzl:obj 1 rules/lib/builtins/ctx#var -
+ctx.version_file bzl:obj 1 rules/lib/builtins/ctx#version_file -
+ctx.workspace_name bzl:obj 1 rules/lib/builtins/ctx#workspace_name -
+depset bzl:type 1 rules/lib/depset -
+dict bzl:type 1 rules/lib/dict -
+exec_compatible_with bzl:attr 1 reference/be/common-definitions#common.exec_compatible_with -
+int bzl:type 1 rules/lib/int -
+label bzl:type 1 concepts/labels -
+list bzl:type 1 rules/lib/list -
+module_ctx bzl:type 1 rules/lib/builtins/module_ctx -
+module_ctx.download bzl:function 1 rules/lib/builtins/module_ctx#download -
+module_ctx.download_and_extract bzl:function 1 rules/lib/builtins/module_ctx#download_and_extract -
+module_ctx.execute bzl:function 1 rules/lib/builtins/module_ctx#execute -
+module_ctx.extension_metadata bzl:function 1 rules/lib/builtins/module_ctx#extension_metadata -
+module_ctx.extract bzl:function 1 rules/lib/builtins/module_ctx#extract -
+module_ctx.file bzl:function 1 rules/lib/builtins/module_ctx#file -
+module_ctx.getenv bzl:function 1 rules/lib/builtins/module_ctx#getenv -
+module_ctx.is_dev_dependency bzl:obj 1 rules/lib/builtins/module_ctx#is_dev_dependency -
+module_ctx.modules bzl:obj 1 rules/lib/builtins/module_ctx#modules -
+module_ctx.os bzl:obj 1 rules/lib/builtins/module_ctx#os -
+module_ctx.path bzl:function 1 rules/lib/builtins/module_ctx#path -
+module_ctx.read bzl:function 1 rules/lib/builtins/module_ctx#read -
+module_ctx.report_progress bzl:function 1 rules/lib/builtins/module_ctx#report_progress -
+module_ctx.root_module_has_non_dev_dependency bzl:function 1 rules/lib/builtins/module_ctx#root_module_has_non_dev_dependency -
+module_ctx.watch bzl:function 1 rules/lib/builtins/module_ctx#watch -
+module_ctx.which bzl:function 1 rules/lib/builtins/module_ctx#which -
+native.existing_rule bzl:function 1 rules/lib/toplevel/native#existing_rule -
+native.existing_rules bzl:function 1 rules/lib/toplevel/native#existing_rules -
+native.exports_files bzl:function 1 rules/lib/toplevel/native#exports_files -
+native.glob bzl:function 1 rules/lib/toplevel/native#glob -
+native.module_name bzl:function 1 rules/lib/toplevel/native#module_name -
+native.module_version bzl:function 1 rules/lib/toplevel/native#module_version -
+native.package_group bzl:function 1 rules/lib/toplevel/native#package_group -
+native.package_name bzl:function 1 rules/lib/toplevel/native#package_name -
+native.package_relative_label bzl:function 1 rules/lib/toplevel/native#package_relative_label -
+native.repo_name bzl:function 1 rules/lib/toplevel/native#repo_name -
+native.repository_name bzl:function 1 rules/lib/toplevel/native#repository_name -
+path bzl:type 1 rules/lib/builtins/path -
+path.basename bzl:obj 1 rules/lib/builtins/path#basename
+path.dirname bzl:obj 1 rules/lib/builtins/path#dirname
+path.exists bzl:obj 1 rules/lib/builtins/path#exists
+path.get_child bzl:function 1 rules/lib/builtins/path#get_child
+path.is_dir bzl:obj 1 rules/lib/builtins/path#is_dir
+path.readdir bzl:function 1 rules/lib/builtins/path#readdir
+path.realpath bzl:obj 1 rules/lib/builtins/path#realpath
+repository_ctx bzl:type 1 rules/lib/builtins/repository_ctx -
+repository_ctx.attr bzl:obj 1 rules/lib/builtins/repository_ctx#attr
+repository_ctx.delete bzl:function 1 rules/lib/builtins/repository_ctx#delete
+repository_ctx.download bzl:function 1 rules/lib/builtins/repository_ctx#download
+repository_ctx.download_and_extract bzl:function 1 rules/lib/builtins/repository_ctx#download_and_extract
+repository_ctx.execute bzl:function 1 rules/lib/builtins/repository_ctx#execute
+repository_ctx.extract bzl:function 1 rules/lib/builtins/repository_ctx#extract
+repository_ctx.file bzl:function 1 rules/lib/builtins/repository_ctx#file
+repository_ctx.getenv bzl:function 1 rules/lib/builtins/repository_ctx#getenv
+repository_ctx.name bzl:obj 1 rules/lib/builtins/repository_ctx#name
+repository_ctx.os bzl:obj 1 rules/lib/builtins/repository_ctx#os
+repository_ctx.patch bzl:function 1 rules/lib/builtins/repository_ctx#patch
+repository_ctx.path bzl:obj 1 rules/lib/builtins/repository_ctx#path
+repository_ctx.read bzl:function 1 rules/lib/builtins/repository_ctx#read
+repository_ctx.report_progress bzl:function 1 rules/lib/builtins/repository_ctx#report_progress
+repository_ctx.symlink bzl:function 1 rules/lib/builtins/repository_ctx#symlink
+repository_ctx.template bzl:function 1 rules/lib/builtins/repository_ctx#template
+repository_ctx.watch bzl:function 1 rules/lib/builtins/repository_ctx#watch
+repository_ctx.watch_tree bzl:function 1 rules/lib/builtins/repository_ctx#watch_tree
+repository_ctx.which bzl:function 1 rules/lib/builtins/repository_ctx#which
+repository_ctx.workspace_root bzl:obj 1 rules/lib/builtins/repository_ctx#workspace_root
+repository_os bzl:type 1 rules/lib/builtins/repository_os -
+repository_os.arch bzl:obj 1 rules/lib/builtins/repository_os#arch
+repository_os.environ bzl:obj 1 rules/lib/builtins/repository_os#environ
+repository_os.name bzl:obj 1 rules/lib/builtins/repository_os#name
+runfiles bzl:type 1 rules/lib/builtins/runfiles -
+runfiles.empty_filenames bzl:type 1 rules/lib/builtins/runfiles#empty_filenames -
+runfiles.files bzl:type 1 rules/lib/builtins/runfiles#files -
+runfiles.merge bzl:type 1 rules/lib/builtins/runfiles#merge -
+runfiles.merge_all bzl:type 1 rules/lib/builtins/runfiles#merge_all -
+runfiles.root_symlinks bzl:type 1 rules/lib/builtins/runfiles#root_symlinks -
+runfiles.symlinks bzl:type 1 rules/lib/builtins/runfiles#symlinks -
+str bzl:type 1 rules/lib/string -
+struct bzl:type 1 rules/lib/builtins/struct -
+target_compatible_with bzl:attr 1 reference/be/common-definitions#common.target_compatible_with -
+testing bzl:obj 1 rules/lib/toplevel/testing -
+testing.ExecutionInfo bzl:function 1 rules/lib/toplevel/testing#ExecutionInfo -
+testing.TestEnvironment bzl:function 1 rules/lib/toplevel/testing#TestEnvironment -
+testing.analysis_test bzl:rule 1 rules/lib/toplevel/testing#analysis_test -
+toolchain bzl:rule 1 reference/be/platforms-and-toolchains#toolchain -
+toolchain.exec_compatible_with bzl:rule 1 reference/be/platforms-and-toolchains#toolchain.exec_compatible_with -
+toolchain.target_settings bzl:attr 1 reference/be/platforms-and-toolchains#toolchain.target_settings -
+toolchain.target_compatible_with bzl:attr 1 reference/be/platforms-and-toolchains#toolchain.target_compatible_with -
+toolchain_type bzl:type 1 rules/lib/builtins/toolchain_type.html -

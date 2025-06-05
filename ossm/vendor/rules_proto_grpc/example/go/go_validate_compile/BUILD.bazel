@@ -1,0 +1,11 @@
+load("@rules_proto_grpc//go:defs.bzl", "go_validate_compile")
+
+go_validate_compile(
+    name = "thing_go_validate",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)
+
+go_validate_compile(
+    name = "greeter_go_validate",
+    protos = ["@rules_proto_grpc//example/proto:greeter_grpc"],
+)

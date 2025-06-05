@@ -1,0 +1,77 @@
+# Copyright 2024 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# EXPERIMENTAL: This is experimental and may be removed without notice
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//python/uv/private:current_toolchain.bzl", "current_toolchain")
+
+package(default_visibility = ["//:__subpackages__"])
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]) + [
+        "//python/uv/private:distribution",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+toolchain_type(
+    name = "uv_toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+current_toolchain(
+    name = "current_toolchain",
+    # Marked manual so that `bazel test //...` passes
+    # even if no toolchain is registered.
+    tags = ["manual"],
+    # EXPERIMENTAL: Visibility is restricted to allow for changes.
+    visibility = [
+        "//:__subpackages__",
+        "@rules_python//examples:__subpackages__",
+    ],
+)
+
+bzl_library(
+    name = "lock_bzl",
+    srcs = ["lock.bzl"],
+    # EXPERIMENTAL: Visibility is restricted to allow for changes.
+    visibility = ["//:__subpackages__"],
+    deps = ["//python/uv/private:lock_bzl"],
+)
+
+bzl_library(
+    name = "uv_bzl",
+    srcs = ["uv.bzl"],
+    # EXPERIMENTAL: Visibility is restricted to allow for changes.
+    visibility = ["//:__subpackages__"],
+    deps = ["//python/uv/private:uv_bzl"],
+)
+
+bzl_library(
+    name = "uv_toolchain_bzl",
+    srcs = ["uv_toolchain.bzl"],
+    # EXPERIMENTAL: Visibility is restricted to allow for changes.
+    visibility = ["//:__subpackages__"],
+    deps = ["//python/uv/private:uv_toolchain_bzl"],
+)
+
+bzl_library(
+    name = "uv_toolchain_info_bzl",
+    srcs = ["uv_toolchain_info.bzl"],
+    # EXPERIMENTAL: Visibility is restricted to allow for changes.
+    visibility = ["//:__subpackages__"],
+    deps = ["//python/uv/private:uv_toolchain_info_bzl"],
+)

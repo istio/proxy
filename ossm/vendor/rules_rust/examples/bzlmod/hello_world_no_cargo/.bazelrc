@@ -1,0 +1,6 @@
+common --experimental_enable_bzlmod
+common --noenable_workspace
+common --enable_runfiles
+
+# Required for cargo_build_script support before Bazel 7
+build --incompatible_merge_fixed_and_default_shell_env

@@ -1,0 +1,11 @@
+
+load("@rules_license//rules:package_info.bzl", "package_info")
+
+package_info(
+    name = "gazelle_generated_package_info",
+    package_name = "golang.org/x/mod",
+    package_url = "https://golang.org/x/mod",
+    package_version = "0.9.0",
+    purl = "pkg:golang/golang.org/x/mod@v0.9.0",
+    visibility = ["//:__subpackages__"],
+)

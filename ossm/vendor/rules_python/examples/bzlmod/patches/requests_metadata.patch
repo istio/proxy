@@ -1,0 +1,12 @@
+diff --unified --recursive a/requests-2.25.1.dist-info/METADATA b/requests-2.25.1.dist-info/METADATA
+--- a/requests-2.25.1.dist-info/METADATA	2020-12-16 19:37:50.000000000 +0900
++++ b/requests-2.25.1.dist-info/METADATA	2023-09-30 20:31:50.079863410 +0900
+@@ -1,7 +1,7 @@
+ Metadata-Version: 2.1
+ Name: requests
+ Version: 2.25.1
+-Summary: Python HTTP for Humans.
++Summary: Python HTTP for Humans. Patched.
+ Home-page: https://requests.readthedocs.io
+ Author: Kenneth Reitz
+ Author-email: me@kennethreitz.org

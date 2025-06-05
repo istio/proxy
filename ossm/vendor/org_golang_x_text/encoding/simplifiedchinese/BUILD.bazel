@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "simplifiedchinese",
+    srcs = [
+        "all.go",
+        "gbk.go",
+        "hzgb2312.go",
+        "tables.go",
+    ],
+    importpath = "golang.org/x/text/encoding/simplifiedchinese",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding",
+        "//encoding/internal",
+        "//encoding/internal/identifier",
+        "//transform",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":simplifiedchinese",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "simplifiedchinese_test",
+    srcs = ["all_test.go"],
+    embed = [":simplifiedchinese"],
+    deps = [
+        "//encoding",
+        "//encoding/internal",
+        "//encoding/internal/enctest",
+        "//transform",
+    ],
+)

@@ -1,0 +1,31 @@
+load("@rules_proto_grpc//rust:defs.bzl", "rust_prost_proto_library", "rust_tonic_grpc_library")
+
+rust_tonic_grpc_library(
+    name = "greeter_rust_tonic_grpc",
+    declared_proto_packages = ["example.proto"],
+    options = {
+        "//rust:rust_prost_plugin": [
+            "type_attribute=.example.proto.Person=#[derive(Eq\\,Hash)]",
+            "type_attribute=.example.proto.Place=#[derive(Eq\\,Hash)]",
+            # "type_attribute=.example.proto.Thing=#[derive(Eq\\,Hash)]",
+        ],
+    },
+    prost_proto_deps = [
+        ":thing_prost",
+    ],
+    protos = [
+        "@rules_proto_grpc//example/proto:greeter_grpc",
+        "@rules_proto_grpc//example/proto:person_proto",
+        "@rules_proto_grpc//example/proto:place_proto",
+        # "@rules_proto_grpc//example/proto:thing_proto",
+    ],
+)
+
+# See https://github.com/rules-proto-grpc/rules_proto_grpc/pull/265/#issuecomment-1577920311
+rust_prost_proto_library(
+    name = "thing_prost",
+    declared_proto_packages = ["example.proto"],
+    protos = [
+        "@rules_proto_grpc//example/proto:thing_proto",
+    ],
+)

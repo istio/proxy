@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "module",
+    srcs = [
+        "module.go",
+        "pseudo.go",
+    ],
+    importpath = "golang.org/x/mod/module",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/lazyregexp",
+        "//semver",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":module",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "module_test",
+    srcs = [
+        "module_test.go",
+        "pseudo_test.go",
+    ],
+    embed = [":module"],
+)

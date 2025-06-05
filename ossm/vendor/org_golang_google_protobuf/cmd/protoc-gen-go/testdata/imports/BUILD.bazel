@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "imports_proto",
+    srcs = [
+        "test_import_a1m1.proto",
+        "test_import_a1m2.proto",
+        "test_import_all.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/protoc-gen-go/testdata/imports/fmt:fmt_proto",
+        "//cmd/protoc-gen-go/testdata/imports/test_a_1:test_a_1_proto",
+        "//cmd/protoc-gen-go/testdata/imports/test_a_2:test_a_2_proto",
+        "//cmd/protoc-gen-go/testdata/imports/test_b_1:test_b_1_proto",
+    ],
+)
+
+go_proto_library(
+    name = "imports_go_proto",
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/imports",
+    proto = ":imports_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/protoc-gen-go/testdata/imports/fmt",
+        "//cmd/protoc-gen-go/testdata/imports/test_a_1",
+        "//cmd/protoc-gen-go/testdata/imports/test_a_2",
+        "//cmd/protoc-gen-go/testdata/imports/test_b_1:m1_proto",
+        "//cmd/protoc-gen-go/testdata/imports/test_b_1:m2_proto",
+    ],
+)
+
+go_library(
+    name = "imports",
+    embed = [":imports_go_proto"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/imports",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":imports",
+    visibility = ["//visibility:public"],
+)

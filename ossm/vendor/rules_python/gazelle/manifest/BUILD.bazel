@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+exports_files([
+    # This gets wrapped up into a py_binary with args inside of the gazelle_python_manifest macro.
+    "copy_to_source.py",
+])
+
+go_library(
+    name = "manifest",
+    srcs = ["manifest.go"],
+    importpath = "github.com/bazelbuild/rules_python/gazelle/manifest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_emirpasic_gods//sets/treeset",
+        "@in_gopkg_yaml_v2//:yaml_v2",
+    ],
+)
+
+go_test(
+    name = "manifest_test",
+    srcs = ["manifest_test.go"],
+    data = glob(["testdata/**"]),
+    deps = [":manifest"],
+)
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]) + [
+        "//manifest/generate:distribution",
+        "//manifest/hasher:distribution",
+        "//manifest/test:distribution",
+    ],
+    visibility = ["//:__pkg__"],
+)

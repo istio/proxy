@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "xcontext",
+    srcs = ["xcontext.go"],
+    importpath = "golang.org/x/tools/internal/xcontext",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":xcontext",
+    visibility = ["//:__subpackages__"],
+)

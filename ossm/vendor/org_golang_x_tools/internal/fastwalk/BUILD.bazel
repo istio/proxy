@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "fastwalk",
+    srcs = [
+        "fastwalk.go",
+        "fastwalk_darwin.go",
+        "fastwalk_dirent_fileno.go",
+        "fastwalk_dirent_ino.go",
+        "fastwalk_dirent_namlen_bsd.go",
+        "fastwalk_dirent_namlen_linux.go",
+        "fastwalk_portable.go",
+        "fastwalk_unix.go",
+    ],
+    cgo = True,
+    importpath = "golang.org/x/tools/internal/fastwalk",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fastwalk",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "fastwalk_test",
+    srcs = ["fastwalk_test.go"],
+    deps = [":fastwalk"],
+)

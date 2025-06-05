@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "jsonpb",
+    srcs = [
+        "decode.go",
+        "encode.go",
+        "json.go",
+    ],
+    importpath = "github.com/golang/protobuf/jsonpb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//proto",
+        "@org_golang_google_protobuf//encoding/protojson:go_default_library",
+        "@org_golang_google_protobuf//proto:go_default_library",
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//reflect/protoregistry:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library_gen",
+    actual = ":go_default_library",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":jsonpb",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "jsonpb_test",
+    srcs = ["json_test.go"],
+    embed = [":jsonpb"],
+    deps = [
+        "//internal/testprotos/jsonpb_proto",
+        "//internal/testprotos/proto3_proto",
+        "//proto",
+        "//protoc-gen-go/descriptor",
+        "//ptypes",
+        "//ptypes/any",
+        "//ptypes/duration",
+        "//ptypes/struct",
+        "//ptypes/timestamp",
+        "//ptypes/wrappers",
+    ],
+)

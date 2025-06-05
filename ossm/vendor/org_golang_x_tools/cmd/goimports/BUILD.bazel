@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "goimports_lib",
+    srcs = [
+        "doc.go",
+        "goimports.go",
+        "goimports_gc.go",
+    ],
+    importpath = "golang.org/x/tools/cmd/goimports",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/gocommand",
+        "//internal/imports",
+        "@org_golang_x_sys//execabs:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "goimports",
+    embed = [":goimports_lib"],
+    visibility = ["//visibility:public"],
+)

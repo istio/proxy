@@ -1,0 +1,36 @@
+name: OpenSSL testing
+
+permissions:
+  contents: read
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+
+jobs:
+  openssl:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: read
+    if: >-
+      ${{ github.repository == 'envoyproxy/envoy-openssl' }}
+    steps:
+    - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871  # v4.2.1
+    - run: |
+        ./ci/run_envoy_docker.sh './ci/do_ci.sh dev //test/...'
+      env:
+        BAZEL_BUILD_EXTRA_OPTIONS: >-
+          --config=remote-envoy-engflow
+          --config=bes-envoy-engflow
+          --config=remote-ci
+        ENVOY_RBE: 1
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ENVOY_STDLIB: libstdc++
+        IMAGE_NAME: quay.io/jwendell/envoy-build-ubuntu
+        IMAGE_ID: openssl-cb86d91cf406995012e330ab58830e6ee10240cb

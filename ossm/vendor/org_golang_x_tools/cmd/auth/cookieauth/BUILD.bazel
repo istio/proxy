@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "cookieauth_lib",
+    srcs = ["cookieauth.go"],
+    importpath = "golang.org/x/tools/cmd/auth/cookieauth",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "cookieauth",
+    embed = [":cookieauth_lib"],
+    visibility = ["//visibility:public"],
+)

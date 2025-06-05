@@ -1,0 +1,33 @@
+# Copyright 2024 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+load("//tests/support:sh_py_run_test.bzl", "py_reconfig_test")
+load("//tests/support:support.bzl", "SUPPORTS_BOOTSTRAP_SCRIPT")
+
+py_reconfig_test(
+    name = "no_unsafe_paths_3.10_test",
+    srcs = ["test.py"],
+    bootstrap_impl = "script",
+    main = "test.py",
+    python_version = "3.10",
+    target_compatible_with = SUPPORTS_BOOTSTRAP_SCRIPT,
+)
+
+py_reconfig_test(
+    name = "no_unsafe_paths_3.11_test",
+    srcs = ["test.py"],
+    bootstrap_impl = "script",
+    main = "test.py",
+    python_version = "3.11",
+    target_compatible_with = SUPPORTS_BOOTSTRAP_SCRIPT,
+)

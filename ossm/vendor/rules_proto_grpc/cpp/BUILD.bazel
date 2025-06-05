@@ -1,0 +1,31 @@
+load("//:defs.bzl", "proto_plugin")
+
+proto_plugin(
+    name = "cpp_plugin",
+    exclusions = [
+        "google/protobuf",
+    ],
+    outputs = [
+        "{protopath}.pb.h",
+        "{protopath}.pb.cc",
+    ],
+    protoc_plugin_name = "cpp",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "grpc_cpp_plugin",
+    exclusions = [
+        "google/protobuf",
+    ],
+    options = [
+        "generate_mock_code=true",
+    ],
+    outputs = [
+        "{protopath}.grpc.pb.h",
+        "{protopath}.grpc.pb.cc",
+        "{protopath}_mock.grpc.pb.h",
+    ],
+    tool = "@com_github_grpc_grpc//src/compiler:grpc_cpp_plugin",
+    visibility = ["//visibility:public"],
+)

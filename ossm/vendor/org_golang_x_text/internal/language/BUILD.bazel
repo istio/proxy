@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "language",
+    srcs = [
+        "common.go",
+        "compact.go",
+        "compose.go",
+        "coverage.go",
+        "language.go",
+        "lookup.go",
+        "match.go",
+        "parse.go",
+        "tables.go",
+        "tags.go",
+    ],
+    importpath = "golang.org/x/text/internal/language",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/tag"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":language",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "language_test",
+    srcs = [
+        "compose_test.go",
+        "language_test.go",
+        "lookup_test.go",
+        "match_test.go",
+        "parse_test.go",
+    ],
+    embed = [":language"],
+    deps = [
+        "//internal/tag",
+        "//internal/testtext",
+    ],
+)

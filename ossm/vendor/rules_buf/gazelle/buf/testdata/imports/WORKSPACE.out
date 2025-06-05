@@ -1,0 +1,4 @@
+load("//:buf_deps.bzl", "buf_deps")
+
+# gazelle:repository_macro buf_deps.bzl%buf_deps
+buf_deps()

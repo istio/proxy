@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "httpfs",
+    srcs = ["httpfs.go"],
+    importpath = "golang.org/x/tools/godoc/vfs/httpfs",
+    visibility = ["//visibility:public"],
+    deps = ["//godoc/vfs"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":httpfs",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,12 @@
+bcr_test_module:
+  module_path: ""
+  matrix:
+    platform: ["macos_arm64", "ubuntu2004", "windows"]
+    bazel: ["7.x"]
+  tasks:
+    run_tests:
+      name: "Run test module"
+      platform: ${{ platform }}
+      bazel: ${{ bazel }}
+      test_targets:
+        - "//..."

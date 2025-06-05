@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "ext_proto",
+    srcs = [
+        "api.proto",
+        "data.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = ["@com_google_protobuf//:descriptor_proto"],
+)
+
+go_proto_library(
+    name = "ext_go_proto",
+    importpath = "github.com/lyft/protoc-gen-star/v2/testdata/graph/extensions/ext",
+    importpath_aliases = ["github.com/lyft/protoc-gen-star/testdata/graph/extensions/ext"],
+    proto = ":ext_proto",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "ext",
+    embed = [":ext_go_proto"],
+    importpath = "github.com/lyft/protoc-gen-star/v2/testdata/graph/extensions/ext",
+    importpath_aliases = ["github.com/lyft/protoc-gen-star/testdata/graph/extensions/ext"],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ext",
+    visibility = ["//visibility:public"],
+)

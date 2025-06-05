@@ -1,0 +1,7 @@
+module(name = "rules_shell_tests")
+
+bazel_dep(name = "rules_shell")
+local_path_override(
+    module_name = "rules_shell",
+    path = "../..",
+)

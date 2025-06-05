@@ -1,0 +1,64 @@
+load("//python/private:bzlmod_enabled.bzl", "BZLMOD_ENABLED")  # buildifier: disable=bzl-visibility
+load("//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
+load("//sphinxdocs:sphinx_stardoc.bzl", "sphinx_stardocs")
+
+package(default_visibility = ["//:__subpackages__"])
+
+# We only build for Linux and Mac because:
+# 1. The actual doc process only runs on Linux
+# 2. Mac is a common development platform, and is close enough to Linux
+#    it's feasible to make work.
+# Making CI happy under Windows is too much of a headache, though, so we don't
+# bother with that.
+_TARGET_COMPATIBLE_WITH = select({
+    "@platforms//os:linux": [],
+    "@platforms//os:macos": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+}) if BZLMOD_ENABLED else ["@platforms//:incompatible"]
+
+sphinx_docs_library(
+    name = "docs_lib",
+    deps = [
+        ":artisian_api_docs",
+        ":bzl_docs",
+        ":py_api_srcs",
+        ":regular_docs",
+    ],
+)
+
+sphinx_docs_library(
+    name = "regular_docs",
+    srcs = glob(
+        ["**/*.md"],
+        exclude = ["api/**"],
+    ),
+    prefix = "sphinxdocs/",
+)
+
+sphinx_docs_library(
+    name = "artisian_api_docs",
+    srcs = glob(
+        ["api/**/*.md"],
+    ),
+    prefix = "api/sphinxdocs/",
+    strip_prefix = "sphinxdocs/docs/api/",
+)
+
+sphinx_stardocs(
+    name = "bzl_docs",
+    srcs = [
+        "//sphinxdocs:readthedocs_bzl",
+        "//sphinxdocs:sphinx_bzl",
+        "//sphinxdocs:sphinx_docs_library_bzl",
+        "//sphinxdocs:sphinx_stardoc_bzl",
+        "//sphinxdocs/private:sphinx_docs_library_bzl",
+    ],
+    prefix = "api/sphinxdocs/",
+    target_compatible_with = _TARGET_COMPATIBLE_WITH,
+)
+
+sphinx_docs_library(
+    name = "py_api_srcs",
+    srcs = ["//sphinxdocs/src/sphinx_bzl"],
+    strip_prefix = "sphinxdocs/src/",
+)

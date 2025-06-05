@@ -1,0 +1,23 @@
+module(name = "rules_jvm_external_example_java_export")
+
+protobuf_version = "21.7"
+
+bazel_dep(name = "protobuf", version = protobuf_version, repo_name = "com_google_protobuf")
+bazel_dep(name = "rules_jvm_external", version = "ignored")
+bazel_dep(name = "rules_proto", version = "5.3.0-21.7")
+
+local_path_override(
+    module_name = "rules_jvm_external",
+    path = "../../",
+)
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    artifacts = [
+        "com.google.guava:guava:29.0-jre",
+        "com.google.protobuf:protobuf-java:3.%s" % protobuf_version,
+    ],
+    fetch_sources = True,
+    lock_file = "//:maven_install.json",
+)
+use_repo(maven, "maven")

@@ -1,0 +1,73 @@
+"""bazelbuild/rules_rust/extensions/prost"""
+
+module(
+    name = "rules_rust_prost",
+    version = "0.56.0",
+)
+
+bazel_dep(
+    name = "rules_rust",
+    version = "0.56.0",
+)
+bazel_dep(
+    name = "platforms",
+    version = "0.0.10",
+)
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.17",
+)
+bazel_dep(
+    name = "rules_proto",
+    version = "6.0.2",
+)
+bazel_dep(
+    name = "protobuf",
+    version = "28.3",
+    repo_name = "com_google_protobuf",
+)
+
+rust_ext = use_extension("//:extensions.bzl", "rust_ext")
+use_repo(
+    rust_ext,
+    "rrprd",
+    "rrprd__h2-0.4.6",
+    "rrprd__heck",
+    "rrprd__prost-0.13.1",
+    "rrprd__prost-types-0.13.1",
+    "rrprd__protoc-gen-prost-0.4.0",
+    "rrprd__protoc-gen-tonic-0.4.1",
+    "rrprd__tokio-1.39.3",
+    "rrprd__tokio-stream-0.1.15",
+    "rrprd__tonic-0.12.1",
+)
+
+register_toolchains(
+    "//:default_prost_toolchain",
+)
+
+bazel_dep(
+    name = "googleapis",
+    version = "0.0.0-20240819-fe8ba054a",
+    dev_dependency = True,
+    repo_name = "com_google_googleapis",
+)
+bazel_dep(
+    name = "bazel_ci_rules",
+    version = "1.0.0",
+    dev_dependency = True,
+)
+
+rust_ext_dev = use_extension(
+    "//private:internal_extensions.bzl",
+    "rust_ext_dev",
+    dev_dependency = True,
+)
+use_repo(
+    rust_ext_dev,
+    "buildkite_config",
+)

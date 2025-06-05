@@ -1,0 +1,10 @@
+load("@rules_proto_grpc//swift:defs.bzl", "swift_proto_library")
+
+swift_proto_library(
+    name = "proto_swift_proto",
+    protos = [
+        "@rules_proto_grpc//example/proto:person_proto",
+        "@rules_proto_grpc//example/proto:place_proto",
+        "@rules_proto_grpc//example/proto:thing_proto",
+    ],
+)

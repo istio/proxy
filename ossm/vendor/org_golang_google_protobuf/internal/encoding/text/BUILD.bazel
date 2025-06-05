@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "text",
+    srcs = [
+        "decode.go",
+        "decode_number.go",
+        "decode_string.go",
+        "decode_token.go",
+        "doc.go",
+        "encode.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/encoding/text",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/detrand",
+        "//internal/errors",
+        "//internal/flags",
+        "//internal/strs",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":text",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "text_test",
+    srcs = [
+        "decode_test.go",
+        "encode_test.go",
+    ],
+    deps = [
+        ":text",
+        "//internal/detrand",
+        "//internal/flags",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

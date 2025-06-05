@@ -1,0 +1,4 @@
+#!/bin/sh
+
+find src/ examples/ test/ -type f \( -name '*.h' -o -name '*.cpp' \) -print0 | \
+    xargs -0 clang-format-14 --style=file --dry-run -Werror

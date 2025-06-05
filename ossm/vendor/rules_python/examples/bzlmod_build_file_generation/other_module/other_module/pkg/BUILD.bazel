@@ -1,0 +1,11 @@
+load("@rules_python//python:py_library.bzl", "py_library")
+
+py_library(
+    name = "lib",
+    srcs = ["lib.py"],
+    data = ["data/data.txt"],
+    visibility = ["//visibility:public"],
+    deps = ["@rules_python//python/runfiles"],
+)
+
+exports_files(["data/data.txt"])

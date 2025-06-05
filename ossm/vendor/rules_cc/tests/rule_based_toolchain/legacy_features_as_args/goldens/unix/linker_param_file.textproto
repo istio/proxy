@@ -1,0 +1,15 @@
+enabled: false
+flag_sets {
+  actions: "c++-link-dynamic-library"
+  actions: "c++-link-executable"
+  actions: "c++-link-nodeps-dynamic-library"
+  actions: "c++-link-static-library"
+  actions: "lto-index-for-dynamic-library"
+  actions: "lto-index-for-executable"
+  actions: "lto-index-for-nodeps-dynamic-library"
+  flag_groups {
+    expand_if_available: "linker_param_file"
+    flags: "@%{linker_param_file}"
+  }
+}
+name: "linker_param_file_test"

@@ -1,0 +1,66 @@
+load("//:defs.bzl", "proto_plugin")
+
+proto_plugin(
+    name = "rust_prost_plugin",
+    exclusions = [
+        # "google/protobuf",
+    ],
+    options = [
+        "file_descriptor_set",
+        "extern_path=.google.protobuf=::pbjson_types",
+        "compile_well_known_types",
+    ],
+    output_directory = True,
+    separate_options_flag = True,
+    tool = "@rules_proto_grpc//rust/3rdparty/crates:protoc-gen-prost-0.2.1__protoc-gen-prost",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "rust_tonic_plugin",
+    exclusions = [
+        # "google/protobuf",
+    ],
+    options = [
+        "no_include",
+        "extern_path=.google.protobuf=::pbjson_types",
+        "compile_well_known_types",
+    ],
+    output_directory = True,
+    separate_options_flag = True,
+    tool = "@rules_proto_grpc//rust/3rdparty/crates:protoc-gen-tonic__protoc-gen-tonic",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "rust_crate_plugin",
+    exclusions = [
+        # "google/protobuf",
+    ],
+    options = ["no_features"],
+    output_directory = True,
+    separate_options_flag = True,
+    tool = "@rules_proto_grpc//rust/3rdparty/crates:protoc-gen-prost-crate__protoc-gen-prost-crate",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "rust_serde_plugin",
+    exclusions = [
+        # "google/protobuf",
+    ],
+    options = [
+        "no_include",
+        "extern_path=.google.protobuf=::pbjson_types",
+    ],
+    output_directory = True,
+    separate_options_flag = True,
+    tool = "@rules_proto_grpc//rust/3rdparty/crates:protoc-gen-prost-serde__protoc-gen-prost-serde",
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "rust_fixer",
+    srcs = ["rust_fixer.sh"],
+    visibility = ["//visibility:public"],
+)

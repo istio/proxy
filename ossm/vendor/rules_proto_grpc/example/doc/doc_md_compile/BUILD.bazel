@@ -1,0 +1,16 @@
+load("@rules_proto_grpc//doc:defs.bzl", "doc_md_compile")
+
+doc_md_compile(
+    name = "person_cpp_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+)
+
+doc_md_compile(
+    name = "place_cpp_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+)
+
+doc_md_compile(
+    name = "thing_cpp_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

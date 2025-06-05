@@ -1,0 +1,11 @@
+load("@rules_proto_grpc//scala:defs.bzl", "scala_grpc_compile")
+
+scala_grpc_compile(
+    name = "thing_scala_grpc",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)
+
+scala_grpc_compile(
+    name = "greeter_scala_grpc",
+    protos = ["@rules_proto_grpc//example/proto:greeter_grpc"],
+)

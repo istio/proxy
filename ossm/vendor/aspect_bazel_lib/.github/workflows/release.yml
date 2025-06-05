@@ -1,0 +1,47 @@
+# Cut a release whenever a new tag is pushed to the repo.
+# You should use an annotated tag, like `git tag -a v1.2.3`
+# and put the release notes into the commit message for the tag.
+name: Release
+on:
+  push:
+    tags:
+      - "v*.*.*"
+jobs:
+  build:
+    # Go cross-compilation works from linux -> any platform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Go Binaries
+        env:
+          # NB: this variable is read by tools/release/copy_release_artifacts.sh
+          DEST: artifacts
+        run: |
+          rm -rf ${{ env.DEST }}
+          mkdir -p ${{ env.DEST }}
+          bazel --bazelrc=.github/workflows/ci.bazelrc \
+            run --config=release //tools/release:copy_release_artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artifacts
+          path: artifacts/
+          retention-days: 1
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Fetch the built artifacts from build jobs above and extract into
+      # ${GITHUB_WORKSPACE}/artifacts/*
+      - uses: actions/download-artifact@v4
+      - name: Prepare workspace snippet
+        run: .github/workflows/release_prep.sh > release_notes.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          # Use GH feature to populate the changelog automatically
+          generate_release_notes: true
+          files: |
+            artifacts/*
+            bazel-lib-*.tar.gz
+          body_path: release_notes.txt
+          fail_on_unmatched_files: true

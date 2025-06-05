@@ -1,0 +1,25 @@
+{
+  "homepage": "https://github.com/bazelbuild/rules_go",
+  "maintainers": [
+    {
+      "email": "fabian@meumertzhe.im",
+      "github": "fmeum",
+      "name": "Fabian Meumertzheim"
+    },
+    {
+      "email": "zplin@uber.com",
+      "github": "linzhp",
+      "name": "Zhongpeng Lin"
+    },
+    {
+      "email": "tfrench@uber.com",
+      "github": "tyler-french",
+      "name": "Tyler French"
+    }
+  ],
+  "repository": [
+    "github:bazel-contrib/rules_go"
+  ],
+  "versions": [],
+  "yanked_versions": {}
+}

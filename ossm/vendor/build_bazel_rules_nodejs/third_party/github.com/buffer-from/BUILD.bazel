@@ -1,0 +1,23 @@
+## Stub BUILD file to export all contents.
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
+exports_files(["LICENSE"])
+
+_CONTENT = [
+    "package.json",
+    "index.js",
+]
+
+filegroup(
+    name = "contents",
+    srcs = _CONTENT,
+)
+
+filegroup(
+    name = "package_contents",
+    srcs = glob(["*"]),
+    visibility = ["//:__pkg__"],
+)

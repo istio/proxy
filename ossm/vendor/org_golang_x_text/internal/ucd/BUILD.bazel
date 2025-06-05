@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ucd",
+    srcs = ["ucd.go"],
+    importpath = "golang.org/x/text/internal/ucd",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ucd",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "ucd_test",
+    srcs = [
+        "example_test.go",
+        "ucd_test.go",
+    ],
+    embed = [":ucd"],
+)

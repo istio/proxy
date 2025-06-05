@@ -1,0 +1,30 @@
+build --java_language_version=11
+build --java_runtime_version=remotejdk_11
+
+build --tool_java_language_version=11
+build --tool_java_runtime_version=remotejdk_11
+
+build --experimental_strict_java_deps=strict
+build --explicit_java_test_deps
+
+build --experimental_sibling_repository_layout
+
+# Make sure we get something helpful when tests fail
+test --verbose_failures
+test --test_output=errors
+
+# Every JVM creates a temporary performance instrumentation file in
+# /tmp/hsperfdata_$USERNAME/$PID. When we use sandboxing, we use PID
+# namespaces, which means that the PIDs are virtualized and all
+# running JVMs believe they are PID 2.
+#
+# This means that they all open/ftruncate/mmap the same file and that
+# gives you SIGBUS eventually, because "It tries to read an address
+# that no longer exists from an mmap'd file".
+#
+# https://github.com/bazelbuild/bazel/issues/3236#issuecomment-310776024
+
+build --sandbox_tmpfs_path=/tmp
+
+# Allows the examples to extend the default bazelrc
+try-import %workspace%/.bazelrc.example

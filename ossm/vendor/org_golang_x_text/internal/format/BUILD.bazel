@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "format",
+    srcs = [
+        "format.go",
+        "parser.go",
+    ],
+    importpath = "golang.org/x/text/internal/format",
+    visibility = ["//:__subpackages__"],
+    deps = ["//language"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":format",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "format_test",
+    srcs = ["parser_test.go"],
+    embed = [":format"],
+)

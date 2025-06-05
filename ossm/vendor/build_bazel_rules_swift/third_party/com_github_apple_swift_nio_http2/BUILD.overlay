@@ -1,0 +1,34 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "NIOHPACK",
+    srcs = glob([
+        "Sources/NIOHPACK/**/*.swift",
+    ]),
+    module_name = "NIOHPACK",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_apple_swift_nio//:NIO",
+        "@com_github_apple_swift_nio//:NIOConcurrencyHelpers",
+        "@com_github_apple_swift_nio//:NIOCore",
+        "@com_github_apple_swift_nio//:NIOHTTP1",
+    ],
+)
+
+swift_library(
+    name = "NIOHTTP2",
+    srcs = glob([
+        "Sources/NIOHTTP2/**/*.swift",
+    ]),
+    module_name = "NIOHTTP2",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":NIOHPACK",
+        "@com_github_apple_swift_atomics//:Atomics",
+        "@com_github_apple_swift_nio//:NIO",
+        "@com_github_apple_swift_nio//:NIOConcurrencyHelpers",
+        "@com_github_apple_swift_nio//:NIOCore",
+        "@com_github_apple_swift_nio//:NIOHTTP1",
+        "@com_github_apple_swift_nio//:NIOTLS",
+    ],
+)

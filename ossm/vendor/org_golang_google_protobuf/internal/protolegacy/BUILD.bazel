@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "protolegacy",
+    srcs = ["proto.go"],
+    importpath = "google.golang.org/protobuf/internal/protolegacy",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+        "//runtime/protoiface",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protolegacy",
+    visibility = ["//:__subpackages__"],
+)

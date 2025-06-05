@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "usesgenerics",
+    srcs = ["usesgenerics.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/usesgenerics",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/inspect",
+        "//go/ast/inspector",
+        "//internal/typeparams/genericfeatures",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":usesgenerics",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "usesgenerics_test",
+    srcs = ["usesgenerics_test.go"],
+    deps = [
+        ":usesgenerics",
+        "//go/analysis/analysistest",
+        "//internal/typeparams",
+    ],
+)

@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "fuzz-driver_lib",
+    srcs = ["driver.go"],
+    importpath = "golang.org/x/tools/cmd/signature-fuzzer/fuzz-driver",
+    visibility = ["//visibility:private"],
+    deps = ["//cmd/signature-fuzzer/internal/fuzz-generator"],
+)
+
+go_binary(
+    name = "fuzz-driver",
+    embed = [":fuzz-driver_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "fuzz-driver_test",
+    srcs = ["drv_test.go"],
+    embed = [":fuzz-driver_lib"],
+    deps = ["//internal/testenv"],
+)

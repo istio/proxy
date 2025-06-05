@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "retention_proto",
+    srcs = [
+        "options_message.proto",
+        "retention.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = ["@com_google_protobuf//:descriptor_proto"],
+)
+
+go_proto_library(
+    name = "retention_go_proto",
+    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/retention",
+    proto = ":retention_proto",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "retention",
+    embed = [":retention_go_proto"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/retention",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":retention",
+    visibility = ["//visibility:public"],
+)

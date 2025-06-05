@@ -1,0 +1,5 @@
+load(":opt_level_test_suite.bzl", "opt_level_test_suite")
+
+opt_level_test_suite(
+    name = "opt_level_test_suite",
+)

@@ -1,0 +1,36 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@build_bazel_rules_nodejs//toolchains/esbuild:esbuild_packages.bzl", "ESBUILD_PACKAGES")
+load(":toolchain.bzl", "configure_esbuild_toolchains")
+
+filegroup(
+    name = "package_contents",
+    srcs = glob(["*"]),
+    visibility = ["//:__pkg__"],
+)
+
+exports_files([
+    "package.json",
+    "package-lock.json",
+])
+
+toolchain_type(
+    name = "toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+configure_esbuild_toolchains(
+    platforms = ESBUILD_PACKAGES.platforms,
+)
+
+bzl_library(
+    name = "bzl",
+    srcs = [
+        "esbuild_packages.bzl",
+        "esbuild_repositories.bzl",
+        "toolchain.bzl",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:bzl",
+    ],
+)

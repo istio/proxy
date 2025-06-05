@@ -1,0 +1,376 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Test
+
+on:
+
+  pull_request:
+    branches:
+    - main
+    - 'envoy-release/**'
+    - 'istio-release/**'
+
+  push:
+    branches:
+    - main
+    - 'envoy-release/**'
+    - 'istio-release/**'
+
+  schedule:
+    - cron: '0 0 * * *'
+
+concurrency:
+
+  group: ${{ github.head_ref || github.run_id }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+
+  test_data:
+    name: build test data
+
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Bazel cache
+      uses: PiotrSikora/cache@v2.1.7-with-skip-cache
+      with:
+        path: |
+          ~/.cache/bazel
+        key: test_data-${{ hashFiles('WORKSPACE', '.bazelrc', '.bazelversion', 'bazel/dependencies.bzl', 'bazel/repositories.bzl', 'bazel/cargo/wasmsign/crates.bzl') }}
+
+    - name: Bazel build
+      run: >
+        bazel build
+        --verbose_failures
+        --test_output=errors
+        --config=clang
+        -c opt
+        $(bazel query 'kind(was.*_rust_binary, //test/test_data/...)')
+        $(bazel query 'kind(_optimized_wasm_cc_binary, //test/test_data/...)')
+
+    # Currently, in Github Action, "Bazel build step" creates `wasm_canary_check.wasm` directory as a temporal directory.
+    # Since the name of this directory has "*.wasm" pattern, the step "Mangle build rules to use existing test data" fails.
+    # So, here, we clear out the directories in test_data.
+    - name: Clean up test data
+      shell: bash
+      run: |
+        # Remove temporal directories
+        for i in $(find bazel-bin/test/test_data/ -mindepth 1 -maxdepth 1 -type d); do \
+          rm -rf $i; \
+        done
+
+    - name: Upload test data
+      uses: actions/upload-artifact@v4
+      with:
+        name: test_data
+        path: bazel-bin/test/test_data/*.wasm
+        if-no-files-found: error
+        retention-days: 3
+
+    - name: Skip Bazel cache update
+      if: ${{ github.ref != 'refs/heads/main' }}
+      run: echo "CACHE_SKIP_SAVE=true" >> $GITHUB_ENV
+
+    - name: Cleanup Bazel cache
+      if: ${{ github.ref == 'refs/heads/main' }}
+      run: |
+        export OUTPUT=$(bazel info output_base)
+        # Distfiles for Rust toolchains (350 MiB).
+        rm -rf ${OUTPUT}/external/rust_*/*.tar.gz
+        # Bazel's repository cache (650-800 MiB) and install base (155 MiB).
+        rm -rf $(bazel info repository_cache)
+        rm -rf $(bazel info install_base)
+
+  build:
+    name: ${{ matrix.action }} with ${{ matrix.name }}
+
+    needs: test_data
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - name: 'NullVM on Linux/x86_64'
+          engine: 'null'
+          os: ubuntu-22.04
+          arch: x86_64
+          action: test
+          flags: --config=gcc
+        - name: 'NullVM on Linux/x86_64 with ASan'
+          engine: 'null'
+          os: ubuntu-22.04
+          arch: x86_64
+          action: test
+          flags: --config=clang-asan-strict --define=crypto=system
+        - name: 'NullVM on Linux/x86_64 with TSan'
+          engine: 'null'
+          os: ubuntu-22.04
+          arch: x86_64
+          action: test
+          flags: --config=clang-tsan
+        - name: 'NullVM on Windows/x86_64'
+          engine: 'null'
+          os: windows-2019
+          arch: x86_64
+          action: test
+          targets: -//test/fuzz/...
+        - name: 'V8 on Linux/x86_64'
+          engine: 'v8'
+          repo: 'v8'
+          os: ubuntu-22.04
+          arch: x86_64
+          action: test
+          flags: --config=clang --define=crypto=system
+          cache: true
+        - name: 'V8 on Linux/x86_64 with ASan'
+          engine: 'v8'
+          repo: 'v8'
+          os: ubuntu-22.04
+          arch: x86_64
+          action: test
+          flags: --config=clang-asan
+          cache: true
+        - name: 'V8 on Linux/x86_64 with TSan'
+          engine: 'v8'
+          repo: 'v8'
+          os: ubuntu-22.04
+          arch: x86_64
+          action: test
+          flags: --config=clang-tsan
+          cache: true
+        - name: 'V8 on Linux/x86_64 with GCC'
+          engine: 'v8'
+          repo: 'v8'
+          os: ubuntu-22.04
+          arch: x86_64
+          action: test
+          flags: --config=gcc
+          cache: true
+        - name: 'V8 on Linux/aarch64'
+          engine: 'v8'
+          repo: 'v8'
+          os: ubuntu-22.04
+          arch: aarch64
+          action: test
+          targets: -//test/fuzz/...
+          flags: --config=zig-cc-linux-aarch64 --@v8//bazel/config:v8_target_cpu=arm64
+          deps: qemu-user-static libc6-arm64-cross
+          cache: true
+        - name: 'V8 on macOS/x86_64'
+          engine: 'v8'
+          repo: 'v8'
+          os: macos-13
+          arch: x86_64
+          action: test
+          cache: true
+        - name: 'WAMR interp on Linux/x86_64'
+          engine: 'wamr-interp'
+          repo: 'com_github_bytecodealliance_wasm_micro_runtime'
+          os: ubuntu-22.04
+          arch: x86_64
+          action: test
+          flags: --config=clang
+        - name: 'WAMR interp on macOS/x86_64'
+          engine: 'wamr-interp'
+          repo: 'com_github_bytecodealliance_wasm_micro_runtime'
+          os: macos-13
+          arch: x86_64
+          action: test
+        - name: 'WAMR jit on Linux/x86_64'
+          engine: 'wamr-jit'
+          repo: 'com_github_bytecodealliance_wasm_micro_runtime'
+          os: ubuntu-22.04
+          arch: x86_64
+          action: test
+          flags: --config=clang
+          deps: lld-12
+          cache: true
+        - name: 'WAMR jit on macOS/x86_64'
+          engine: 'wamr-jit'
+          repo: 'com_github_bytecodealliance_wasm_micro_runtime'
+          os: macos-13
+          arch: x86_64
+          action: test
+          cache: true
+        - name: 'WasmEdge on Linux/x86_64'
+          engine: 'wasmedge'
+          repo: 'com_github_wasmedge_wasmedge'
+          os: ubuntu-22.04
+          arch: x86_64
+          action: test
+          flags: --config=clang
+        - name: 'WasmEdge on macOS/x86_64'
+          engine: 'wasmedge'
+          repo: 'com_github_wasmedge_wasmedge'
+          os: macos-13
+          arch: x86_64
+          action: test
+        - name: 'Wasmtime on Linux/x86_64'
+          engine: 'wasmtime'
+          repo: 'com_github_bytecodealliance_wasmtime'
+          os: ubuntu-22.04
+          arch: x86_64
+          action: test
+          flags: --config=clang -c opt
+        - name: 'Wasmtime on Linux/x86_64 with ASan'
+          engine: 'wasmtime'
+          repo: 'com_github_bytecodealliance_wasmtime'
+          os: ubuntu-22.04
+          arch: x86_64
+          action: test
+          flags: --config=clang-asan-strict --define=crypto=system
+        - name: 'Wasmtime on Linux/aarch64'
+          engine: 'wasmtime'
+          repo: 'com_github_bytecodealliance_wasmtime'
+          os: ubuntu-22.04
+          arch: aarch64
+          action: build
+          flags: --config=zig-cc-linux-aarch64
+          deps: qemu-user-static libc6-arm64-cross
+        - name: 'Wasmtime on Linux/s390x'
+          engine: 'wasmtime'
+          repo: 'com_github_bytecodealliance_wasmtime'
+          os: ubuntu-22.04
+          arch: s390x
+          action: test
+          flags: --config=clang --test_timeout=1800
+          # s390x build-tools image built from bazel/external/Dockerfile.bazel
+          run_under: docker run --rm --env HOME=$HOME --env USER=$(id -un) --volume "$HOME:$HOME" --workdir $(pwd) --user $(id -u):$(id -g) --platform linux/s390x ghcr.io/proxy-wasm/build-tools:ubuntu-22.04-bazel-6.5.0
+          cache: true
+        - name: 'Wasmtime on macOS/x86_64'
+          engine: 'wasmtime'
+          repo: 'com_github_bytecodealliance_wasmtime'
+          os: macos-13
+          arch: x86_64
+          action: test
+        - name: 'WAVM on Linux/x86_64'
+          engine: 'wavm'
+          repo: 'com_github_wavm_wavm'
+          os: ubuntu-22.04
+          arch: x86_64
+          action: test
+          flags: --config=clang
+          cache: true
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies (Linux)
+      if: ${{ matrix.deps != '' && startsWith(matrix.os, 'ubuntu') }}
+      run: sudo apt update -y && sudo apt install -y ${{ matrix.deps }}
+
+    # Needed for s390x test which runs on a GHCR Docker Ubuntu image.
+    - name: Login to GitHub Container Registry
+      if: startsWith(matrix.run_under, 'docker')
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Activate Docker/QEMU
+      if: startsWith(matrix.run_under, 'docker')
+      run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Set cache key
+      if: ${{ matrix.cache }}
+      run: echo "::set-output name=uniq::$(bazel query --output build //external:${{ matrix.repo }} | grep -E 'sha256|commit' | cut -d\" -f2)-$(echo ${{ matrix.flags }} | sha256sum)"
+      id: cache-key
+
+    - name: Bazel cache
+      if: ${{ matrix.cache }}
+      uses: PiotrSikora/cache@v2.1.7-with-skip-cache
+      with:
+        path: |
+          ~/.cache/bazel
+          /private/var/tmp/_bazel_runner/
+        key: ${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.engine }}-${{ steps.cache-key.outputs.uniq }}-${{ hashFiles('WORKSPACE', '.bazelrc', '.bazelversion', 'bazel/dependencies.bzl', 'bazel/repositories.bzl') }}
+        restore-keys: |
+          ${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.engine }}-${{ steps.cache-key.outputs.uniq }}-
+
+    - name: Download test data
+      uses: actions/download-artifact@v4
+      with:
+        name: test_data
+        path: test/test_data/
+
+    - name: Mangle build rules to use existing test data
+      shell: bash
+      run: |
+        sed 's/\.wasm//g' test/BUILD > test/BUILD.tmp && mv test/BUILD.tmp test/BUILD
+        echo "package(default_visibility = [\"//visibility:public\"])" > test/test_data/BUILD
+        for i in $(cd test/test_data && ls -1 *.wasm | sed 's/\.wasm$//g'); do \
+          echo "filegroup(name = \"$i\", srcs = [\"$i.wasm\"])" >> test/test_data/BUILD; \
+        done
+
+    - name: Bazel build/test
+      shell: bash
+      run: >
+        ${{ matrix.run_under }}
+        bazel ${{ matrix.action }}
+        --verbose_failures
+        --test_output=errors
+        --define engine=${{ matrix.engine }}
+        ${{ matrix.flags }}
+        -- //test/... ${{ matrix.targets }}
+
+    - name: Bazel build/test (signed Wasm module)
+      if: ${{ matrix.engine != 'null' && !startsWith(matrix.os, 'windows') }}
+      run: >
+        ${{ matrix.run_under }}
+        bazel ${{ matrix.action }}
+        --verbose_failures
+        --test_output=errors
+        --define engine=${{ matrix.engine }}
+        ${{ matrix.flags }}
+        --per_file_copt=src/signature_util.cc,test/signature_util_test.cc@-DPROXY_WASM_VERIFY_WITH_ED25519_PUBKEY=\"$(xxd -p -c 256 test/test_data/signature_key1.pub | cut -b9-)\"
+        //test:signature_util_test
+
+    - name: Skip Bazel cache update
+      if: ${{ matrix.cache && github.ref != 'refs/heads/main' }}
+      run: echo "CACHE_SKIP_SAVE=true" >> $GITHUB_ENV
+
+    - name: Cleanup Bazel cache
+      if: ${{ matrix.cache && github.ref == 'refs/heads/main' }}
+      run: |
+        export OUTPUT=$(${{ matrix.run_under }} bazel info output_base)
+        echo "===== BEFORE ====="
+        du -s ${OUTPUT}/external/* $(dirname ${OUTPUT})/* | sort -rn | head -20
+        # BoringSSL's test data (90 MiB).
+        rm -rf ${OUTPUT}/external/boringssl/crypto_test_data.cc
+        rm -rf ${OUTPUT}/external/boringssl/src/crypto/*/test/
+        rm -rf ${OUTPUT}/external/boringssl/src/third_party/wycheproof_testvectors/
+        # LLVM's tests (500 MiB).
+        rm -rf ${OUTPUT}/external/llvm*/test/
+        # V8's tests (100 MiB).
+        if [ -d "${OUTPUT}/external/v8/test/torque" ]; then
+          mv ${OUTPUT}/external/v8/test/torque ${OUTPUT}/external/v8/test_torque
+          rm -rf ${OUTPUT}/external/v8/test/*
+          mv ${OUTPUT}/external/v8/test_torque ${OUTPUT}/external/v8/test/torque
+        fi
+        # Unnecessary CMake tools (65 MiB).
+        rm -rf ${OUTPUT}/external/cmake-*/bin/{ccmake,cmake-gui,cpack,ctest}
+        # Distfiles for Rust toolchains (350 MiB).
+        rm -rf ${OUTPUT}/external/rust_*/*.tar.gz
+        # Bazel's repository cache (650-800 MiB) and install base (155 MiB).
+        rm -rf ${OUTPUT}/../cache
+        rm -rf ${OUTPUT}/../install
+        echo "===== AFTER ====="
+        du -s ${OUTPUT}/external/* $(dirname ${OUTPUT})/* | sort -rn | head -20

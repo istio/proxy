@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "registry",
+    srcs = [
+        "key.go",
+        "syscall.go",
+        "value.go",
+        "zsyscall_windows.go",
+    ],
+    importpath = "golang.org/x/sys/windows/registry",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//windows",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":registry",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "registry_test",
+    srcs = [
+        "export_test.go",
+        "registry_test.go",
+    ],
+    embed = [":registry"],
+)

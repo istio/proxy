@@ -1,0 +1,80 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("defs.bzl", "with_exec_cfg", "with_extra_exec_rustc_flags_cfg")
+
+package(default_visibility = ["//test:__subpackages__"])
+
+# Checks that extra_exec_rustc_flags are passed in exec configuration.
+# lib.rs is a sample source file that requires a `--cfg=bazel_exec` flag to build.
+# These targets set up transitions so that building :lib triggers building
+# lib.rs in exec configuration with //rust/settings:extra_exec_rustc_flags=[--cfg=bazel_exec].
+# The intermediate targets are tagged "manual" as they are not meant to be built
+# on their own.
+
+rust_library(
+    name = "lib_do_not_build_directly",
+    srcs = ["lib.rs"],
+    edition = "2018",
+    tags = ["manual"],
+)
+
+with_extra_exec_rustc_flags_cfg(
+    name = "lib_with_exec_flags_do_not_build_directly",
+    srcs = ["lib_do_not_build_directly"],
+    extra_exec_rustc_flag = [],
+    extra_exec_rustc_flags = ["--cfg=bazel_exec"],
+    tags = ["manual"],
+)
+
+with_extra_exec_rustc_flags_cfg(
+    name = "lib_with_singular_exec_flags_do_not_build_directly",
+    srcs = ["lib_do_not_build_directly"],
+    extra_exec_rustc_flag = ["--cfg=bazel_exec"],
+    extra_exec_rustc_flags = [],
+    tags = ["manual"],
+)
+
+with_exec_cfg(
+    name = "lib",
+    srcs = ["lib_with_exec_flags_do_not_build_directly"],
+)
+
+with_exec_cfg(
+    name = "lib_singular",
+    srcs = ["lib_with_singular_exec_flags_do_not_build_directly"],
+)
+
+# Checks that extra_exec_rustc_flags are not passed in non-exec configurations.
+# lib_no_exec.rs is a sample source file that fails to build if
+# `--cfg=bazel_exec` is present. The targets below are built in non-exec configurations,
+# so they should build just fine with //rust/settings:extra_exec_rustc_flags=[--cfg=bazel_exec].
+rust_library(
+    name = "lib_no_exec",
+    srcs = ["lib_no_exec.rs"],
+    edition = "2018",
+)
+
+with_extra_exec_rustc_flags_cfg(
+    name = "lib_no_exec_with_extra_build_flags",
+    srcs = ["lib_no_exec"],
+    extra_exec_rustc_flag = [],
+    extra_exec_rustc_flags = ["--cfg=bazel_exec"],
+)
+
+with_extra_exec_rustc_flags_cfg(
+    name = "lib_no_exec_with_singular_extra_build_flags",
+    srcs = ["lib_no_exec"],
+    extra_exec_rustc_flag = ["--cfg=bazel_exec"],
+    extra_exec_rustc_flags = [],
+)
+
+build_test(
+    name = "lib_build",
+    targets = [
+        ":lib",
+        ":lib_singular",
+        ":lib_no_exec",
+        ":lib_no_exec_with_extra_build_flags",
+        ":lib_no_exec_with_singular_extra_build_flags",
+    ],
+)

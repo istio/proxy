@@ -1,0 +1,151 @@
+# Copyright 2023 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@rules_cc//cc/toolchains:cc_toolchain.bzl", "cc_toolchain")
+load("@rules_cc//cc/toolchains:cc_toolchain_suite.bzl", "cc_toolchain_suite")
+load("@rules_testing//lib:util.bzl", "PREVENT_IMPLICIT_BUILDING_TAGS")
+load("//python/cc:py_cc_toolchain.bzl", "py_cc_toolchain")
+load(":fake_cc_toolchain_config.bzl", "fake_cc_toolchain_config")
+
+package(default_visibility = ["//:__subpackages__"])
+
+exports_files(["fake_header.h"])
+
+filegroup(
+    name = "libpython",
+    srcs = ["libpython-fake.so"],
+    tags = PREVENT_IMPLICIT_BUILDING_TAGS,
+)
+
+toolchain(
+    name = "fake_py_cc_toolchain",
+    tags = PREVENT_IMPLICIT_BUILDING_TAGS,
+    toolchain = ":fake_py_cc_toolchain_impl",
+    toolchain_type = "@rules_python//python/cc:toolchain_type",
+)
+
+py_cc_toolchain(
+    name = "fake_py_cc_toolchain_impl",
+    headers = ":fake_headers",
+    libs = ":fake_libs",
+    python_version = "3.999",
+    tags = PREVENT_IMPLICIT_BUILDING_TAGS,
+)
+
+# buildifier: disable=native-cc
+cc_library(
+    name = "fake_headers",
+    hdrs = ["fake_header.h"],
+    data = ["data.txt"],
+    includes = ["fake_include"],
+    tags = PREVENT_IMPLICIT_BUILDING_TAGS,
+)
+
+# buildifier: disable=native-cc
+cc_library(
+    name = "fake_libs",
+    srcs = ["libpython3.so"],
+    data = ["libdata.txt"],
+    tags = PREVENT_IMPLICIT_BUILDING_TAGS,
+)
+
+cc_toolchain_suite(
+    name = "cc_toolchain_suite",
+    tags = ["manual"],
+    toolchains = {
+        "darwin_x86_64": ":mac_toolchain",
+        "k8": ":linux_toolchain",
+        "windows_x86_64": ":windows_toolchain",
+    },
+)
+
+filegroup(name = "empty")
+
+cc_toolchain(
+    name = "mac_toolchain",
+    all_files = ":empty",
+    compiler_files = ":empty",
+    dwp_files = ":empty",
+    linker_files = ":empty",
+    objcopy_files = ":empty",
+    strip_files = ":empty",
+    supports_param_files = 0,
+    toolchain_config = ":mac_toolchain_config",
+    toolchain_identifier = "mac-toolchain",
+)
+
+toolchain(
+    name = "mac_toolchain_definition",
+    target_compatible_with = ["@platforms//os:macos"],
+    toolchain = ":mac_toolchain",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
+fake_cc_toolchain_config(
+    name = "mac_toolchain_config",
+    target_cpu = "darwin_x86_64",
+    toolchain_identifier = "mac-toolchain",
+)
+
+cc_toolchain(
+    name = "linux_toolchain",
+    all_files = ":empty",
+    compiler_files = ":empty",
+    dwp_files = ":empty",
+    linker_files = ":empty",
+    objcopy_files = ":empty",
+    strip_files = ":empty",
+    supports_param_files = 0,
+    toolchain_config = ":linux_toolchain_config",
+    toolchain_identifier = "linux-toolchain",
+)
+
+toolchain(
+    name = "linux_toolchain_definition",
+    target_compatible_with = ["@platforms//os:linux"],
+    toolchain = ":linux_toolchain",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
+fake_cc_toolchain_config(
+    name = "linux_toolchain_config",
+    target_cpu = "k8",
+    toolchain_identifier = "linux-toolchain",
+)
+
+cc_toolchain(
+    name = "windows_toolchain",
+    all_files = ":empty",
+    compiler_files = ":empty",
+    dwp_files = ":empty",
+    linker_files = ":empty",
+    objcopy_files = ":empty",
+    strip_files = ":empty",
+    supports_param_files = 0,
+    toolchain_config = ":windows_toolchain_config",
+    toolchain_identifier = "windows-toolchain",
+)
+
+toolchain(
+    name = "windows_toolchain_definition",
+    target_compatible_with = ["@platforms//os:windows"],
+    toolchain = ":windows_toolchain",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
+fake_cc_toolchain_config(
+    name = "windows_toolchain_config",
+    target_cpu = "windows_x86_64",
+    toolchain_identifier = "windows-toolchain",
+)

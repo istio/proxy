@@ -1,0 +1,21 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+something(
+    name = "__test__",
+)
+
+py_library(
+    name = "generated_test_entrypoint",
+    srcs = [
+        "__init__.py",
+        "foo.py",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+py_test(
+    name = "generated_test_entrypoint_test",
+    srcs = [":__test__"],
+    main = ":__test__.py",
+    deps = [":__test__"],
+)

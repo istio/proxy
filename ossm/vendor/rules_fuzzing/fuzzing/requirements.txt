@@ -1,0 +1,5 @@
+# Python requirements for the tools supporting the fuzzing rules. These are
+# installed automatically through the WORKSPACE configuration.
+
+absl-py==2.0.0 --hash=sha256:9a28abb62774ae4e8edbe2dd4c49ffcd45a6a848952a5eccc6a49f3f0fc1e2f3
+six==1.16.0 --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254

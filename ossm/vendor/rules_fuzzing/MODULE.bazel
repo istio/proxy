@@ -1,0 +1,78 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+module(
+    name = "rules_fuzzing",
+    # Automatically updated during releases by the Publish to BCR app.
+    version = "0.0.0",
+)
+
+bazel_dep(name = "bazel_features", version = "1.20.0")
+bazel_dep(name = "abseil-cpp", version = "20240116.1", repo_name = "com_google_absl")
+bazel_dep(name = "bazel_skylib", version = "1.5.0")
+bazel_dep(name = "platforms", version = "0.0.8")
+bazel_dep(name = "rules_python", version = "0.28.0")
+bazel_dep(name = "rules_cc", version = "0.0.17")
+bazel_dep(name = "rules_java", version = "6.5.2")
+bazel_dep(name = "rules_shell", version = "0.3.0")
+
+bazel_dep(name = "stardoc", version = "0.6.2", dev_dependency = True, repo_name = "io_bazel_stardoc")
+bazel_dep(name = "googletest", version = "1.14.0.bcr.1", dev_dependency = True, repo_name = "com_google_googletest")
+bazel_dep(name = "re2", version = "2023-11-01", dev_dependency = True)
+
+non_module_dependencies = use_extension("//fuzzing/private:extensions.bzl", "non_module_dependencies")
+use_repo(
+    non_module_dependencies,
+    "honggfuzz",
+    "rules_fuzzing_jazzer",
+    "rules_fuzzing_jazzer_api",
+    "rules_fuzzing_oss_fuzz",
+)
+
+SUPPORTED_PYTHON_VERSIONS = [
+    "3.8",
+    "3.9",
+    "3.10",
+    "3.11",
+    "3.12",
+]
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+
+[
+    python.toolchain(
+        # Required to avoid an error when running as root in OSS-Fuzz.
+        ignore_root_user_error = True,
+        is_default = python_version == SUPPORTED_PYTHON_VERSIONS[-1],
+        python_version = python_version,
+    )
+    for python_version in SUPPORTED_PYTHON_VERSIONS
+]
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+
+[
+    pip.parse(
+        extra_pip_args = ["--require-hashes"],
+        hub_name = "rules_fuzzing_py_deps",
+        python_version = python_version,
+        requirements_lock = "//fuzzing:requirements.txt",
+    )
+    for python_version in SUPPORTED_PYTHON_VERSIONS
+]
+
+use_repo(pip, fuzzing_py_deps = "rules_fuzzing_py_deps")
+
+java_toolchains = use_extension("@rules_java//java:extensions.bzl", "toolchains")
+use_repo(java_toolchains, "local_jdk")

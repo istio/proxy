@@ -1,0 +1,103 @@
+---
+tasks:
+  ubuntu2204:
+    environment:
+      # This tests custom cache locations.
+      # https://github.com/bazelbuild/rules_jvm_external/pull/316
+      COURSIER_CACHE: /tmp/custom_coursier_cache
+      REPIN: 1
+    shell_commands:
+      - bazel run @regression_testing_coursier//:pin
+      - bazel run @regression_testing_maven//:pin
+      - bazel run @maven_install_in_custom_location//:pin
+      - tests/bazel_run_tests.sh
+    test_targets:
+      - "--"
+      - "//..."
+  android_ubuntu2204:
+    name: Android Tests
+    platform: ubuntu2204
+    test_flags:
+      # TODO(https://github.com/bazelbuild/rules_jvm_external/issues/978):
+      #   These tests are not compatible with Android platforms, so use the legacy mode
+      - "--noincompatible_enable_android_toolchain_resolution"
+    test_targets:
+      - "--"
+      - "//tests/integration/override_targets:override_targets"
+  ubuntu2204_6_4_0:
+    platform: ubuntu2204
+    bazel: 6.4.0
+    environment:
+      REPIN: 1
+    shell_commands:
+      - bazel run @regression_testing_coursier//:pin
+      - bazel run @regression_testing_maven//:pin
+      - bazel run @maven_install_in_custom_location//:pin
+      - tests/bazel_run_tests.sh
+    test_targets:
+      - "--"
+      - "//..."
+  ubuntu2204_7_4_1:
+    platform: ubuntu2204
+    bazel: 7.4.1
+    environment:
+      REPIN: 1
+    shell_commands:
+      - bazel run @regression_testing_coursier//:pin
+      - bazel run @regression_testing_maven//:pin
+      - bazel run @maven_install_in_custom_location//:pin
+      - tests/bazel_run_tests.sh
+    test_targets:
+      - "--"
+      - "//..."
+  ubuntu2204_latest:
+    platform: ubuntu2204
+    # TODO: Revert to latest after fixing incompatibilities with Bazel 8.0.0
+    bazel: 7.x
+    environment:
+      # This tests custom cache locations.
+      # https://github.com/bazelbuild/rules_jvm_external/pull/316
+      COURSIER_CACHE: /tmp/custom_coursier_cache
+      REPIN: 1
+    shell_commands:
+      - bazel run @regression_testing_coursier//:pin
+      - bazel run @regression_testing_maven//:pin
+      - bazel run @maven_install_in_custom_location//:pin
+      - tests/bazel_run_tests.sh
+    test_targets:
+      - "--"
+      - "//..."
+  macos:
+    environment:
+      # This tests custom cache locations.
+      # https://github.com/bazelbuild/rules_jvm_external/pull/316
+      COURSIER_CACHE: /tmp/custom_coursier_cache
+      REPIN: 1
+    shell_commands:
+      - bazel run @regression_testing_coursier//:pin
+      - bazel run @regression_testing_maven//:pin
+      - bazel run @maven_install_in_custom_location//:pin
+      - tests/bazel_run_tests.sh
+    test_targets:
+      - "//..."
+      # manual tests
+  windows:
+    environment:
+      # This tests custom cache locations.
+      # https://github.com/bazelbuild/rules_jvm_external/pull/316
+      COURSIER_CACHE: /tmp/custom_coursier_cache
+      REPIN: 1
+    shell_commands:
+      - bazel run @regression_testing_coursier//:pin
+      - bazel run @regression_testing_maven//:pin
+      - bazel run @maven_install_in_custom_location//:pin
+      - tests/bazel_run_tests.sh
+    test_targets:
+      - "--"
+      - "//..."
+      # rules_kotlin is not tested / does not work on Windows.
+      # https://github.com/bazelbuild/rules_kotlin/issues/179
+      # https://github.com/bazelbuild/rules_kotlin/blob/master/.bazelci/presubmit.yml
+      - "-//tests/unit/kotlin/..."
+      # https://github.com/bazelbuild/rules_jvm_external/issues/586
+      - "-//tests/unit/manifest_stamp:diff_signed_manifest_test"

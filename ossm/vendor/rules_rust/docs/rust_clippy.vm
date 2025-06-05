@@ -1,0 +1,32 @@
+#[[
+## Overview
+]]#
+
+[Clippy][clippy] is a tool for catching common mistakes in Rust code and improving it. An
+expansive list of lints and the justification can be found in their [documentation][docs].
+
+[clippy]: https://github.com/rust-lang/rust-clippy#readme
+[docs]: https://rust-lang.github.io/rust-clippy/
+
+#[[
+### Setup
+]]#
+
+Simply add the following to the `.bazelrc` file in the root of your workspace:
+
+```text
+build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+build --output_groups=+clippy_checks
+```
+
+This will enable clippy on all [Rust targets](./defs.md).
+
+Note that targets tagged with `no-clippy` will not perform clippy checks
+
+To use a local clippy.toml, add the following flag to your `.bazelrc`. Note that due to
+the upstream implementation of clippy, this file must be named either `.clippy.toml` or
+`clippy.toml`. Using a custom config file requires Rust 1.34.0 or newer.
+
+```text
+build --@rules_rust//rust/settings:clippy.toml=//:clippy.toml
+```

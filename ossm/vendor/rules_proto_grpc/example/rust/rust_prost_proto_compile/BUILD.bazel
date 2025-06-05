@@ -1,0 +1,29 @@
+load("@rules_proto_grpc//rust:defs.bzl", "rust_prost_proto_compile")
+
+rust_prost_proto_compile(
+    name = "person_rust_proto",
+    declared_proto_packages = ["example.proto"],
+    options = {
+        "//rust:rust_prost_plugin": ["type_attribute=.other.space.Person=#[derive(Eq\\,Hash)]"],
+    },
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+)
+
+rust_prost_proto_compile(
+    name = "place_rust_proto",
+    declared_proto_packages = ["example.proto"],
+    options = {
+        "//rust:rust_prost_plugin": ["type_attribute=.other.space.Place=#[derive(Eq\\,Hash)]"],
+    },
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+)
+
+rust_prost_proto_compile(
+    name = "thing_rust_proto",
+    declared_proto_packages = ["example.proto"],
+    options = {
+        # Known limitation, can't derive if the type contains a pbjson type.
+        # "//rust:rust_prost_plugin": ["type_attribute=.other.space.Thing=#[derive(Eq\\,Hash)]"],
+    },
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

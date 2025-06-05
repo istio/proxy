@@ -1,0 +1,26 @@
+# Copyright 2023 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//python:py_test.bzl", "py_test")
+load("//python/private:util.bzl", "IS_BAZEL_7_OR_HIGHER")  # buildifier: disable=bzl-visibility
+
+py_test(
+    name = "proto_to_markdown_test",
+    srcs = ["proto_to_markdown_test.py"],
+    target_compatible_with = [] if IS_BAZEL_7_OR_HIGHER else ["@platforms//:incompatible"],
+    deps = [
+        "//sphinxdocs/private:proto_to_markdown_lib",
+        "@dev_pip//absl_py",
+    ],
+)

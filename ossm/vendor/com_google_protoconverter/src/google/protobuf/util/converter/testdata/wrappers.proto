@@ -1,0 +1,84 @@
+// Copyright 2023 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package proto_util_converter.testing;
+
+import "google/protobuf/wrappers.proto";
+
+// Top-level test cases proto used by MarshallingTest. See description
+// at the top of the class MarshallingTest for details on how to write
+// test cases.
+message WrappersTestCases {
+  DoubleWrapper double_wrapper = 1;
+  FloatWrapper float_wrapper = 2;
+  Int64Wrapper int64_wrapper = 3;
+  UInt64Wrapper uint64_wrapper = 4;
+  Int32Wrapper int32_wrapper = 5;
+  UInt32Wrapper uint32_wrapper = 6;
+  BoolWrapper bool_wrapper = 7;
+  StringWrapper string_wrapper = 8;
+  BytesWrapper bytes_wrapper = 9;
+
+  DoubleWrapper double_wrapper_default = 10;
+  FloatWrapper float_wrapper_default = 11;
+  Int64Wrapper int64_wrapper_default = 12;
+  UInt64Wrapper uint64_wrapper_default = 13;
+  Int32Wrapper int32_wrapper_default = 14;
+  UInt32Wrapper uint32_wrapper_default = 15;
+  BoolWrapper bool_wrapper_default = 16;
+  StringWrapper string_wrapper_default = 17;
+  BytesWrapper bytes_wrapper_default = 18;
+}
+
+message DoubleWrapper {
+  google.protobuf.DoubleValue double = 1;
+}
+
+message FloatWrapper {
+  google.protobuf.FloatValue float = 1;
+}
+
+message Int64Wrapper {
+  google.protobuf.Int64Value int64 = 1;
+}
+
+message UInt64Wrapper {
+  google.protobuf.UInt64Value uint64 = 1;
+}
+
+message Int32Wrapper {
+  google.protobuf.Int32Value int32 = 1;
+}
+
+message UInt32Wrapper {
+  google.protobuf.UInt32Value uint32 = 1;
+}
+
+message BoolWrapper {
+  google.protobuf.BoolValue bool = 1;
+}
+
+message StringWrapper {
+  google.protobuf.StringValue string = 1;
+}
+
+message BytesWrapper {
+  google.protobuf.BytesValue bytes = 1;
+}
+
+service WrappersTestService {
+  rpc Call(WrappersTestCases) returns (WrappersTestCases);
+}

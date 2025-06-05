@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+# Sample script demonstrating custom C++ toolchain selection: handles
+# the command that translates a cc_library's .cc (source file) into .o  (object
+# file).
+
+echo "$0: running sample cc_library compiler (produces .o output)."
+
+# https://docs.bazel.build/versions/master/cc-toolchain-config-reference.html
+# defines fancier ways to generate custom command lines. This script just shows
+# the default, which looks like:
+#
+# examples/custom_toolchain/sample_compiler <various compiler flags> -o bazel-out/x86-fastbuild/bin/examples/custom_toolchain/_objs/buildme/buildme.o.
+
+# The .o is the last parameter.
+OBJECT_FILE=${@: -1}
+# Swap out .o for .d to get expected .d (source dependency output).
+DOTD_FILE=${OBJECT_FILE%?}d
+
+echo "$0: sample .o output" > $OBJECT_FILE
+echo "sample .d output ($0)" > $DOTD_FILE

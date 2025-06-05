@@ -1,0 +1,14 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+py_library(
+    name = "has_test",
+    srcs = ["python/my_module.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_test(
+    name = "has_test_test",
+    srcs = ["__test__.py"],
+    main = "__test__.py",
+    deps = [":has_test"],
+)

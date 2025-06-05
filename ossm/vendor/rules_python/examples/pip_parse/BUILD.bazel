@@ -1,0 +1,79 @@
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@rules_python//python:py_test.bzl", "py_test")
+load("@rules_python//python/entry_points:py_console_script_binary.bzl", "py_console_script_binary")
+
+# Toolchain setup, this is optional.
+# Demonstrate that we can use the same python interpreter for the toolchain and executing pip in pip install (see WORKSPACE).
+#
+#load("@rules_python//python:py_runtime_pair.bzl", "py_runtime_pair")
+#
+#py_runtime(
+#    name = "python3_runtime",
+#    files = ["@python_interpreter//:files"],
+#    interpreter = "@python_interpreter//:python_bin",
+#    python_version = "PY3",
+#    visibility = ["//visibility:public"],
+#)
+#
+#py_runtime_pair(
+#    name = "my_py_runtime_pair",
+#    py2_runtime = None,
+#    py3_runtime = ":python3_runtime",
+#)
+#
+#toolchain(
+#    name = "my_py_toolchain",
+#    toolchain = ":my_py_runtime_pair",
+#    toolchain_type = "@rules_python//python:toolchain_type",
+#)
+# End of toolchain setup.
+
+py_binary(
+    name = "main",
+    srcs = ["main.py"],
+    deps = [
+        "@pypi//requests:pkg",
+        "@pypi//sphinx:pkg",
+        "@pypi//sphinxcontrib_serializinghtml:pkg",
+    ],
+)
+
+py_test(
+    name = "test",
+    srcs = ["test.py"],
+    deps = [":main"],
+)
+
+# For pip dependencies which have entry points, the `entry_point` macro can be
+# used from the generated `pip_parse` repository to access a runnable binary.
+
+py_console_script_binary(
+    name = "yamllint",
+    pkg = "@pypi//yamllint",
+)
+
+# This rule adds a convenient way to update the requirements file.
+compile_pip_requirements(
+    name = "requirements",
+    src = "requirements.in",
+    requirements_txt = "requirements_lock.txt",
+    requirements_windows = "requirements_windows.txt",
+)
+
+# Test the use of all pip_parse utilities in a single py_test
+py_test(
+    name = "pip_parse_test",
+    srcs = ["pip_parse_test.py"],
+    data = [
+        ":yamllint",
+        "@pypi//requests:dist_info",
+        "@pypi//s3cmd:data",
+    ],
+    env = {
+        "WHEEL_DATA_CONTENTS": "$(rootpaths @pypi//s3cmd:data)",
+        "WHEEL_DIST_INFO_CONTENTS": "$(rootpaths @pypi//requests:dist_info)",
+        "YAMLLINT_ENTRY_POINT": "$(rlocationpath :yamllint)",
+    },
+    deps = ["@rules_python//python/runfiles"],
+)

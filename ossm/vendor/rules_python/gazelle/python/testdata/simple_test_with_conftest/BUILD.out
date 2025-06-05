@@ -1,0 +1,27 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+py_library(
+    name = "simple_test_with_conftest",
+    srcs = [
+        "__init__.py",
+        "foo.py",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+py_library(
+    name = "conftest",
+    testonly = True,
+    srcs = ["conftest.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_test(
+    name = "simple_test_with_conftest_test",
+    srcs = ["__test__.py"],
+    main = "__test__.py",
+    deps = [
+        ":conftest",
+        ":simple_test_with_conftest",
+    ],
+)

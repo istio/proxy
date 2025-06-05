@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+enum Enum {
+    A = 0;
+    B = 1;
+    C = 2;
+}
+
+message Types {
+    Enum a_enum = 1;
+    double a_double = 2;
+    float a_float = 3;
+    int32 a_int32 = 4;
+    int64 a_int64 = 5;
+    uint32 a_uint32 = 6;
+    uint64 a_uint64 = 7;
+    sint32 a_sint32 = 8;
+    sint64 a_sint64 = 9;
+    fixed32 a_fixed32 = 10;
+    fixed64 a_fixed64 = 11;
+    sfixed32 a_sfixed32 = 12;
+    sfixed64 a_sfixed64 = 13;
+    bool a_bool = 14;
+    string a_string = 15;
+    bytes a_bytes = 16;
+
+    repeated Enum repeated_enum = 17;
+    repeated double repeated_double = 18;
+    repeated float repeated_float = 19;
+    repeated int32 repeated_int32 = 20;
+    repeated int64 repeated_int64 = 21;
+    repeated uint32 repeated_uint32 = 22;
+    repeated uint64 repeated_uint64 = 23;
+    repeated sint32 repeated_sint32 = 24;
+    repeated sint64 repeated_sint64 = 25;
+    repeated fixed32 repeated_fixed32 = 26;
+    repeated fixed64 repeated_fixed64 = 27;
+    repeated sfixed32 repeated_sfixed32 = 28;
+    repeated sfixed64 repeated_sfixed64 = 29;
+    repeated bool repeated_bool = 30;
+    repeated string repeated_string = 31;
+    repeated bytes repeated_bytes = 32;
+
+    map<string, Enum> map_string_enum = 33;
+    map<string, double> map_string_double = 34;
+    map<string, float> map_string_float = 35;
+    map<string, int32> map_string_int32 = 36;
+    map<string, int64> map_string_int64 = 37;
+    map<string, uint32> map_string_uint32 = 38;
+    map<string, uint64> map_string_uint64 = 39;
+    map<string, sint32> map_string_sint32 = 40;
+    map<string, sint64> map_string_sint64 = 41;
+    map<string, fixed32> map_string_fixed32 = 42;
+    map<string, fixed64> map_string_fixed64 = 43;
+    map<string, sfixed32> map_string_sfixed32 = 44;
+    map<string, sfixed64> map_string_sfixed64 = 45;
+    map<string, bool> map_string_bool = 46;
+    map<string, string> map_string_string = 47;
+    map<string, bytes> map_string_bytes = 48;
+
+    oneof OneOf {
+        Enum oneof_enum = 49;
+        double oneof_double = 50;
+        float oneof_float = 51;
+        int32 oneof_int32 = 52;
+        int64 oneof_int64 = 53;
+        uint32 oneof_uint32 = 54;
+        uint64 oneof_uint64 = 55;
+        sint32 oneof_sint32 = 56;
+        sint64 oneof_sint64 = 57;
+        fixed32 oneof_fixed32 = 58;
+        fixed64 oneof_fixed64 = 59;
+        sfixed32 oneof_sfixed32 = 60;
+        sfixed64 oneof_sfixed64 = 61;
+        bool oneof_bool = 62;
+        string oneof_string = 63;
+        bytes oneof_bytes = 64;
+    }
+}

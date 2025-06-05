@@ -1,0 +1,18 @@
+[workspace]
+members = []
+resolver = "2"
+
+[package]
+name = "tree-data"
+version = "0.1.0"
+edition = "2018"
+
+# Required to satisfy cargo but no `lib.rs` is expected to
+# exist within test data.
+[lib]
+path = "lib.rs"
+
+[dependencies]
+chrono = "=0.4.24"
+cpufeatures = "=0.2.7"
+serde_derive = "=1.0.152"

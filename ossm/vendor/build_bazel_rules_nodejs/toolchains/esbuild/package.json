@@ -1,0 +1,18 @@
+{
+  "version": "0.0.0-PLACEHOLDER",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bazelbuild/rules_nodejs.git",
+    "directory": "packages/esbuild"
+  },
+  "bugs": {
+    "url": "https://github.com/bazelbuild/rules_nodejs/issues"
+  },
+  "keywords": [
+    "bazel"
+  ],
+  "dependencies": {
+    "esbuild": "0.15.17"
+  }
+}

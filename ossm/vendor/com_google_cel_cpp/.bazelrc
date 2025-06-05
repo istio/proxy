@@ -1,0 +1,20 @@
+build --cxxopt=-std=c++17 --host_cxxopt=-std=c++17
+build --cxxopt=-fsized-deallocation
+
+# Enable matchers in googletest
+build --define absl=1
+
+build:asan --linkopt -ldl
+build:asan --linkopt -fsanitize=address
+build:asan --copt -fsanitize=address
+build:asan --copt -DADDRESS_SANITIZER=1
+build:asan --copt -D__SANITIZE_ADDRESS__
+build:asan --test_env=ASAN_OPTIONS=handle_abort=1:allow_addr2line=true:check_initialization_order=true:strict_init_order=true:detect_odr_violation=1
+build:asan --test_env=ASAN_SYMBOLIZER_PATH
+build:asan --copt -O1
+build:asan --copt -fno-optimize-sibling-calls
+build:asan --linkopt=-fuse-ld=lld
+
+try-import %workspace%/clang.bazelrc
+try-import %workspace%/user.bazelrc
+try-import %workspace%/local_tsan.bazelrc

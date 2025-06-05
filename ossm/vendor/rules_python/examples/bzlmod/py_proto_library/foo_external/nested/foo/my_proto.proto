@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+package my_proto;
+
+message MyMessage {
+}

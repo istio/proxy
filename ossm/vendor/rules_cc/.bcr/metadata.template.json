@@ -1,0 +1,12 @@
+{
+  "homepage": "https://github.com/bazelbuild/rules_cc",
+  "maintainers": [
+    {
+      "email": "ilist@google.com",
+      "github": "comius",
+      "name": "Ivo Ristovski List"
+    }
+  ],
+  "versions": [],
+  "yanked_versions": {}
+}

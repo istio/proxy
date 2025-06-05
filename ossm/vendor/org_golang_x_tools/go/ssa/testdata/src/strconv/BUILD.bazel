@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "strconv",
+    srcs = ["strconv.go"],
+    importpath = "golang.org/x/tools/go/ssa/testdata/src/strconv",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":strconv",
+    visibility = ["//visibility:public"],
+)

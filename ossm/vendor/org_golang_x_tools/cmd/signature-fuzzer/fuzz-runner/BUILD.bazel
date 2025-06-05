@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "fuzz-runner_lib",
+    srcs = ["runner.go"],
+    importpath = "golang.org/x/tools/cmd/signature-fuzzer/fuzz-runner",
+    visibility = ["//visibility:private"],
+    deps = ["//cmd/signature-fuzzer/internal/fuzz-generator"],
+)
+
+go_binary(
+    name = "fuzz-runner",
+    embed = [":fuzz-runner_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "fuzz-runner_test",
+    srcs = ["rnr_test.go"],
+    embed = [":fuzz-runner_lib"],
+    deps = ["//internal/testenv"],
+)

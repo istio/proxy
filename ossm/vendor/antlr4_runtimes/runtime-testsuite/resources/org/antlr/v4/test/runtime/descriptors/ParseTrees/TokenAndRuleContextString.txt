@@ -1,0 +1,29 @@
+[type]
+Parser
+
+[grammar]
+grammar T;
+<ImportRuleInvocationStack()>
+
+s
+@init {
+<BuildParseTrees()>
+}
+@after {
+<ToStringTree("$r.ctx"):writeln()>
+}
+  : r=a ;
+a : 'x' {
+<RuleInvocationStack():writeln()>
+} ;
+
+[start]
+s
+
+[input]
+x
+
+[output]
+[a, s]
+(a x)
+

@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package google.jwt_verify;
+
+message FuzzInput {
+  string jwt = 1;
+  string jwks = 2;
+}

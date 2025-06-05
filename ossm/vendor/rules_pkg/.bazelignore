@@ -1,0 +1,5 @@
+# The following directories have their own WORKSPACEs (or contain WORKSPACEs),
+# so they shouldn't be built when in the main part of the rules_pkg repository.
+
+deb_packages/
+examples/

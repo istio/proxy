@@ -1,0 +1,11 @@
+# Match Envoy's toolchain.
+build --cxxopt=-std=c++17 --host_cxxopt=-std=c++17
+
+# Force the use of Clang for C++ builds.
+build --action_env=CC=clang-13
+build --action_env=CXX=clang++-13
+
+# Define the --config=asan-libfuzzer configuration.
+build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:libfuzzer
+build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
+build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan

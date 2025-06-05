@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "txtar",
+    srcs = ["archive.go"],
+    importpath = "golang.org/x/tools/txtar",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":txtar",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "txtar_test",
+    srcs = ["archive_test.go"],
+    embed = [":txtar"],
+)

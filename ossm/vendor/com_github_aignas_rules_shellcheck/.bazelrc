@@ -1,0 +1,13 @@
+test --test_output=errors
+
+# Fix the excessive rebuilding when using anything that depends on protobuf rules
+# See https://github.com/bazelbuild/buildtools/issues/744
+common --incompatible_strict_action_env
+common --enable_bzlmod
+
+try-import user.bazelrc
+
+# To update these lines, execute 
+# `bazel run @rules_bazel_integration_test//tools:update_deleted_packages`
+build --deleted_packages=examples/check_glob,examples/optional_attributes
+query --deleted_packages=examples/check_glob,examples/optional_attributes

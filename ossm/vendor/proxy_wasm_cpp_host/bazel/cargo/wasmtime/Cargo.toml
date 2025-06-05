@@ -1,0 +1,17 @@
+[package]
+edition = "2021"
+name = "wasmtime-c-api-bazel"
+version = "24.0.0"
+rust-version = "1.78.0"
+
+[lib]
+path = "fake_lib.rs"
+
+[dependencies]
+env_logger = "0.10"
+anyhow = "1.0"
+once_cell = "1.12"
+log = {version = "0.4.8", default-features = false}
+tracing = "0.1.26"
+wasmtime = {version = "24.0.0", default-features = false, features = ['cranelift', 'runtime', 'gc', 'std']}
+wasmtime-c-api-macros = {git = "https://github.com/bytecodealliance/wasmtime", tag = "v24.0.0"}

@@ -1,0 +1,64 @@
+"""bazelbuild/rules_rust/extensions/protobuf"""
+
+module(
+    name = "rules_rust_protobuf",
+    version = "0.56.0",
+)
+
+bazel_dep(
+    name = "rules_rust",
+    version = "0.56.0",
+)
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
+bazel_dep(
+    name = "platforms",
+    version = "0.0.10",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.17",
+)
+bazel_dep(
+    name = "rules_proto",
+    version = "6.0.2",
+)
+bazel_dep(
+    name = "protobuf",
+    version = "28.3",
+    repo_name = "com_google_protobuf",
+)
+
+bazel_dep(
+    name = "bazel_ci_rules",
+    version = "1.0.0",
+    dev_dependency = True,
+)
+
+rust_ext = use_extension("//:extensions.bzl", "rust_ext")
+use_repo(
+    rust_ext,
+    "rules_rust_protobuf_deps__grpc-0.6.2",
+    "rules_rust_protobuf_deps__grpc-compiler-0.6.2",
+    "rules_rust_protobuf_deps__log-0.4.17",
+    "rules_rust_protobuf_deps__protobuf-2.8.2",
+    "rules_rust_protobuf_deps__protobuf-codegen-2.8.2",
+    "rules_rust_protobuf_deps__tls-api-0.1.22",
+    "rules_rust_protobuf_deps__tls-api-stub-0.1.22",
+)
+
+register_toolchains(
+    "//:default_proto_toolchain",
+)
+
+rust_ext_dev = use_extension(
+    "//private:internal_extensions.bzl",
+    "rust_ext_dev",
+    dev_dependency = True,
+)
+use_repo(
+    rust_ext_dev,
+    "buildkite_config",
+)

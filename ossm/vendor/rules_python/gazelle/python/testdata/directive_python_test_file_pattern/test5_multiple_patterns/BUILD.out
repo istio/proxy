@@ -1,0 +1,34 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+# gazelle:python_test_file_pattern *_hello.py,hello_*,unittest_*,*_unittest.py
+
+# Note that "foo_unittest.pyc" and "test_bar" files are ignored.
+
+py_library(
+    name = "test5_multiple_patterns",
+    srcs = [
+        "mylib.py",
+        "mylib2.py",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+py_test(
+    name = "foo_hello",
+    srcs = ["foo_hello.py"],
+)
+
+py_test(
+    name = "foo_unittest",
+    srcs = ["foo_unittest.py"],
+)
+
+py_test(
+    name = "hello_foo",
+    srcs = ["hello_foo.py"],
+)
+
+py_test(
+    name = "unittest_foo",
+    srcs = ["unittest_foo.py"],
+)

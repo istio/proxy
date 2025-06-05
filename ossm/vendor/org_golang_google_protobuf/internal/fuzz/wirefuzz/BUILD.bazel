@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "wirefuzz",
+    srcs = ["fuzz.go"],
+    importpath = "google.golang.org/protobuf/internal/fuzz/wirefuzz",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/impl",
+        "//internal/testprotos/fuzz",
+        "//proto",
+        "//reflect/protoregistry",
+        "//runtime/protoiface",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":wirefuzz",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "wirefuzz_test",
+    srcs = ["fuzz_test.go"],
+    embed = [":wirefuzz"],
+    deps = ["//internal/fuzztest"],
+)

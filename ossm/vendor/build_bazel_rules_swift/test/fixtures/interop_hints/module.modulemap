@@ -1,0 +1,9 @@
+module TopModule {
+  header "header1.h"
+  export *
+
+  module Submodule {
+    header "header2.h"
+    export *
+  }
+}

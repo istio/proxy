@@ -1,0 +1,23 @@
+#!/bin/bash
+#
+# Sample script demonstrating custom C++ toolchain selection: handles
+# the command that translates a cc_library's .o (object file) into
+# .a (archive).
+
+echo "$0: running sample cc_library linker (produces .a output)."
+
+# https://docs.bazel.build/versions/master/cc-toolchain-config-reference.html
+# defines fancier ways to generate custom command lines. This script just shows
+# the default, which looks like:
+#
+# examples/custom_toolchain/sample_linker @bazel-out/x86-fastbuild/bin/examples/custom_toolchain/libbuildme.a-2.params.
+
+# Get "@bazel-out/.../libbuildme.a-2.params".
+PARAMS_FILE=${@: -1}
+# Remove the "@" prefix.
+OUTFILE=${PARAMS_FILE#?}
+# Replace "libbuildme.a-2.params" with "libbuildme.a".
+OUTFILE=${OUTFILE%-*}
+
+echo "$0: sample output"  >  $OUTFILE
+

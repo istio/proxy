@@ -1,0 +1,39 @@
+load("@io_bazel_rules_d//d:d.bzl", "d_library", "d_binary", "d_source_library")
+
+d_binary(
+    name = "protoc-gen-d",
+    srcs = [
+        "protoc_gen_d/protoc-gen-d.d",
+    ] + glob([
+        "protoc_gen_d/google/**/*.d",
+    ]),
+    deps = [
+        ":protobuf",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+d_library(
+    name = "protobuf",
+    srcs = [
+        "src/google/protobuf/any.d",
+        "src/google/protobuf/api.d",
+        "src/google/protobuf/common.d",
+        "src/google/protobuf/decoding.d",
+        "src/google/protobuf/duration.d",
+        "src/google/protobuf/empty.d",
+        "src/google/protobuf/encoding.d",
+        "src/google/protobuf/field_mask.d",
+        "src/google/protobuf/internal.d",
+        "src/google/protobuf/json_decoding.d",
+        "src/google/protobuf/json_encoding.d",
+        "src/google/protobuf/package.d",
+        "src/google/protobuf/source_context.d",
+        "src/google/protobuf/struct_.d",
+        "src/google/protobuf/timestamp.d",
+        "src/google/protobuf/type.d",
+        "src/google/protobuf/wrappers.d",
+    ],
+    imports = ["src"],
+    visibility = ["//visibility:public"],
+)

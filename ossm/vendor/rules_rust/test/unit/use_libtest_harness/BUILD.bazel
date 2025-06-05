@@ -1,0 +1,4 @@
+load(":use_libtest_harness_test.bzl", "use_libtest_harness_test_suite")
+
+############################ UNIT TESTS #############################
+use_libtest_harness_test_suite(name = "use_libtest_harness_test_suite")

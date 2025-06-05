@@ -1,0 +1,78 @@
+//
+// Copyright 2018-2019 The OpenZipkin Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License. You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software distributed under the License
+// is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+// or implied. See the License for the specific language governing permissions and limitations under
+// the License.
+//
+
+syntax = "proto3";
+
+package zipkin.jsonv2;
+// This is a copy of the normal proto file, reverse mapped to the v2
+// json openapi/swagger because envoy has a policy of only generating
+// json from proto.
+//
+// Note: ListOfSpans is not included because it does not serialize as
+// a simple list. You will need to separately manage list encoding of
+// json, which is simple and has no special character concerns.
+//
+// Ex. Simply wrap in brackets and join on comma like: "[span1,span2]"
+//
+// The next id is 14.
+//
+message Span {
+  // required 16 or 32 lower-hex characters
+  string trace_id = 1;
+  // optional 16 lower-hex characters
+  string parent_id = 2;
+  // required 16 lower-hex characters
+  string id = 3;
+  // Only on remote spans. One of 'CLIENT' 'SERVER' 'PRODUCER' or 'CONSUMER'
+  string kind = 4;
+  // optional and lowercase; don't serialize empty
+  string name = 5;
+  // optional epoch microseconds; don't serialize 0
+  fixed64 timestamp = 6;
+  // optional microsecond duration; don't serialize 0
+  uint64 duration = 7;
+  // usually a bug if absent
+  Endpoint local_endpoint = 8;
+  // invalid if kind is absent
+  Endpoint remote_endpoint = 9;
+  repeated Annotation annotations = 10;
+  // utf-8; empty values are valid, but empty keys are not
+  map<string, string> tags = 11;
+  // set when "X-B3-Flags" header has a value of 1; don't serialize false
+  bool debug = 12;
+  // set when using the same span ID as a sampled client; don't serialize false
+  bool shared = 13;
+}
+
+// don't serialize unless one of the fields are present
+//
+// The next id is 5.
+message Endpoint {
+  // optional and lowercase; don't serialize empty
+  string service_name = 1;
+  // optional ip literal ex '192.168.99.100'; don't serialize empty
+  string ipv4 = 2;
+  // optional ip literal ex '2001:db8::c001'; don't serialize empty
+  string ipv6 = 3;
+  // optional; don't serialize 0
+  int32 port = 4;
+}
+
+// The next id is 3.
+message Annotation {
+  // required epoch microseconds; don't serialize 0
+  fixed64 timestamp = 1;
+  // required utf-8; don't serialize empty
+  string value = 2;
+}

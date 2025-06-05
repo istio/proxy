@@ -1,0 +1,8 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "ignored_invalid_imported_module",
+    srcs = ["__init__.py"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@gazelle_python_test//foo"],
+)

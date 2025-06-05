@@ -1,0 +1,16 @@
+load("@rules_proto_grpc//php:defs.bzl", "php_proto_compile")
+
+php_proto_compile(
+    name = "person_php_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+)
+
+php_proto_compile(
+    name = "place_php_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+)
+
+php_proto_compile(
+    name = "thing_php_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

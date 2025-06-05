@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "a",
+    srcs = ["a.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/nilness/testdata/src/a",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":a",
+    visibility = ["//visibility:public"],
+)

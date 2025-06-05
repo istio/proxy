@@ -1,0 +1,31 @@
+# Normally these are ignored, but if you're using a custom
+# build of Bazel with a custom --output_user_root value, Bazel
+# tries to follow the symlinks of the other builds and finds
+# the WORKSPACE, BUILD, etc files and tries to build them.
+bazel-rules_python
+bazel-bin
+bazel-out
+bazel-testlogs
+# Prevent the convenience symlinks within the examples from being
+# treated as directories with valid BUILD files for the main repo.
+# Any directory with a WORKSPACE in it should be added here, with
+# an entry like `bazel-{workspacename}`
+examples/bzlmod/bazel-bin
+examples/bzlmod/bazel-bzlmod
+examples/bzlmod/bazel-out
+examples/bzlmod/bazel-testlogs
+examples/bzlmod/other_module/bazel-bin
+examples/bzlmod/other_module/bazel-other_module
+examples/bzlmod/other_module/bazel-out
+examples/bzlmod/other_module/bazel-testlogs
+examples/bzlmod/py_proto_library/foo_external
+examples/bzlmod_build_file_generation/bazel-bzlmod_build_file_generation
+examples/multi_python_versions/bazel-multi_python_versions
+examples/pip_parse/bazel-pip_parse
+examples/pip_parse_vendored/bazel-pip_parse_vendored
+examples/pip_repository_annotations/bazel-pip_repository_annotations
+examples/py_proto_library/bazel-py_proto_library
+tests/integration/compile_pip_requirements/bazel-compile_pip_requirements
+tests/integration/ignore_root_user_error/bazel-ignore_root_user_error
+tests/integration/local_toolchains/bazel-local_toolchains
+tests/integration/py_cc_toolchain_registered/bazel-py_cc_toolchain_registered

@@ -1,0 +1,8 @@
+# https://docs.bazel.build/versions/main/best-practices.html#using-the-bazelrc-file
+try-import %workspace%/user.bazelrc
+
+# This example is WORKSPACE specific. The equivalent functionality
+# is in examples/bzlmod as the `whl_mods` feature.
+common --noenable_bzlmod
+common --enable_workspace
+common --incompatible_python_disallow_native_rules

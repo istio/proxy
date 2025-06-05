@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "testutils",
+    srcs = ["loader.go"],
+    importpath = "github.com/lyft/protoc-gen-star/v2/testutils",
+    importpath_aliases = ["github.com/lyft/protoc-gen-star/testutils"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:protoc-gen-star",
+        "@com_github_spf13_afero//:go_default_library",
+        "@org_golang_google_protobuf//proto:go_default_library",
+        "@org_golang_google_protobuf//types/descriptorpb:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testutils",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "testutils_test",
+    srcs = ["loader_test.go"],
+    embed = [":testutils"],
+    deps = [
+        "@com_github_spf13_afero//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+        "@org_golang_google_protobuf//proto:go_default_library",
+        "@org_golang_google_protobuf//types/descriptorpb:go_default_library",
+    ],
+)

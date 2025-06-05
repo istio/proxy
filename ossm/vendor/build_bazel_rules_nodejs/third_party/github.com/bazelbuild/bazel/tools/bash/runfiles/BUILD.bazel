@@ -1,0 +1,11 @@
+filegroup(
+    name = "package_contents",
+    srcs = glob(["**"]),
+    visibility = ["//:__pkg__"],
+)
+
+sh_library(
+    name = "runfiles",
+    srcs = ["runfiles.bash"],
+    visibility = ["//visibility:public"],
+)

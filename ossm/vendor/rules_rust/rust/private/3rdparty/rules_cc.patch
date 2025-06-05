@@ -1,0 +1,25 @@
+diff --git a/cc/defs.bzl b/cc/defs.bzl
+index 4fccdcc..d848ede 100644
+--- a/cc/defs.bzl
++++ b/cc/defs.bzl
+@@ -13,7 +13,7 @@
+ # limitations under the License.
+ """Starlark rules for building C++ projects."""
+ 
+-load("@com_google_protobuf//bazel:cc_proto_library.bzl", _cc_proto_library = "cc_proto_library")
++load("//cc/private:cc_proto_library.bzl", _cc_proto_library = "cc_proto_library")
+ load("//cc:cc_binary.bzl", _cc_binary = "cc_binary")
+ load("//cc:cc_import.bzl", _cc_import = "cc_import")
+ load("//cc:cc_library.bzl", _cc_library = "cc_library")
+diff --git a/cc/private/cc_proto_library.bzl b/cc/private/cc_proto_library.bzl
+new file mode 100644
+index 0000000..bd94272
+--- /dev/null
++++ b/cc/private/cc_proto_library.bzl
+@@ -0,0 +1,6 @@
++"""Avoid the following issue by providing a native reexport:
++https://github.com/bazelbuild/rules_cc/issues/274
++"""
++
++def cc_proto_library(**kwargs):
++    native.cc_proto_library(**kwargs)

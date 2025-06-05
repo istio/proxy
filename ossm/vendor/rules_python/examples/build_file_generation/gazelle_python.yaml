@@ -1,0 +1,37 @@
+# GENERATED FILE - DO NOT EDIT!
+#
+# To update this file, run:
+#   bazel run //:gazelle_python_manifest.update
+
+manifest:
+  modules_mapping:
+    alabaster: alabaster
+    babel: Babel
+    certifi: certifi
+    charset_normalizer: charset_normalizer
+    click: click
+    docutils: docutils
+    flask: Flask
+    idna: idna
+    imagesize: imagesize
+    importlib_metadata: importlib_metadata
+    itsdangerous: itsdangerous
+    jinja2: Jinja2
+    markupsafe: MarkupSafe
+    packaging: packaging
+    pygments: Pygments
+    requests: requests
+    snowballstemmer: snowballstemmer
+    sphinx: sphinx
+    sphinxcontrib.applehelp: sphinxcontrib_applehelp
+    sphinxcontrib.devhelp: sphinxcontrib_devhelp
+    sphinxcontrib.htmlhelp: sphinxcontrib_htmlhelp
+    sphinxcontrib.jsmath: sphinxcontrib_jsmath
+    sphinxcontrib.qthelp: sphinxcontrib_qthelp
+    sphinxcontrib.serializinghtml: sphinxcontrib_serializinghtml
+    urllib3: urllib3
+    werkzeug: Werkzeug
+    zipp: zipp
+  pip_repository:
+    name: pip
+integrity: 19c0e03a9cf1d6bbb2dfe301325fefc59a30c3f967f84c2f1baaf915c2805da7

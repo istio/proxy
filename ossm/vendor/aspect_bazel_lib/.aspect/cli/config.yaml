@@ -1,0 +1,4 @@
+lint:
+  aspects:
+    - //tools/lint:linters.bzl%vale
+    - //tools/lint:linters.bzl%shellcheck

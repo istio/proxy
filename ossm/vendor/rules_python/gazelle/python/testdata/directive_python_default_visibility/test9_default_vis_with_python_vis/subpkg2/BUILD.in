@@ -1,0 +1,3 @@
+# gazelle:python_default_visibility //a:b,//a:c
+# gazelle:python_visibility //c:d
+# gazelle:python_visibility //e:f

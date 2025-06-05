@@ -1,0 +1,7 @@
+syntax = "proto3";
+package samples;
+
+message BytesPayload {
+    string description = 1;
+    bytes payload      = 2;
+}

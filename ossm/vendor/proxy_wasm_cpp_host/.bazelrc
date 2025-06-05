@@ -1,0 +1,90 @@
+# Disable Bzlmod
+common --noenable_bzlmod
+
+# Pass CC, CXX and PATH from the environment.
+build --action_env=CC
+build --action_env=CXX
+build --action_env=PATH
+
+# Use Clang compiler.
+build:clang --action_env=BAZEL_COMPILER=clang
+build:clang --action_env=CC=clang
+build:clang --action_env=CXX=clang++
+
+# Common flags for Clang sanitizers.
+build:clang-xsan --config=clang
+build:clang-xsan --copt -O1
+build:clang-xsan --copt -fno-omit-frame-pointer
+build:clang-xsan --copt -fno-optimize-sibling-calls
+build:clang-xsan --copt -fno-sanitize-recover=all
+build:clang-xsan --linkopt -fsanitize-link-c++-runtime
+build:clang-xsan --linkopt -fuse-ld=lld
+build:clang-xsan --linkopt -rtlib=compiler-rt
+build:clang-xsan --linkopt --unwindlib=libgcc
+
+# Use Clang compiler with Address and Undefined Behavior Sanitizers.
+build:clang-asan --config=clang-xsan
+build:clang-asan --copt -DADDRESS_SANITIZER=1
+build:clang-asan --copt -DUNDEFINED_SANITIZER=1
+build:clang-asan --copt -fsanitize=address,undefined
+build:clang-asan --copt -fsanitize-address-use-after-scope
+build:clang-asan --linkopt -fsanitize=address,undefined
+build:clang-asan --linkopt -fsanitize-address-use-after-scope
+build:clang-asan --test_env=ASAN_OPTIONS=check_initialization_order=1:detect_stack_use_after_return=1:strict_init_order=1:strict_string_checks=1
+build:clang-asan --test_env=UBSAN_OPTIONS=print_stacktrace=1
+build:clang-asan --test_env=ASAN_SYMBOLIZER_PATH
+
+# Use Clang compiler with Address and Undefined Behavior Sanitizers (strict version).
+build:clang-asan-strict --config=clang-asan
+build:clang-asan-strict --copt -fsanitize=integer,local-bounds,nullability
+build:clang-asan-strict --linkopt -fsanitize=integer,local-bounds,nullability
+
+# Use Honggfuzz with Address and Undefined Behavior Sanitizers (strict version).
+build:clang-asan-honggfuzz --config=clang-asan-strict
+build:clang-asan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:honggfuzz
+build:clang-asan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine_instrumentation=honggfuzz
+
+# Use LibFuzzer with Address and Undefined Behavior Sanitizers (strict version).
+build:clang-asan-libfuzzer --config=clang-asan-strict
+build:clang-asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:libfuzzer
+build:clang-asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
+
+# Use Clang compiler with Thread Sanitizer.
+build:clang-tsan --config=clang-xsan
+build:clang-tsan --copt -DTHREAD_SANITIZER=1
+build:clang-tsan --copt -fsanitize=thread
+build:clang-tsan --linkopt -fsanitize=thread
+
+# Use Clang-Tidy tool.
+build:clang-tidy --config=clang
+build:clang-tidy --aspects @bazel_clang_tidy//clang_tidy:clang_tidy.bzl%clang_tidy_aspect
+build:clang-tidy --@bazel_clang_tidy//:clang_tidy_config=@proxy_wasm_cpp_host//:clang_tidy_config
+build:clang-tidy --output_groups=report
+
+# Use GCC compiler.
+build:gcc --action_env=BAZEL_COMPILER=gcc
+build:gcc --action_env=CC=gcc
+build:gcc --action_env=CXX=g++
+
+# Use Zig C/C++ compiler.
+build:zig-cc --incompatible_enable_cc_toolchain_resolution
+build:zig-cc --extra_toolchains @zig_sdk//:aarch64-linux-gnu.2.28_toolchain
+build:zig-cc --extra_toolchains @zig_sdk//:x86_64-linux-gnu.2.28_toolchain
+build:zig-cc --host_copt=-fno-sanitize=undefined
+
+# Use Zig C/C++ compiler (cross-compile to Linux/aarch64).
+build:zig-cc-linux-aarch64 --config=zig-cc
+build:zig-cc-linux-aarch64 --platforms @zig_sdk//:linux_aarch64_platform
+build:zig-cc-linux-aarch64 --run_under=qemu-aarch64-static
+build:zig-cc-linux-aarch64 --test_env=QEMU_LD_PREFIX=/usr/aarch64-linux-gnu/
+
+build --enable_platform_specific_config
+
+# Use C++17.
+build:linux --cxxopt=-std=c++17
+build:macos --cxxopt=-std=c++17
+build:windows --cxxopt="/std:c++17"
+
+# Enable symlinks and runfiles on Windows (enabled by default on other platforms).
+startup --windows_enable_symlinks
+build:windows --enable_runfiles

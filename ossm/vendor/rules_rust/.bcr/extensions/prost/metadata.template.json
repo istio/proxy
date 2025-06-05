@@ -1,0 +1,23 @@
+{
+  "homepage": "https://github.com/bazelbuild/rules_rust",
+  "maintainers": [
+    {
+        "email": "26427366+UebelAndre@users.noreply.github.com",
+        "github": "UebelAndre",
+        "name": "UebelAndre"
+    },
+    {
+      "email": "1131704+illicitonion@users.noreply.github.com",
+      "github": "illicitonion",
+      "name": "Daniel Wagner-Hall"
+    },
+    {
+      "email": "11149636+scentini@users.noreply.github.com",
+      "github": "scentini",
+      "name": "Rosica Dejanovska"
+    }
+  ],
+  "repository": ["github:bazelbuild/rules_rust"],
+  "versions": [],
+  "yanked_versions": {}
+}

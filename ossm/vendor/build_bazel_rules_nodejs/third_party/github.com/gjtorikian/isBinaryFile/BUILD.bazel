@@ -1,0 +1,29 @@
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
+exports_files(["LICENSE"])
+
+# buildifier: disable=load-on-top
+load("@build_bazel_rules_nodejs//:index.bzl", "js_library")
+
+
+
+js_library(
+    name = "isBinaryFile",
+    package_name = "isbinaryfile",
+    srcs = [
+        "package.json",
+        "src/index.js",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "package_contents",
+    srcs = [
+        "BUILD.bazel",
+        "LICENSE",
+        ":isBinaryFile",
+    ],
+)

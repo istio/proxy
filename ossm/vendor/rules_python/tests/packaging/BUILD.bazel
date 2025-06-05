@@ -1,0 +1,44 @@
+# Copyright 2025 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("//tests/support:sh_py_run_test.bzl", "py_reconfig_test")
+load("//tests/support:support.bzl", "SUPPORTS_BOOTSTRAP_SCRIPT")
+
+build_test(
+    name = "bzl_libraries_build_test",
+    targets = [
+        # keep sorted
+        ":bin_tar",
+    ],
+)
+
+py_reconfig_test(
+    name = "bin",
+    srcs = ["bin.py"],
+    bootstrap_impl = "script",
+    main = "bin.py",
+    target_compatible_with = SUPPORTS_BOOTSTRAP_SCRIPT,
+    # Needed until https://github.com/bazelbuild/rules_pkg/issues/929 is fixed
+    # See: https://github.com/bazelbuild/rules_python/issues/2489
+    venvs_use_declare_symlink = "no",
+)
+
+pkg_tar(
+    name = "bin_tar",
+    testonly = True,
+    srcs = [":bin"],
+    include_runfiles = True,
+)

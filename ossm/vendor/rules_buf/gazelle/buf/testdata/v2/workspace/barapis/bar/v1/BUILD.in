@@ -1,0 +1,9 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "bar_proto",
+    srcs = ["bar.proto"],
+    strip_import_prefix = "/barapis",
+    visibility = ["//visibility:public"],
+)
+

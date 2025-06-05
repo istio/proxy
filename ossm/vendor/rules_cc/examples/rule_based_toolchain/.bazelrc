@@ -1,0 +1,4 @@
+# Do not use the default toolchain.
+build --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=0
+
+build:gcc --//toolchains:compiler_kind=gcc

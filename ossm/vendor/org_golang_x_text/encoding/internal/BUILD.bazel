@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "internal",
+    srcs = ["internal.go"],
+    importpath = "golang.org/x/text/encoding/internal",
+    visibility = ["//encoding:__subpackages__"],
+    deps = [
+        "//encoding",
+        "//encoding/internal/identifier",
+        "//transform",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":internal",
+    visibility = ["//encoding:__subpackages__"],
+)

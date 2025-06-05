@@ -1,0 +1,19 @@
+* @aiuto @cgrindel
+
+/.bazelci/	@meteorcloudy
+/.bcr/		@meteorcloudy
+/.github/	@meteorcloudy
+/.pre-commit-config.yaml	@meteorcloudy
+
+/deb_packages/  @aiuto
+/docs/		@aiuto @jylinv0
+/doc_build/	@aiuto @jylinv0
+
+/pkg/rpm/		@nacl
+/pkg/tests/rpm/		@nacl
+/legacy/tests/rpm	@nacl
+/toolchains/rpm		@nacl
+
+/pkg/deb.bzl		@aiuto @dannysullivan
+/pkg/private/deb/	@aiuto @dannysullivan
+/pkg/tests/deb/		@aiuto @dannysullivan

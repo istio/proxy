@@ -1,0 +1,48 @@
+---
+buildifier: latest
+
+matrix:
+  platform:
+    - ubuntu2004
+    - macos
+    - windows
+  bazel:
+    - 6.5.0
+    - 7.4.0
+
+tasks:
+  test_module_bzlmod:
+    name: "Test module (Bzlmod)"
+    working_directory: "tests/bcr"
+    bazel: ${{ bazel }}
+    platform: ${{ platform }}
+    build_flags:
+      - "--enable_bzlmod"
+    build_targets:
+      - "//..."
+    test_flags:
+      - "--enable_bzlmod"
+    test_targets:
+      - "//..."
+  test_module_workspace:
+    name: "Test module (WORKSPACE)"
+    working_directory: "tests/bcr"
+    bazel: ${{ bazel }}
+    platform: ${{ platform }}
+    build_flags:
+      - "--enable_bzlmod"
+    build_targets:
+      - "//..."
+    test_flags:
+      - "--enable_bzlmod"
+    test_targets:
+      - "//..."
+  test_module_head:
+    name: "Test module (Bazel@HEAD, Bzlmod)"
+    working_directory: "tests/bcr"
+    bazel: last_green
+    platform: ${{ platform }}
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."

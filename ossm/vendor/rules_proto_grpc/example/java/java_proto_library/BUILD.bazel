@@ -1,0 +1,18 @@
+load("@rules_proto_grpc//java:defs.bzl", "java_proto_library")
+
+java_proto_library(
+    name = "person_java_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+    deps = ["place_java_proto"],
+)
+
+java_proto_library(
+    name = "place_java_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+    deps = ["thing_java_proto"],
+)
+
+java_proto_library(
+    name = "thing_java_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

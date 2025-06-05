@@ -1,0 +1,103 @@
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@aspect_bazel_lib//lib:diff_test.bzl", "diff_test")
+
+# Test special cases of using "./**" and "./*/**" patterns in the root package
+
+copy_to_directory(
+    name = "dir1",
+    srcs = [
+        ":a",
+        "//subpkg:b",
+    ],
+    include_srcs_packages = [
+        "./**",
+    ],
+)
+
+copy_to_directory(
+    name = "dir1b",
+    srcs = [
+        ":a",
+        "//subpkg:b",
+    ],
+)
+
+diff_test(
+    name = "test1",
+    file1 = ":dir1",
+    file2 = ":expected1",
+)
+
+diff_test(
+    name = "test1b",
+    file1 = ":dir1b",
+    file2 = ":expected1",
+)
+
+copy_to_directory(
+    name = "dir2",
+    srcs = [
+        ":a",
+        "//subpkg:b",
+    ],
+    include_srcs_packages = [
+        ".",
+    ],
+)
+
+copy_to_directory(
+    name = "dir2b",
+    srcs = [
+        ":a",
+        "//subpkg:b",
+    ],
+    exclude_srcs_packages = [
+        "./*/**",
+    ],
+)
+
+diff_test(
+    name = "test2",
+    file1 = ":dir2",
+    file2 = ":expected2",
+)
+
+diff_test(
+    name = "test2b",
+    file1 = ":dir2b",
+    file2 = ":expected2",
+)
+
+copy_to_directory(
+    name = "dir3",
+    srcs = [
+        ":a",
+        "//subpkg:b",
+    ],
+    include_srcs_packages = [
+        "./*/**",
+    ],
+)
+
+copy_to_directory(
+    name = "dir3b",
+    srcs = [
+        ":a",
+        "//subpkg:b",
+    ],
+    exclude_srcs_packages = [
+        ".",
+    ],
+)
+
+diff_test(
+    name = "test3",
+    file1 = ":dir3",
+    file2 = ":expected3",
+)
+
+diff_test(
+    name = "test3b",
+    file1 = ":dir3b",
+    file2 = ":expected3",
+)

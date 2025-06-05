@@ -1,0 +1,13 @@
+load("//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "workspace_status",
+    srcs = ["workspace_status.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+)
+
+rust_test(
+    name = "workspace_status_test",
+    crate = ":workspace_status",
+)

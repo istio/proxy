@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package google.api.expr.runtime;
+
+// This has no dependencies on any other messages to keep the file descriptor
+// set needed to parse this message simple.
+message SimpleTestMessage {
+  int64 int64_value = 1;
+}

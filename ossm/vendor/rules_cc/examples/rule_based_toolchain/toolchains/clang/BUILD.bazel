@@ -1,0 +1,40 @@
+# Copyright 2024 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@rules_cc//cc/toolchains:toolchain.bzl", "cc_toolchain")
+
+licenses(["notice"])
+
+cc_toolchain(
+    name = "host_clang",
+    args = select({
+        "@platforms//os:linux": [
+            "//toolchains/clang/args:linux_sysroot",
+        ],
+        "//conditions:default": [],
+    }) + [
+        "//toolchains/args:no_absolute_paths_for_builtins",
+        "//toolchains/args:warnings",
+    ],
+    enabled_features = ["@rules_cc//cc/toolchains/args:experimental_replace_legacy_action_config_features"],
+    known_features = ["@rules_cc//cc/toolchains/args:experimental_replace_legacy_action_config_features"],
+    tool_map = "//toolchains/clang/tools:all_tools",
+)
+
+toolchain(
+    name = "host_clang_toolchain",
+    toolchain = ":host_clang",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+    visibility = ["//visibility:public"],
+)

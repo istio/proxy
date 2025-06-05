@@ -1,0 +1,45 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//python/private:util.bzl", "IS_BAZEL_7_OR_HIGHER")  # buildifier: disable=bzl-visibility
+load("//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
+load(":defs.bzl", "gen_directory")
+
+# We only build for Linux and Mac because:
+# 1. The actual doc process only runs on Linux
+# 2. Mac is a common development platform, and is close enough to Linux
+#    it's feasible to make work.
+# Making CI happy under Windows is too much of a headache, though, so we don't
+# bother with that.
+_TARGET_COMPATIBLE_WITH = select({
+    "@platforms//os:linux": [],
+    "@platforms//os:macos": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+}) if IS_BAZEL_7_OR_HIGHER else ["@platforms//:incompatible"]
+
+sphinx_docs(
+    name = "docs",
+    srcs = glob(["*.md"]) + [
+        ":generated_directory",
+    ],
+    config = "conf.py",
+    formats = ["html"],
+    sphinx = ":sphinx-build",
+    target_compatible_with = _TARGET_COMPATIBLE_WITH,
+)
+
+gen_directory(
+    name = "generated_directory",
+)
+
+sphinx_build_binary(
+    name = "sphinx-build",
+    tags = ["manual"],  # Only needed as part of sphinx doc building
+    deps = [
+        "@dev_pip//myst_parser",
+        "@dev_pip//sphinx",
+    ],
+)
+
+build_test(
+    name = "build_tests",
+    targets = [":docs"],
+)

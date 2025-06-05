@@ -1,0 +1,34 @@
+build --enable_platform_specific_config
+build --features=-supports_dynamic_linker
+build --copt="-Wall"
+build --copt="-Werror"
+build:windows --copt=/wd4716
+
+# Pass PATH variable from the environment
+build --action_env=PATH
+
+# Common flags for Clang
+build:clang --action_env=BAZEL_COMPILER=clang
+build:clang --action_env=CC=clang --action_env=CXX=clang++
+build:clang --linkopt=-fuse-ld=lld
+
+# Coverage options
+coverage --config=coverage
+coverage --build_tests_only
+build:coverage --config=clang
+build:coverage --action_env=BAZEL_USE_LLVM_NATIVE_COVERAGE=1
+build:coverage --action_env=GCOV=llvm-profdata
+build:coverage --combined_report=lcov
+build:coverage --experimental_use_llvm_covmap
+build:coverage --experimental_generate_llvm_lcov
+build:coverage --collect_code_coverage
+build:coverage --instrumentation_filter="//source[/:],//cpp2sky[/:]"
+build:coverage --coverage_support=@cpp2sky//bazel/coverage:coverage_support
+build:coverage --test_env=CC_CODE_COVERAGE_SCRIPT=external/cpp2sky/bazel/coverage/collect_cc_coverage.sh
+build:coverage --strategy=TestRunner=local
+build:coverage --strategy=CoverageReport=local
+build:coverage --experimental_use_llvm_covmap
+build:coverage --collect_code_coverage
+build:coverage --test_tag_filters=-nocoverage
+
+try-import %workspace%/user.bazelrc

@@ -1,0 +1,11 @@
+load("@aspect_rules_lint//format:defs.bzl", "format_multirun")
+
+format_multirun(
+    name = "format",
+    go = "@aspect_rules_lint//format:gofumpt",
+    shell = "@aspect_rules_lint//format:shfmt",
+    starlark = "@buildifier_prebuilt//:buildifier",
+    tags = ["manual"],
+    visibility = ["//:__subpackages__"],
+    yaml = "@aspect_rules_lint//format:yamlfmt",
+)

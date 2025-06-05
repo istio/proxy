@@ -1,0 +1,37 @@
+steps:
+- name: 'gcr.io/cel-analysis/gcc-9@sha256:5c08ae90e33a33010c8e518173a926143ba029affb54ceec288f375f474ea87f'
+  args:
+  - '--output_base=/bazel' # This is mandatory to avoid steps accidently sharing data.
+  - 'test'
+  - '...'
+  - '--noenable_bzlmod'
+  - '--copt=-Wno-deprecated-declarations'
+  - '--compilation_mode=fastbuild'
+  - '--test_output=errors'
+  - '--show_timestamps'
+  - '--test_tag_filters=-benchmark,-notap'
+  - '--jobs=HOST_CPUS*.5'
+  - '--local_ram_resources=HOST_RAM*.4'
+  id: gcc-9
+  waitFor: ['-']
+- name: 'gcr.io/cel-analysis/gcc-9@sha256:5c08ae90e33a33010c8e518173a926143ba029affb54ceec288f375f474ea87f'
+  env:
+  - 'CC=clang-11'
+  - 'CXX=clang++-11'
+  args:
+  - '--output_base=/bazel' # This is mandatory to avoid steps accidently sharing data.
+  - 'test'
+  - '...'
+  - '--noenable_bzlmod'
+  - '--copt=-Wno-deprecated-declarations'
+  - '--compilation_mode=fastbuild'
+  - '--test_output=errors'
+  - '--show_timestamps'
+  - '--test_tag_filters=-benchmark,-notap'
+  - '--jobs=HOST_CPUS*.5'
+  - '--local_ram_resources=HOST_RAM*.4'
+  id: clang-11
+  waitFor: ['-']
+timeout: 1h
+options:
+  machineType: 'E2_HIGHCPU_32'

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "issue46877",
+    srcs = [
+        "x.go",
+        "x.h",
+    ],
+    cgo = True,
+    importpath = "golang.org/x/tools/go/loader/testdata/issue46877",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":issue46877",
+    visibility = ["//visibility:public"],
+)

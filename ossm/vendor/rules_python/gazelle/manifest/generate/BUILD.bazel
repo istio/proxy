@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("//manifest:defs.bzl", "sources_hash")
+
+go_library(
+    name = "generate_lib",
+    srcs = ["generate.go"],
+    importpath = "github.com/bazelbuild/rules_python/gazelle/manifest/generate",
+    visibility = ["//visibility:public"],
+    deps = ["//manifest"],
+)
+
+sources_hash(
+    name = "generate_lib_sources_hash",
+    go_library = ":generate_lib",
+    visibility = ["//visibility:public"],
+)
+
+go_binary(
+    name = "generate",
+    embed = [":generate_lib"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+    visibility = ["//manifest:__pkg__"],
+)

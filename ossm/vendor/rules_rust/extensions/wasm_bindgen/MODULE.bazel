@@ -1,0 +1,75 @@
+"""bazelbuild/rules_rust/extensions/wasm_bindgen"""
+
+module(
+    name = "rules_rust_wasm_bindgen",
+    version = "0.56.0",
+)
+
+bazel_dep(
+    name = "rules_rust",
+    version = "0.56.0",
+)
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
+bazel_dep(
+    name = "platforms",
+    version = "0.0.10",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.17",
+)
+bazel_dep(
+    name = "aspect_rules_js",
+    version = "2.1.1",
+)
+
+rust_ext = use_extension("//:extensions.bzl", "rust_ext")
+use_repo(
+    rust_ext,
+    "rrwbd__anyhow-1.0.71",
+    "rrwbd__assert_cmd-1.0.8",
+    "rrwbd__diff-0.1.13",
+    "rrwbd__docopt-1.1.1",
+    "rrwbd__env_logger-0.8.4",
+    "rrwbd__log-0.4.19",
+    "rrwbd__predicates-1.0.8",
+    "rrwbd__rayon-1.7.0",
+    "rrwbd__rouille-3.6.2",
+    "rrwbd__serde-1.0.171",
+    "rrwbd__serde_derive-1.0.171",
+    "rrwbd__serde_json-1.0.102",
+    "rrwbd__tempfile-3.6.0",
+    "rrwbd__ureq-2.8.0",
+    "rrwbd__walrus-0.20.3",
+    "rrwbd__wasm-bindgen-0.2.92",
+    "rrwbd__wasm-bindgen-cli-support-0.2.92",
+    "rrwbd__wasm-bindgen-shared-0.2.92",
+    "rrwbd__wasmparser-0.102.0",
+    "rrwbd__wasmprinter-0.2.60",
+    "rules_rust_wasm_bindgen_cli",
+)
+
+register_toolchains(
+    "//:default_wasm_bindgen_toolchain",
+    "@rules_rust//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain",
+    "@rules_rust//rust/private/dummy_cc_toolchain:dummy_cc_wasm64_toolchain",
+)
+
+bazel_dep(
+    name = "bazel_ci_rules",
+    version = "1.0.0",
+    dev_dependency = True,
+)
+
+rust_ext_dev = use_extension(
+    "//private:internal_extensions.bzl",
+    "rust_ext_dev",
+    dev_dependency = True,
+)
+use_repo(
+    rust_ext_dev,
+    "buildkite_config",
+)

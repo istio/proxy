@@ -1,0 +1,8 @@
+/*
+ * Mapping sizes for memory mapping the consumer queue (CQ) memory space, and
+ * producer port (PP) MMIO space.
+ */
+#define DLB2_CQ_SIZE 65536
+#define DLB2_PP_SIZE 4096
+
+#endif /* __DLB2_USER_H */

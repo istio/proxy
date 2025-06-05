@@ -1,0 +1,67 @@
+# Copyright 2024 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+load(":repositories_util.bzl", "FLAT_CONFIGS")
+
+# build this to generate _REMOTE_JDK_CONFIGS_LIST in repositories.bzl
+# this downloads all the jdks and computes their sha256 sum, so can take a while
+# TODO(hvd): make this a sh_binary to update the configs in place
+genrule(
+    name = "dump_remote_jdk_configs",
+    outs = ["remote_jdks_config.out"],
+    cmd = """
+echo > $@
+while read -r config; do
+    TMP_FILE=$$(mktemp -q /tmp/remotejdk.XXXXXX)
+    IFS=\\| read -r name version urls strip_prefix target_compatible_with primary_url <<< "$$config"
+    echo "fetching: $$primary_url to $$TMP_FILE" > /dev/stderr
+    curl --silent -o $$TMP_FILE -L "$$primary_url" > /dev/stderr
+    sha256=`sha256sum $$TMP_FILE | cut -d' ' -f1`
+    echo "struct("
+    echo "  name = \\"$$name\\","
+    echo "  target_compatible_with = $$target_compatible_with,"
+    echo "  sha256 = \\"$$sha256\\","
+    echo "  strip_prefix = \\"$$strip_prefix\\","
+    echo "  urls = $$urls,"
+    echo "  version = \\"$$version\\","
+    echo "),"
+done <<< '{configs}' >> $@
+    """.format(configs = "\n".join([
+        "|".join([
+            config.name,
+            config.version,
+            json.encode(config.urls),
+            config.strip_prefix,
+            json.encode(config.target_compatible_with),
+            config.urls[0],
+        ])
+        for config in FLAT_CONFIGS
+    ])),
+    tags = [
+        "local",
+        "manual",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "for_bazel_tests",
+    testonly = 1,
+    visibility = ["//java:__pkg__"],
+)
+
+filegroup(
+    name = "srcs",
+    srcs = glob(["**"]),
+    visibility = ["//java:__pkg__"],
+)

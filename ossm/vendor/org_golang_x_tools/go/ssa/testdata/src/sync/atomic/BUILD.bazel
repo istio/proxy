@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "atomic",
+    srcs = ["atomic.go"],
+    importpath = "golang.org/x/tools/go/ssa/testdata/src/sync/atomic",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":atomic",
+    visibility = ["//visibility:public"],
+)

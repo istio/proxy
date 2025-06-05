@@ -1,0 +1,8 @@
+local_repository(
+    name = "rules_shellcheck",
+    path = "../..",
+)
+
+load("@rules_shellcheck//:deps.bzl", "shellcheck_dependencies")
+
+shellcheck_dependencies()

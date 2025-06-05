@@ -1,0 +1,8 @@
+# gazelle:python_library_naming_convention py_default_library
+# gazelle:resolve py numpy @pip//:numpy
+# gazelle:resolve py pandas @pip//:pandas
+
+filegroup(
+    name = "collided_main",
+    srcs = ["collided_main.py"],
+)

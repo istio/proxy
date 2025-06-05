@@ -1,0 +1,65 @@
+module(
+    name = "multi_python_versions",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_python", version = "0.0.0")
+local_path_override(
+    module_name = "rules_python",
+    path = "../..",
+)
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    configure_coverage_tool = True,
+    python_version = "3.8",
+)
+python.toolchain(
+    configure_coverage_tool = True,
+    # Only set when you have mulitple toolchain versions.
+    is_default = True,
+    python_version = "3.9",
+)
+python.toolchain(
+    configure_coverage_tool = True,
+    python_version = "3.10",
+)
+python.toolchain(
+    configure_coverage_tool = True,
+    python_version = "3.11",
+)
+use_repo(
+    python,
+    "pythons_hub",
+    python = "python_versions",
+)
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+use_repo(pip, "pypi")
+pip.parse(
+    hub_name = "pypi",
+    python_version = "3.8",
+    requirements_lock = "//requirements:requirements_lock_3_8.txt",
+)
+pip.parse(
+    hub_name = "pypi",
+    python_version = "3.9",
+    requirements_lock = "//requirements:requirements_lock_3_9.txt",
+)
+pip.parse(
+    hub_name = "pypi",
+    python_version = "3.10",
+    requirements_lock = "//requirements:requirements_lock_3_10.txt",
+)
+pip.parse(
+    hub_name = "pypi",
+    python_version = "3.11",
+    requirements_lock = "//requirements:requirements_lock_3_11.txt",
+)
+
+# example test dependencies
+bazel_dep(name = "rules_shell", version = "0.2.0", dev_dependency = True)
+
+# Only needed to make rules_python's CI happy. rules_java 8.3.0+ is needed so
+# that --java_runtime_version=remotejdk_11 works with Bazel 8.
+bazel_dep(name = "rules_java", version = "8.3.1")

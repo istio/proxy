@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "servertest",
+    srcs = ["servertest.go"],
+    importpath = "golang.org/x/tools/internal/jsonrpc2/servertest",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/jsonrpc2"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":servertest",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "servertest_test",
+    srcs = ["servertest_test.go"],
+    embed = [":servertest"],
+    deps = ["//internal/jsonrpc2"],
+)

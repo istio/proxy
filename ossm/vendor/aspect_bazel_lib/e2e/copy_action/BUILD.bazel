@@ -1,0 +1,13 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load(":copy.bzl", "simple_copy_file")
+
+simple_copy_file(
+    name = "copy",
+    src = "foo.txt",
+    out = "bar.txt",
+)
+
+build_test(
+    name = "test",
+    targets = [":copy"],
+)

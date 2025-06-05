@@ -1,0 +1,42 @@
+load("@bazel_tools//tools/build_rules:test_rules.bzl", "rule_test")
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_library(
+    name = "hello_lib",
+    srcs = [
+        "src/greeter.rs",
+        "src/lib.rs",
+    ],
+    data = ["greeting.txt"],
+    edition = "2018",
+    deps = ["//tools/runfiles"],
+)
+
+rust_binary(
+    name = "hello_world",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+    deps = [":hello_lib"],
+)
+
+rust_test(
+    name = "hello_lib_test",
+    crate = ":hello_lib",
+)
+
+rule_test(
+    name = "hello_lib_rule_test",
+    generates = ["libhello_lib-683707109.rlib"],
+    rule = ":hello_lib",
+)
+
+rule_test(
+    name = "hello_world_rule_test",
+    generates = select({
+        "//rust/platform:windows": ["hello_world.exe"],
+        "//conditions:default": ["hello_world"],
+    }),
+    rule = "//test/rust:hello_world",
+)

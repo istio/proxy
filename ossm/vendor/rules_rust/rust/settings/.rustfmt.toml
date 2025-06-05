@@ -1,0 +1,6 @@
+# rustfmt options: https://rust-lang.github.io/rustfmt/
+
+# Skipping children allows rustfmt to run on crates with
+# generated source files. Without this formatting will
+# fail with: `failed to resolve mod ${MOD}`.
+skip_children = true

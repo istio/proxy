@@ -1,0 +1,36 @@
+load("//nodejs/private:stamp.bzl", "stamp_setting")
+
+# Detect if the build is running under --stamp
+config_setting(
+    name = "stamp",
+    values = {"stamp": "true"},
+    visibility = ["//visibility:public"],
+)
+
+# Enable stamping based on the --stamp flag
+stamp_setting(
+    name = "use_stamp_flag",
+    stamp = select({
+        ":stamp": True,
+        "//conditions:default": False,
+    }),
+    visibility = ["//visibility:public"],
+)
+
+stamp_setting(
+    name = "always",
+    stamp = True,
+    visibility = ["//visibility:public"],
+)
+
+stamp_setting(
+    name = "never",
+    stamp = False,
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "package_contents",
+    srcs = glob(["*"]),
+    visibility = ["//nodejs:__pkg__"],
+)

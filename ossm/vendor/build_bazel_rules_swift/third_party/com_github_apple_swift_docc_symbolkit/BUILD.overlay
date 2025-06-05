@@ -1,0 +1,10 @@
+load("@build_bazel_rules_swift//swift:swift_library.bzl", "swift_library")
+
+swift_library(
+    name = "SymbolKit",
+    srcs = glob([
+        "Sources/SymbolKit/**/*.swift",
+    ]),
+    module_name = "SymbolKit",
+    visibility = ["//visibility:public"],
+)

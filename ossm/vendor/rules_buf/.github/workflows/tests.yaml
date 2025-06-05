@@ -1,0 +1,53 @@
+name: Tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  # Bazelisk is included in github runners
+  # Bazel cache: https://docs.bazel.build/versions/main/output_directories.html
+  # NOTE: Cache path doesn't support env expansion
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      # Caches and restores the bazelisk download directory, the bazel build directory.
+      - name: Cache bazel
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/bazelisk
+            ~/.cache/bazel
+          key: ${{ runner.os }}-bazel-cache
+      - uses: actions/checkout@v2
+      - name: bazel test
+        run: make test
+  macos:
+    runs-on: macos-latest
+    steps:
+      # Caches and restores the bazelisk download directory, the bazel build directory.
+      - name: Cache bazel
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/bazelisk
+            /private/var/tmp/_bazel_runner
+          key: ${{ runner.os }}-bazel-cache
+      - uses: actions/checkout@v2
+      - name: bazel test
+        run: make test
+  windows:
+    runs-on: windows-latest
+    steps:
+      # Caches and restores the bazelisk download directory, the bazel build directory.
+      - name: Cache bazel
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~\AppData\Local\bazelisk
+            ~\_bazel_runneradmin
+          key: ${{ runner.os }}-bazel-cache
+      - uses: actions/checkout@v2
+      - name: bazel test
+        run: make test

@@ -1,0 +1,3 @@
+jwt: "eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSIsImtpZCI6ImFiYyJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIiwic3ViIjoidGVzdEBleGFtcGxlLmNvbSJ9.n7Jd_zwXE03FFDrjdxDP3CYJqAlFXCa3jbv8qER_Z5cmisGJ3_gEb2j1IALPtLA8TsYxQJ4Xxfucen9nFqxUBg"
+jwks: '{"keys":[{"kty":"OKP","crv":"Ed25519","alg":"EdDSA","kid":"abc","x":"6hH43mEbo-h7iigPm9zLKHH5oEc-bjIXD_t4PLPqHLQ"},{"kty":"OKP","crv":"Ed25519","alg":"EdDSA","kid":"xyz","x":"6hH43mEbo-h7iigPm9zLKHH5oEc-bjIXD_t4PLPqHLQ"}]}'
+

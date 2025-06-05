@@ -1,0 +1,16 @@
+
+
+filegroup(
+    name = "package_contents",
+    srcs = [
+        "BUILD.bazel",
+        "index.cjs",
+        "runfile_helper_main.cjs",
+    ],
+    visibility = ["//:__pkg__"],
+)
+
+exports_files([
+    "index.cjs",
+    "runfile_helper_main.cjs",
+])

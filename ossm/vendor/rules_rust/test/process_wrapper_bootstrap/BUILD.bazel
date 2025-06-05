@@ -1,0 +1,12 @@
+load("//rust:defs.bzl", "rust_test")
+load(":process_wrapper_bootstrap_test.bzl", "process_wrapper_bootstrap_test_suite")
+
+rust_test(
+    name = "bootstrap_process_wrapper_test",
+    srcs = ["bootstrap_process_wrapper_test.rs"],
+    data = ["//util/process_wrapper/private:process_wrapper.sh"],
+    edition = "2021",
+    deps = ["//tools/runfiles"],
+)
+
+process_wrapper_bootstrap_test_suite(name = "process_wrapper_bootstrap_test_suite")

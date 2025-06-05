@@ -1,0 +1,38 @@
+diff --git a/BUILD b/BUILD
+index 69c9bda..d293092 100644
+--- a/BUILD
++++ b/BUILD
+@@ -88,7 +88,7 @@ cc_library(
+         ":headers",
+     ] + select({
+         "//bazel:crypto_system": [],
+-        "//conditions:default": ["@boringssl//:crypto"],
++        "//conditions:default": ["@envoy//bazel:boringcrypto"],
+     }),
+     alwayslink = 1,
+ )
+diff --git a/bazel/BUILD b/bazel/BUILD
+index 650fa29..733c975 100644
+--- a/bazel/BUILD
++++ b/bazel/BUILD
+@@ -57,19 +57,6 @@ config_setting(
+ )
+ 
+ config_setting(
+-    name = "requested_crypto_system",
+-    values = {"define": "crypto=system"},
+-)
+-
+-config_setting(
+-    name = "linux_s390x",
+-    values = {"cpu": "s390x"},
+-)
+-
+-selects.config_setting_group(
+     name = "crypto_system",
+-    match_any = [
+-        ":requested_crypto_system",
+-        ":linux_s390x",
+-    ],
++    values = {"define": "crypto=system"},
+ )

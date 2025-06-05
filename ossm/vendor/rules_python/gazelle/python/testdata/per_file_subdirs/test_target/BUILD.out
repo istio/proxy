@@ -1,0 +1,25 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+some_target(
+    name = "__test__",
+)
+
+py_test(
+    name = "a_test",
+    srcs = [
+        "a_test.py",
+        ":__test__",
+    ],
+    main = ":__test__.py",
+    deps = [":__test__"],
+)
+
+py_test(
+    name = "b_test",
+    srcs = [
+        "b_test.py",
+        ":__test__",
+    ],
+    main = ":__test__.py",
+    deps = [":__test__"],
+)

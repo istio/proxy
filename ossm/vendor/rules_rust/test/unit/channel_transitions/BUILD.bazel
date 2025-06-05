@@ -1,0 +1,5 @@
+load(":channel_transiitons_test.bzl", "channel_transitions_test_suite")
+
+channel_transitions_test_suite(
+    name = "channel_transitions_test_suite",
+)

@@ -1,0 +1,56 @@
+load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("//:def.bzl", "shellcheck_test")
+
+pkg_files(
+    name = "files",
+    srcs = [
+        "//:distribution",
+    ],
+    strip_prefix = strip_prefix.from_root(),
+)
+
+pkg_tar(
+    name = "tar",
+    srcs = [
+        ":files",
+    ],
+    out = "rules_shellcheck.tar",
+)
+
+genrule(
+    name = "archive",
+    srcs = [":tar"],
+    outs = ["rules_shellcheck.tar.gz"],
+    cmd = "gzip -c $< > $@",
+)
+
+genrule(
+    name = "release_stamped",
+    srcs = ["release.sh"],
+    outs = ["release_stamped.sh"],
+    cmd = "; ".join([
+        "BUILD_EMBED_LABEL=$$(grep ^BUILD_EMBED_LABEL bazel-out/stable-status.txt | cut -d' ' -f2)",
+        "sed \"s|{BUILD_EMBED_LABEL}|$$BUILD_EMBED_LABEL|g\" $< >$@",
+    ]),
+    stamp = 1,
+)
+
+sh_binary(
+    name = "release",
+    srcs = ["release_stamped"],
+    data = [
+        ":archive",
+        ":release_notes.tmpl.md",
+    ],
+    env = {
+        "ARCHIVE": "$(location :archive)",
+        "RELEASE_NOTES_TEMPLATE": "$(location :release_notes.tmpl.md)",
+    },
+    visibility = ["//:__pkg__"],
+)
+
+shellcheck_test(
+    name = "release.shellcheck",
+    data = [":release"],
+)

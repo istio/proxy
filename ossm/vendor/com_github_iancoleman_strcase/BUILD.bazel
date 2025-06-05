@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "strcase",
+    srcs = [
+        "acronyms.go",
+        "camel.go",
+        "doc.go",
+        "snake.go",
+    ],
+    importpath = "github.com/iancoleman/strcase",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":strcase",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "strcase_test",
+    srcs = [
+        "camel_test.go",
+        "snake_test.go",
+    ],
+    embed = [":strcase"],
+)
+
+load("@rules_license//rules:package_info.bzl", "package_info")
+
+package_info(
+    name = "gazelle_generated_package_info",
+    package_name = "github.com/iancoleman/strcase",
+    package_url = "https://github.com/iancoleman/strcase",
+    package_version = "0.2.0",
+    purl = "pkg:golang/github.com/iancoleman/strcase@v0.2.0",
+    visibility = ["//:__subpackages__"],
+)

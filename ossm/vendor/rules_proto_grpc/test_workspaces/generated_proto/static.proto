@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "generated.proto";
+import "generated_elsewhere.proto";
+
+message static {
+    generated_elsewhere generated_elsewhere = 1;
+    generated generated = 2;
+}

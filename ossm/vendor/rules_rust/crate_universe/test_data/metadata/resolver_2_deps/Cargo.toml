@@ -1,0 +1,24 @@
+[workspace]
+members = []
+resolver = "2"
+
+[package]
+name = "resolver_2_deps"
+version = "0.1.0"
+edition = "2018"
+
+# Required to satisfy cargo but no `lib.rs` is expected to
+# exist within test data.
+[lib]
+path = "lib.rs"
+
+[dependencies]
+# Reqwest on non wasm platforms will enable the `tokio/net` feature
+# through `hyper-util`. With `resolver = 1` this would result in `mio`
+# being added as a dependency to `tokio` for wasm platforms even though
+# `tokio` is never a dependency in this configuration and thus features
+# enabled by `reqwest` should have no impact on `tokio`. `resolver = 2`
+# correctly identifies this.
+reqwest = "=0.12.4"
+tokio = {version ="=1.37.0", features = ["io-util"] }
+iana-time-zone = "=0.1.60"

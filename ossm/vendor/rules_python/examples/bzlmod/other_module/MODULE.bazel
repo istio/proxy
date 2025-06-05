@@ -1,0 +1,58 @@
+module(
+    name = "other_module",
+)
+
+# This module is using the same version of rules_python
+# that the parent module uses.
+bazel_dep(name = "rules_python", version = "")
+
+# The story behind this commented out override:
+# This override is necessary to generate/update the requirements file
+# for this module. This is because running it via the outer
+# module doesn't work -- the `requirements.update` target can't find
+# the correct file to update.
+# Running in the submodule itself works, but submodules using overrides
+# is considered an error until Bazel 6.3, which prevents the outer module
+# from depending on this module.
+# So until 6.3 and higher is the minimum, we leave this commented out.
+# local_path_override(
+#     module_name = "rules_python",
+#     path = "../../..",
+# )
+
+PYTHON_NAME_39 = "python_3_9"
+
+PYTHON_NAME_311 = "python_3_11"
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    configure_coverage_tool = True,
+    python_version = "3.9",
+)
+python.toolchain(
+    configure_coverage_tool = True,
+    # In a submodule this is ignored
+    is_default = True,
+    python_version = "3.11",
+)
+
+# created by the above python.toolchain calls.
+use_repo(
+    python,
+    "python_versions",
+    PYTHON_NAME_39,
+    PYTHON_NAME_311,
+)
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "other_module_pip",
+    # NOTE: This version must be different than the root module's
+    # default python version.
+    # This is testing that a sub-module can use pip.parse() and only specify
+    # Python versions that DON'T include whatever the root-module's default
+    # Python version is.
+    python_version = "3.11",
+    requirements_lock = ":requirements_lock_3_11.txt",
+)
+use_repo(pip, "other_module_pip")

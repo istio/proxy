@@ -1,0 +1,7 @@
+load(":versioned_libs_analysis_test.bzl", "versioned_libs_analysis_test_suite")
+load(":versioned_libs_unit_test.bzl", "versioned_libs_unit_test_suite")
+
+############################ UNIT TESTS #############################
+versioned_libs_unit_test_suite(name = "versioned_libs_unit_test_suite")
+
+versioned_libs_analysis_test_suite(name = "versioned_libs_analysis_test_suite")

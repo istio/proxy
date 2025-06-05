@@ -1,0 +1,18 @@
+load("@rules_python//python:py_test.bzl", "py_test")
+
+py_test(
+    name = "pricetag_test",
+    srcs = ["test.py"],
+    main = "test.py",
+    deps = [
+        "//example.com/proto:pricetag_proto_py_pb2",
+    ],
+)
+
+py_test(
+    name = "message_test",
+    srcs = ["message_test.py"],
+    deps = [
+        "//example.com/another_proto:message_proto_py_pb2",
+    ],
+)

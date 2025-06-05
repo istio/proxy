@@ -1,0 +1,13 @@
+diff --git a/src/lib.rs b/src/lib.rs
+index b487e6e..38b7f7c 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -119,4 +119,7 @@ pub const VERSION: &str = "";
+ #[cfg(never)]
+ #[doc(hidden)]
+ pub const VERSION_IDENT: &str = "";
+-include!(concat!(env!("OUT_DIR"), "/version.rs"));
++pub const VERSION: &'static str = "2.8.2";
++#[doc(hidden)]
++pub const VERSION_IDENT: &'static str = "VERSION_2_8_2";
++pub const VERSION_2_8_2: () = ();

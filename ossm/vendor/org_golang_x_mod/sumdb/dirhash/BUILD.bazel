@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "dirhash",
+    srcs = ["hash.go"],
+    importpath = "golang.org/x/mod/sumdb/dirhash",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":dirhash",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "dirhash_test",
+    srcs = ["hash_test.go"],
+    embed = [":dirhash"],
+)

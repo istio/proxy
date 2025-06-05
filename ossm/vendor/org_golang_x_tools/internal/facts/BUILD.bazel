@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "facts",
+    srcs = [
+        "facts.go",
+        "imports.go",
+    ],
+    importpath = "golang.org/x/tools/internal/facts",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/types/objectpath",
+        "//internal/typeparams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":facts",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "facts_test",
+    srcs = ["facts_test.go"],
+    deps = [
+        ":facts",
+        "//go/analysis/analysistest",
+        "//go/packages",
+        "//internal/testenv",
+        "//internal/typeparams",
+    ],
+)

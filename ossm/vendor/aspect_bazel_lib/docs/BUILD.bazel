@@ -1,0 +1,166 @@
+load("//lib:docs.bzl", "stardoc_with_diff_test", "update_docs")
+
+stardoc_with_diff_test(
+    name = "copy_file",
+    bzl_library_target = "//lib:copy_file",
+)
+
+stardoc_with_diff_test(
+    name = "copy_directory",
+    bzl_library_target = "//lib:copy_directory",
+)
+
+stardoc_with_diff_test(
+    name = "copy_to_directory",
+    bzl_library_target = "//lib:copy_to_directory",
+)
+
+stardoc_with_diff_test(
+    name = "copy_to_bin",
+    bzl_library_target = "//lib:copy_to_bin",
+)
+
+stardoc_with_diff_test(
+    name = "docs",
+    bzl_library_target = "//lib:docs",
+    tags = ["some_random_tag_for_testing_pr746_regression"],
+)
+
+stardoc_with_diff_test(
+    name = "diff_test",
+    bzl_library_target = "//lib:diff_test",
+)
+
+stardoc_with_diff_test(
+    name = "expand_make_vars",
+    bzl_library_target = "//lib:expand_make_vars",
+)
+
+stardoc_with_diff_test(
+    name = "expand_template",
+    bzl_library_target = "//lib:expand_template",
+)
+
+stardoc_with_diff_test(
+    name = "params_file",
+    bzl_library_target = "//lib:params_file",
+)
+
+stardoc_with_diff_test(
+    name = "paths",
+    bzl_library_target = "//lib:paths",
+)
+
+stardoc_with_diff_test(
+    name = "lists",
+    bzl_library_target = "//lib:lists",
+)
+
+stardoc_with_diff_test(
+    name = "tar",
+    bzl_library_target = "//lib:tar",
+)
+
+stardoc_with_diff_test(
+    name = "utils",
+    bzl_library_target = "//lib:utils",
+)
+
+stardoc_with_diff_test(
+    name = "jq",
+    bzl_library_target = "//lib:jq",
+)
+
+stardoc_with_diff_test(
+    name = "write_source_files",
+    bzl_library_target = "//lib:write_source_files",
+)
+
+stardoc_with_diff_test(
+    name = "directory_path",
+    bzl_library_target = "//lib:directory_path",
+)
+
+stardoc_with_diff_test(
+    name = "output_files",
+    bzl_library_target = "//lib:output_files",
+)
+
+stardoc_with_diff_test(
+    name = "run_binary",
+    bzl_library_target = "//lib:run_binary",
+)
+
+stardoc_with_diff_test(
+    name = "transitions",
+    bzl_library_target = "//lib:transitions",
+)
+
+stardoc_with_diff_test(
+    name = "repo_utils",
+    bzl_library_target = "//lib:repo_utils",
+)
+
+stardoc_with_diff_test(
+    name = "yq",
+    bzl_library_target = "//lib:yq",
+)
+
+stardoc_with_diff_test(
+    name = "glob_match",
+    bzl_library_target = "//lib:glob_match",
+)
+
+stardoc_with_diff_test(
+    name = "host_repo",
+    bzl_library_target = "//lib:host_repo",
+)
+
+stardoc_with_diff_test(
+    name = "platform_utils",
+    bzl_library_target = "//lib:platform_utils",
+)
+
+stardoc_with_diff_test(
+    name = "stamping",
+    bzl_library_target = "//lib:stamping",
+)
+
+stardoc_with_diff_test(
+    name = "testing",
+    bzl_library_target = "//lib:testing",
+)
+
+stardoc_with_diff_test(
+    name = "base64",
+    bzl_library_target = "//lib:base64",
+)
+
+stardoc_with_diff_test(
+    name = "repositories",
+    bzl_library_target = "//lib:repositories",
+)
+
+stardoc_with_diff_test(
+    name = "bazelrc_presets",
+    bzl_library_target = "//lib:bazelrc_presets",
+)
+
+stardoc_with_diff_test(
+    name = "strings",
+    bzl_library_target = "//lib:strings",
+)
+
+stardoc_with_diff_test(
+    name = "bats",
+    bzl_library_target = "//lib:bats",
+)
+
+stardoc_with_diff_test(
+    name = "resource_sets",
+    bzl_library_target = "//lib:resource_sets",
+)
+
+update_docs(
+    tags = ["skip-on-bazel6"],
+)

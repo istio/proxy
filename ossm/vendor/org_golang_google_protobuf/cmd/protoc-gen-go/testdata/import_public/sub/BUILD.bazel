@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "sub_proto",
+    srcs = [
+        "a.proto",
+        "b.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = ["//cmd/protoc-gen-go/testdata/import_public/sub2:sub2_proto"],
+)
+
+go_proto_library(
+    name = "sub_go_proto",
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/import_public/sub",
+    proto = ":sub_proto",
+    visibility = ["//visibility:public"],
+    deps = ["//cmd/protoc-gen-go/testdata/import_public/sub2"],
+)
+
+go_library(
+    name = "sub",
+    embed = [":sub_go_proto"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/import_public/sub",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sub",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,22 @@
+# This file contains options passed to Bazel when running tests.
+# They are used by Travis CI and by non-Bazel test scripts.
+
+# TODO: Make all tests work with Bzlmod.
+common --noenable_bzlmod
+
+common:ci --verbose_failures
+common:ci --sandbox_debug
+common:ci --spawn_strategy=standalone
+common:ci --genrule_strategy=standalone
+common:ci --test_strategy=standalone
+
+common --lockfile_mode=update
+common --test_output=errors
+
+common:incompatible --incompatible_load_proto_rules_from_bzl
+common:incompatible --incompatible_config_setting_private_default_visibility
+common:incompatible --incompatible_enforce_config_setting_visibility
+common:incompatible --incompatible_disallow_empty_glob
+common:incompatible --incompatible_disable_starlark_host_transitions
+common:incompatible --nolegacy_external_runfiles
+common:incompatible --test_env=GO_BAZEL_TEST_BAZELFLAGS='--incompatible_load_proto_rules_from_bzl --incompatible_config_setting_private_default_visibility --incompatible_enforce_config_setting_visibility --incompatible_disallow_empty_glob --incompatible_disable_starlark_host_transitions --nolegacy_external_runfiles'

@@ -1,0 +1,53 @@
+name: Sync from Upstream (Scheduled)
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  sync:
+    if: github.repository == 'envoyproxy/envoy-openssl'
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        branch_name:
+          - release/v1.32
+          - release/v1.28
+    steps:
+    - id: appauth
+      uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.2.35
+      with:
+        key: ${{ secrets.ENVOY_CI_UPDATE_BOT_KEY }}
+        app_id: ${{ secrets.ENVOY_CI_UPDATE_APP_ID }}
+
+    # Checkout the branch we're merging into
+    - name: "Checkout ${{ github.repository }}[${{ matrix.branch_name }}]"
+      uses: actions/checkout@v4
+      with:
+        token: ${{ steps.appauth.outputs.token }}
+        ref: ${{ matrix.branch_name }}
+        fetch-depth: 0
+
+    # Configure the git user info on the repository
+    - run: git config user.name "${{ github.actor }}"
+    - run: git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+
+    # Checkout & run the script from the default branch
+    - name: 'Checkout ci/envoy-sync-receive.sh'
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.repository.default_branch }}
+        sparse-checkout: 'ci/envoy-sync-receive.sh'
+        sparse-checkout-cone-mode: false
+        path: '.script'
+    - run: .script/ci/envoy-sync-receive.sh ${{ matrix.branch_name }}
+      env:
+          GH_TOKEN: ${{ steps.appauth.outputs.token }}

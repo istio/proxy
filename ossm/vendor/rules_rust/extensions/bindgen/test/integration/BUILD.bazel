@@ -1,0 +1,26 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_test")
+load("@rules_rust_bindgen//:defs.bzl", "rust_bindgen_library")
+
+rust_bindgen_library(
+    name = "simple_bindgen",
+    bindgen_flags = [
+        "--allowlist-function=simple_.*",
+        "--allowlist-var=SIMPLE_.*",
+    ],
+    cc_lib = "//test/integration/simple",
+    edition = "2021",
+    header = "//test/integration/simple:simple.h",
+    wrap_static_fns = True,
+)
+
+rust_binary(
+    name = "simple_example",
+    srcs = ["main.rs"],
+    edition = "2021",
+    deps = [":simple_bindgen"],
+)
+
+rust_test(
+    name = "simple_test",
+    crate = ":simple_example",
+)

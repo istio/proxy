@@ -1,0 +1,21 @@
+load("//rust:defs.bzl", "rust_binary")
+
+exports_files(
+    [
+        "bootstrap_installer.rs",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# This target is only used to confirm the source code is buildable
+# in a `cargo_bootstrap_repository` rule.
+rust_binary(
+    name = "bootstrap_installer_bin",
+    srcs = [
+        "bootstrap_installer.rs",
+    ],
+    edition = "2018",
+    rustc_env = {
+        "RULES_RUST_CARGO_BOOTSTRAP_BINARY": "$(rootpath bootstrap_installer.rs)",
+    },
+)

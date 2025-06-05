@@ -1,0 +1,25 @@
+{
+  "homepage": "https://github.com/bazel-contrib/bazel-gazelle",
+  "maintainers": [
+    {
+      "email": "fabian@meumertzhe.im",
+      "github": "fmeum",
+      "name": "Fabian Meumertzheim"
+    },
+    {
+      "email": "zplin@uber.com",
+      "github": "linzhp",
+      "name": "Zhongpeng Lin"
+    },
+    {
+      "email": "tfrench@uber.com",
+      "github": "tyler-french",
+      "name": "Tyler French"
+    }
+  ],
+  "repository": [
+      "github:bazel-contrib/bazel-gazelle"
+  ],
+  "versions": [],
+  "yanked_versions": {}
+}

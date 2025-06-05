@@ -1,0 +1,15 @@
+[package]
+name = "has_package_metadata"
+version = "0.0.0"
+edition = "2021"
+
+# Required to satisfy cargo but no `lib.rs` is expected to
+# exist within test data.
+[lib]
+path = "lib.rs"
+
+[package.metadata.bazel]
+additive_build_file_content = """
+genrule(**kwargs)
+"""
+rustc_env = { "FOO" = "foo is set" }

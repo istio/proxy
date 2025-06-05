@@ -1,0 +1,25 @@
+syntax = "proto2";
+package samples;
+
+message Proto2PayloadMessage {
+    enum Topology {
+        FLAT             = 0;
+        NESTED_OBJECT    = 1;
+        NESTED_MESSAGE   = 2;
+        ARRAY_OF_TYPE    = 3;
+        ARRAY_OF_OBJECT  = 4;
+        ARRAY_OF_MESSAGE = 5;
+    }
+
+    required string name       = 1;
+    optional string timestamp  = 2;
+    required int32 id          = 3;
+    optional float rating      = 4;
+    optional bool complete     = 5;
+    optional Topology topology = 6;
+}
+
+message Proto2NestedMessage {
+    required Proto2PayloadMessage payload = 1;
+    optional string description = 2;
+}

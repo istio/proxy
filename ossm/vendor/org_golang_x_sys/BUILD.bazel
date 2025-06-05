@@ -1,0 +1,11 @@
+
+load("@rules_license//rules:package_info.bzl", "package_info")
+
+package_info(
+    name = "gazelle_generated_package_info",
+    package_name = "golang.org/x/sys",
+    package_url = "https://golang.org/x/sys",
+    package_version = "0.7.0",
+    purl = "pkg:golang/golang.org/x/sys@v0.7.0",
+    visibility = ["//:__subpackages__"],
+)

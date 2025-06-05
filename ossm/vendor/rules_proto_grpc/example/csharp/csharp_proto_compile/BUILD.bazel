@@ -1,0 +1,16 @@
+load("@rules_proto_grpc//csharp:defs.bzl", "csharp_proto_compile")
+
+csharp_proto_compile(
+    name = "person_csharp_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+)
+
+csharp_proto_compile(
+    name = "place_csharp_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+)
+
+csharp_proto_compile(
+    name = "thing_csharp_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

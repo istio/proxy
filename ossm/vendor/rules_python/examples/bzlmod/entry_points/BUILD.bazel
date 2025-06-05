@@ -1,0 +1,33 @@
+load("@python_versions//3.9:defs.bzl", py_console_script_binary_3_9 = "py_console_script_binary")
+load("@rules_python//python/entry_points:py_console_script_binary.bzl", "py_console_script_binary")
+
+# This is how you can define a `pylint` entrypoint which uses the default python version.
+py_console_script_binary(
+    name = "pylint",
+    pkg = "@pip//pylint",
+    visibility = ["//entry_points:__subpackages__"],
+)
+
+# We can also specify extra dependencies for the binary, which is useful for
+# tools like flake8, pylint, pytest, which have plugin discovery methods.
+py_console_script_binary(
+    name = "pylint_with_deps",
+    pkg = "@pip//pylint",
+    # Because `pylint` has multiple console_scripts available, we have to
+    # specify which we want if the name of the target name 'pylint_with_deps'
+    # cannot be used to guess the entry_point script.
+    script = "pylint",
+    visibility = ["//entry_points:__subpackages__"],
+    deps = [
+        # One can add extra dependencies to the entry point.
+        "@pip//pylint_print",
+    ],
+)
+
+# A specific Python version can be forced by using the generated version-aware
+# wrappers, e.g. to force Python 3.9:
+py_console_script_binary_3_9(
+    name = "yamllint",
+    pkg = "@pip//yamllint:pkg",
+    visibility = ["//entry_points:__subpackages__"],
+)

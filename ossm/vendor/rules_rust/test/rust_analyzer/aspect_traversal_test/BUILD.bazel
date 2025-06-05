@@ -1,0 +1,110 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
+load(":custom_alias.bzl", "custom_alias")
+
+rust_library(
+    name = "mylib",
+    srcs = ["mylib.rs"],
+    aliases = {
+        ":renamed_proc_macro_dep": "shorter_name",
+    },
+    edition = "2018",
+    proc_macro_deps = [
+        ":proc_macro_dep",
+        ":renamed_proc_macro_dep",
+    ],
+    deps = [
+        ":alias_dep",
+        ":custom_alias_dep",
+        ":lib_dep",
+    ],
+)
+
+rust_library(
+    name = "lib_dep",
+    srcs = ["lib_dep.rs"],
+    edition = "2018",
+)
+
+alias(
+    name = "alias_dep",
+    actual = ":actual_dep",
+)
+
+rust_library(
+    name = "actual_dep",
+    srcs = ["actual_dep.rs"],
+    edition = "2018",
+    deps = [":dep_of_aliased_dep"],
+)
+
+rust_library(
+    name = "dep_of_aliased_dep",
+    srcs = ["dep_of_aliased_dep.rs"],
+    edition = "2018",
+)
+
+custom_alias(
+    name = "custom_alias_dep",
+    actual = ":custom_actual_dep",
+)
+
+rust_library(
+    name = "custom_actual_dep",
+    srcs = ["custom_actual_dep.rs"],
+    edition = "2018",
+    deps = [":dep_of_custom_aliased_dep"],
+)
+
+rust_library(
+    name = "dep_of_custom_aliased_dep",
+    srcs = ["dep_of_custom_aliased_dep.rs"],
+    edition = "2018",
+)
+
+rust_proc_macro(
+    name = "proc_macro_dep",
+    srcs = ["proc_macro_dep.rs"],
+    edition = "2018",
+)
+
+rust_test(
+    name = "mylib_test",
+    crate = ":mylib",
+    edition = "2018",
+    proc_macro_deps = [":extra_proc_macro_dep"],
+    deps = [":extra_test_dep"],
+)
+
+rust_library(
+    name = "extra_test_dep",
+    srcs = ["extra_test_dep.rs"],
+    edition = "2018",
+)
+
+rust_proc_macro(
+    name = "extra_proc_macro_dep",
+    srcs = ["extra_proc_macro_dep.rs"],
+    edition = "2018",
+)
+
+rust_proc_macro(
+    name = "renamed_proc_macro_dep",
+    srcs = ["renamed_proc_macro_dep.rs"],
+    edition = "2018",
+)
+
+rust_test(
+    name = "rust_project_json_test",
+    srcs = ["rust_project_json_test.rs"],
+    data = [":rust-project.json"],
+    edition = "2018",
+    env = {"RUST_PROJECT_JSON": "$(rootpath :rust-project.json)"},
+    # This target is tagged as manual since it's not expected to pass in
+    # contexts outside of `//test/rust_analyzer:rust_analyzer_test`. Run
+    # that target to execute this test.
+    tags = ["manual"],
+    deps = [
+        "@rules_rust//test/3rdparty/crates:serde",
+        "@rules_rust//test/3rdparty/crates:serde_json",
+    ],
+)

@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package cpp2sky;
+
+enum Protocol {
+  GRPC = 0;
+  REST = 1;
+}
+
+message TracerConfig {
+  // Tracer protocol.
+  // | Static config only
+  Protocol protocol = 1;
+
+  // Service name
+  // | Static config only
+  string service_name = 2;
+
+  // Instance name
+  // | Static config only
+  string instance_name = 3;
+
+  // OAP address.
+  // | Static config only
+  string address = 4;
+
+  // OAP token.
+  // | Static config only
+  string token = 5;
+
+  // The size of buffer it stores pending messages.
+  // | Static config only
+  uint32 delayed_buffer_size = 6;
+
+  // If the operation name of the first span is included in this set, 
+  // this segment should be ignored.
+  // | This value can be changed with SkyWalking CDS.
+  repeated string ignore_operation_name_suffix = 8;
+
+  // CDS sync request interval. If this value is zero, CDS feature will be disabled.
+  // | Static config only
+  uint32 cds_request_interval = 7;
+}

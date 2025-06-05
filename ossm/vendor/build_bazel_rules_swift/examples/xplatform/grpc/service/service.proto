@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package service;
+
+import "examples/xplatform/grpc/service/service_messages.proto";
+
+service EchoService {
+  rpc Echo(EchoRequest) returns (EchoResponse);
+}

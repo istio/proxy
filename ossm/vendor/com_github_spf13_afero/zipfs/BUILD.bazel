@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "zipfs",
+    srcs = [
+        "file.go",
+        "fs.go",
+    ],
+    importpath = "github.com/spf13/afero/zipfs",
+    visibility = ["//visibility:public"],
+    deps = ["//:afero"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":zipfs",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "zipfs_test",
+    srcs = [
+        "file_test.go",
+        "zipfs_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":zipfs"],
+    deps = ["//:afero"],
+)

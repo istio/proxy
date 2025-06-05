@@ -1,0 +1,22 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+
+py_library(
+    name = "dont_rename",
+    srcs = ["__init__.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_binary(
+    name = "my_dont_rename_binary",
+    srcs = ["__main__.py"],
+    main = "__main__.py",
+    visibility = ["//:__subpackages__"],
+    deps = [":dont_rename"],
+)
+
+py_test(
+    name = "my_dont_rename_test",
+    srcs = ["__test__.py"],
+    main = "__test__.py",
+    deps = [":dont_rename"],
+)

@@ -1,0 +1,34 @@
+name: Formatting
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  code-format-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: DoozyX/clang-format-lint-action@v0.14
+        with:
+          source: '.'
+          extensions: 'h,c,cc,cpp,proto,java'
+          clangFormatVersion: 14
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: |
+          pip install 'black==24.10.0' 'isort==5.13.2'
+      - name: Run black
+        run: |
+          python -m black --check --diff ./
+      - name: Run isort
+        run: |
+          python -m isort --profile=black --check-only ./

@@ -1,0 +1,13 @@
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
+# Downloaded from https://github.com/juanjoDiaz/removeNPMAbsolutePaths/archive/v1.0.4.tar.gz
+# Timestamp: 2019-05-27
+# SHA256: 3e8309c823660df6edeb4580f1d2df06ebfec0d65e196c46b488f53e644bd7aa
+exports_files(["LICENSE"])
+
+filegroup(
+    name = "package_contents",
+    srcs = glob(["**/*"]),
+)

@@ -1,0 +1,12 @@
+workspace(name = "rules_shell_tests")
+
+local_repository(
+    name = "rules_shell",
+    path = "../..",
+)
+
+load("@rules_shell//shell:repositories.bzl", "rules_shell_dependencies", "rules_shell_toolchains")
+
+rules_shell_dependencies()
+
+rules_shell_toolchains()

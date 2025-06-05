@@ -1,0 +1,56 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "protoc-gen-prost": [crate.annotation(
+            gen_binaries = ["protoc-gen-prost"],
+        )],
+        "protoc-gen-tonic": [crate.annotation(
+            gen_binaries = ["protoc-gen-tonic"],
+        )],
+    },
+    cargo_lockfile = "Cargo.Bazel.lock",
+    mode = "remote",
+    packages = {
+        "h2": crate.spec(
+            version = "0.4.6",
+        ),
+        "prost": crate.spec(
+            version = "0.13.1",
+        ),
+        "prost-types": crate.spec(
+            version = "0.13.1",
+        ),
+        "protoc-gen-prost": crate.spec(
+            version = "0.4.0",
+        ),
+        "protoc-gen-tonic": crate.spec(
+            version = "0.4.0",
+        ),
+        "tokio": crate.spec(
+            features = ["full"],
+            version = "1.39.3",
+        ),
+        "tokio-stream": crate.spec(
+            version = "0.1.15",
+        ),
+        "tonic": crate.spec(
+            version = "0.12.1",
+        ),
+    },
+    # Shorten the repository name to avoid MAX_PATH issues on Windows
+    # `rules_rust_prost_deps` == `rrprd`
+    repository_name = "rrprd",
+    tags = ["manual"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = [
+        "//private/3rdparty/crates:crates.bzl",
+        "//private/3rdparty/crates:defs.bzl",
+    ],
+    visibility = ["//private:__pkg__"],
+)

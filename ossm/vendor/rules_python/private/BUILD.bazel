@@ -1,0 +1,27 @@
+load("@rules_multirun//:defs.bzl", "multirun")
+
+# This file has various targets that are using dev-only dependencies that our users should not ideally see.
+
+multirun(
+    name = "requirements.update",
+    commands = [
+        "//tools/publish:{}.update".format(r)
+        for r in [
+            "requirements_universal",
+            "requirements_darwin",
+            "requirements_windows",
+            "requirements_linux",
+        ]
+    ] + [
+        "//docs:requirements.update",
+    ],
+)
+
+# NOTE: The requirements for the pip dependencies may sometimes break the build
+# process due to how `pip-compile` works (i.e. it sometimes needs to build
+# wheels to resolve the `requirements.in` file.  Hence we do not lump the
+# target with the other targets above.
+alias(
+    name = "whl_library_requirements.update",
+    actual = "//tools/private/update_deps:update_pip_deps",
+)

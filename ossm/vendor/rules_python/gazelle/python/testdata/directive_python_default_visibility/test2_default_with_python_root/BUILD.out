@@ -1,0 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_root
+
+py_library(
+    name = "test2_default_with_python_root",
+    srcs = [
+        "__init__.py",
+        "test2.py",
+    ],
+    visibility = ["//test2_default_with_python_root:__subpackages__"],
+)

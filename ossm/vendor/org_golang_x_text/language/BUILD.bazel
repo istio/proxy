@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "language",
+    srcs = [
+        "coverage.go",
+        "doc.go",
+        "language.go",
+        "match.go",
+        "parse.go",
+        "tables.go",
+        "tags.go",
+    ],
+    importpath = "golang.org/x/text/language",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/language",
+        "//internal/language/compact",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":language",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "language_test",
+    srcs = [
+        "coverage_test.go",
+        "examples_test.go",
+        "httpexample_test.go",
+        "language_test.go",
+        "lookup_test.go",
+        "match_test.go",
+        "parse_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":language"],
+    deps = [
+        "//internal/language",
+        "//internal/testtext",
+        "//internal/ucd",
+    ],
+)

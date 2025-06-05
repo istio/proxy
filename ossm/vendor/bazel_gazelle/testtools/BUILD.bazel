@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testtools",
+    testonly = True,
+    srcs = [
+        "config.go",
+        "files.go",
+    ],
+    importpath = "github.com/bazelbuild/bazel-gazelle/testtools",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//config",
+        "//language",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "config.go",
+        "files.go",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testtools",
+    visibility = ["//visibility:public"],
+)

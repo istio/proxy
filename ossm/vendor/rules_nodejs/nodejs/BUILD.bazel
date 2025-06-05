@@ -1,0 +1,54 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//nodejs/private:toolchains_repo.bzl", "PLATFORMS")
+load("//nodejs/private:user_build_settings.bzl", "user_args")
+
+filegroup(
+    name = "package_contents",
+    srcs = glob(["*"]) + [
+        "//nodejs/private:package_contents",
+        "//nodejs/stamp:package_contents",
+    ],
+    visibility = ["//:__pkg__"],
+)
+
+exports_files([
+    "index.for_docs.bzl",
+    "providers.bzl",
+])
+
+bzl_library(
+    name = "bzl",
+    srcs = glob(["*.bzl"]) + ["@bazel_tools//tools:bzl_srcs"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//nodejs/private:bzl",
+        "//nodejs/private/providers:bzl",
+        "@bazel_skylib//lib:paths",
+    ],
+)
+
+# This is the target rule authors should put in their "toolchains"
+# attribute in order to get a node interpreter for the correct
+# platform.
+# See https://docs.bazel.build/versions/main/toolchains.html#writing-rules-that-use-toolchains
+toolchain_type(
+    name = "toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+[
+    platform(
+        name = key,
+        constraint_values = values.compatible_with,
+    )
+    for key, values in PLATFORMS.items()
+]
+
+# Default arguments/flags that are passed to nodejs in all nodejs_binary and
+# nodejs_test targets. Can be overwritten by settings
+# --@rules_nodejs//nodejs:default_args="--flag1 --flag2"
+user_args(
+    name = "default_args",
+    build_setting_default = "--preserve-symlinks",
+    visibility = ["//visibility:public"],
+)

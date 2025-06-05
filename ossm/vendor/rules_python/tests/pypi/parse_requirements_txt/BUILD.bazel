@@ -1,0 +1,3 @@
+load(":parse_requirements_txt_tests.bzl", "parse_requirements_txt_test_suite")
+
+parse_requirements_txt_test_suite(name = "parse_requirements_txt_tests")

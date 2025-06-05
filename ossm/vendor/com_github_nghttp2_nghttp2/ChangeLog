@@ -1,0 +1,433 @@
+commit 526ff38e0249acbcc4d0e8958c12cdeae9960cfe
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-21
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-21
+
+    Update manual pages
+
+commit 881aa25d6d602a3712a0ebc94ca877bab2b42f50
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-21
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-21
+
+    Bump package and library versions
+
+commit 6fe7351579f4f248c1ccc9f3a90470778fd05e14
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-21
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-21
+
+    Update AUTHORS
+
+commit 01a155a1b942b79c9c1f0422050e93f920f1291b
+Merge: fd251c59 866a9396
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-10-21
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-21
+
+    Merge pull request #2265 from nghttp2/fix-check-authority-doc
+    
+    Update nghttp2_check_authority doc
+
+commit 866a93968bca5dc74b29f7f863b6fd5dce72ae7f
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-21
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-21
+
+    Update nghttp2_check_authority doc
+
+commit fd251c590fa36b106d628fa0e8e6fb8784ed4508
+Merge: b62c737d 18f5e11d
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-10-21
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-21
+
+    Merge pull request #2264 from nghttp2/bump-libbpf
+    
+    Bump libbpf to v1.4.6
+
+commit 18f5e11d35bf2a8400c13385edb807bb546b35ba
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-21
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-21
+
+    Bump libbpf to v1.4.6
+
+commit b62c737dc6bc99d36b51551aea0fadc33e4e3714
+Merge: b268018b dbb0252d
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-10-20
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-20
+
+    Merge pull request #2263 from nghttp2/h2load-gro-buffer-size
+    
+    h2load: GRO buffer size should be 64KiB
+
+commit dbb0252d193fffd65b9cc6d6be3212b3de47815a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-20
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-20
+
+    h2load: GRO buffer size should be 64KiB
+
+commit b268018b7f6ce066218c99c314084142741ccbbf
+Merge: a066a276 cb6dcc39
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-10-19
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-19
+
+    Merge pull request #2262 from nghttp2/authority-at-sign
+    
+    Do not allow '@' in :authority or host field values
+
+commit cb6dcc39f7f0c393967af4716336b9cc855ca29a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-19
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-19
+
+    Do not allow '@' in :authority or host field values
+    
+    :authority and host field values are just host in RFC 3986, which does
+    not include userinfo.  This change only affects the internal
+    validation of :authority and host field values.
+    nghttp2_check_authority still accepts '@' as a valid character because
+    the function might be used for the other purposes.
+
+commit a066a27652af59b4f6ef24336308e326c89a8461
+Merge: 2d9e4607 b59fe32c
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-10-18
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-18
+
+    Merge pull request #2261 from nghttp2/bump-ngtcp2
+    
+    Bump ngtcp2 and its dependencies
+
+commit 2d9e46076666adf7f1dfe766efbdbf22080f6d72
+Merge: 1f4a5f3a 01ec93ad
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-10-18
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-18
+
+    Merge pull request #2260 from nghttp2/remove-extra-semicolons
+    
+    Remove extra semicolons
+
+commit b59fe32cb6248e95fff4c55e8516e97567b6d5ec
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-18
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-18
+
+    Bump ngtcp2 and its dependencies
+
+commit 01ec93ad0ff9cf34aa35a30db94bceb2178a2352
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-18
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-18
+
+    Remove extra semicolons
+
+commit 1f4a5f3ac3bef916a4a0a4f3b587bc1d34f92572
+Merge: c4ab09c5 d7729f0c
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-10-17
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-17
+
+    Merge pull request #2259 from nghttp2/fix-clang-format
+    
+    clang-format macros that do not need semicolon at the end
+
+commit d7729f0caf3fc3a0447925e7b6c5ab7ff5bc5ade
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-17
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-17
+
+    clang-format macros that do not need semicolon at the end
+
+commit c4ab09c5099d98018cec6a511d31996ca610ac78
+Merge: e2250577 b4d82171
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-10-17
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-17
+
+    Merge pull request #2258 from codebytere/fix-extra-semi
+    
+    fix: `-Wextra-semi` errors in `nghttp2_helper.h`
+
+commit b4d821716d8c757ce35dd8be336c61317027799d
+Author:     Shelley Vohr <shelley.vohr@gmail.com>
+AuthorDate: 2024-10-16
+Commit:     Shelley Vohr <shelley.vohr@gmail.com>
+CommitDate: 2024-10-16
+
+    fix: -Wextra-semi errors in nghttp2_helper.h
+
+commit e2250577004423f6e40d08af8b0b015e2d305608
+Merge: d8449bbd 1ee46365
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-10-15
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-15
+
+    Merge pull request #2256 from nghttp2/cmake-ares-version
+    
+    cmake: Fix c-ares v1.34.0 version detection failure
+
+commit 1ee4636528b1a8ea6769496750dda05f12104fa8
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-15
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-15
+
+    cmake: Fix c-ares v1.34.0 version detection failure
+
+commit d8449bbd8feeca29f2dadcc396308aaaf22ae09f
+Merge: 2bf3bb2f c4cb8631
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-10-15
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-15
+
+    Merge pull request #2255 from nghttp2/wine-run-i686
+    
+    GHA: Run tests for i686-w64-mingw32 host
+
+commit c4cb8631c628b566f4e59b66e6eae28e7980519c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-15
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-15
+
+    GHA: Run tests for i686-w64-mingw32 host
+
+commit 2bf3bb2faa9e8acd831b9a0a7bdfd10b3aeed26c
+Merge: 4202608e 32248d62
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-10-14
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-14
+
+    Merge pull request #2254 from nghttp2/gha-ubuntu-24.04
+    
+    Gha ubuntu 24.04
+
+commit 32248d62f3c205065df809d52815e22f978bd753
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-14
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-14
+
+    GHA: No need to install gcc/clang when building cache
+
+commit 0600ed82cc901a5eaaac30fbc56fa2ba48394e20
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-14
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-14
+
+    neverbleed/cmake: Define _GNU_SOURCE
+
+commit ea87bfff51e704cb15006e01811e5f4aea1b0b87
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-10-14
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-10-14
+
+    GHA: Bump Ubuntu runner to 24.04
+
+commit 4202608e744b3dc0dab3b54060898ec8cd87d414
+Merge: ac0bb05b b9af7736
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-10-08
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-08
+
+    Merge pull request #2249 from TuxInvader/duration-close-race
+    
+    fix race condition on h1 connection close
+
+commit ac0bb05bb7bed216ea192861d63101202d6e42ce
+Merge: 24b467f6 cfe26f78
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-10-08
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-08
+
+    Merge pull request #2252 from nghttp2/dependabot/go_modules/golang.org/x/net-0.30.0
+    
+    build(deps): bump golang.org/x/net from 0.29.0 to 0.30.0
+
+commit cfe26f780e77dab92ce917e10e4e366676818880
+Author:     dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+AuthorDate: 2024-10-07
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-10-07
+
+    build(deps): bump golang.org/x/net from 0.29.0 to 0.30.0
+    
+    Bumps [golang.org/x/net](https://github.com/golang/net) from 0.29.0 to 0.30.0.
+    - [Commits](https://github.com/golang/net/compare/v0.29.0...v0.30.0)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: golang.org/x/net
+      dependency-type: direct:production
+      update-type: version-update:semver-minor
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+
+commit b9af7736a164eec2bcd07049d644111ce9a835ef
+Author:     Mark Boddington <TuxInvader@users.noreply.github.com>
+AuthorDate: 2024-09-23
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-09-23
+
+    fix race condition on h1 connection close
+
+commit 24b467f6296827de4e08c3ca3027e2d0ae44b67e
+Merge: 3e660dcd af9449e2
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-09-21
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-09-21
+
+    Merge pull request #2248 from nghttp2/fix-h2load-dgram-metric
+    
+    h2load: Fix UDP datagram send/recv metric
+
+commit af9449e282accec5180abf698707335d210baa11
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-09-21
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-09-21
+
+    h2load: Fix UDP datagram send/recv metric
+
+commit 3e660dcd9c664baf86a89af76643bc88ae0f27be
+Merge: fd55d39c 8655d26d
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-09-10
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-09-10
+
+    Merge pull request #2245 from nghttp2/update-map
+    
+    nghttp2_map: Port ngtcp2 changes
+
+commit 8655d26de4f15f56af27c53adafcdd44e8ff85e4
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-09-10
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-09-10
+
+    nghttp2_map: Port ngtcp2 changes
+
+commit fd55d39c106593dcef45809f48e23b8ecf44cdc3
+Merge: 8dfb25cb 85caffee
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-09-10
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-09-10
+
+    Merge pull request #2244 from nghttp2/dependabot/go_modules/golang.org/x/net-0.29.0
+    
+    build(deps): bump golang.org/x/net from 0.28.0 to 0.29.0
+
+commit 85caffee2fa5b2f84459bf3ab171393cadb5697f
+Author:     dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+AuthorDate: 2024-09-09
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-09-09
+
+    build(deps): bump golang.org/x/net from 0.28.0 to 0.29.0
+    
+    Bumps [golang.org/x/net](https://github.com/golang/net) from 0.28.0 to 0.29.0.
+    - [Commits](https://github.com/golang/net/compare/v0.28.0...v0.29.0)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: golang.org/x/net
+      dependency-type: direct:production
+      update-type: version-update:semver-minor
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+
+commit 8dfb25cb730d5dca0bf83ceba6c1d46698c0148f
+Merge: beb25a21 d71858c8
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-09-10
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-09-10
+
+    Merge pull request #2243 from nghttp2/dependabot/go_modules/github.com/quic-go/quic-go-0.47.0
+    
+    build(deps): bump github.com/quic-go/quic-go from 0.46.0 to 0.47.0
+
+commit d71858c8530856ef60fca65dd26247803e9388cb
+Author:     dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+AuthorDate: 2024-09-09
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-09-09
+
+    build(deps): bump github.com/quic-go/quic-go from 0.46.0 to 0.47.0
+    
+    Bumps [github.com/quic-go/quic-go](https://github.com/quic-go/quic-go) from 0.46.0 to 0.47.0.
+    - [Release notes](https://github.com/quic-go/quic-go/releases)
+    - [Changelog](https://github.com/quic-go/quic-go/blob/master/Changelog.md)
+    - [Commits](https://github.com/quic-go/quic-go/compare/v0.46.0...v0.47.0)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: github.com/quic-go/quic-go
+      dependency-type: direct:production
+      update-type: version-update:semver-minor
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+
+commit beb25a219445a10ac9e7a7dee28b96fcfb702e71
+Merge: f5d50831 292bcbca
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2024-08-28
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2024-08-28
+
+    Merge pull request #2240 from nghttp2/change-clang-format-options
+    
+    Change clang-format options
+
+commit 292bcbca4f7d23af0e1efbe208f815bc5610b7c4
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-08-28
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-08-28
+
+    Change clang-format options
+
+commit f5d5083110a066c0b8287869e0f1702737f6fc92
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2024-08-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2024-08-27
+
+    Bump package version

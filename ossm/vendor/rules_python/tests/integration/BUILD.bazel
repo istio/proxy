@@ -1,0 +1,127 @@
+# Copyright 2023 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_binaries//:defs.bzl", "bazel_binaries")
+load("@rules_bazel_integration_test//bazel_integration_test:defs.bzl", "default_test_runner")
+load("//python:py_library.bzl", "py_library")
+load(":integration_test.bzl", "rules_python_integration_test")
+
+licenses(["notice"])
+
+_WORKSPACE_FLAGS = [
+    "--noenable_bzlmod",
+    "--enable_workspace",
+]
+
+_WORKSPACE_GAZELLE_PLUGIN_FLAGS = [
+    "--override_repository=rules_python_gazelle_plugin=../../../rules_python_gazelle_plugin",
+]
+
+_GAZELLE_PLUGIN_FLAGS = [
+    "--override_module=rules_python_gazelle_plugin=../../../rules_python_gazelle_plugin",
+]
+
+default_test_runner(
+    name = "workspace_test_runner",
+    bazel_cmds = [
+        "info {}".format(" ".join(_WORKSPACE_FLAGS)),
+        "test {} //...".format(" ".join(_WORKSPACE_FLAGS)),
+    ],
+    visibility = ["//visibility:public"],
+)
+
+default_test_runner(
+    name = "workspace_test_runner_gazelle_plugin",
+    bazel_cmds = [
+        "info {}".format(" ".join(_WORKSPACE_FLAGS + _WORKSPACE_GAZELLE_PLUGIN_FLAGS)),
+        "test {} //...".format(" ".join(_WORKSPACE_FLAGS + _WORKSPACE_GAZELLE_PLUGIN_FLAGS)),
+    ],
+    visibility = ["//visibility:public"],
+)
+
+default_test_runner(
+    name = "test_runner",
+    visibility = ["//visibility:public"],
+)
+
+default_test_runner(
+    name = "test_runner_gazelle_plugin",
+    bazel_cmds = [
+        "info {}".format(" ".join(_GAZELLE_PLUGIN_FLAGS)),
+        "test {} //...".format(" ".join(_GAZELLE_PLUGIN_FLAGS)),
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# TODO: add compile_pip_requirements_test_from_external_repo
+
+rules_python_integration_test(
+    name = "compile_pip_requirements_test",
+)
+
+rules_python_integration_test(
+    name = "compile_pip_requirements_workspace_test",
+    bzlmod = False,
+    workspace_path = "compile_pip_requirements",
+)
+
+rules_python_integration_test(
+    name = "ignore_root_user_error_test",
+)
+
+rules_python_integration_test(
+    name = "ignore_root_user_error_workspace_test",
+    bzlmod = False,
+    workspace_path = "ignore_root_user_error",
+)
+
+rules_python_integration_test(
+    name = "local_toolchains_test",
+    bazel_versions = [
+        version
+        for version in bazel_binaries.versions.all
+        if not version.startswith("6.")
+    ],
+)
+
+rules_python_integration_test(
+    name = "pip_parse_test",
+)
+
+rules_python_integration_test(
+    name = "pip_parse_workspace_test",
+    bzlmod = False,
+    workspace_path = "pip_parse",
+)
+
+rules_python_integration_test(
+    name = "py_cc_toolchain_registered_test",
+)
+
+rules_python_integration_test(
+    name = "py_cc_toolchain_registered_workspace_test",
+    bzlmod = False,
+    workspace_path = "py_cc_toolchain_registered",
+)
+
+rules_python_integration_test(
+    name = "custom_commands_test",
+    py_main = "custom_commands_test.py",
+)
+
+py_library(
+    name = "runner_lib",
+    srcs = ["runner.py"],
+    imports = ["../../"],
+)

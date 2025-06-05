@@ -1,0 +1,83 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "importgraph",
+    srcs = ["graph.go"],
+    importpath = "golang.org/x/tools/refactor/importgraph",
+    visibility = ["//visibility:public"],
+    deps = ["//go/buildutil"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":importgraph",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "importgraph_test",
+    srcs = ["graph_test.go"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:osx": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:qnx": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            ":importgraph",
+            "//go/packages/packagestest",
+        ],
+        "//conditions:default": [],
+    }),
+)

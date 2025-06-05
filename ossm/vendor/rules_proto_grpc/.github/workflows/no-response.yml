@@ -1,0 +1,28 @@
+name: Close issues with no response
+on:
+  schedule:
+    - cron: '30 20 * * *'
+
+jobs:
+  mark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          only-labels: 'more-info-needed'
+          stale-issue-label: stale
+          skip-stale-issue-message: true
+          stale-issue-message: Stale  # Not used, but if absent skip-stale-issue-message is not applied
+          close-issue-message: >
+            This issue has been automatically closed because there has been no response
+            to our request for more information from the original author. With only the
+            information that is currently in the issue, we don't have enough information
+            to take action. Please reach out if you have or find the answers we need so
+            that we can investigate further.
+          days-before-stale: 60
+          days-before-close: 5
+          days-before-pr-stale: -1  # Never mark PRs stale
+          days-before-pr-close: -1  # Never close PRs
+          remove-stale-when-updated: true
+          #debug-only: true

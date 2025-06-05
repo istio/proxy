@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "lib": ["es2017" , "es2018"],
+    "module": "commonjs",
+    "removeComments": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es2018"
+  },
+  "files": [
+    "generate_build_file.ts",
+  ]
+}

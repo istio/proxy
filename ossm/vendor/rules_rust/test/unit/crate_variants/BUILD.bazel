@@ -1,0 +1,4 @@
+load(":crate_variants.bzl", "crate_variants_test_suite")
+
+############################ UNIT TESTS #############################
+crate_variants_test_suite(name = "crate_variants_test_suite")

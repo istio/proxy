@@ -1,0 +1,62 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
+load("//rust:defs.bzl", "rust_test")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:rust.bzl", "rust_binary_without_process_wrapper")
+load("//util/process_wrapper/private:bootstrap_process_wrapper.bzl", "bootstrap_process_wrapper")
+
+config_setting(
+    name = "compilation_mode_opt",
+    values = {"compilation_mode": "opt"},
+)
+
+selects.config_setting_group(
+    name = "opt_linux",
+    match_all = [
+        ":compilation_mode_opt",
+        "@platforms//os:linux",
+    ],
+    visibility = ["@rules_rust_tinyjson//:__pkg__"],
+)
+
+selects.config_setting_group(
+    name = "opt_macos",
+    match_all = [
+        ":compilation_mode_opt",
+        "@platforms//os:macos",
+    ],
+    visibility = ["@rules_rust_tinyjson//:__pkg__"],
+)
+
+rust_binary_without_process_wrapper(
+    name = "process_wrapper",
+    srcs = glob(["*.rs"]),
+    edition = "2018",
+    # To ensure the process wrapper is produced deterministically
+    # debug info, which is known to sometimes have host specific
+    # paths embedded in this section, is stripped out.
+    rustc_flags = select({
+        ":opt_linux": ["-Cstrip=debuginfo"],
+        ":opt_macos": ["-Cstrip=debuginfo"],
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@rules_rust_tinyjson//:tinyjson",
+    ],
+)
+
+rust_test(
+    name = "process_wrapper_test",
+    crate = ":process_wrapper",
+    edition = "2018",
+)
+
+bootstrap_process_wrapper(
+    name = "bootstrap_process_wrapper",
+    is_windows = select({
+        "@platforms//os:windows": True,
+        "//conditions:default": False,
+    }),
+    visibility = ["//visibility:public"],
+)

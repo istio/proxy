@@ -1,0 +1,21 @@
+load("@rules_python//python:py_test.bzl", "py_test")
+
+exports_files(
+    glob(["data/**"]),
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "pip_whl_mods_test",
+    srcs = ["pip_whl_mods_test.py"],
+    env = {
+        "REQUESTS_PKG": "$(rlocationpaths @pip//requests:pkg)",
+        "WHEEL_PKG": "$(rlocationpaths @pip//wheel:pkg)",
+    },
+    main = "pip_whl_mods_test.py",
+    deps = [
+        "@pip//requests:pkg",
+        "@pip//wheel:pkg",
+        "@rules_python//python/runfiles",
+    ],
+)

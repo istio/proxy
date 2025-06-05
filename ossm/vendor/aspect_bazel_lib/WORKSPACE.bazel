@@ -1,0 +1,21 @@
+# An external repository for test to use
+local_repository(
+    name = "external_test_repo",
+    path = "./lib/tests/external_test_repo",
+)
+
+############################################
+# Go dependencies
+
+load("//:deps.bzl", "go_dependencies")
+
+# gazelle:repository_macro deps.bzl%go_dependencies
+# gazelle:repository go_repository name=org_golang_x_tools importpath=golang.org/x/tools
+# https://github.com/bazelbuild/bazel-gazelle/issues/1217#issuecomment-1152236735
+go_dependencies()
+
+############################################
+# Lint
+load("@aspect_rules_lint//lint:vale.bzl", "fetch_vale")
+
+fetch_vale()

@@ -1,0 +1,46 @@
+load("//go:def.bzl", "go_test", "go_tool_library")
+
+go_tool_library(
+    name = "bzltestutil",
+    srcs = [
+        "lcov.go",
+        "test2json.go",
+        "timeout.go",
+        "wrap.go",
+        "xml.go",
+    ],
+    importpath = "github.com/bazelbuild/rules_go/go/tools/bzltestutil",
+    visibility = ["//visibility:public"],
+    deps = ["//go/tools/bzltestutil/chdir"],
+)
+
+go_test(
+    name = "bzltestutil_test",
+    srcs = [
+        "lcov_test.go",
+        "wrap_test.go",
+        "xml_test.go",
+    ],
+    # Empty in integration tests or in distributions.
+    data = glob(
+        ["testdata/**"],
+        allow_empty = True,
+    ),
+    embed = [":bzltestutil"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = ["//go/tools/bzltestutil/chdir:all_files"] + glob(
+        ["**"],
+        exclude = ["testdata/*"],
+    ),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":bzltestutil",
+    visibility = ["//visibility:public"],
+)

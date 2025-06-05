@@ -1,0 +1,38 @@
+load("//js:defs.bzl", "nodejs_grpc_library")
+load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_binary")
+
+nodejs_grpc_library(
+    name = "routeguide",
+    legacy_path = True,
+    protos = ["//example/proto:routeguide_proto"],
+)
+
+nodejs_grpc_library(
+    name = "routeguide_stripped",
+    package_name = "routeguide_package",
+    protos = ["//example/proto:routeguide_proto"],
+)
+
+nodejs_binary(
+    name = "client",
+    data = [
+        "client.js",
+        ":routeguide",
+        "//example/proto:routeguide_features",
+    ],
+    entry_point = "client.js",
+    templated_args = ["--bazel_patch_module_resolver"],  # Workaround until rules_js is mature
+    visibility = ["//example/routeguide:__pkg__"],
+)
+
+nodejs_binary(
+    name = "server",
+    data = [
+        "server.js",
+        ":routeguide_stripped",
+        "//example/proto:routeguide_features",
+    ],
+    entry_point = "server.js",
+    templated_args = ["--bazel_patch_module_resolver"],  # Workaround until rules_js is mature
+    visibility = ["//example/routeguide:__pkg__"],
+)

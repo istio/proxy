@@ -1,0 +1,2 @@
+filegroup(name = "all", srcs = glob(["**"], exclude=[]), visibility = ["//visibility:public"])
+cc_library(name = "curl", visibility = ["//visibility:public"], deps = ["@envoy//bazel/foreign_cc:curl"])

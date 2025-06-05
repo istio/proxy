@@ -1,0 +1,19 @@
+# Directories used by sandboxed non-worker execution may be reused to avoid unnecessary setup costs.
+# Save time on Sandbox creation and deletion when many of the same kind of action run during the
+# build.
+# No longer experimental in Bazel 6: https://github.com/bazelbuild/bazel/commit/c1a95501a5611878e5cc43a3cc531f2b9e47835b
+# Docs: https://bazel.build/reference/command-line-reference#flag--reuse_sandbox_directories
+build --experimental_reuse_sandbox_directories
+
+# Avoid creating a runfiles tree for binaries or tests until it is needed.
+# Docs: https://bazel.build/reference/command-line-reference#flag--build_runfile_links
+# See https://github.com/bazelbuild/bazel/issues/6627
+#
+# This may break local workflows that `build` a binary target, then run the resulting program
+# outside of `bazel run`. In those cases, the script will need to call
+# `bazel build --build_runfile_links //my/binary:target` and then execute the resulting program.
+build --nobuild_runfile_links
+
+# Needed prior to Bazel 8; see
+# https://github.com/bazelbuild/bazel/issues/20577
+coverage --build_runfile_links

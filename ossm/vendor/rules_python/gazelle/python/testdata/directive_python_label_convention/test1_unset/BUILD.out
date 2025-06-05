@@ -1,0 +1,11 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "test1_unset",
+    srcs = ["bar.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@gazelle_python_test//google_cloud_aiplatform",
+        "@gazelle_python_test//google_cloud_storage",
+    ],
+)

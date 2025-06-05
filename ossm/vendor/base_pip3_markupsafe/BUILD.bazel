@@ -1,0 +1,18 @@
+load("@rules_python//python/private/pypi:whl_library_targets.bzl", "whl_library_targets")
+
+package(default_visibility = ["//visibility:public"])
+
+whl_library_targets(
+    data_exclude = [],
+    dep_template = "@base_pip3_{name}//:{target}",
+    dependencies = [],
+    dependencies_by_platform = {},
+    entry_points = {},
+    group_deps = [],
+    group_name = "",
+    name = "MarkupSafe-2.1.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+    tags = [
+        "pypi_name=markupsafe",
+        "pypi_version=2.1.5",
+    ],
+)

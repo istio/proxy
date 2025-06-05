@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "sort",
+    srcs = ["sort.go"],
+    importpath = "golang.org/x/tools/go/ssa/testdata/src/sort",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sort",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,38 @@
+# For bazel-in-bazel testing
+# Trick bazel into treating BUILD files under examples/* as being regular files
+# This lets us glob() up all the files inside the examples to make them inputs to tests
+# (Note, we cannot use `common --deleted_packages` because the bazel version command doesn't support it)
+# To update these lines, execute
+# `bazel run @rules_bazel_integration_test//tools:update_deleted_packages`
+build --deleted_packages=examples/build_file_generation,examples/build_file_generation/random_number_generator,examples/bzlmod,examples/bzlmod_build_file_generation,examples/bzlmod_build_file_generation/other_module/other_module/pkg,examples/bzlmod_build_file_generation/runfiles,examples/bzlmod/entry_points,examples/bzlmod/entry_points/tests,examples/bzlmod/libs/my_lib,examples/bzlmod/other_module,examples/bzlmod/other_module/other_module/pkg,examples/bzlmod/patches,examples/bzlmod/py_proto_library,examples/bzlmod/py_proto_library/example.com/another_proto,examples/bzlmod/py_proto_library/example.com/proto,examples/bzlmod/runfiles,examples/bzlmod/tests,examples/bzlmod/tests/other_module,examples/bzlmod/whl_mods,examples/multi_python_versions/libs/my_lib,examples/multi_python_versions/requirements,examples/multi_python_versions/tests,examples/pip_parse,examples/pip_parse_vendored,examples/pip_repository_annotations,examples/py_proto_library,examples/py_proto_library/example.com/another_proto,examples/py_proto_library/example.com/proto,gazelle,gazelle/manifest,gazelle/manifest/generate,gazelle/manifest/hasher,gazelle/manifest/test,gazelle/modules_mapping,gazelle/python,gazelle/pythonconfig,gazelle/python/private,tests/integration/compile_pip_requirements,tests/integration/compile_pip_requirements_test_from_external_repo,tests/integration/custom_commands,tests/integration/ignore_root_user_error,tests/integration/ignore_root_user_error/submodule,tests/integration/local_toolchains,tests/integration/pip_parse,tests/integration/pip_parse/empty,tests/integration/py_cc_toolchain_registered
+query --deleted_packages=examples/build_file_generation,examples/build_file_generation/random_number_generator,examples/bzlmod,examples/bzlmod_build_file_generation,examples/bzlmod_build_file_generation/other_module/other_module/pkg,examples/bzlmod_build_file_generation/runfiles,examples/bzlmod/entry_points,examples/bzlmod/entry_points/tests,examples/bzlmod/libs/my_lib,examples/bzlmod/other_module,examples/bzlmod/other_module/other_module/pkg,examples/bzlmod/patches,examples/bzlmod/py_proto_library,examples/bzlmod/py_proto_library/example.com/another_proto,examples/bzlmod/py_proto_library/example.com/proto,examples/bzlmod/runfiles,examples/bzlmod/tests,examples/bzlmod/tests/other_module,examples/bzlmod/whl_mods,examples/multi_python_versions/libs/my_lib,examples/multi_python_versions/requirements,examples/multi_python_versions/tests,examples/pip_parse,examples/pip_parse_vendored,examples/pip_repository_annotations,examples/py_proto_library,examples/py_proto_library/example.com/another_proto,examples/py_proto_library/example.com/proto,gazelle,gazelle/manifest,gazelle/manifest/generate,gazelle/manifest/hasher,gazelle/manifest/test,gazelle/modules_mapping,gazelle/python,gazelle/pythonconfig,gazelle/python/private,tests/integration/compile_pip_requirements,tests/integration/compile_pip_requirements_test_from_external_repo,tests/integration/custom_commands,tests/integration/ignore_root_user_error,tests/integration/ignore_root_user_error/submodule,tests/integration/local_toolchains,tests/integration/pip_parse,tests/integration/pip_parse/empty,tests/integration/py_cc_toolchain_registered
+
+test --test_output=errors
+
+# Do NOT implicitly create empty __init__.py files in the runfiles tree.
+# By default, these are created in every directory containing Python source code
+# or shared libraries, and every parent directory of those directories,
+# excluding the repo root directory. With this flag set, we are responsible for
+# creating (possibly empty) __init__.py files and adding them to the srcs of
+# Python targets as required.
+build --incompatible_default_to_explicit_init_py
+
+# Ensure ongoing compatibility with this flag.
+common --incompatible_disallow_struct_provider_syntax
+
+# Windows makes use of runfiles for some rules
+build --enable_runfiles
+
+# Make Bazel 7 use bzlmod by default
+common --enable_bzlmod
+
+# Additional config to use for readthedocs builds.
+# See .readthedocs.yml for additional flags that can only be determined from
+# the runtime environment.
+build:rtd --stamp
+# Some bzl files contain repos only available under bzlmod
+build:rtd --enable_bzlmod
+
+common --incompatible_python_disallow_native_rules
+
+build --lockfile_mode=update

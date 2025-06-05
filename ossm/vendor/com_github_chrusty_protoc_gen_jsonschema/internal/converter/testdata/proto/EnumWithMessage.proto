@@ -1,0 +1,12 @@
+syntax = "proto3";
+package samples;
+
+enum FooBarBaz {
+    Foo = 0;
+    Bar = 1;
+    Baz = 2;
+}
+
+message WithFooBarBaz {
+  FooBarBaz enumField = 1;
+}

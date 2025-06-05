@@ -1,0 +1,4 @@
+stages:
+  - benchmarks
+
+include: ".gitlab/benchmarks.yml"

@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "message",
+    srcs = [
+        "catalog.go",
+        "doc.go",
+        "format.go",
+        "message.go",
+        "print.go",
+    ],
+    importpath = "golang.org/x/text/message",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//feature/plural",
+        "//internal/format",
+        "//internal/number",
+        "//language",
+        "//message/catalog",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":message",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "message_test",
+    srcs = [
+        "catalog_test.go",
+        "examples_test.go",
+        "fmt_test.go",
+        "message_test.go",
+    ],
+    embed = [":message"],
+    deps = [
+        "//internal",
+        "//internal/format",
+        "//language",
+        "//message/catalog",
+    ],
+)

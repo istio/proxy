@@ -1,0 +1,17 @@
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+load("@rules_python//python:proto.bzl", "py_proto_library")
+
+py_proto_library(
+    name = "pricetag_proto_py_pb2",
+    visibility = ["//visibility:public"],
+    deps = [":pricetag_proto"],
+)
+
+proto_library(
+    name = "pricetag_proto",
+    srcs = ["pricetag.proto"],
+    # https://bazel.build/reference/be/protocol-buffer#proto_library.strip_import_prefix
+    strip_import_prefix = "/example.com",
+    visibility = ["//visibility:public"],
+    deps = ["@com_google_protobuf//:any_proto"],
+)

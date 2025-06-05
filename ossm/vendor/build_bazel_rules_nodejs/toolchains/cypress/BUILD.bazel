@@ -1,0 +1,101 @@
+load(":cypress_toolchain.bzl", "cypress_toolchain")
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+package(default_visibility = ["//visibility:private"])
+
+filegroup(
+    name = "package_contents",
+    srcs = glob(["*"]),
+    visibility = ["//:__pkg__"],
+)
+
+bzl_library(
+    name = "bzl",
+    srcs = [
+        "cypress_repositories.bzl",
+        "cypress_toolchain.bzl",
+        "@bazel_tools//tools:bzl_srcs",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# cypress toolchain type
+toolchain_type(name = "toolchain_type")
+
+[cypress_toolchain(
+    name = "cypress_%s_toolchain_config" % os_name,
+    cypress_bin = "@cypress_%s//:bin" % os_name,
+    cypress_files = "@cypress_%s//:files" % os_name,
+) for os_name in [
+    "darwin",
+    "darwin_arm64",
+    "linux",
+    "windows",
+]]
+
+# Allow targets to use a toolchains attribute, such as sh_binary and genrule
+# This way they can reference the cypress_PATH make variable.
+alias(
+    name = "toolchain",
+    actual = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ":cypress_darwin_toolchain_config",
+        "@bazel_tools//src/conditions:darwin_arm64": ":cypress_darwin_arm64_toolchain_config",
+        "@bazel_tools//src/conditions:linux_x86_64": ":cypress_linux_toolchain_config",
+        "@bazel_tools//src/conditions:windows": ":cypress_windows_toolchain_config",
+        "//conditions:default": ":cypress_linux_toolchain_config",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+# Allow targets to declare a dependency on the cypress binary for the current host platform
+alias(
+    name = "cypress_bin",
+    actual = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": "@cypress_darwin//:bin",
+        "@bazel_tools//src/conditions:darwin_arm64": "@cypress_darwin_arm64//:bin",
+        "@bazel_tools//src/conditions:linux_x86_64": "@cypress_linux//:bin",
+        "@bazel_tools//src/conditions:windows": "@cypress_windows//:bin",
+        "//conditions:default": "@cypress_linux//:bin",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "cypress_linux_toolchain",
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = ":cypress_linux_toolchain_config",
+    toolchain_type = ":toolchain_type",
+)
+
+toolchain(
+    name = "cypress_darwin_toolchain",
+    target_compatible_with = [
+        "@platforms//os:osx",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = ":cypress_darwin_toolchain_config",
+    toolchain_type = ":toolchain_type",
+)
+
+toolchain(
+    name = "cypress_darwin_arm64_toolchain",
+    target_compatible_with = [
+        "@platforms//os:osx",
+        "@platforms//cpu:arm64",
+    ],
+    toolchain = ":cypress_darwin_arm64_toolchain_config",
+    toolchain_type = ":toolchain_type",
+)
+
+toolchain(
+    name = "cypress_windows_toolchain",
+    target_compatible_with = [
+        "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
+    ],
+    toolchain = ":cypress_windows_toolchain_config",
+    toolchain_type = ":toolchain_type",
+)

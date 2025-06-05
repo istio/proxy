@@ -1,0 +1,9 @@
+load("@rules_shellcheck//:def.bzl", "shellcheck_test")
+
+shellcheck_test(
+    name = "shellcheck_all",
+    data = glob(["*.sh"]),
+    format = "gcc",
+    severity = "warning",
+    tags = ["lint"],
+)

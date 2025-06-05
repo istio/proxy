@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "htmlindex",
+    srcs = [
+        "htmlindex.go",
+        "map.go",
+        "tables.go",
+    ],
+    importpath = "golang.org/x/text/encoding/htmlindex",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding",
+        "//encoding/charmap",
+        "//encoding/internal/identifier",
+        "//encoding/japanese",
+        "//encoding/korean",
+        "//encoding/simplifiedchinese",
+        "//encoding/traditionalchinese",
+        "//encoding/unicode",
+        "//language",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":htmlindex",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "htmlindex_test",
+    srcs = ["htmlindex_test.go"],
+    embed = [":htmlindex"],
+    deps = [
+        "//encoding",
+        "//encoding/charmap",
+        "//encoding/internal/identifier",
+        "//encoding/unicode",
+        "//language",
+    ],
+)

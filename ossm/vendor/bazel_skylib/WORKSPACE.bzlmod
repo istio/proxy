@@ -1,0 +1,2 @@
+# Workaround so that targets prefixed with @bazel_skylib still work
+workspace(name = "bazel_skylib")

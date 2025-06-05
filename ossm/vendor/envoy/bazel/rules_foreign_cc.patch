@@ -1,0 +1,29 @@
+--- a/toolchains/built_toolchains.bzl	2024-10-28 18:43:55.324179647 +0100
++++ b/toolchains/built_toolchains.bzl	2024-10-28 18:46:46.635785420 +0100
+@@ -341,6 +341,9 @@
+                 # This patch is required as rules_foreign_cc runs in MSYS2 on Windows and MSYS2's "mkdir" is used
+                 Label("//toolchains/patches:pkgconfig-makefile-vc.patch"),
+ 
++               # This patch is required to overcome type mismatch error
++               Label("//toolchains:pkgconfig-valgrind.patch"),
++
+                 # This patch fixes explicit integer conversion which causes errors in clang >= 15 and gcc >= 14
+                 Label("//toolchains/patches:pkgconfig-builtin-glib-int-conversion.patch"),
+             ],
+diff --git a/toolchains/pkgconfig-valgrind.patch b/toolchains/pkgconfig-valgrind.patch
+new file mode 100644
+index 0000000..f6f4cc8
+--- /dev/null
++++ b/toolchains/pkgconfig-valgrind.patch
+@@ -0,0 +1,11 @@
++--- glib/glib/valgrind.h
+++++ glib/glib/valgrind.h
++@@ -643,7 +643,7 @@
++                     /* results = r3 */                           \
++                     "lgr %0, 3\n\t"                              \
++                     : "=d" (_zzq_result)                         \
++-                    : "a" (&_zzq_args[0]), "0" (_zzq_default)    \
+++                    : "a" (&_zzq_args[0]), "0" ((unsigned long long int)(_zzq_default))    \
++                     : "cc", "2", "3", "memory"                   \
++                    );                                            \
++    _zzq_result;                                                  \

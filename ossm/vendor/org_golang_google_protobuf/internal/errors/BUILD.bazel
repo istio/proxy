@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "errors",
+    srcs = [
+        "errors.go",
+        "is_go112.go",
+        "is_go113.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/errors",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/detrand"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":errors",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "errors_test",
+    srcs = ["errors_test.go"],
+    embed = [":errors"],
+)

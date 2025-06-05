@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -ue
+
+# This script deploys a master or release version.
+#
+# See [README.md] for an explanation of this and how CI should use it.
+version=${1:-master}
+
+# deploy maven snapshot or release version
+build-bin/maven/maven_deploy
+
+# update GH pages on commit
+if [ "${version}" = "master" ]; then
+  build-bin/idl_to_gh_pages
+fi

@@ -1,0 +1,10 @@
+load("//rust:defs.bzl", "rust_library")
+
+rust_library(
+    name = "hello_lib",
+    srcs = ["lib.rs"],
+    edition = "2018",
+    # regression test: we used to include these flags twice.
+    # rustc -v -v will fail: "Option 'verbose' given more than once"
+    rustc_flags = ["-v"],
+)

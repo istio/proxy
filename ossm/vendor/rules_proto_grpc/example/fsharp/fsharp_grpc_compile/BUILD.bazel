@@ -1,0 +1,11 @@
+load("@rules_proto_grpc//fsharp:defs.bzl", "fsharp_grpc_compile")
+
+fsharp_grpc_compile(
+    name = "thing_fsharp_grpc",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)
+
+fsharp_grpc_compile(
+    name = "greeter_fsharp_grpc",
+    protos = ["@rules_proto_grpc//example/proto:greeter_grpc"],
+)

@@ -1,0 +1,189 @@
+{
+    "metadata": null,
+    "packages": [
+        {
+            "authors": [],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [],
+            "description": null,
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "path+file://{TEMP_DIR}/workspace_path/child_a#0.1.0",
+            "keywords": [],
+            "license": null,
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{TEMP_DIR}/workspace_path/child_a/Cargo.toml",
+            "metadata": null,
+            "name": "child_a",
+            "publish": null,
+            "readme": null,
+            "repository": null,
+            "rust_version": null,
+            "source": null,
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "child_a",
+                    "src_path": "{TEMP_DIR}/workspace_path/child_a/lib.rs",
+                    "test": true
+                }
+            ],
+            "version": "0.1.0"
+        },
+        {
+            "authors": [],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "child_a",
+                    "optional": false,
+                    "path": "{TEMP_DIR}/workspace_path/child_a",
+                    "registry": null,
+                    "rename": null,
+                    "req": "*",
+                    "source": null,
+                    "target": null,
+                    "uses_default_features": true
+                }
+            ],
+            "description": null,
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "path+file://{TEMP_DIR}/workspace_path/child_b#0.1.0",
+            "keywords": [],
+            "license": null,
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{TEMP_DIR}/workspace_path/child_b/Cargo.toml",
+            "metadata": null,
+            "name": "child_b",
+            "publish": null,
+            "readme": null,
+            "repository": null,
+            "rust_version": null,
+            "source": null,
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "child_b",
+                    "src_path": "{TEMP_DIR}/workspace_path/child_b/lib.rs",
+                    "test": true
+                }
+            ],
+            "version": "0.1.0"
+        },
+        {
+            "authors": [],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [],
+            "description": null,
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "path+file://{TEMP_DIR}/workspace_path#parent@0.1.0",
+            "keywords": [],
+            "license": null,
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{TEMP_DIR}/workspace_path/Cargo.toml",
+            "metadata": null,
+            "name": "parent",
+            "publish": null,
+            "readme": null,
+            "repository": null,
+            "rust_version": null,
+            "source": null,
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "parent",
+                    "src_path": "{TEMP_DIR}/workspace_path/lib.rs",
+                    "test": true
+                }
+            ],
+            "version": "0.1.0"
+        }
+    ],
+    "resolve": {
+        "nodes": [
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [],
+                "id": "path+file://{TEMP_DIR}/workspace_path/child_a#0.1.0"
+            },
+            {
+                "dependencies": [
+                    "path+file://{TEMP_DIR}/workspace_path/child_a#0.1.0"
+                ],
+                "deps": [
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "child_a",
+                        "pkg": "path+file://{TEMP_DIR}/workspace_path/child_a#0.1.0"
+                    }
+                ],
+                "features": [],
+                "id": "path+file://{TEMP_DIR}/workspace_path/child_b#0.1.0"
+            },
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [],
+                "id": "path+file://{TEMP_DIR}/workspace_path#parent@0.1.0"
+            }
+        ],
+        "root": "path+file://{TEMP_DIR}/workspace_path#parent@0.1.0"
+    },
+    "target_directory": "{TEMP_DIR}/workspace_path/target",
+    "version": 1,
+    "workspace_default_members": [
+        "path+file://{TEMP_DIR}/workspace_path#parent@0.1.0"
+    ],
+    "workspace_members": [
+        "path+file://{TEMP_DIR}/workspace_path/child_a#0.1.0",
+        "path+file://{TEMP_DIR}/workspace_path/child_b#0.1.0",
+        "path+file://{TEMP_DIR}/workspace_path#parent@0.1.0"
+    ],
+    "workspace_root": "{TEMP_DIR}/workspace_path"
+}

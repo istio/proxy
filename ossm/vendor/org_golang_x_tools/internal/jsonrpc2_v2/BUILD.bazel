@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "jsonrpc2_v2",
+    srcs = [
+        "conn.go",
+        "frame.go",
+        "jsonrpc2.go",
+        "messages.go",
+        "net.go",
+        "serve.go",
+        "serve_go116.go",
+        "serve_pre116.go",
+        "wire.go",
+    ],
+    importpath = "golang.org/x/tools/internal/jsonrpc2_v2",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/event",
+        "//internal/event/keys",
+        "//internal/event/label",
+        "//internal/event/tag",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":jsonrpc2_v2",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "jsonrpc2_v2_test",
+    srcs = [
+        "jsonrpc2_test.go",
+        "serve_test.go",
+        "wire_test.go",
+    ],
+    deps = [
+        ":jsonrpc2_v2",
+        "//internal/event/export/eventtest",
+        "//internal/stack/stacktest",
+    ],
+)

@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "packages",
+    srcs = [
+        "doc.go",
+        "external.go",
+        "golist.go",
+        "golist_overlay.go",
+        "loadmode_string.go",
+        "packages.go",
+        "visit.go",
+    ],
+    importpath = "golang.org/x/tools/go/packages",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/gcexportdata",
+        "//go/internal/packagesdriver",
+        "//internal/gocommand",
+        "//internal/packagesinternal",
+        "//internal/typeparams",
+        "//internal/typesinternal",
+        "@org_golang_x_sys//execabs:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":packages",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "packages_test",
+    srcs = [
+        "example_test.go",
+        "overlay_test.go",
+        "packages_test.go",
+        "stdlib_test.go",
+    ],
+    deps = [
+        ":packages",
+        "//go/packages/packagestest",
+        "//internal/packagesinternal",
+        "//internal/testenv",
+    ],
+)

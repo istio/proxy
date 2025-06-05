@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "generator",
+    srcs = ["generator.go"],
+    importpath = "github.com/golang/protobuf/protoc-gen-go/generator",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//proto",
+        "//protoc-gen-go/descriptor",
+        "//protoc-gen-go/generator/internal/remap",
+        "//protoc-gen-go/plugin",
+    ],
+)
+
+alias(
+    name = "go_default_library_gen",
+    actual = ":go_default_library",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":generator",
+    visibility = ["//visibility:public"],
+)

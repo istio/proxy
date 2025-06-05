@@ -1,0 +1,116 @@
+# Load various rules so that we can have bazel download
+# various rulesets and dependencies.
+# The `load` statement imports the symbol for the rule, in the defined
+# ruleset. When the symbol is loaded you can use the rule.
+
+# The following code loads the base python requirements and gazelle
+# requirements.
+load("@bazel_gazelle//:def.bzl", "gazelle")
+load("@pip//:requirements.bzl", "all_whl_requirements")
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@rules_python//python:py_library.bzl", "py_library")
+load("@rules_python//python:py_test.bzl", "py_test")
+load("@rules_python_gazelle_plugin//manifest:defs.bzl", "gazelle_python_manifest")
+load("@rules_python_gazelle_plugin//modules_mapping:def.bzl", "modules_mapping")
+
+# This stanza calls a rule that generates targets for managing pip dependencies
+# with pip-compile.
+compile_pip_requirements(
+    name = "requirements",
+    src = "requirements.in",
+    requirements_txt = "requirements_lock.txt",
+    requirements_windows = "requirements_windows.txt",
+)
+
+# This repository rule fetches the metadata for python packages we
+# depend on. That data is required for the gazelle_python_manifest
+# rule to update our manifest file.
+modules_mapping(
+    name = "modules_map",
+    exclude_patterns = [
+        "^_|(\\._)+",  # This is the default.
+        "(\\.tests)+",  # Add a custom one to get rid of the psutil tests.
+        "^colorama",  # Get rid of colorama on Windows.
+        "^tzdata",  # Get rid of tzdata on Windows.
+        "^lazy_object_proxy\\.cext$",  # Get rid of this on Linux because it isn't included on Windows.
+    ],
+    wheels = all_whl_requirements,
+)
+
+modules_mapping(
+    name = "modules_map_with_types",
+    exclude_patterns = [
+        "^_|(\\._)+",  # This is the default.
+        "(\\.tests)+",  # Add a custom one to get rid of the psutil tests.
+        "^colorama",  # Get rid of colorama on Windows.
+        "^tzdata",  # Get rid of tzdata on Windows.
+        "^lazy_object_proxy\\.cext$",  # Get rid of this on Linux because it isn't included on Windows.
+    ],
+    include_stub_packages = True,
+    modules_mapping_name = "modules_mapping_with_types.json",
+    wheels = all_whl_requirements,
+)
+
+# Gazelle python extension needs a manifest file mapping from
+# an import to the installed package that provides it.
+# This macro produces two targets:
+# - //:gazelle_python_manifest.update can be used with `bazel run`
+#   to recalculate the manifest
+# - //:gazelle_python_manifest.test is a test target ensuring that
+#   the manifest doesn't need to be updated
+# This target updates a file called gazelle_python.yaml, and
+# requires that file exist before the target is run.
+# When you are using gazelle you need to run this target first.
+gazelle_python_manifest(
+    name = "gazelle_python_manifest",
+    modules_mapping = ":modules_map",
+    pip_repository_name = "pip",
+    tags = ["exclusive"],
+)
+
+gazelle_python_manifest(
+    name = "gazelle_python_manifest_with_types",
+    manifest = "gazelle_python_with_types.yaml",
+    modules_mapping = ":modules_map_with_types",
+    pip_repository_name = "pip",
+    tags = ["exclusive"],
+)
+
+# Our gazelle target points to the python gazelle binary.
+# This is the simple case where we only need one language supported.
+# If you also had proto, go, or other gazelle-supported languages,
+# you would also need a gazelle_binary rule.
+# See https://github.com/bazel-contrib/bazel-gazelle/blob/master/extend.md#example
+# This is the primary gazelle target to run, so that you can update BUILD.bazel files.
+# You can execute:
+# - bazel run //:gazelle update
+# - bazel run //:gazelle fix
+# See: https://github.com/bazelbuild/bazel-gazelle#fix-and-update
+gazelle(
+    name = "gazelle",
+    gazelle = "@rules_python_gazelle_plugin//python:gazelle_binary",
+)
+
+# The following targets are created and maintained by gazelle
+py_library(
+    name = "bzlmod_build_file_generation",
+    srcs = ["lib.py"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@pip//tabulate"],
+)
+
+py_binary(
+    name = "bzlmod_build_file_generation_bin",
+    srcs = ["__main__.py"],
+    main = "__main__.py",
+    visibility = ["//:__subpackages__"],
+    deps = [":bzlmod_build_file_generation"],
+)
+
+py_test(
+    name = "bzlmod_build_file_generation_test",
+    srcs = ["__test__.py"],
+    main = "__test__.py",
+    deps = [":bzlmod_build_file_generation"],
+)

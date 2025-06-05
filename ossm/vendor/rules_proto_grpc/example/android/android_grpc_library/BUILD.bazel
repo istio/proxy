@@ -1,0 +1,12 @@
+load("@rules_proto_grpc//android:defs.bzl", "android_grpc_library")
+
+android_grpc_library(
+    name = "thing_android_grpc",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)
+
+android_grpc_library(
+    name = "greeter_android_grpc",
+    protos = ["@rules_proto_grpc//example/proto:greeter_grpc"],
+    deps = ["thing_android_grpc"],
+)

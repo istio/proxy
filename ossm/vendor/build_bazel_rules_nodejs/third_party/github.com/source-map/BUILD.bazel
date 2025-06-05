@@ -1,0 +1,33 @@
+## Stub BUILD file to export all contents.
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
+exports_files(["LICENSE"])
+
+_CONTENT = [
+    "package.json",
+    "source-map.js",
+    "lib/array-set.js",
+    "lib/base64-vlq.js",
+    "lib/base64.js",
+    "lib/binary-search.js",
+    "lib/mapping-list.js",
+    "lib/quick-sort.js",
+    "lib/source-map-consumer.js",
+    "lib/source-map-generator.js",
+    "lib/source-node.js",
+    "lib/util.js",
+]
+
+filegroup(
+    name = "contents",
+    srcs = _CONTENT,
+)
+
+filegroup(
+    name = "package_contents",
+    srcs = glob(["**"]),
+    visibility = ["//:__pkg__"],
+)

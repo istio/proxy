@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "google_message2",
+    srcs = ["benchmark_message2.pb.go"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/benchmarks/datasets/google_message2",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":google_message2",
+    visibility = ["//:__subpackages__"],
+)

@@ -1,0 +1,14 @@
+[package]
+name = "host_specific_build_deps"
+version = "0.0.0"
+edition = "2021"
+
+# Required to satisfy cargo but no `lib.rs` is expected to
+# exist within test data.
+[lib]
+path = "lib.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+pbjson-types = "=0.6.0"

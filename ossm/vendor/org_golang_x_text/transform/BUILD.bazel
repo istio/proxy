@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "transform",
+    srcs = ["transform.go"],
+    importpath = "golang.org/x/text/transform",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":transform",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "transform_test",
+    srcs = [
+        "examples_test.go",
+        "transform_test.go",
+    ],
+    embed = [":transform"],
+    deps = [
+        "//internal/testtext",
+        "//unicode/norm",
+    ],
+)

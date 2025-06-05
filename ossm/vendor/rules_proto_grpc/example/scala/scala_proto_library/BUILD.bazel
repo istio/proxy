@@ -1,0 +1,18 @@
+load("@rules_proto_grpc//scala:defs.bzl", "scala_proto_library")
+
+scala_proto_library(
+    name = "person_scala_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+    deps = ["place_scala_proto"],
+)
+
+scala_proto_library(
+    name = "place_scala_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+    deps = ["thing_scala_proto"],
+)
+
+scala_proto_library(
+    name = "thing_scala_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

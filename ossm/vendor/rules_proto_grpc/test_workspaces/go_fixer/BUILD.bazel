@@ -1,0 +1,45 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_proto_grpc//go:defs.bzl", "go_grpc_library")
+load("@rules_proto_grpc//grpc-gateway:defs.bzl", "gateway_grpc_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+package(default_visibility = ["//visibility:private"])
+
+# Test that mixing files with and without services works with go and grpc-gateway, since its empty template requires
+# injecting an import path
+
+proto_library(
+    name = "proto_lib",
+    srcs = [
+        "no_service.proto",
+        "service.proto",
+    ],
+    deps = [
+        "@go_googleapis//google/api:annotations_proto",
+    ],
+)
+
+go_grpc_library(
+    name = "go_lib",
+    importpath = "github.com/rules-proto-grpc/rules_proto_grpc/test_workspaces/go_fixer",
+    protos = ["proto_lib"],
+    deps = [
+        "@go_googleapis//google/api:annotations_go_proto",
+    ],
+)
+
+gateway_grpc_library(
+    name = "grpc_gateway_lib",
+    importpath = "github.com/rules-proto-grpc/rules_proto_grpc/test_workspaces/go_fixer",
+    protos = ["proto_lib"],
+)
+
+go_test(
+    name = "test",
+    srcs = ["main.go"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "go_lib",
+        "grpc_gateway_lib",
+    ],
+)

@@ -1,0 +1,34 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust_protobuf//:defs.bzl", "rust_proto_library")
+
+proto_library(
+    name = "a_proto",
+    srcs = ["a.proto"],
+    strip_import_prefix = "",
+)
+
+proto_library(
+    name = "b_proto",
+    srcs = ["b.proto"],
+    strip_import_prefix = "",
+    deps = [":a_proto"],
+)
+
+rust_proto_library(
+    name = "b_rust",
+    # In Rust nightly (2023-04-20), this target fails due to the following issue:
+    # https://doc.rust-lang.org/nightly/nightly-rustc/rustc_lint/builtin/static.AMBIGUOUS_GLOB_REEXPORTS.html
+    tags = ["no-clippy"],
+    # The protobuf rules don't currently work on Windows.
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = [":b_proto"],
+)
+
+build_test(
+    name = "build_test",
+    targets = [":b_rust"],
+)

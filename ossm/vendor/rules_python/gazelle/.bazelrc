@@ -1,0 +1,14 @@
+test --test_output=errors
+
+# Do NOT implicitly create empty __init__.py files in the runfiles tree.
+# By default, these are created in every directory containing Python source code
+# or shared libraries, and every parent directory of those directories,
+# excluding the repo root directory. With this flag set, we are responsible for
+# creating (possibly empty) __init__.py files and adding them to the srcs of
+# Python targets as required.
+build --incompatible_default_to_explicit_init_py
+
+# Windows makes use of runfiles for some rules
+build --enable_runfiles
+
+common:bazel7.x --incompatible_python_disallow_native_rules

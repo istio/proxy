@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "a",
+    srcs = [
+        "buildtag4.go",
+        "buildtag5.go",
+        "buildtag6.s",
+    ],
+    importpath = "golang.org/x/tools/go/analysis/passes/buildtag/testdata/src/a",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":a",
+    visibility = ["//visibility:public"],
+)

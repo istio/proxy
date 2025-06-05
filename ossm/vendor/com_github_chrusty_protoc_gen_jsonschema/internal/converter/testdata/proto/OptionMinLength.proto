@@ -1,0 +1,8 @@
+syntax = "proto3";
+package samples;
+import "options.proto";
+
+message OptionMinLength {
+  string query = 1 [(protoc.gen.jsonschema.field_options).min_length = 2,  (protoc.gen.jsonschema.field_options).required = true];
+  int32 result_per_page = 3;
+}

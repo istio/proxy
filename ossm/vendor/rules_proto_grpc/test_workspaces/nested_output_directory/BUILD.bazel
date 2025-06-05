@@ -1,0 +1,27 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_test")
+load("mixed_grpc_compile.bzl", "mixed_grpc_compile")
+
+package(default_visibility = ["//visibility:private"])
+
+# Test that plugins that use output_directory behave correctly when files are in a nested dir
+# This needs a mix of both a output_directory plugin and a normal plugin that retains the directory,
+# which in this case is Python proto + PHP gRPC
+# See https://github.com/rules-proto-grpc/rules_proto_grpc/pull/213
+
+proto_library(
+    name = "proto_lib",
+    srcs = ["directory/service.proto"],
+)
+
+mixed_grpc_compile(
+    name = "mixed_lib",
+    protos = ["proto_lib"],
+)
+
+# Some sort of test is required to exit cleanly
+py_test(
+    name = "placeholder",
+    srcs = ["placeholder.py"],
+    main = "placeholder.py",
+)

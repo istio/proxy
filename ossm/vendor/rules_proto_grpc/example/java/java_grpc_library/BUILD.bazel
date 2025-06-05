@@ -1,0 +1,12 @@
+load("@rules_proto_grpc//java:defs.bzl", "java_grpc_library")
+
+java_grpc_library(
+    name = "thing_java_grpc",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)
+
+java_grpc_library(
+    name = "greeter_java_grpc",
+    protos = ["@rules_proto_grpc//example/proto:greeter_grpc"],
+    deps = ["thing_java_grpc"],
+)

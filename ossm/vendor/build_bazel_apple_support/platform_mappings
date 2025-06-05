@@ -1,0 +1,152 @@
+platforms:
+  //platforms:macos_x86_64
+    --apple_platform_type=macos
+    --cpu=darwin_x86_64
+
+  //platforms:macos_arm64
+    --apple_platform_type=macos
+    --cpu=darwin_arm64
+
+  //platforms:darwin_arm64e
+    --apple_platform_type=macos
+    --cpu=darwin_arm64e
+
+  //platforms:ios_i386
+    --apple_platform_type=ios
+    --cpu=ios_i386
+
+  //platforms:ios_x86_64
+    --apple_platform_type=ios
+    --cpu=ios_x86_64
+
+  //platforms:ios_sim_arm64
+    --apple_platform_type=ios
+    --cpu=ios_sim_arm64
+
+  //platforms:ios_armv7
+    --apple_platform_type=ios
+    --cpu=ios_armv7
+
+  //platforms:ios_arm64
+    --apple_platform_type=ios
+    --cpu=ios_arm64
+
+  //platforms:ios_arm64e
+    --apple_platform_type=ios
+    --cpu=ios_arm64e
+
+  //platforms:tvos_x86_64
+    --apple_platform_type=tvos
+    --cpu=tvos_x86_64
+
+  //platforms:tvos_sim_arm64
+    --apple_platform_type=tvos
+    --cpu=tvos_sim_arm64
+
+  //platforms:tvos_arm64
+    --apple_platform_type=tvos
+    --cpu=tvos_arm64
+
+  //platforms:watchos_i386
+    --apple_platform_type=watchos
+    --cpu=watchos_i386
+
+  //platforms:watchos_x86_64
+    --apple_platform_type=watchos
+    --cpu=watchos_x86_64
+
+  //platforms:watchos_arm64
+    --apple_platform_type=watchos
+    --cpu=watchos_arm64
+
+  //platforms:watchos_armv7k
+    --apple_platform_type=watchos
+    --cpu=watchos_armv7k
+
+  //platforms:watchos_arm64_32
+    --apple_platform_type=watchos
+    --cpu=watchos_arm64_32
+
+  //platforms:watchos_device_arm64
+    --apple_platform_type=watchos
+    --cpu=watchos_device_arm64
+
+  //platforms:watchos_device_arm64e
+    --apple_platform_type=watchos
+    --cpu=watchos_device_arm64e
+flags:
+  --cpu=darwin_x86_64
+  --apple_platform_type=macos
+    //platforms:macos_x86_64
+
+  --cpu=darwin_arm64
+  --apple_platform_type=macos
+    //platforms:macos_arm64
+
+  --cpu=darwin_arm64e
+  --apple_platform_type=macos
+    //platforms:darwin_arm64e
+
+  --cpu=ios_i386
+  --apple_platform_type=ios
+    //platforms:ios_i386
+
+  --cpu=ios_x86_64
+  --apple_platform_type=ios
+    //platforms:ios_x86_64
+
+  --cpu=ios_sim_arm64
+  --apple_platform_type=ios
+    //platforms:ios_sim_arm64
+
+  --cpu=ios_armv7
+  --apple_platform_type=ios
+    //platforms:ios_armv7
+
+  --cpu=ios_arm64
+  --apple_platform_type=ios
+    //platforms:ios_arm64
+
+  --cpu=ios_arm64e
+  --apple_platform_type=ios
+    //platforms:ios_arm64e
+
+  --cpu=tvos_x86_64
+  --apple_platform_type=tvos
+    //platforms:tvos_x86_64
+
+  --cpu=tvos_sim_arm64
+  --apple_platform_type=tvos
+    //platforms:tvos_sim_arm64
+
+  --cpu=tvos_arm64
+  --apple_platform_type=tvos
+    //platforms:tvos_arm64
+
+  --cpu=watchos_i386
+  --apple_platform_type=watchos
+    //platforms:watchos_i386
+
+  --cpu=watchos_x86_64
+  --apple_platform_type=watchos
+    //platforms:watchos_x86_64
+
+  --cpu=watchos_arm64
+  --apple_platform_type=watchos
+    //platforms:watchos_arm64
+
+  --cpu=watchos_armv7k
+  --apple_platform_type=watchos
+    //platforms:watchos_armv7k
+
+  --cpu=watchos_arm64_32
+  --apple_platform_type=watchos
+    //platforms:watchos_arm64_32
+
+  --cpu=watchos_device_arm64
+  --apple_platform_type=watchos
+    //platforms:watchos_device_arm64
+
+  --cpu=watchos_device_arm64e
+  --apple_platform_type=watchos
+    //platforms:watchos_device_arm64e

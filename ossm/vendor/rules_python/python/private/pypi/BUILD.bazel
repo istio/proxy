@@ -1,0 +1,350 @@
+# Copyright 2024 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+package(default_visibility = ["//:__subpackages__"])
+
+licenses(["notice"])
+
+filegroup(
+    name = "distribution",
+    srcs = glob(
+        ["**"],
+        exclude = ["requirements.txt"],
+    ) + [
+        "//python/private/pypi/dependency_resolver:distribution",
+        "//python/private/pypi/whl_installer:distribution",
+    ],
+    visibility = ["//python/private:__pkg__"],
+)
+
+# Filegroup of bzl files that can be used by downstream rules for documentation generation
+filegroup(
+    name = "bzl",
+    srcs = glob(["**/*.bzl"]),
+    visibility = [
+        "//python/private:__pkg__",
+        "//tools/private:__pkg__",
+    ],
+)
+
+filegroup(
+    name = "requirements_txt",
+    srcs = ["requirements.txt"],
+    visibility = ["//tools/private/update_deps:__pkg__"],
+)
+
+# Keep sorted by library name and keep the files named by the main symbol they export
+
+bzl_library(
+    name = "attrs_bzl",
+    srcs = ["attrs.bzl"],
+)
+
+bzl_library(
+    name = "config_settings_bzl",
+    srcs = ["config_settings.bzl"],
+    deps = [
+        ":flags_bzl",
+        "//python/private:flags_bzl",
+    ],
+)
+
+bzl_library(
+    name = "deps_bzl",
+    srcs = ["deps.bzl"],
+    deps = [
+        "//python/private:bazel_tools_bzl",
+        "//python/private:glob_excludes_bzl",
+    ],
+)
+
+bzl_library(
+    name = "evaluate_markers_bzl",
+    srcs = ["evaluate_markers.bzl"],
+    deps = [
+        ":pypi_repo_utils_bzl",
+    ],
+)
+
+bzl_library(
+    name = "extension_bzl",
+    srcs = ["extension.bzl"],
+    deps = [
+        ":attrs_bzl",
+        ":evaluate_markers_bzl",
+        ":hub_repository_bzl",
+        ":parse_requirements_bzl",
+        ":parse_whl_name_bzl",
+        ":pip_repository_attrs_bzl",
+        ":simpleapi_download_bzl",
+        ":whl_config_setting_bzl",
+        ":whl_library_bzl",
+        ":whl_repo_name_bzl",
+        "//python/private:full_version_bzl",
+        "//python/private:normalize_name_bzl",
+        "//python/private:semver_bzl",
+        "//python/private:version_label_bzl",
+        "@bazel_features//:features",
+        "@pythons_hub//:interpreters_bzl",
+    ],
+)
+
+bzl_library(
+    name = "flags_bzl",
+    srcs = ["flags.bzl"],
+    deps = [
+        "//python/private:enum_bzl",
+        "@bazel_skylib//rules:common_settings",
+    ],
+)
+
+bzl_library(
+    name = "generate_whl_library_build_bazel_bzl",
+    srcs = ["generate_whl_library_build_bazel.bzl"],
+    deps = [
+        "//python/private:text_util_bzl",
+    ],
+)
+
+bzl_library(
+    name = "generate_group_library_build_bazel_bzl",
+    srcs = ["generate_group_library_build_bazel.bzl"],
+    deps = [
+        ":labels_bzl",
+        "//python/private:normalize_name_bzl",
+    ],
+)
+
+bzl_library(
+    name = "group_library_bzl",
+    srcs = ["group_library.bzl"],
+    deps = [
+        ":generate_group_library_build_bazel_bzl",
+    ],
+)
+
+bzl_library(
+    name = "hub_repository_bzl",
+    srcs = ["hub_repository.bzl"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":render_pkg_aliases_bzl",
+        "//python/private:text_util_bzl",
+    ],
+)
+
+bzl_library(
+    name = "index_sources_bzl",
+    srcs = ["index_sources.bzl"],
+)
+
+bzl_library(
+    name = "labels_bzl",
+    srcs = ["labels.bzl"],
+)
+
+bzl_library(
+    name = "multi_pip_parse_bzl",
+    srcs = ["multi_pip_parse.bzl"],
+    deps = [
+        ":pip_repository_bzl",
+        "//python/private:text_util_bzl",
+    ],
+)
+
+bzl_library(
+    name = "package_annotation_bzl",
+    srcs = ["package_annotation.bzl"],
+)
+
+bzl_library(
+    name = "parse_requirements_bzl",
+    srcs = ["parse_requirements.bzl"],
+    deps = [
+        ":index_sources_bzl",
+        ":parse_requirements_txt_bzl",
+        ":pypi_repo_utils_bzl",
+        ":requirements_files_by_platform_bzl",
+        ":whl_target_platforms_bzl",
+        "//python/private:normalize_name_bzl",
+        "//python/private:repo_utils_bzl",
+    ],
+)
+
+bzl_library(
+    name = "parse_requirements_txt_bzl",
+    srcs = ["parse_requirements_txt.bzl"],
+)
+
+bzl_library(
+    name = "parse_simpleapi_html_bzl",
+    srcs = ["parse_simpleapi_html.bzl"],
+)
+
+bzl_library(
+    name = "parse_whl_name_bzl",
+    srcs = ["parse_whl_name.bzl"],
+)
+
+bzl_library(
+    name = "patch_whl_bzl",
+    srcs = ["patch_whl.bzl"],
+    deps = [
+        ":parse_whl_name_bzl",
+        "//python/private:repo_utils_bzl",
+    ],
+)
+
+bzl_library(
+    name = "pip_bzl",
+    srcs = ["pip.bzl"],
+    deps = [
+        ":extension_bzl",
+    ],
+)
+
+bzl_library(
+    name = "pip_compile_bzl",
+    srcs = ["pip_compile.bzl"],
+    deps = [
+        ":deps_bzl",
+        "//python:py_binary_bzl",
+        "//python:py_test_bzl",
+    ],
+)
+
+bzl_library(
+    name = "pip_repository_bzl",
+    srcs = ["pip_repository.bzl"],
+    deps = [
+        ":attrs_bzl",
+        ":evaluate_markers_bzl",
+        ":parse_requirements_bzl",
+        ":pip_repository_attrs_bzl",
+        ":render_pkg_aliases_bzl",
+        ":whl_config_setting_bzl",
+        "//python/private:normalize_name_bzl",
+        "//python/private:repo_utils_bzl",
+        "//python/private:text_util_bzl",
+        "@bazel_skylib//lib:sets",
+    ],
+)
+
+bzl_library(
+    name = "pip_repository_attrs_bzl",
+    srcs = ["pip_repository_attrs.bzl"],
+)
+
+bzl_library(
+    name = "pkg_aliases_bzl",
+    srcs = ["pkg_aliases.bzl"],
+    deps = [
+        ":labels_bzl",
+        ":parse_whl_name_bzl",
+        ":whl_target_platforms_bzl",
+        "//python/private:text_util_bzl",
+        "@bazel_skylib//lib:selects",
+    ],
+)
+
+bzl_library(
+    name = "pypi_repo_utils_bzl",
+    srcs = ["pypi_repo_utils.bzl"],
+    deps = [
+        "//python/private:repo_utils_bzl",
+        "@bazel_skylib//lib:types",
+    ],
+)
+
+bzl_library(
+    name = "render_pkg_aliases_bzl",
+    srcs = ["render_pkg_aliases.bzl"],
+    deps = [
+        ":generate_group_library_build_bazel_bzl",
+        ":parse_whl_name_bzl",
+        ":whl_config_setting_bzl",
+        ":whl_target_platforms_bzl",
+        "//python/private:normalize_name_bzl",
+        "//python/private:text_util_bzl",
+    ],
+)
+
+bzl_library(
+    name = "requirements_files_by_platform_bzl",
+    srcs = ["requirements_files_by_platform.bzl"],
+    deps = [
+        ":whl_target_platforms_bzl",
+    ],
+)
+
+bzl_library(
+    name = "simpleapi_download_bzl",
+    srcs = ["simpleapi_download.bzl"],
+    deps = [
+        ":parse_simpleapi_html_bzl",
+        "//python/private:auth_bzl",
+        "//python/private:normalize_name_bzl",
+        "//python/private:text_util_bzl",
+        "@bazel_features//:features",
+    ],
+)
+
+bzl_library(
+    name = "whl_config_setting_bzl",
+    srcs = ["whl_config_setting.bzl"],
+)
+
+bzl_library(
+    name = "whl_library_alias_bzl",
+    srcs = ["whl_library_alias.bzl"],
+    deps = [
+        ":render_pkg_aliases_bzl",
+        "//python/private:full_version_bzl",
+    ],
+)
+
+bzl_library(
+    name = "whl_library_bzl",
+    srcs = ["whl_library.bzl"],
+    deps = [
+        ":attrs_bzl",
+        ":deps_bzl",
+        ":generate_whl_library_build_bazel_bzl",
+        ":parse_whl_name_bzl",
+        ":patch_whl_bzl",
+        ":pypi_repo_utils_bzl",
+        ":whl_target_platforms_bzl",
+        "//python/private:auth_bzl",
+        "//python/private:envsubst_bzl",
+        "//python/private:is_standalone_interpreter_bzl",
+        "//python/private:repo_utils_bzl",
+    ],
+)
+
+bzl_library(
+    name = "whl_repo_name_bzl",
+    srcs = ["whl_repo_name.bzl"],
+    deps = [
+        ":parse_whl_name_bzl",
+        "//python/private:normalize_name_bzl",
+    ],
+)
+
+bzl_library(
+    name = "whl_target_platforms_bzl",
+    srcs = ["whl_target_platforms.bzl"],
+    deps = [":parse_whl_name_bzl"],
+)

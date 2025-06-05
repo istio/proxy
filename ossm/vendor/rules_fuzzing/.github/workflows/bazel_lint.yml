@@ -1,0 +1,40 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Lint Bazel and BUILD files
+
+name: bazel_lint
+on:
+  push:
+    paths:
+      - '**/BUILD'
+      - '**.bzl'
+      - '**/BUILD.bazel'
+  pull_request:
+    paths:
+      - '**/BUILD'
+      - '**.bzl'
+      - '**/BUILD.bazel'
+jobs:
+  bazel_lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '^1.13.1' # The Go version to download (if necessary) and use.
+    - run: go install github.com/bazelbuild/buildtools/buildifier@latest
+    - run: buildifier -lint=warn -mode=check $(find . -type f \( -name BUILD.bazel -or -name BUILD -or -name *.bzl \))
+

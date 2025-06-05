@@ -1,0 +1,382 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//lib:utils.bzl", "is_bazel_7_or_greater")
+load(":utf8_environment.bzl", "utf8_environment")
+
+exports_files(
+    [
+        "diff_test_tmpl.sh",
+        "diff_test_tmpl.bat",
+        "modify_mtree.awk",
+        "parse_status_file.jq",
+        "parse_status_file.yq",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+exports_files(
+    glob(["*.bzl"]),
+    visibility = ["//lib/private/docs:__pkg__"],
+)
+
+utf8_environment(
+    name = "utf8_environment",
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "base64",
+    srcs = ["base64.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [":strings"],
+)
+
+bzl_library(
+    name = "copy_directory",
+    srcs = ["copy_directory.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        ":copy_common",
+        ":platform_utils",
+    ],
+)
+
+bzl_library(
+    name = "copy_directory_toolchain",
+    srcs = ["copy_directory_toolchain.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        "//tools:integrity",
+        "//tools:version",
+    ],
+)
+
+bzl_library(
+    name = "copy_file",
+    srcs = ["copy_file.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        ":copy_common",
+        ":directory_path",
+        ":platform_utils",
+    ],
+)
+
+bzl_library(
+    name = "copy_to_bin",
+    srcs = ["copy_to_bin.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        ":copy_file",
+        "@bazel_skylib//lib:paths",
+    ],
+)
+
+bzl_library(
+    name = "copy_to_directory",
+    srcs = ["copy_to_directory.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        ":copy_common",
+        ":directory_path",
+        ":glob_match",
+        ":paths",
+        ":platform_utils",
+        "@bazel_skylib//lib:paths",
+    ],
+)
+
+bzl_library(
+    name = "copy_to_directory_toolchain",
+    srcs = ["copy_to_directory_toolchain.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        "//tools:integrity",
+        "//tools:version",
+    ],
+)
+
+bzl_library(
+    name = "directory_path",
+    srcs = ["directory_path.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = ["//lib:utils"],
+)
+
+#keep
+bzl_library(
+    name = "diff_test",
+    srcs = ["diff_test.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        ":directory_path",
+        "//lib:utils",
+        "@bazel_skylib//lib:shell",
+    ],
+)
+
+bzl_library(
+    name = "docs",
+    srcs = ["docs.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        "//lib:write_source_files",
+        "@io_bazel_stardoc//stardoc:stardoc_lib",  #keep
+    ],
+)
+
+bzl_library(
+    name = "expand_template",
+    srcs = ["expand_template.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        ":expand_variables",
+        "//lib:stamping",
+        "@bazel_skylib//lib:dicts",
+    ],
+)
+
+bzl_library(
+    name = "expand_template_toolchain",
+    srcs = ["expand_template_toolchain.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        "//tools:integrity",
+        "//tools:version",
+    ],
+)
+
+bzl_library(
+    name = "expand_variables",
+    srcs = ["expand_variables.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = ["@bazel_skylib//lib:paths"],
+)
+
+bzl_library(
+    name = "host_repo",
+    srcs = ["host_repo.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        ":repo_utils",
+        "@bazel_skylib//lib:versions",
+    ],
+)
+
+bzl_library(
+    name = "jq",
+    srcs = ["jq.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        ":expand_variables",
+        ":strings",
+        "//lib:stamping",
+    ],
+)
+
+bzl_library(
+    name = "jq_toolchain",
+    srcs = ["jq_toolchain.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [":repo_utils"],
+)
+
+bzl_library(
+    name = "output_files",
+    srcs = ["output_files.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = ["//lib:utils"],
+)
+
+bzl_library(
+    name = "params_file",
+    srcs = ["params_file.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        ":expand_variables",
+        ":strings",
+    ],
+)
+
+bzl_library(
+    name = "patch",
+    srcs = ["patch.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [":repo_utils"],
+)
+
+bzl_library(
+    name = "paths",
+    srcs = ["paths.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = ["@bazel_skylib//lib:paths"],
+)
+
+bzl_library(
+    name = "run_binary",
+    srcs = ["run_binary.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        ":expand_variables",
+        ":strings",
+        "//lib:resource_sets",
+        "//lib:stamping",
+        "@bazel_skylib//lib:dicts",
+    ],
+)
+
+bzl_library(
+    name = "utils",
+    srcs = ["utils.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        "@bazel_tools//tools/build_defs/repo:http.bzl",
+        "@bazel_tools//tools/build_defs/repo:utils.bzl",
+    ] + (["@bazel_tools//tools/build_defs/repo:cache.bzl"] if is_bazel_7_or_greater() else []),
+)
+
+# keep
+bzl_library(
+    name = "fail_with_message_test",
+    srcs = ["fail_with_message_test.bzl"],
+)
+
+bzl_library(
+    name = "write_source_file",
+    srcs = ["write_source_file.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        ":diff_test",
+        ":directory_path",
+        ":fail_with_message_test",
+        ":utils",
+    ],
+)
+
+bzl_library(
+    name = "yq",
+    srcs = ["yq.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = ["//lib:stamping"],
+)
+
+bzl_library(
+    name = "yq_toolchain",
+    srcs = ["yq_toolchain.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [":repo_utils"],
+)
+
+bzl_library(
+    name = "platform_utils",
+    srcs = [
+        "platform_utils.bzl",
+        "@host_platform//:constraints.bzl",  # keep
+        "@local_config_platform//:constraints.bzl",  # keep
+        "@platforms//host:constraints.bzl",  # keep
+    ],
+    visibility = ["//lib:__subpackages__"],
+    deps = [],  # keep
+)
+
+bzl_library(
+    name = "tar_toolchain",
+    srcs = ["tar_toolchain.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        "utf8_environment.bzl",
+        ":repo_utils",
+    ],
+)
+
+bzl_library(
+    name = "tar",
+    srcs = ["tar.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        "@aspect_bazel_lib//lib:paths",
+        "@bazel_skylib//rules:common_settings",
+    ],
+)
+
+bzl_library(
+    name = "bats",
+    srcs = ["bats.bzl"],
+    visibility = ["//lib:__subpackages__"],
+    deps = [
+        ":expand_variables",
+        "@aspect_bazel_lib//lib:paths",
+        "@aspect_bazel_lib//lib:windows_utils",
+    ],
+)
+
+bzl_library(
+    name = "bats_toolchain",
+    srcs = ["bats_toolchain.bzl"],
+    visibility = ["//lib:__subpackages__"],
+)
+
+bzl_library(
+    name = "copy_common",
+    srcs = ["copy_common.bzl"],
+    visibility = ["//lib:__subpackages__"],
+)
+
+bzl_library(
+    name = "coreutils_toolchain",
+    srcs = ["coreutils_toolchain.bzl"],
+    visibility = ["//lib:__subpackages__"],
+)
+
+bzl_library(
+    name = "expand_locations",
+    srcs = ["expand_locations.bzl"],
+    visibility = ["//lib:__subpackages__"],
+)
+
+bzl_library(
+    name = "extension_utils",
+    srcs = ["extension_utils.bzl"],
+    visibility = ["//lib:__subpackages__"],
+)
+
+bzl_library(
+    name = "glob_match",
+    srcs = ["glob_match.bzl"],
+    visibility = ["//lib:__subpackages__"],
+)
+
+bzl_library(
+    name = "lists",
+    srcs = ["lists.bzl"],
+    visibility = ["//lib:__subpackages__"],
+)
+
+bzl_library(
+    name = "repo_utils",
+    srcs = ["repo_utils.bzl"],
+    visibility = ["//lib:__subpackages__"],
+)
+
+bzl_library(
+    name = "source_toolchains_repo",
+    srcs = ["source_toolchains_repo.bzl"],
+    visibility = ["//lib:__subpackages__"],
+)
+
+bzl_library(
+    name = "stamping",
+    srcs = ["stamping.bzl"],
+    visibility = ["//lib:__subpackages__"],
+)
+
+bzl_library(
+    name = "strings",
+    srcs = ["strings.bzl"],
+    visibility = ["//lib:__subpackages__"],
+)
+
+bzl_library(
+    name = "zstd_toolchain",
+    srcs = ["zstd_toolchain.bzl"],
+    visibility = ["//lib:__subpackages__"],
+)

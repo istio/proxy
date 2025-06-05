@@ -1,0 +1,4413 @@
+{
+    "metadata": null,
+    "packages": [
+        {
+            "authors": [
+                "Josh Stone <cuviper@gmail.com>"
+            ],
+            "categories": [
+                "development-tools::build-utils"
+            ],
+            "default_run": null,
+            "dependencies": [],
+            "description": "Automatic cfg for Rust compiler features",
+            "documentation": null,
+            "edition": "2015",
+            "features": {},
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#autocfg@1.1.0",
+            "keywords": [
+                "rustc",
+                "build",
+                "autoconf"
+            ],
+            "license": "Apache-2.0 OR MIT",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/autocfg-1.1.0/Cargo.toml",
+            "metadata": null,
+            "name": "autocfg",
+            "publish": null,
+            "readme": "README.md",
+            "repository": "https://github.com/cuviper/autocfg",
+            "rust_version": null,
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2015",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "autocfg",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/autocfg-1.1.0/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2015",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "integers",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/autocfg-1.1.0/examples/integers.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2015",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "paths",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/autocfg-1.1.0/examples/paths.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2015",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "versions",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/autocfg-1.1.0/examples/versions.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2015",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "traits",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/autocfg-1.1.0/examples/traits.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2015",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "rustflags",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/autocfg-1.1.0/tests/rustflags.rs",
+                    "test": true
+                }
+            ],
+            "version": "1.1.0"
+        },
+        {
+            "authors": [],
+            "categories": [
+                "no-std",
+                "rust-patterns"
+            ],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "rustversion",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "static_assertions",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "trybuild",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0.49",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                }
+            ],
+            "description": "A lightweight version of pin-project written with declarative macros.\n",
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#pin-project-lite@0.2.9",
+            "keywords": [
+                "pin",
+                "macros"
+            ],
+            "license": "Apache-2.0 OR MIT",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/pin-project-lite-0.2.9/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "targets": [
+                            "x86_64-unknown-linux-gnu"
+                        ]
+                    }
+                }
+            },
+            "name": "pin-project-lite",
+            "publish": null,
+            "readme": "README.md",
+            "repository": "https://github.com/taiki-e/pin-project-lite",
+            "rust_version": "1.37",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "pin_project_lite",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/pin-project-lite-0.2.9/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "proper_unpin",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/pin-project-lite-0.2.9/tests/proper_unpin.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "drop_order",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/pin-project-lite-0.2.9/tests/drop_order.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/pin-project-lite-0.2.9/tests/test.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "expandtest",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/pin-project-lite-0.2.9/tests/expandtest.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "lint",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/pin-project-lite-0.2.9/tests/lint.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "compiletest",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/pin-project-lite-0.2.9/tests/compiletest.rs",
+                    "test": true
+                }
+            ],
+            "version": "0.2.9"
+        },
+        {
+            "authors": [],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "tokio",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.25.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "fs"
+                    ],
+                    "kind": null,
+                    "name": "tokio",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.25.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(unix)",
+                    "uses_default_features": true
+                }
+            ],
+            "description": null,
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "path+file://{TEMP_DIR}/target_cfg_features#0.1.0",
+            "keywords": [],
+            "license": null,
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{TEMP_DIR}/target_cfg_features/Cargo.toml",
+            "metadata": null,
+            "name": "target_cfg_features",
+            "publish": null,
+            "readme": null,
+            "repository": null,
+            "rust_version": null,
+            "source": null,
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "target_cfg_features",
+                    "src_path": "{TEMP_DIR}/target_cfg_features/lib.rs",
+                    "test": true
+                }
+            ],
+            "version": "0.1.0"
+        },
+        {
+            "authors": [
+                "Tokio Contributors <team@tokio.rs>"
+            ],
+            "categories": [
+                "asynchronous",
+                "network-programming"
+            ],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "bytes",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "memchr",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^2.2",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "mio",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.8.4",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "num_cpus",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.8.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "parking_lot",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.12.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "pin-project-lite",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.2.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "tokio-macros",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.7.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "async-stream",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.3",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "async-await"
+                    ],
+                    "kind": "dev",
+                    "name": "futures",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.3.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "mockall",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.11.1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "tempfile",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^3.1.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "tokio-stream",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "tokio-test",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.4.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "build",
+                    "name": "autocfg",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "wasm-bindgen-test",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.3.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(all(any(target_arch = \"wasm32\", target_arch = \"wasm64\"), not(target_os = \"wasi\")))",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "Win32_Foundation",
+                        "Win32_Security_Authorization"
+                    ],
+                    "kind": null,
+                    "name": "windows-sys",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(docsrs)",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "futures",
+                        "checkpoint"
+                    ],
+                    "kind": "dev",
+                    "name": "loom",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.5.2",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(loom)",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "rand",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.8.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(not(all(any(target_arch = \"wasm32\", target_arch = \"wasm64\"), target_os = \"unknown\")))",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "all"
+                    ],
+                    "kind": null,
+                    "name": "socket2",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.4.4",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(not(any(target_arch = \"wasm32\", target_arch = \"wasm64\")))",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "proptest",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(not(any(target_arch = \"wasm32\", target_arch = \"wasm64\")))",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "socket2",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.4",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(not(any(target_arch = \"wasm32\", target_arch = \"wasm64\")))",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "tokio"
+                    ],
+                    "kind": "dev",
+                    "name": "mio-aio",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.7.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(target_os = \"freebsd\")",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "std"
+                    ],
+                    "kind": null,
+                    "name": "tracing",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.1.25",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(tokio_unstable)",
+                    "uses_default_features": false
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "libc",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.2.42",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(unix)",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "signal-hook-registry",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.1.1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(unix)",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "libc",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.2.42",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(unix)",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "fs",
+                        "socket"
+                    ],
+                    "kind": "dev",
+                    "name": "nix",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.26",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(unix)",
+                    "uses_default_features": false
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "windows-sys",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(windows)",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "ntapi",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.3.6",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(windows)",
+                    "uses_default_features": true
+                }
+            ],
+            "description": "An event-driven, non-blocking I/O platform for writing asynchronous I/O\nbacked applications.\n",
+            "documentation": null,
+            "edition": "2018",
+            "features": {
+                "bytes": [
+                    "dep:bytes"
+                ],
+                "default": [],
+                "fs": [],
+                "full": [
+                    "fs",
+                    "io-util",
+                    "io-std",
+                    "macros",
+                    "net",
+                    "parking_lot",
+                    "process",
+                    "rt",
+                    "rt-multi-thread",
+                    "signal",
+                    "sync",
+                    "time"
+                ],
+                "io-std": [],
+                "io-util": [
+                    "memchr",
+                    "bytes"
+                ],
+                "libc": [
+                    "dep:libc"
+                ],
+                "macros": [
+                    "tokio-macros"
+                ],
+                "memchr": [
+                    "dep:memchr"
+                ],
+                "mio": [
+                    "dep:mio"
+                ],
+                "net": [
+                    "libc",
+                    "mio/os-poll",
+                    "mio/os-ext",
+                    "mio/net",
+                    "socket2",
+                    "windows-sys/Win32_Foundation",
+                    "windows-sys/Win32_Security",
+                    "windows-sys/Win32_Storage_FileSystem",
+                    "windows-sys/Win32_System_Pipes",
+                    "windows-sys/Win32_System_SystemServices"
+                ],
+                "num_cpus": [
+                    "dep:num_cpus"
+                ],
+                "parking_lot": [
+                    "dep:parking_lot"
+                ],
+                "process": [
+                    "bytes",
+                    "libc",
+                    "mio/os-poll",
+                    "mio/os-ext",
+                    "mio/net",
+                    "signal-hook-registry",
+                    "windows-sys/Win32_Foundation",
+                    "windows-sys/Win32_System_Threading",
+                    "windows-sys/Win32_System_WindowsProgramming"
+                ],
+                "rt": [],
+                "rt-multi-thread": [
+                    "num_cpus",
+                    "rt"
+                ],
+                "signal": [
+                    "libc",
+                    "mio/os-poll",
+                    "mio/net",
+                    "mio/os-ext",
+                    "signal-hook-registry",
+                    "windows-sys/Win32_Foundation",
+                    "windows-sys/Win32_System_Console"
+                ],
+                "signal-hook-registry": [
+                    "dep:signal-hook-registry"
+                ],
+                "socket2": [
+                    "dep:socket2"
+                ],
+                "stats": [],
+                "sync": [],
+                "test-util": [
+                    "rt",
+                    "sync",
+                    "time"
+                ],
+                "time": [],
+                "tokio-macros": [
+                    "dep:tokio-macros"
+                ],
+                "tracing": [
+                    "dep:tracing"
+                ],
+                "windows-sys": [
+                    "dep:windows-sys"
+                ]
+            },
+            "homepage": "https://tokio.rs",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#tokio@1.25.0",
+            "keywords": [
+                "io",
+                "async",
+                "non-blocking",
+                "futures"
+            ],
+            "license": "MIT",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "all-features": true,
+                        "rustc-args": [
+                            "--cfg",
+                            "tokio_unstable"
+                        ],
+                        "rustdoc-args": [
+                            "--cfg",
+                            "docsrs",
+                            "--cfg",
+                            "tokio_unstable"
+                        ]
+                    }
+                },
+                "playground": {
+                    "features": [
+                        "full",
+                        "test-util"
+                    ]
+                }
+            },
+            "name": "tokio",
+            "publish": null,
+            "readme": "README.md",
+            "repository": "https://github.com/tokio-rs/tokio",
+            "rust_version": "1.49",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "tokio",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "task_panic",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/task_panic.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_chain",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_chain.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "signal_no_rt",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/signal_no_rt.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "task_local",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/task_local.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "signal_usr1",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/signal_usr1.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_panic",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_panic.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "task_abort",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/task_abort.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "process_arg0",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/process_arg0.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "fs_link",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/fs_link.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "task_join_set",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/task_join_set.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "tcp_socket",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/tcp_socket.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "time_sleep",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/time_sleep.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_driver",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_driver.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_read_buf",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_read_buf.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_read",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_read.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "process_issue_2174",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/process_issue_2174.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "tcp_split",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/tcp_split.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "signal_drop_recv",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/signal_drop_recv.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "rt_panic",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/rt_panic.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "time_pause",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/time_pause.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_errors",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_errors.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "tcp_accept",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/tcp_accept.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "uds_split",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/uds_split.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "macros_rename_test",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/macros_rename_test.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_read_to_end",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_read_to_end.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "signal_panic",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/signal_panic.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "task_local_set",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/task_local_set.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_semaphore_owned",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_semaphore_owned.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "signal_notify_both",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/signal_notify_both.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_driver_drop",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_driver_drop.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "signal_ctrl_c",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/signal_ctrl_c.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_once_cell",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_once_cell.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "process_issue_42",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/process_issue_42.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_write_int",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_write_int.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "signal_drop_rt",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/signal_drop_rt.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "time_rt",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/time_rt.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "time_interval",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/time_interval.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_take",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_take.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "tcp_connect",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/tcp_connect.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "fs_dir",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/fs_dir.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "tcp_into_std",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/tcp_into_std.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_semaphore",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_semaphore.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "macros_select",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/macros_select.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "fs_copy",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/fs_copy.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_write",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_write.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "buffered",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/buffered.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "no_rt",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/no_rt.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_mutex_owned",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_mutex_owned.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_mpsc",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_mpsc.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_panic",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_panic.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "net_bind_resource",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/net_bind_resource.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_util_empty",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_util_empty.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "net_panic",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/net_panic.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "rt_common",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/rt_common.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "task_blocking",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/task_blocking.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "tcp_echo",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/tcp_echo.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "rt_handle_block_on",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/rt_handle_block_on.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "fs_file",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/fs_file.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_poll_aio",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_poll_aio.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_notify",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_notify.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_buf_writer",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_buf_writer.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "time_timeout",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/time_timeout.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "unwindsafe",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/unwindsafe.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "task_id",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/task_id.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_fill_buf",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_fill_buf.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_write_buf",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_write_buf.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_buf_reader",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_buf_reader.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "process_raw_handle",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/process_raw_handle.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_copy",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_copy.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_oneshot",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_oneshot.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_read_until",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_read_until.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "process_kill_on_drop",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/process_kill_on_drop.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "task_builder",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/task_builder.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "rt_metrics",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/rt_metrics.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "uds_stream",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/uds_stream.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_clock",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/test_clock.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_write_all_buf",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_write_all_buf.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "async_send_sync",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/async_send_sync.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_read_exact",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_read_exact.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "tcp_stream",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/tcp_stream.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_barrier",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_barrier.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_read_line",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_read_line.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_copy_bidirectional",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_copy_bidirectional.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "macros_try_join",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/macros_try_join.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_mutex",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_mutex.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "rt_threaded",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/rt_threaded.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_lines",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_lines.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_mem_stream",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_mem_stream.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "uds_cred",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/uds_cred.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "signal_drop_signal",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/signal_drop_signal.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_read_to_string",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_read_to_string.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "uds_datagram",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/uds_datagram.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "net_named_pipe",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/net_named_pipe.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "fs",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/fs.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "process_smoke",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/process_smoke.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "macros_join",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/macros_join.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "_require_full",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/_require_full.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "tcp_peek",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/tcp_peek.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_async_read",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_async_read.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "signal_multi_rt",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/signal_multi_rt.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "time_panic",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/time_panic.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "net_lookup_host",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/net_lookup_host.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_split",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_split.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "macros_test",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/macros_test.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "rt_basic",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/rt_basic.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "signal_twice",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/signal_twice.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "macros_pin",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/macros_pin.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_rwlock",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_rwlock.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "join_handle_panic",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/join_handle_panic.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_broadcast",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_broadcast.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_mpsc_weak",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_mpsc_weak.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "tcp_into_split",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/tcp_into_split.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "sync_watch",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/sync_watch.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "tcp_shutdown",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/tcp_shutdown.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "udp",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/udp.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_write_all",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_write_all.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "io_async_fd",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/tests/io_async_fd.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/tokio-1.25.0/build.rs",
+                    "test": false
+                }
+            ],
+            "version": "1.25.0"
+        },
+        {
+            "authors": [
+                "Microsoft"
+            ],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "windows_aarch64_gnullvm",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "aarch64-pc-windows-gnullvm",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "windows_aarch64_msvc",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "aarch64-pc-windows-msvc",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "windows_aarch64_msvc",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "aarch64-uwp-windows-msvc",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "windows_i686_gnu",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "i686-pc-windows-gnu",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "windows_i686_msvc",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "i686-pc-windows-msvc",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "windows_i686_gnu",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "i686-uwp-windows-gnu",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "windows_i686_msvc",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "i686-uwp-windows-msvc",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "windows_x86_64_gnu",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "x86_64-pc-windows-gnu",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "windows_x86_64_gnullvm",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "x86_64-pc-windows-gnullvm",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "windows_x86_64_msvc",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "x86_64-pc-windows-msvc",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "windows_x86_64_gnu",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "x86_64-uwp-windows-gnu",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "windows_x86_64_msvc",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.42.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "x86_64-uwp-windows-msvc",
+                    "uses_default_features": true
+                }
+            ],
+            "description": "Rust for Windows",
+            "documentation": null,
+            "edition": "2018",
+            "features": {
+                "Win32": [],
+                "Win32_AI": [
+                    "Win32"
+                ],
+                "Win32_AI_MachineLearning": [
+                    "Win32_AI"
+                ],
+                "Win32_AI_MachineLearning_DirectML": [
+                    "Win32_AI_MachineLearning"
+                ],
+                "Win32_AI_MachineLearning_WinML": [
+                    "Win32_AI_MachineLearning"
+                ],
+                "Win32_Data": [
+                    "Win32"
+                ],
+                "Win32_Data_HtmlHelp": [
+                    "Win32_Data"
+                ],
+                "Win32_Data_RightsManagement": [
+                    "Win32_Data"
+                ],
+                "Win32_Data_Xml": [
+                    "Win32_Data"
+                ],
+                "Win32_Data_Xml_MsXml": [
+                    "Win32_Data_Xml"
+                ],
+                "Win32_Data_Xml_XmlLite": [
+                    "Win32_Data_Xml"
+                ],
+                "Win32_Devices": [
+                    "Win32"
+                ],
+                "Win32_Devices_AllJoyn": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_BiometricFramework": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_Bluetooth": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_Communication": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_DeviceAccess": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_DeviceAndDriverInstallation": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_DeviceQuery": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_Display": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_Enumeration": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_Enumeration_Pnp": [
+                    "Win32_Devices_Enumeration"
+                ],
+                "Win32_Devices_Fax": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_FunctionDiscovery": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_Geolocation": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_HumanInterfaceDevice": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_ImageAcquisition": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_PortableDevices": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_Properties": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_Pwm": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_Sensors": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_SerialCommunication": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_Tapi": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_Usb": [
+                    "Win32_Devices"
+                ],
+                "Win32_Devices_WebServicesOnDevices": [
+                    "Win32_Devices"
+                ],
+                "Win32_Foundation": [
+                    "Win32"
+                ],
+                "Win32_Gaming": [
+                    "Win32"
+                ],
+                "Win32_Globalization": [
+                    "Win32"
+                ],
+                "Win32_Graphics": [
+                    "Win32"
+                ],
+                "Win32_Graphics_CompositionSwapchain": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_DXCore": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Direct2D": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Direct2D_Common": [
+                    "Win32_Graphics_Direct2D"
+                ],
+                "Win32_Graphics_Direct3D": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Direct3D10": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Direct3D11": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Direct3D11on12": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Direct3D12": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Direct3D9": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Direct3D9on12": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Direct3D_Dxc": [
+                    "Win32_Graphics_Direct3D"
+                ],
+                "Win32_Graphics_Direct3D_Fxc": [
+                    "Win32_Graphics_Direct3D"
+                ],
+                "Win32_Graphics_DirectComposition": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_DirectDraw": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_DirectManipulation": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_DirectWrite": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Dwm": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Dxgi": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Dxgi_Common": [
+                    "Win32_Graphics_Dxgi"
+                ],
+                "Win32_Graphics_Gdi": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Hlsl": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Imaging": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Imaging_D2D": [
+                    "Win32_Graphics_Imaging"
+                ],
+                "Win32_Graphics_OpenGL": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Printing": [
+                    "Win32_Graphics"
+                ],
+                "Win32_Graphics_Printing_PrintTicket": [
+                    "Win32_Graphics_Printing"
+                ],
+                "Win32_Management": [
+                    "Win32"
+                ],
+                "Win32_Management_MobileDeviceManagementRegistration": [
+                    "Win32_Management"
+                ],
+                "Win32_Media": [
+                    "Win32"
+                ],
+                "Win32_Media_Audio": [
+                    "Win32_Media"
+                ],
+                "Win32_Media_Audio_Apo": [
+                    "Win32_Media_Audio"
+                ],
+                "Win32_Media_Audio_DirectMusic": [
+                    "Win32_Media_Audio"
+                ],
+                "Win32_Media_Audio_DirectSound": [
+                    "Win32_Media_Audio"
+                ],
+                "Win32_Media_Audio_Endpoints": [
+                    "Win32_Media_Audio"
+                ],
+                "Win32_Media_Audio_XAudio2": [
+                    "Win32_Media_Audio"
+                ],
+                "Win32_Media_DeviceManager": [
+                    "Win32_Media"
+                ],
+                "Win32_Media_DirectShow": [
+                    "Win32_Media"
+                ],
+                "Win32_Media_DirectShow_Xml": [
+                    "Win32_Media_DirectShow"
+                ],
+                "Win32_Media_DxMediaObjects": [
+                    "Win32_Media"
+                ],
+                "Win32_Media_KernelStreaming": [
+                    "Win32_Media"
+                ],
+                "Win32_Media_LibrarySharingServices": [
+                    "Win32_Media"
+                ],
+                "Win32_Media_MediaFoundation": [
+                    "Win32_Media"
+                ],
+                "Win32_Media_MediaPlayer": [
+                    "Win32_Media"
+                ],
+                "Win32_Media_Multimedia": [
+                    "Win32_Media"
+                ],
+                "Win32_Media_PictureAcquisition": [
+                    "Win32_Media"
+                ],
+                "Win32_Media_Speech": [
+                    "Win32_Media"
+                ],
+                "Win32_Media_Streaming": [
+                    "Win32_Media"
+                ],
+                "Win32_Media_WindowsMediaFormat": [
+                    "Win32_Media"
+                ],
+                "Win32_NetworkManagement": [
+                    "Win32"
+                ],
+                "Win32_NetworkManagement_Dhcp": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_Dns": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_InternetConnectionWizard": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_IpHelper": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_MobileBroadband": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_Multicast": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_Ndis": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_NetBios": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_NetManagement": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_NetShell": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_NetworkDiagnosticsFramework": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_NetworkPolicyServer": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_P2P": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_QoS": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_Rras": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_Snmp": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_WNet": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_WebDav": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_WiFi": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_WindowsConnectNow": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_WindowsConnectionManager": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_WindowsFilteringPlatform": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_WindowsFirewall": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_NetworkManagement_WindowsNetworkVirtualization": [
+                    "Win32_NetworkManagement"
+                ],
+                "Win32_Networking": [
+                    "Win32"
+                ],
+                "Win32_Networking_ActiveDirectory": [
+                    "Win32_Networking"
+                ],
+                "Win32_Networking_BackgroundIntelligentTransferService": [
+                    "Win32_Networking"
+                ],
+                "Win32_Networking_Clustering": [
+                    "Win32_Networking"
+                ],
+                "Win32_Networking_HttpServer": [
+                    "Win32_Networking"
+                ],
+                "Win32_Networking_Ldap": [
+                    "Win32_Networking"
+                ],
+                "Win32_Networking_NetworkListManager": [
+                    "Win32_Networking"
+                ],
+                "Win32_Networking_RemoteDifferentialCompression": [
+                    "Win32_Networking"
+                ],
+                "Win32_Networking_WebSocket": [
+                    "Win32_Networking"
+                ],
+                "Win32_Networking_WinHttp": [
+                    "Win32_Networking"
+                ],
+                "Win32_Networking_WinInet": [
+                    "Win32_Networking"
+                ],
+                "Win32_Networking_WinSock": [
+                    "Win32_Networking"
+                ],
+                "Win32_Networking_WindowsWebServices": [
+                    "Win32_Networking"
+                ],
+                "Win32_Security": [
+                    "Win32"
+                ],
+                "Win32_Security_AppLocker": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_Authentication": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_Authentication_Identity": [
+                    "Win32_Security_Authentication"
+                ],
+                "Win32_Security_Authentication_Identity_Provider": [
+                    "Win32_Security_Authentication_Identity"
+                ],
+                "Win32_Security_Authorization": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_Authorization_UI": [
+                    "Win32_Security_Authorization"
+                ],
+                "Win32_Security_ConfigurationSnapin": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_Credentials": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_Cryptography": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_Cryptography_Catalog": [
+                    "Win32_Security_Cryptography"
+                ],
+                "Win32_Security_Cryptography_Certificates": [
+                    "Win32_Security_Cryptography"
+                ],
+                "Win32_Security_Cryptography_Sip": [
+                    "Win32_Security_Cryptography"
+                ],
+                "Win32_Security_Cryptography_UI": [
+                    "Win32_Security_Cryptography"
+                ],
+                "Win32_Security_DiagnosticDataQuery": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_DirectoryServices": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_EnterpriseData": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_ExtensibleAuthenticationProtocol": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_Isolation": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_LicenseProtection": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_NetworkAccessProtection": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_Tpm": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_WinTrust": [
+                    "Win32_Security"
+                ],
+                "Win32_Security_WinWlx": [
+                    "Win32_Security"
+                ],
+                "Win32_Storage": [
+                    "Win32"
+                ],
+                "Win32_Storage_Cabinets": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_CloudFilters": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_Compression": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_DataDeduplication": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_DistributedFileSystem": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_EnhancedStorage": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_FileHistory": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_FileServerResourceManager": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_FileSystem": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_Imapi": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_IndexServer": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_InstallableFileSystems": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_IscsiDisc": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_Jet": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_OfflineFiles": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_OperationRecorder": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_Packaging": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_Packaging_Appx": [
+                    "Win32_Storage_Packaging"
+                ],
+                "Win32_Storage_Packaging_Opc": [
+                    "Win32_Storage_Packaging"
+                ],
+                "Win32_Storage_ProjectedFileSystem": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_StructuredStorage": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_Vhd": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_VirtualDiskService": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_Vss": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_Xps": [
+                    "Win32_Storage"
+                ],
+                "Win32_Storage_Xps_Printing": [
+                    "Win32_Storage_Xps"
+                ],
+                "Win32_System": [
+                    "Win32"
+                ],
+                "Win32_System_AddressBook": [
+                    "Win32_System"
+                ],
+                "Win32_System_Antimalware": [
+                    "Win32_System"
+                ],
+                "Win32_System_ApplicationInstallationAndServicing": [
+                    "Win32_System"
+                ],
+                "Win32_System_ApplicationVerifier": [
+                    "Win32_System"
+                ],
+                "Win32_System_AssessmentTool": [
+                    "Win32_System"
+                ],
+                "Win32_System_Com": [
+                    "Win32_System"
+                ],
+                "Win32_System_Com_CallObj": [
+                    "Win32_System_Com"
+                ],
+                "Win32_System_Com_ChannelCredentials": [
+                    "Win32_System_Com"
+                ],
+                "Win32_System_Com_Events": [
+                    "Win32_System_Com"
+                ],
+                "Win32_System_Com_Marshal": [
+                    "Win32_System_Com"
+                ],
+                "Win32_System_Com_StructuredStorage": [
+                    "Win32_System_Com"
+                ],
+                "Win32_System_Com_UI": [
+                    "Win32_System_Com"
+                ],
+                "Win32_System_Com_Urlmon": [
+                    "Win32_System_Com"
+                ],
+                "Win32_System_ComponentServices": [
+                    "Win32_System"
+                ],
+                "Win32_System_Console": [
+                    "Win32_System"
+                ],
+                "Win32_System_Contacts": [
+                    "Win32_System"
+                ],
+                "Win32_System_CorrelationVector": [
+                    "Win32_System"
+                ],
+                "Win32_System_DataExchange": [
+                    "Win32_System"
+                ],
+                "Win32_System_DeploymentServices": [
+                    "Win32_System"
+                ],
+                "Win32_System_DesktopSharing": [
+                    "Win32_System"
+                ],
+                "Win32_System_DeveloperLicensing": [
+                    "Win32_System"
+                ],
+                "Win32_System_Diagnostics": [
+                    "Win32_System"
+                ],
+                "Win32_System_Diagnostics_Ceip": [
+                    "Win32_System_Diagnostics"
+                ],
+                "Win32_System_Diagnostics_Debug": [
+                    "Win32_System_Diagnostics"
+                ],
+                "Win32_System_Diagnostics_Etw": [
+                    "Win32_System_Diagnostics"
+                ],
+                "Win32_System_Diagnostics_ProcessSnapshotting": [
+                    "Win32_System_Diagnostics"
+                ],
+                "Win32_System_Diagnostics_ToolHelp": [
+                    "Win32_System_Diagnostics"
+                ],
+                "Win32_System_DistributedTransactionCoordinator": [
+                    "Win32_System"
+                ],
+                "Win32_System_Environment": [
+                    "Win32_System"
+                ],
+                "Win32_System_ErrorReporting": [
+                    "Win32_System"
+                ],
+                "Win32_System_EventCollector": [
+                    "Win32_System"
+                ],
+                "Win32_System_EventLog": [
+                    "Win32_System"
+                ],
+                "Win32_System_EventNotificationService": [
+                    "Win32_System"
+                ],
+                "Win32_System_GroupPolicy": [
+                    "Win32_System"
+                ],
+                "Win32_System_HostCompute": [
+                    "Win32_System"
+                ],
+                "Win32_System_HostComputeNetwork": [
+                    "Win32_System"
+                ],
+                "Win32_System_HostComputeSystem": [
+                    "Win32_System"
+                ],
+                "Win32_System_Hypervisor": [
+                    "Win32_System"
+                ],
+                "Win32_System_IO": [
+                    "Win32_System"
+                ],
+                "Win32_System_Iis": [
+                    "Win32_System"
+                ],
+                "Win32_System_Ioctl": [
+                    "Win32_System"
+                ],
+                "Win32_System_JobObjects": [
+                    "Win32_System"
+                ],
+                "Win32_System_Js": [
+                    "Win32_System"
+                ],
+                "Win32_System_Kernel": [
+                    "Win32_System"
+                ],
+                "Win32_System_LibraryLoader": [
+                    "Win32_System"
+                ],
+                "Win32_System_Mailslots": [
+                    "Win32_System"
+                ],
+                "Win32_System_Mapi": [
+                    "Win32_System"
+                ],
+                "Win32_System_Memory": [
+                    "Win32_System"
+                ],
+                "Win32_System_Memory_NonVolatile": [
+                    "Win32_System_Memory"
+                ],
+                "Win32_System_MessageQueuing": [
+                    "Win32_System"
+                ],
+                "Win32_System_MixedReality": [
+                    "Win32_System"
+                ],
+                "Win32_System_Mmc": [
+                    "Win32_System"
+                ],
+                "Win32_System_Ole": [
+                    "Win32_System"
+                ],
+                "Win32_System_ParentalControls": [
+                    "Win32_System"
+                ],
+                "Win32_System_PasswordManagement": [
+                    "Win32_System"
+                ],
+                "Win32_System_Performance": [
+                    "Win32_System"
+                ],
+                "Win32_System_Performance_HardwareCounterProfiling": [
+                    "Win32_System_Performance"
+                ],
+                "Win32_System_Pipes": [
+                    "Win32_System"
+                ],
+                "Win32_System_Power": [
+                    "Win32_System"
+                ],
+                "Win32_System_ProcessStatus": [
+                    "Win32_System"
+                ],
+                "Win32_System_RealTimeCommunications": [
+                    "Win32_System"
+                ],
+                "Win32_System_Recovery": [
+                    "Win32_System"
+                ],
+                "Win32_System_Registry": [
+                    "Win32_System"
+                ],
+                "Win32_System_RemoteAssistance": [
+                    "Win32_System"
+                ],
+                "Win32_System_RemoteDesktop": [
+                    "Win32_System"
+                ],
+                "Win32_System_RemoteManagement": [
+                    "Win32_System"
+                ],
+                "Win32_System_RestartManager": [
+                    "Win32_System"
+                ],
+                "Win32_System_Restore": [
+                    "Win32_System"
+                ],
+                "Win32_System_Rpc": [
+                    "Win32_System"
+                ],
+                "Win32_System_Search": [
+                    "Win32_System"
+                ],
+                "Win32_System_Search_Common": [
+                    "Win32_System_Search"
+                ],
+                "Win32_System_SecurityCenter": [
+                    "Win32_System"
+                ],
+                "Win32_System_ServerBackup": [
+                    "Win32_System"
+                ],
+                "Win32_System_Services": [
+                    "Win32_System"
+                ],
+                "Win32_System_SettingsManagementInfrastructure": [
+                    "Win32_System"
+                ],
+                "Win32_System_SetupAndMigration": [
+                    "Win32_System"
+                ],
+                "Win32_System_Shutdown": [
+                    "Win32_System"
+                ],
+                "Win32_System_SideShow": [
+                    "Win32_System"
+                ],
+                "Win32_System_StationsAndDesktops": [
+                    "Win32_System"
+                ],
+                "Win32_System_SubsystemForLinux": [
+                    "Win32_System"
+                ],
+                "Win32_System_SystemInformation": [
+                    "Win32_System"
+                ],
+                "Win32_System_SystemServices": [
+                    "Win32_System"
+                ],
+                "Win32_System_TaskScheduler": [
+                    "Win32_System"
+                ],
+                "Win32_System_Threading": [
+                    "Win32_System"
+                ],
+                "Win32_System_Time": [
+                    "Win32_System"
+                ],
+                "Win32_System_TpmBaseServices": [
+                    "Win32_System"
+                ],
+                "Win32_System_TransactionServer": [
+                    "Win32_System"
+                ],
+                "Win32_System_UpdateAgent": [
+                    "Win32_System"
+                ],
+                "Win32_System_UpdateAssessment": [
+                    "Win32_System"
+                ],
+                "Win32_System_UserAccessLogging": [
+                    "Win32_System"
+                ],
+                "Win32_System_VirtualDosMachines": [
+                    "Win32_System"
+                ],
+                "Win32_System_WinRT": [
+                    "Win32_System"
+                ],
+                "Win32_System_WinRT_AllJoyn": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WinRT_Composition": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WinRT_CoreInputView": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WinRT_Direct3D11": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WinRT_Display": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WinRT_Graphics": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WinRT_Graphics_Capture": [
+                    "Win32_System_WinRT_Graphics"
+                ],
+                "Win32_System_WinRT_Graphics_Direct2D": [
+                    "Win32_System_WinRT_Graphics"
+                ],
+                "Win32_System_WinRT_Graphics_Imaging": [
+                    "Win32_System_WinRT_Graphics"
+                ],
+                "Win32_System_WinRT_Holographic": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WinRT_Isolation": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WinRT_ML": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WinRT_Media": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WinRT_Pdf": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WinRT_Printing": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WinRT_Shell": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WinRT_Storage": [
+                    "Win32_System_WinRT"
+                ],
+                "Win32_System_WindowsProgramming": [
+                    "Win32_System"
+                ],
+                "Win32_System_WindowsSync": [
+                    "Win32_System"
+                ],
+                "Win32_System_Wmi": [
+                    "Win32_System"
+                ],
+                "Win32_UI": [
+                    "Win32"
+                ],
+                "Win32_UI_Accessibility": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_Animation": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_ColorSystem": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_Controls": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_Controls_Dialogs": [
+                    "Win32_UI_Controls"
+                ],
+                "Win32_UI_Controls_RichEdit": [
+                    "Win32_UI_Controls"
+                ],
+                "Win32_UI_HiDpi": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_Input": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_Input_Ime": [
+                    "Win32_UI_Input"
+                ],
+                "Win32_UI_Input_Ink": [
+                    "Win32_UI_Input"
+                ],
+                "Win32_UI_Input_KeyboardAndMouse": [
+                    "Win32_UI_Input"
+                ],
+                "Win32_UI_Input_Pointer": [
+                    "Win32_UI_Input"
+                ],
+                "Win32_UI_Input_Radial": [
+                    "Win32_UI_Input"
+                ],
+                "Win32_UI_Input_Touch": [
+                    "Win32_UI_Input"
+                ],
+                "Win32_UI_Input_XboxController": [
+                    "Win32_UI_Input"
+                ],
+                "Win32_UI_InteractionContext": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_LegacyWindowsEnvironmentFeatures": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_Magnification": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_Notifications": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_Ribbon": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_Shell": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_Shell_Common": [
+                    "Win32_UI_Shell"
+                ],
+                "Win32_UI_Shell_PropertiesSystem": [
+                    "Win32_UI_Shell"
+                ],
+                "Win32_UI_TabletPC": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_TextServices": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_WindowsAndMessaging": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_Wpf": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_Xaml": [
+                    "Win32_UI"
+                ],
+                "Win32_UI_Xaml_Diagnostics": [
+                    "Win32_UI_Xaml"
+                ],
+                "default": [],
+                "deprecated": []
+            },
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows-sys@0.42.0",
+            "keywords": [],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows-sys-0.42.0/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "all-features": true,
+                        "default-target": "x86_64-pc-windows-msvc",
+                        "targets": []
+                    }
+                }
+            },
+            "name": "windows-sys",
+            "publish": null,
+            "readme": "readme.md",
+            "repository": "https://github.com/microsoft/windows-rs",
+            "rust_version": "1.49",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "windows_sys",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows-sys-0.42.0/src/lib.rs",
+                    "test": true
+                }
+            ],
+            "version": "0.42.0"
+        },
+        {
+            "authors": [
+                "Microsoft"
+            ],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [],
+            "description": "Code gen support for the windows crate",
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_gnullvm@0.42.1",
+            "keywords": [],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_aarch64_gnullvm-0.42.1/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "default-target": "x86_64-pc-windows-msvc",
+                        "targets": []
+                    }
+                }
+            },
+            "name": "windows_aarch64_gnullvm",
+            "publish": null,
+            "readme": null,
+            "repository": "https://github.com/microsoft/windows-rs",
+            "rust_version": null,
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "windows_aarch64_gnullvm",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_aarch64_gnullvm-0.42.1/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_aarch64_gnullvm-0.42.1/build.rs",
+                    "test": false
+                }
+            ],
+            "version": "0.42.1"
+        },
+        {
+            "authors": [
+                "Microsoft"
+            ],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [],
+            "description": "Code gen support for the windows crate",
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_msvc@0.42.1",
+            "keywords": [],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_aarch64_msvc-0.42.1/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "default-target": "x86_64-pc-windows-msvc",
+                        "targets": []
+                    }
+                }
+            },
+            "name": "windows_aarch64_msvc",
+            "publish": null,
+            "readme": null,
+            "repository": "https://github.com/microsoft/windows-rs",
+            "rust_version": null,
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "windows_aarch64_msvc",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_aarch64_msvc-0.42.1/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_aarch64_msvc-0.42.1/build.rs",
+                    "test": false
+                }
+            ],
+            "version": "0.42.1"
+        },
+        {
+            "authors": [
+                "Microsoft"
+            ],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [],
+            "description": "Code gen support for the windows crate",
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_i686_gnu@0.42.1",
+            "keywords": [],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_i686_gnu-0.42.1/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "default-target": "x86_64-pc-windows-msvc",
+                        "targets": []
+                    }
+                }
+            },
+            "name": "windows_i686_gnu",
+            "publish": null,
+            "readme": null,
+            "repository": "https://github.com/microsoft/windows-rs",
+            "rust_version": null,
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "windows_i686_gnu",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_i686_gnu-0.42.1/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_i686_gnu-0.42.1/build.rs",
+                    "test": false
+                }
+            ],
+            "version": "0.42.1"
+        },
+        {
+            "authors": [
+                "Microsoft"
+            ],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [],
+            "description": "Code gen support for the windows crate",
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_i686_msvc@0.42.1",
+            "keywords": [],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_i686_msvc-0.42.1/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "default-target": "x86_64-pc-windows-msvc",
+                        "targets": []
+                    }
+                }
+            },
+            "name": "windows_i686_msvc",
+            "publish": null,
+            "readme": null,
+            "repository": "https://github.com/microsoft/windows-rs",
+            "rust_version": null,
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "windows_i686_msvc",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_i686_msvc-0.42.1/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_i686_msvc-0.42.1/build.rs",
+                    "test": false
+                }
+            ],
+            "version": "0.42.1"
+        },
+        {
+            "authors": [
+                "Microsoft"
+            ],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [],
+            "description": "Code gen support for the windows crate",
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnu@0.42.1",
+            "keywords": [],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_x86_64_gnu-0.42.1/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "default-target": "x86_64-pc-windows-msvc",
+                        "targets": []
+                    }
+                }
+            },
+            "name": "windows_x86_64_gnu",
+            "publish": null,
+            "readme": null,
+            "repository": "https://github.com/microsoft/windows-rs",
+            "rust_version": null,
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "windows_x86_64_gnu",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_x86_64_gnu-0.42.1/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_x86_64_gnu-0.42.1/build.rs",
+                    "test": false
+                }
+            ],
+            "version": "0.42.1"
+        },
+        {
+            "authors": [
+                "Microsoft"
+            ],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [],
+            "description": "Code gen support for the windows crate",
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnullvm@0.42.1",
+            "keywords": [],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_x86_64_gnullvm-0.42.1/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "default-target": "x86_64-pc-windows-msvc",
+                        "targets": []
+                    }
+                }
+            },
+            "name": "windows_x86_64_gnullvm",
+            "publish": null,
+            "readme": null,
+            "repository": "https://github.com/microsoft/windows-rs",
+            "rust_version": null,
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "windows_x86_64_gnullvm",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_x86_64_gnullvm-0.42.1/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_x86_64_gnullvm-0.42.1/build.rs",
+                    "test": false
+                }
+            ],
+            "version": "0.42.1"
+        },
+        {
+            "authors": [
+                "Microsoft"
+            ],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [],
+            "description": "Code gen support for the windows crate",
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_msvc@0.42.1",
+            "keywords": [],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_x86_64_msvc-0.42.1/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "default-target": "x86_64-pc-windows-msvc",
+                        "targets": []
+                    }
+                }
+            },
+            "name": "windows_x86_64_msvc",
+            "publish": null,
+            "readme": null,
+            "repository": "https://github.com/microsoft/windows-rs",
+            "rust_version": null,
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "windows_x86_64_msvc",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_x86_64_msvc-0.42.1/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/windows_x86_64_msvc-0.42.1/build.rs",
+                    "test": false
+                }
+            ],
+            "version": "0.42.1"
+        }
+    ],
+    "resolve": {
+        "nodes": [
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#autocfg@1.1.0"
+            },
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#pin-project-lite@0.2.9"
+            },
+            {
+                "dependencies": [
+                    "registry+https://github.com/rust-lang/crates.io-index#tokio@1.25.0"
+                ],
+                "deps": [
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            },
+                            {
+                                "kind": null,
+                                "target": "cfg(unix)"
+                            }
+                        ],
+                        "name": "tokio",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#tokio@1.25.0"
+                    }
+                ],
+                "features": [],
+                "id": "path+file://{TEMP_DIR}/target_cfg_features#0.1.0"
+            },
+            {
+                "dependencies": [
+                    "registry+https://github.com/rust-lang/crates.io-index#autocfg@1.1.0",
+                    "registry+https://github.com/rust-lang/crates.io-index#pin-project-lite@0.2.9",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows-sys@0.42.0"
+                ],
+                "deps": [
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": "build",
+                                "target": null
+                            }
+                        ],
+                        "name": "autocfg",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#autocfg@1.1.0"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "pin_project_lite",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#pin-project-lite@0.2.9"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "cfg(docsrs)"
+                            }
+                        ],
+                        "name": "windows_sys",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows-sys@0.42.0"
+                    }
+                ],
+                "features": [
+                    "default",
+                    "fs"
+                ],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#tokio@1.25.0"
+            },
+            {
+                "dependencies": [
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_gnullvm@0.42.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_msvc@0.42.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_i686_gnu@0.42.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_i686_msvc@0.42.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnu@0.42.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnullvm@0.42.1",
+                    "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_msvc@0.42.1"
+                ],
+                "deps": [
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "aarch64-pc-windows-gnullvm"
+                            }
+                        ],
+                        "name": "windows_aarch64_gnullvm",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_gnullvm@0.42.1"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "aarch64-pc-windows-msvc"
+                            },
+                            {
+                                "kind": null,
+                                "target": "aarch64-uwp-windows-msvc"
+                            }
+                        ],
+                        "name": "windows_aarch64_msvc",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_msvc@0.42.1"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "i686-pc-windows-gnu"
+                            },
+                            {
+                                "kind": null,
+                                "target": "i686-uwp-windows-gnu"
+                            }
+                        ],
+                        "name": "windows_i686_gnu",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_i686_gnu@0.42.1"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "i686-pc-windows-msvc"
+                            },
+                            {
+                                "kind": null,
+                                "target": "i686-uwp-windows-msvc"
+                            }
+                        ],
+                        "name": "windows_i686_msvc",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_i686_msvc@0.42.1"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "x86_64-pc-windows-gnu"
+                            },
+                            {
+                                "kind": null,
+                                "target": "x86_64-uwp-windows-gnu"
+                            }
+                        ],
+                        "name": "windows_x86_64_gnu",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnu@0.42.1"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "x86_64-pc-windows-gnullvm"
+                            }
+                        ],
+                        "name": "windows_x86_64_gnullvm",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnullvm@0.42.1"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "x86_64-pc-windows-msvc"
+                            },
+                            {
+                                "kind": null,
+                                "target": "x86_64-uwp-windows-msvc"
+                            }
+                        ],
+                        "name": "windows_x86_64_msvc",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_msvc@0.42.1"
+                    }
+                ],
+                "features": [
+                    "Win32",
+                    "Win32_Foundation",
+                    "Win32_Security",
+                    "Win32_Security_Authorization",
+                    "default"
+                ],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows-sys@0.42.0"
+            },
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_gnullvm@0.42.1"
+            },
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_aarch64_msvc@0.42.1"
+            },
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_i686_gnu@0.42.1"
+            },
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_i686_msvc@0.42.1"
+            },
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnu@0.42.1"
+            },
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_gnullvm@0.42.1"
+            },
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#windows_x86_64_msvc@0.42.1"
+            }
+        ],
+        "root": "path+file://{TEMP_DIR}/target_cfg_features#0.1.0"
+    },
+    "target_directory": "{TEMP_DIR}/target_cfg_features/target",
+    "version": 1,
+    "workspace_default_members": [
+        "path+file://{TEMP_DIR}/target_cfg_features#0.1.0"
+    ],
+    "workspace_members": [
+        "path+file://{TEMP_DIR}/target_cfg_features#0.1.0"
+    ],
+    "workspace_root": "{TEMP_DIR}/target_cfg_features"
+}

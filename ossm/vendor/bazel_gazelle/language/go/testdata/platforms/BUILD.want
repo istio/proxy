@@ -1,0 +1,65 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "platforms",
+    srcs = [
+        "cgo_generic.c",
+        "cgo_generic.go",
+        "cgo_linux.c",
+        "cgo_linux.go",
+        "constraints_dual_cgo.go",
+        "constraints_dual_no_cgo.go",
+        "constraints_verify_demorgans_law.go",
+        "generic.go",
+        "new_constraint_a.go",
+        "no_cgo.go",
+        "release.go",
+        "suffix_amd64.go",
+        "suffix_arm.go",
+        "suffix_darwin.go",
+        "suffix_linux.go",
+        "tag_a.go",
+        "tag_d.go",
+        "tag_l.go",
+    ],
+    _gazelle_imports = [
+        "example.com/repo/platforms/generic",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "example.com/repo/platforms/linux",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "example.com/repo/platforms/darwin",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "example.com/repo/platforms/darwin",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "example.com/repo/platforms/linux",
+        ],
+        "//conditions:default": [],
+    }),
+    cgo = True,
+    copts = [
+        "-DGENERIC",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:android": [
+            "-DLINUX",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "-DLINUX",
+        ],
+        "//conditions:default": [],
+    }),
+    importpath = "example.com/repo/platforms",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "platforms_test",
+    srcs = [
+        "generic_test.go",
+        "suffix_linux_test.go",
+    ],
+    _gazelle_imports = ["example.com/repo/platforms"],
+)

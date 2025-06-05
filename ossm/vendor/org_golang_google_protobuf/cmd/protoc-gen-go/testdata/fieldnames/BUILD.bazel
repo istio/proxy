@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "fieldnames_proto",
+    srcs = ["fieldnames.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_proto_library(
+    name = "fieldnames_go_proto",
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/fieldnames",
+    proto = ":fieldnames_proto",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "fieldnames",
+    embed = [":fieldnames_go_proto"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/fieldnames",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fieldnames",
+    visibility = ["//visibility:public"],
+)

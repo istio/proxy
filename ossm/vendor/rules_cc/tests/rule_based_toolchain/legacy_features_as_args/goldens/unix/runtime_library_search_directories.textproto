@@ -1,0 +1,54 @@
+enabled: false
+flag_sets {
+  actions: "c++-link-dynamic-library"
+  actions: "c++-link-executable"
+  actions: "c++-link-nodeps-dynamic-library"
+  actions: "lto-index-for-dynamic-library"
+  actions: "lto-index-for-executable"
+  actions: "lto-index-for-nodeps-dynamic-library"
+  flag_groups {
+    expand_if_available: "runtime_library_search_directories"
+    flag_groups {
+      flag_groups {
+        expand_if_true: "is_cc_test"
+        flags: "-Xlinker"
+        flags: "-rpath"
+        flags: "-Xlinker"
+        flags: "$EXEC_ORIGIN/%{runtime_library_search_directories}"
+      }
+      flag_groups {
+        expand_if_false: "is_cc_test"
+        flags: "-Xlinker"
+        flags: "-rpath"
+        flags: "-Xlinker"
+        flags: "$ORIGIN/%{runtime_library_search_directories}"
+      }
+      iterate_over: "runtime_library_search_directories"
+    }
+  }
+  with_features {
+    features: "static_link_cpp_runtimes"
+  }
+}
+flag_sets {
+  actions: "c++-link-dynamic-library"
+  actions: "c++-link-executable"
+  actions: "c++-link-nodeps-dynamic-library"
+  actions: "lto-index-for-dynamic-library"
+  actions: "lto-index-for-executable"
+  actions: "lto-index-for-nodeps-dynamic-library"
+  flag_groups {
+    expand_if_available: "runtime_library_search_directories"
+    flag_groups {
+      flags: "-Xlinker"
+      flags: "-rpath"
+      flags: "-Xlinker"
+      flags: "$ORIGIN/%{runtime_library_search_directories}"
+      iterate_over: "runtime_library_search_directories"
+    }
+  }
+  with_features {
+    not_features: "static_link_cpp_runtimes"
+  }
+}
+name: "runtime_library_search_directories_test"

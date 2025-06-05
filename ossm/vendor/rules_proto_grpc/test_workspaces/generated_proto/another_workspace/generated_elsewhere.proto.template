@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message generated_elsewhere {
+    bool field = 1;
+}

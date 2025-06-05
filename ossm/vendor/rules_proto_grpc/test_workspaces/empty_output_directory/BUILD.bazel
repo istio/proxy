@@ -1,0 +1,25 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_proto_grpc//php:defs.bzl", "php_grpc_compile")
+
+package(default_visibility = ["//visibility:private"])
+
+# Test that plugins that use output_directory behave correctly when no files are written to the output directory
+# See https://github.com/rules-proto-grpc/rules_proto_grpc/issues/39
+
+proto_library(
+    name = "proto_lib",
+    srcs = ["no-services.proto"],
+)
+
+php_grpc_compile(
+    name = "php_lib",
+    protos = ["proto_lib"],
+)
+
+# Some sort of test is required to exit cleanly
+py_test(
+    name = "placeholder",
+    srcs = ["placeholder.py"],
+    main = "placeholder.py",
+)

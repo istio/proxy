@@ -1,0 +1,103 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "eg",
+    srcs = [
+        "eg.go",
+        "match.go",
+        "rewrite.go",
+    ],
+    importpath = "golang.org/x/tools/refactor/eg",
+    visibility = ["//visibility:public"],
+    deps = ["//go/ast/astutil"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":eg",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "eg_test",
+    srcs = ["eg_test.go"],
+    data = glob(["testdata/**"]),
+    deps = select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:osx": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:qnx": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            ":eg",
+            "//go/loader",
+            "//internal/testenv",
+        ],
+        "//conditions:default": [],
+    }),
+)

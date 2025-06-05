@@ -1,0 +1,11 @@
+The Linux DLB2 driver is a kernel module that supports configuration and use of
+the DLB2 device.
+
+The driver uses the kbuild
+(https://www.kernel.org/doc/Documentation/kbuild/modules.txt) build system. To
+build out-of-tree, simply run 'make'. You can optionally specify the KSRC
+environment variable to specify the kernel source tree to build against. (If
+unspecified, the build uses the host OS's kernel headers.)
+
+To build in-tree, run './scripts/patch_kernel_tree.sh <Path to Linux kernel
+source>' to patch the kernel source tree and then build the kernel as usual.

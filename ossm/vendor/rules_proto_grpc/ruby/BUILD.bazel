@@ -1,0 +1,22 @@
+load("//:defs.bzl", "proto_plugin")
+
+proto_plugin(
+    name = "ruby_plugin",
+    exclusions = [
+        "google/protobuf",
+    ],
+    outputs = ["{protopath}_pb.rb"],
+    protoc_plugin_name = "ruby",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "grpc_ruby_plugin",
+    empty_template = "empty.template",
+    exclusions = [
+        "google/protobuf",
+    ],
+    outputs = ["{protopath}_services_pb.rb"],
+    tool = "@com_github_grpc_grpc//src/compiler:grpc_ruby_plugin",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "google/protobuf/wrappers.proto";
+
+option java_package = "com.github.bazelbuild.rules_jvm_external.java_export";
+
+message Example {
+  google.protobuf.Int32Value optional = 1;
+}

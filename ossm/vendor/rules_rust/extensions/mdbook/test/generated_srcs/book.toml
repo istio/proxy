@@ -1,0 +1,6 @@
+[book]
+authors = ["Andre Brisco"]
+language = "en"
+multilingual = false
+src = "src"
+title = "With Generated Sources"

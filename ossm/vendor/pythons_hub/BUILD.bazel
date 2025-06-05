@@ -1,0 +1,16 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@@rules_python//python/private:py_toolchain_suite.bzl", "py_toolchain_suite")
+
+bzl_library(
+    name = "interpreters_bzl",
+    srcs = ["interpreters.bzl"],
+    visibility = ["@rules_python//:__subpackages__"],
+)
+
+bzl_library(
+    name = "versions_bzl",
+    srcs = ["versions.bzl"],
+    visibility = ["@rules_python//:__subpackages__"],
+)
+
+

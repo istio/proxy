@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "github.com/rules-proto-grpc/rules_proto_grpc/example/proto";
+
+package example.proto;
+
+import "example/proto/thing.proto";
+
+message Place {
+    string name = 1;
+    example.proto.Thing thing = 2;
+}

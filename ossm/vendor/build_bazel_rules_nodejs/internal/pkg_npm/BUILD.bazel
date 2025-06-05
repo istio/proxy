@@ -1,0 +1,32 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@build_bazel_rules_nodejs//:index.bzl", "nodejs_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+bzl_library(
+    name = "bzl",
+    srcs = glob(["*.bzl"]),
+    visibility = ["//visibility:public"],
+)
+
+# Exported to be consumed for generating stardoc.
+exports_files(["pkg_npm.bzl"])
+
+nodejs_binary(
+    name = "packager",
+    data = ["//third_party/github.com/gjtorikian/isBinaryFile"],
+    entry_point = ":packager.js",
+    # TODO: figure out why isbinaryfile is not linked in a way this can resolve
+    templated_args = ["--bazel_patch_module_resolver"],
+)
+
+nodejs_binary(
+    name = "npm_script_generator",
+    entry_point = ":npm_script_generator.js",
+)
+
+filegroup(
+    name = "package_contents",
+    srcs = glob(["*"]),
+    visibility = ["//:__pkg__"],
+)

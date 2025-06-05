@@ -1,0 +1,29 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//private:toolchain.bzl", "current_mdbook_binary", "current_mdbook_toolchain")
+
+exports_files([
+    "defs.bzl",
+    "MODULE.bazel",
+])
+
+toolchain_type(
+    name = "toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+current_mdbook_toolchain(
+    name = "toolchain",
+    visibility = ["//visibility:public"],
+)
+
+current_mdbook_binary(
+    name = "mdbook",
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = ["defs.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["//private:bzl_lib"],
+)

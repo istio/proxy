@@ -1,0 +1,53 @@
+# Copyright 2023 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# See CONTRIBUTING.md for instructions.
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0  # Use the ref you want to point at
+    hooks:
+      - id: check-merge-conflict
+  - repo: https://github.com/keith/pre-commit-buildifier
+    rev: 6.1.0
+    hooks:
+      - id: buildifier
+        args: &args
+          # Keep this argument in sync with .bazelci/presubmit.yaml
+          - --warnings=all
+      - id: buildifier-lint
+        args: *args
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: isort (python)
+        args:
+          - --profile
+          - black
+  - repo: https://github.com/psf/black
+    rev: 23.1.0
+    hooks:
+      - id: black
+  - repo: local
+    hooks:
+      - id: update-deleted-packages
+        name: Update deleted packages
+        language: system
+        # 7.x is necessary until https://github.com/bazel-contrib/rules_bazel_integration_test/pull/414
+        # is merged and released
+        entry: env USE_BAZEL_VERSION=7.x bazel run @rules_bazel_integration_test//tools:update_deleted_packages
+        files: ^((examples|tests)/.*/(MODULE.bazel|WORKSPACE|WORKSPACE.bzlmod|BUILD.bazel)|.bazelrc)$
+        pass_filenames: false

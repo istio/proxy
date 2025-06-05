@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CPP2SKY_PKGCONFIG_LIBDIR@
+includedir=@CPP2SKY_PKGCONFIG_INCLUDEDIR@
+
+Name: cpp2sky
+Description: Distributed tracing and monitor SDK in CPP for Apache SkyWalking APM
+Version: @CPP2SKY_VERSION@
+Libs: -L${libdir} -lcpp2sky
+Cflags: -I${includedir}/skywalking-protocol

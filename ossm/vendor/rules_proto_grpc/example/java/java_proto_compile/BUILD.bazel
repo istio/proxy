@@ -1,0 +1,16 @@
+load("@rules_proto_grpc//java:defs.bzl", "java_proto_compile")
+
+java_proto_compile(
+    name = "person_java_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+)
+
+java_proto_compile(
+    name = "place_java_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+)
+
+java_proto_compile(
+    name = "thing_java_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

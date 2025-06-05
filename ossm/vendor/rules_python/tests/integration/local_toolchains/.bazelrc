@@ -1,0 +1,6 @@
+common --action_env=RULES_PYTHON_BZLMOD_DEBUG=1
+common --lockfile_mode=off
+test --test_output=errors
+# Windows requires these for multi-python support:
+build --enable_runfiles
+common:bazel7.x --incompatible_python_disallow_native_rules
