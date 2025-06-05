@@ -41,6 +41,10 @@ def load_envoy():
         sha256 = "%s",
         strip_prefix = "%s-%s",
         url = "https://github.com/%s/%s/archive/%s.tar.gz",
+        patch_args = ["-p1"],
+        patches = [
+            "@io_istio_proxy//ossm/patches:use-cmake-from-host.patch",
+            ],
     )
 ''' % (openssl_disabled_extensions, attr["sha256"], attr["repo"], attr["sha"], attr["org"], attr["repo"], attr["sha"])
     )

@@ -30,8 +30,8 @@ ENVOY_ORG = "envoyproxy"
 
 ENVOY_REPO = "envoy"
 
-OPENSSL_ENVOY_SHA = "3677e06b8750ab1b46637256029a82266f9e5b31"
-OPENSSL_ENVOY_SHA256 = "d3ca2e8d3b3a2effeb092f8ecd2a09a4fc2fd3188abdd0a558d20a58107c106e"
+OPENSSL_ENVOY_SHA = "2ecdd4cd60c947a09e3409ae097640440227c6b3"
+OPENSSL_ENVOY_SHA256 = "5ea411a975a0d52c80a1227ace873071cccce71fe20e3923606377cd2e1f9028"
 OPENSSL_ENVOY_ORG = "dcillera"
 OPENSSL_ENVOY_REPO = "envoy-openssl"
 
@@ -88,4 +88,4 @@ install_deps()
 
 load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 
-envoy_dependency_imports()
+envoy_dependency_imports(go_version = "host")

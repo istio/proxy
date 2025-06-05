@@ -1,0 +1,29 @@
+# Common build flags
+# build --cxxopt -w
+
+build --host_force_python=PY3
+build --extra_toolchains=@local_jdk//:all
+build --tool_java_runtime_version=local_jdk
+build --verbose_failures
+build --config=openssl
+
+# Test flags
+build --test_env=ENVOY_IP_TEST_VERSIONS=v4only
+build --test_env=HEAPCHECK=minimal
+build --test_output=all
+
+# Arch-specific build flags, triggered with --config=$ARCH in bazel build command
+build:x86_64 --linkopt=-fuse-ld=lld
+build:s390x --@envoy//source/extensions/filters/common/lua:luajit2=1 --cxxopt='-includeoptional' --copt=-Wno-error=type-limits --copt=-Wno-error=uninitialized --linkopt=-fuse-ld=gold --copt=-fno-builtin-strlen --action_env=BAZEL_LINKLIBS=-lstdc++
+build:ppc --linkopt=-fuse-ld=lld --@envoy//source/extensions/filters/common/lua:luajit2=1
+build:aarch64 --linkopt=-fuse-ld=lld
+
+# Colored ouput messes with some of the logging systems in CI, so we disable that.
+build:ci-config --color=no
+build:ci-config --show_progress_rate_limit=10
+
+common --action_env=OPENSSL_ROOT_DIR
+common --action_env=Clang_DIR=/usr/lib/llvm
+
+# Import vendor flags
+import %workspace%/ossm/bazelrc-vendor
