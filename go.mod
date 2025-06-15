@@ -3,8 +3,8 @@ module istio.io/proxy
 go 1.24
 
 require (
-	github.com/cncf/xds/go v0.0.0-20250121191232-2f005788dc42
-	github.com/envoyproxy/go-control-plane v0.13.5-0.20250606132447-d936c5d669b5
+	github.com/cncf/xds/go v0.0.0-20250326154945-ae57f3c0d45f
+	github.com/envoyproxy/go-control-plane v0.13.5-0.20250610191940-0951cb0e66fc
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.7.0
@@ -13,14 +13,14 @@ require (
 	go.opentelemetry.io/proto/otlp v1.1.0
 	go.starlark.net v0.0.0-20240123142251-f86470692795
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250528174236-200df99c418a
-	google.golang.org/grpc v1.72.2
+	google.golang.org/grpc v1.73.0
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
-	cel.dev/expr v0.20.0 // indirect
+	cel.dev/expr v0.23.0 // indirect
 	github.com/envoyproxy/go-control-plane/ratelimit v0.1.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.2.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.0 // indirect
