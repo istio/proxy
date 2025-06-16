@@ -1,6 +1,8 @@
 # This file is sourced from %workspace%/.bazelrc, and includes additional
 # configuration specific to building envoy on openssl/bssl-compat
 
+build:clang --linkopt=-latomic
+
 test --test_env=ENVOY_IP_TEST_VERSIONS=v4only
 
 # As of today we do not support QUIC/HTTP3, hence we exclude it from the build, always.

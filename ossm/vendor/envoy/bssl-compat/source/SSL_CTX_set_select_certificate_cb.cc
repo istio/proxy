@@ -1,5 +1,6 @@
 #include <openssl/ssl.h>
 #include <ossl.h>
+#include "log.h"
 
 
 /**
@@ -113,6 +114,11 @@ static int ssl_ctx_client_hello_cb(SSL *ssl, int *alert, void *arg) {
     case ssl_select_cert_success: return ossl_SSL_CLIENT_HELLO_SUCCESS;
     case ssl_select_cert_retry:   return ossl_SSL_CLIENT_HELLO_RETRY;
     case ssl_select_cert_error:   return ossl_SSL_CLIENT_HELLO_ERROR;
+    case ssl_select_cert_disable_ech: {
+      // None of the Envoy code ever returns the new ssl_select_cert_disable_ech enumerator
+      bssl_compat_error("Unexpected ssl_select_cert_disable_ech result from callback");
+      return ossl_SSL_CLIENT_HELLO_ERROR;
+    }
   };
 }
 

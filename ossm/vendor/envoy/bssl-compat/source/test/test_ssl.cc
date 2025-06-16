@@ -625,9 +625,8 @@ TEST(SSLTest, test_SSL_get_curve_name) {
   EXPECT_STREQ("P-384", SSL_get_curve_name(SSL_CURVE_SECP384R1));
   EXPECT_STREQ("P-521", SSL_get_curve_name(SSL_CURVE_SECP521R1));
   EXPECT_STREQ("X25519", SSL_get_curve_name(SSL_CURVE_X25519));
-#ifndef BSSL_COMPAT
-  EXPECT_STREQ("CECPQ2", SSL_get_curve_name(SSL_CURVE_CECPQ2));
-#endif
+  EXPECT_STREQ("X25519MLKEM768", SSL_get_curve_name(SSL_GROUP_X25519_MLKEM768));
+  EXPECT_STREQ("X25519Kyber768Draft00", SSL_get_curve_name(SSL_GROUP_X25519_KYBER768_DRAFT00));
 }
 
 
@@ -1634,5 +1633,125 @@ TEST(SSLTest, test_SSL_CTX_set_custom_verify_alert_codes) {
 
     // Check that the server received the expected TLS alert
     ASSERT_STREQ(alert_string, static_cast<char*>(SSL_get_app_data(server_ssl.get())));
+  }
+}
+
+
+TEST(SSLTest, test_SSL_get_all_cipher_names) {
+  // Get the size by passing a zero size input buffer
+  size_t size1 = SSL_get_all_cipher_names(nullptr, 0);
+  ASSERT_GT(size1, 0);
+
+  // Allocate a buffer of the size returned above
+  std::unique_ptr<const char*[]> names1(new const char*[size1]);
+
+  // Call SSL_get_all_cipher_names() with the allocated buffer
+  size_t size2 = SSL_get_all_cipher_names(names1.get(), size1);
+
+  // Check that the size returned is the same as the size we allocated
+  ASSERT_EQ(size2, size1);
+
+  // Check that the names are not null and have a non-zero length
+  for (size_t i = 0; i < size2; i++) {
+    ASSERT_NE(names1.get()[i], nullptr);
+    ASSERT_GT(strlen(names1.get()[i]), 0);
+    // printf("%s\n", names1.get()[i]);
+  }
+
+  // Allocate another buffer that is one element too short (size2 - 1)
+  std::unique_ptr<const char*[]> names2(new const char*[size2 - 1]);
+
+  // Call SSL_get_all_cipher_names() with the short buffer
+  size_t size3 = SSL_get_all_cipher_names(names2.get(), size2 - 1);
+
+  // Check that the size returned is the number of ciphers it
+  // would have returned if the buffer had been big enough.
+  ASSERT_EQ(size3, size2);
+
+  // Check that the names are not null and have a non-zero length
+  for (size_t i = 0; i < (size2 - 1); i++) {
+    ASSERT_NE(names2.get()[i], nullptr);
+    ASSERT_GT(strlen(names2.get()[i]), 0);
+    // printf("%s\n", names2.get()[i]);
+  }
+}
+
+
+TEST(SSLTest, test_SSL_get_all_signature_algorithm_names) {
+  // Get the size by passing a zero size input buffer
+  size_t size1 = SSL_get_all_signature_algorithm_names(nullptr, 0);
+  ASSERT_GT(size1, 0);
+
+  // Allocate a buffer of the size returned above
+  std::unique_ptr<const char*[]> names1(new const char*[size1]);
+
+  // Call SSL_get_all_signature_algorithm_names() with the allocated buffer
+  size_t size2 = SSL_get_all_signature_algorithm_names(names1.get(), size1);
+
+  // Check that the size returned is the same as the size we allocated
+  ASSERT_EQ(size2, size1);
+
+  // Check that the names are not null and have a non-zero length
+  for (size_t i = 0; i < size2; i++) {
+    ASSERT_NE(names1.get()[i], nullptr);
+    ASSERT_GT(strlen(names1.get()[i]), 0);
+    // printf("%s\n", names1.get()[i]);
+  }
+
+  // Allocate another buffer that is one element too short (size2 - 1)
+  std::unique_ptr<const char*[]> names2(new const char*[size2 - 1]);
+
+  // Call SSL_get_all_signature_algorithm_names() with the short buffer
+  size_t size3 = SSL_get_all_signature_algorithm_names(names2.get(), size2 - 1);
+
+  // Check that the size returned is the number of ciphers it
+  // would have returned if the buffer had been big enough.
+  ASSERT_EQ(size3, size2);
+
+  // Check that the names are not null and have a non-zero length
+  for (size_t i = 0; i < (size2 - 1); i++) {
+    ASSERT_NE(names2.get()[i], nullptr);
+    ASSERT_GT(strlen(names2.get()[i]), 0);
+    // printf("%s\n", names2.get()[i]);
+  }
+}
+
+
+TEST(SSLTest, test_SSL_get_all_curve_names) {
+  // Get the size by passing a zero size input buffer
+  size_t size1 = SSL_get_all_curve_names(nullptr, 0);
+  ASSERT_GT(size1, 0);
+
+  // Allocate a buffer of the size returned above
+  std::unique_ptr<const char*[]> names1(new const char*[size1]);
+
+  // Call SSL_get_all_curve_names() with the allocated buffer
+  size_t size2 = SSL_get_all_curve_names(names1.get(), size1);
+
+  // Check that the size returned is the same as the size we allocated
+  ASSERT_EQ(size2, size1);
+
+  // Check that the names are not null and have a non-zero length
+  for (size_t i = 0; i < size2; i++) {
+    ASSERT_NE(names1.get()[i], nullptr);
+    // ASSERT_GT(strlen(names1.get()[i]), 0);
+    printf("%s\n", names1.get()[i]);
+  }
+
+  // Allocate another buffer that is one element too short (size2 - 1)
+  std::unique_ptr<const char*[]> names2(new const char*[size2 - 1]);
+
+  // Call SSL_get_all_curve_names() with the short buffer
+  size_t size3 = SSL_get_all_curve_names(names2.get(), size2 - 1);
+
+  // Check that the size returned is the number of ciphers it
+  // would have returned if the buffer had been big enough.
+  ASSERT_EQ(size3, size2);
+
+  // Check that the names are not null and have a non-zero length
+  for (size_t i = 0; i < (size2 - 1); i++) {
+    ASSERT_NE(names2.get()[i], nullptr);
+    ASSERT_GT(strlen(names2.get()[i]), 0);
+    // printf("%s\n", names2.get()[i]);
   }
 }

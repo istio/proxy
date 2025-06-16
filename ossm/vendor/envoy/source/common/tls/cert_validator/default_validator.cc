@@ -579,16 +579,11 @@ absl::Status DefaultCertValidator::addClientValidationContext(SSL_CTX* ctx,
   // Set the verify_depth
   if (config_->maxVerifyDepth().has_value()) {
     uint32_t max_verify_depth = std::min(config_->maxVerifyDepth().value(), uint32_t{INT_MAX});
-#if 0
-    // RH - Commented because we have verified that, even with OpenSSL 3.0.x
-    // (in both 1.32 and 1.34 merged upstream Envoy), this causes a failure.
-  
     // Older BoringSSLs behave like OpenSSL 1.0.x and exclude the leaf from the
     // depth but include the trust anchor. Newer BoringSSLs match OpenSSL 1.1.x
     // and later in excluding both the leaf and trust anchor. `maxVerifyDepth`
     // documents the older behavior, so adjust the value to match.
     max_verify_depth = max_verify_depth > 0 ? max_verify_depth - 1 : 0;
-#endif
     SSL_CTX_set_verify_depth(ctx, static_cast<int>(max_verify_depth));
   }
   return absl::OkStatus();

@@ -1,5 +1,7 @@
 #include <openssl/ssl.h>
 #include <ossl.h>
+#include <iostream>
+
 
 
 // NOTE: OpenSSL interprets the verify depth differently to BoringSSL. BoringSSL excludes the leaf
@@ -11,5 +13,5 @@
 // https://github.com/google/boringssl/blob/ca1690e221677cea3fb946f324eb89d846ec53f2/include/openssl/ssl.h#L2493-L2496
 
 void SSL_CTX_set_verify_depth(SSL_CTX *ctx, int depth) {
-  return ossl.ossl_SSL_CTX_set_verify_depth(ctx, depth - 1);
+  return ossl.ossl_SSL_CTX_set_verify_depth(ctx, depth);
 }

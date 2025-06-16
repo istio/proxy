@@ -3,5 +3,5 @@
 
 
 extern "C" GENERAL_NAME *d2i_GENERAL_NAME(GENERAL_NAME **a, const unsigned char **in, long len) {
-  return (GENERAL_NAME *)ossl.ossl_d2i_GENERAL_NAME((ossl_GENERAL_NAME **)a, in, len);
+  return ossl.ossl_d2i_GENERAL_NAME(a, in, len);
 }

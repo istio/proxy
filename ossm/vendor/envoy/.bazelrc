@@ -92,7 +92,6 @@ build:clang --linkopt=-fuse-ld=lld
 build:clang --action_env=CC=clang --host_action_env=CC=clang
 build:clang --action_env=CXX=clang++ --host_action_env=CXX=clang++
 build:clang --incompatible_enable_cc_toolchain_resolution=false
-build:clang --linkopt=-latomic
 
 # Flags for Clang + PCH
 build:clang-pch --spawn_strategy=local
