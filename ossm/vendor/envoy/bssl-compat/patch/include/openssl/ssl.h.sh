@@ -208,7 +208,6 @@ uncomment.sh "$1" --comment -h \
   --uncomment-macro SSL_GROUP_X25519 \
   --uncomment-macro SSL_GROUP_X25519_MLKEM768 \
   --uncomment-macro SSL_GROUP_X25519_KYBER768_DRAFT00 \
-  --uncomment-macro DTLS1_3_EXPERIMENTAL_VERSION \
   --uncomment-func-decl SSL_CIPHER_get_handshake_digest \
   --uncomment-enum ssl_compliance_policy_t \
   --uncomment-func-decl SSL_CTX_set_compliance_policy 

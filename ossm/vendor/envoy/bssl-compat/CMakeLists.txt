@@ -42,6 +42,7 @@ add_library(bssl-compat STATIC
   source/BASIC_CONSTRAINTS_free.cc
   source/BASIC_CONSTRAINTS_new.cc
   source/BIO_free.cc
+  source/BIO_gets.c
   source/BIO_mem_contents.cc
   source/BIO_meth_set_create.cc
   source/BIO_meth_set_ctrl.cc
@@ -98,6 +99,7 @@ add_library(bssl-compat STATIC
   source/log.h
   source/NAME_CONSTRAINTS_free.cc
   source/NAME_CONSTRAINTS_new.cc
+  source/OPENSSL_sk_num.c
   source/ossl.c
   source/override.h
   source/override.cc
@@ -119,7 +121,6 @@ add_library(bssl-compat STATIC
   source/RSA_decrypt.cc
   source/RSA_encrypt.cc
   source/RSA_generate_key_ex.cc
-  source/RSA_new_public_key.c
   source/RSA_private_key_from_bytes.cc
   source/RSA_public_key_from_bytes.cc
   source/RSA_sign_pss_mgf1.cc
@@ -149,7 +150,6 @@ add_library(bssl-compat STATIC
   source/SSL_CTX_set_tlsext_ticket_key_cb.cc
   source/SSL_CTX_set_tlsext_ticket_keys.cc
   source/SSL_CTX_set_verify_algorithm_prefs.cc
-  source/SSL_CTX_set_verify_depth.cc
   source/SSL_CTX_set_keylog_callback.cc
   source/SSL_CTX_set_next_proto_select_cb.cc
   source/SSL_CTX_set_verify.cc
@@ -207,6 +207,7 @@ add_library(bssl-compat STATIC
   source/X509_STORE_CTX_set0_crls.cc
   source/X509_STORE_CTX_set0_trusted_stack.cc
   source/X509_STORE_CTX_set_verify_cb.cc
+  source/X509_verify_cert.c
   source/X509_verify_cert_error_string.cc
   source/X509_VERIFY_PARAM_set_time_posix.cc
 )
@@ -349,7 +350,6 @@ target_add_bssl_function(bssl-compat
   BIO_new_fd
   BIO_new_fp
   BIO_new_socket
-  BIO_gets
   BIO_new_mem_buf
   BIO_puts
   BIO_read
@@ -481,7 +481,6 @@ target_add_bssl_function(bssl-compat
   OPENSSL_init_ssl
   OPENSSL_sk_free
   OPENSSL_sk_new_null
-  OPENSSL_sk_num
   OPENSSL_sk_pop
   OPENSSL_sk_push
   OPENSSL_sk_value
@@ -547,6 +546,7 @@ target_add_bssl_function(bssl-compat
   SSL_CTX_set_session_id_context
   SSL_CTX_set_timeout
   SSL_CTX_set_tlsext_servername_arg
+  SSL_CTX_set_verify_depth
   SSL_CTX_set1_curves_list
   SSL_CTX_set1_sigalgs_list
   SSL_CTX_use_certificate_chain_file
@@ -604,7 +604,6 @@ target_add_bssl_function(bssl-compat
   TLS_method
   TLS_server_method
   X509_add1_ext_i2d
-  X509_check_purpose
   X509_cmp
   X509_CRL_cmp
   X509_CRL_dup
@@ -676,7 +675,6 @@ target_add_bssl_function(bssl-compat
   X509_STORE_set_verify_cb
   X509_up_ref
   X509_verify
-  X509_verify_cert
   X509_VERIFY_PARAM_clear_flags
   X509_VERIFY_PARAM_get_flags
   X509_VERIFY_PARAM_set_flags
@@ -767,14 +765,16 @@ set(utests-source-list
 ################################################################################
 # Unit Tests built on bssl-compat
 ################################################################################
-add_executable(utests-bssl-compat ${utests-source-list})
+add_executable(utests-bssl-compat ${utests-source-list} source/test/main.cc)
 target_add_bssl_source(utests-bssl-compat ${utests-bssl-source-list})
 set_source_files_properties(source/extra/err_extra.c PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
 # Add env variable SANITIZE_OPTIONS for optional sanitizers
 target_link_options(utests-bssl-compat PRIVATE "$ENV{SANITIZE_OPTIONS}" )
-target_link_libraries(utests-bssl-compat PRIVATE GTest::gtest_main bssl-compat)
+target_link_libraries(utests-bssl-compat PRIVATE GTest::gtest bssl-compat)
 set_target_properties(utests-bssl-compat PROPERTIES BUILD_RPATH "${OPENSSL_LIBRARY_DIR}")
 gtest_discover_tests(utests-bssl-compat)
+install(TARGETS utests-bssl-compat DESTINATION bin)
+
 ################################################################################
 # Unit Tests built on BoringSSL
 ################################################################################
@@ -787,4 +787,5 @@ if(BUILD_BORINGSSL)
   target_link_libraries(utests-boring PRIVATE BoringSSL::SSL BoringSSL::Crypto)
   target_link_libraries(utests-boring PRIVATE GTest::gtest_main)
   gtest_discover_tests(utests-boring)
+  install(TARGETS utests-boring DESTINATION bin)
 endif(BUILD_BORINGSSL)

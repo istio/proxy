@@ -36,8 +36,4 @@ uncomment.sh "$1" --comment -h \
 --uncomment-func-decl RSA_get0_dmq1 \
 --uncomment-func-decl RSA_get0_p \
 --uncomment-func-decl RSA_get0_iqmp \
---uncomment-func-decl RSA_new_private_key_no_crt \
---uncomment-func-decl RSA_new_private_key_no_e \
---uncomment-func-decl RSA_new_public_key \
---uncomment-func-decl RSA_new_private_key \
 --uncomment-macro RSA_FLAG_NO_PUBLIC_EXPONENT

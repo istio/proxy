@@ -137,9 +137,6 @@ uncomment.sh "$1" --comment -h \
   --uncomment-func-decl BASIC_CONSTRAINTS_new \
   --uncomment-func-decl i2d_X509_PUBKEY \
   --uncomment-struct GENERAL_NAME_st \
-  --uncomment-func-decl X509_check_purpose \
-  --uncomment-macro X509_PURPOSE_ANY \
-  --uncomment-macro X509_PURPOSE_SSL_SERVER \
   --uncomment-func-decl GENERAL_SUBTREE_new \
   --uncomment-regex-range 'typedef struct otherName_st.*' '.*OTHERNAME;' \
   --uncomment-regex-range 'typedef struct EDIPartyName_st.*' '.*EDIPARTYNAME;' \

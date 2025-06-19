@@ -1,6 +1,16 @@
---- a/x509_test.cc	2025-05-20 12:13:04.957115735 +0200
-+++ b/x509_test.cc	2025-05-20 12:21:08.564390933 +0200
-@@ -1987,14 +1987,23 @@
+--- a/source/crypto/x509/x509_test.cc
++++ b/source/crypto/x509/x509_test.cc
+@@ -1275,6 +1275,9 @@
+           Verify(root_cross_signed.get(), {cross_signing_root.get()}, {},
+                  /*crls=*/{}, /*flags=*/0, configure_callback));
+ 
++#ifdef BSSL_COMPAT // This next check fails for negative depths on OpenSSL
++      if (depth < 0) continue;
++#endif
+       // An explicitly trusted self-signed certificate is unaffected by depth
+       // checks.
+       EXPECT_EQ(X509_V_OK,
+@@ -1987,14 +1990,23 @@
  
      bssl::UniquePtr<NAME_CONSTRAINTS> nc(NAME_CONSTRAINTS_new());
      ASSERT_TRUE(nc);
@@ -26,7 +36,21 @@
  
      bssl::UniquePtr<X509> root =
          MakeTestCert("Root", "Root", key.get(), /*is_ca=*/true);
-@@ -3764,6 +3773,7 @@
+@@ -2936,11 +2948,13 @@
+   // |X509_check_purpose| with |X509_PURPOSE_ANY| and purpose -1 do not check
+   // basicConstraints, but other purpose types do. (This is redundant with the
+   // actual basicConstraints check, but |X509_check_purpose| is public API.)
++#ifndef BSSL_COMPAT
+   EXPECT_TRUE(X509_check_purpose(intermediate.get(), -1, /*ca=*/1));
+   EXPECT_TRUE(
+       X509_check_purpose(intermediate.get(), X509_PURPOSE_ANY, /*ca=*/1));
+   EXPECT_FALSE(X509_check_purpose(intermediate.get(), X509_PURPOSE_SSL_SERVER,
+                                   /*ca=*/1));
++#endif // BSSL_COMPAT
+ }
+ 
+ TEST(X509Test, NoBasicConstraintsNetscapeCA) {
+@@ -3767,6 +3781,7 @@
  t6uPxHrmpUY=
  -----END CERTIFICATE-----
  )";
@@ -34,7 +58,7 @@
  static const char kP256InvalidParam[] = R"(
  -----BEGIN CERTIFICATE-----
  MIIBMTCBz6ADAgECAgIE0jATBggqhkjOPQQDAgQHZ2FyYmFnZTAPMQ0wCwYDVQQD
-@@ -3775,6 +3785,7 @@
+@@ -3778,6 +3793,7 @@
  fLULTZnynuQUULQkRcF7S7T2WpIL
  -----END CERTIFICATE-----
  )";
@@ -42,7 +66,7 @@
  static const char kRSANoParam[] = R"(
  -----BEGIN CERTIFICATE-----
  MIIBWzCBx6ADAgECAgIE0jALBgkqhkiG9w0BAQswDzENMAsGA1UEAxMEVGVzdDAg
-@@ -3799,6 +3810,7 @@
+@@ -3802,6 +3818,7 @@
  SwmQUz4bRpckRBj+sIyp1We+pg==
  -----END CERTIFICATE-----
  )";
@@ -50,7 +74,7 @@
  static const char kRSAInvalidParam[] = R"(
  -----BEGIN CERTIFICATE-----
  MIIBbTCB0KADAgECAgIE0jAUBgkqhkiG9w0BAQsEB2dhcmJhZ2UwDzENMAsGA1UE
-@@ -3811,7 +3823,7 @@
+@@ -3814,7 +3831,7 @@
  5OMNZ/ajVwOssw61GcAlScRqEHkZFBoGp7e+QpgB2tf9
  -----END CERTIFICATE-----
  )";
@@ -59,7 +83,7 @@
  TEST(X509Test, AlgorithmParameters) {
    // P-256 parameters should be omitted, but we accept NULL ones.
    bssl::UniquePtr<EVP_PKEY> key = PrivateKeyFromPEM(kP256Key);
-@@ -3825,11 +3837,13 @@
+@@ -3828,11 +3845,13 @@
    ASSERT_TRUE(cert);
    EXPECT_TRUE(X509_verify(cert.get(), key.get()));
  
@@ -73,7 +97,7 @@
  
    // RSA parameters should be NULL, but we accept omitted ones.
    key = PrivateKeyFromPEM(kRSAKey);
-@@ -3843,11 +3857,13 @@
+@@ -3846,11 +3865,13 @@
    ASSERT_TRUE(cert);
    EXPECT_TRUE(X509_verify(cert.get(), key.get()));
  
@@ -86,4 +110,4 @@
 +#endif
  }
  
- TEST(X509Test, GeneralName)  {
+ // TEST(X509Test, GeneralName)  {

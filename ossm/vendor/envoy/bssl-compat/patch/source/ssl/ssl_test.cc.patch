@@ -1,6 +1,6 @@
 --- a/source/ssl/ssl_test.cc
 +++ b/source/ssl/ssl_test.cc
-@@ -81,11 +81,15 @@
+@@ -85,13 +85,19 @@
  // static const size_t kTicketKeyLen = 48;
  
  static const VersionParam kAllVersions[] = {
@@ -14,9 +14,13 @@
      {DTLS1_VERSION, VersionParam::is_dtls, "DTLS1"},
 +#endif
      {DTLS1_2_VERSION, VersionParam::is_dtls, "DTLS1_2"},
++#ifdef DTLS1_3_EXPERIMENTAL_VERSION
+     {DTLS1_3_EXPERIMENTAL_VERSION, VersionParam::is_dtls, "DTLS1_3"},
++#endif // DTLS1_3_EXPERIMENTAL_VERSION
  };
  
-@@ -911,6 +915,7 @@
+ // struct ExpectedCipher {
+@@ -1169,6 +1175,7 @@
      int auth_nid;
      int prf_nid;
    } kTests[] = {
@@ -24,7 +28,7 @@
        {
            SSL3_CK_RSA_DES_192_CBC3_SHA,
            "TLS_RSA_WITH_3DES_EDE_CBC_SHA",
-@@ -920,6 +925,7 @@
+@@ -1178,6 +1185,7 @@
            NID_auth_rsa,
            NID_md5_sha1,
        },
@@ -32,7 +36,7 @@
        {
            TLS1_CK_RSA_WITH_AES_128_SHA,
            "TLS_RSA_WITH_AES_128_CBC_SHA",
-@@ -1422,7 +1428,11 @@
+@@ -1682,7 +1690,11 @@
      if (client_err != SSL_ERROR_NONE &&
          client_err != SSL_ERROR_WANT_READ &&
          client_err != SSL_ERROR_WANT_WRITE &&
@@ -44,7 +48,7 @@
        fprintf(stderr, "Client error: %s\n", SSL_error_description(client_err));
        return false;
      }
-@@ -1432,7 +1442,11 @@
+@@ -1692,7 +1704,11 @@
      if (server_err != SSL_ERROR_NONE &&
          server_err != SSL_ERROR_WANT_READ &&
          server_err != SSL_ERROR_WANT_WRITE &&
@@ -56,7 +60,7 @@
        fprintf(stderr, "Server error: %s\n", SSL_error_description(server_err));
        return false;
      }
-@@ -1520,7 +1534,12 @@
+@@ -1780,7 +1796,12 @@
      return false;
    }
    if (config.early_data) {
@@ -69,7 +73,7 @@
    }
    if (config.session) {
      SSL_set_session(client.get(), config.session);
-@@ -1530,14 +1549,25 @@
+@@ -1790,14 +1811,25 @@
      return false;
    }
    if (!config.verify_hostname.empty()) {
@@ -95,7 +99,7 @@
  
    if (!CompleteHandshakes(client.get(), server.get())) {
      return false;
-@@ -3104,12 +3134,16 @@
+@@ -3410,12 +3442,16 @@
    // However, for historical reasons, the X509 chain includes the leaf on the
    // client, but does not on the server.
    EXPECT_EQ(sk_X509_num(SSL_get_peer_cert_chain(client_.get())), 1u);
@@ -112,7 +116,7 @@
  }
  
  TEST_P(SSLVersionTest, NoPeerCertificate) {
-@@ -3122,7 +3156,9 @@
+@@ -3428,7 +3464,9 @@
    // Server should not see a peer certificate.
    bssl::UniquePtr<X509> peer(SSL_get_peer_certificate(server_.get()));
    ASSERT_FALSE(peer);
@@ -122,3 +126,56 @@
  }
  
  // TEST_P(SSLVersionTest, RetainOnlySHA256OfCerts) {
+@@ -3635,11 +3673,13 @@
+ #ifdef BSSL_COMPAT
+ GTEST_SKIP() << "TODO: Investigate failure on BSSL_COMPAT";
+ #endif
++#ifdef DTLS1_3_EXPERIMENTAL_VERSION
+   if (version() == DTLS1_3_EXPERIMENTAL_VERSION) {
+     // TODO(crbug.com/boringssl/715): Enable the rest of this test for DTLS 1.3
+     // once it supports NewSessionTickets.
+     return;
+   }
++#endif // DTLS1_3_EXPERIMENTAL_VERSION
+   static const uint8_t kContext1[] = {1};
+   static const uint8_t kContext2[] = {2};
+ 
+@@ -4145,8 +4185,10 @@
+       return "DTLSv1";
+     case DTLS1_2_VERSION:
+       return "DTLSv1.2";
++#ifdef DTLS1_3_EXPERIMENTAL_VERSION
+     case DTLS1_3_EXPERIMENTAL_VERSION:
+       return "DTLSv1.3";
++#endif // DTLS1_3_EXPERIMENTAL_VERSION
+     default:
+       return "???";
+   }
+@@ -4612,11 +4654,13 @@
+   bssl::UniquePtr<SSL_SESSION> session =
+       CreateClientSession(client_ctx_.get(), server_ctx_.get(), config);
+ 
++#ifdef DTLS1_3_EXPERIMENTAL_VERSION
+   if (version() == DTLS1_3_EXPERIMENTAL_VERSION) {
+     // TODO(crbug.com/boringssl/715): Enable the rest of this test for DTLS 1.3
+     // once it supports NewSessionTickets.
+     return;
+   }
++#endif // DTLS1_3_EXPERIMENTAL_VERSION
+   // If the client resumes a session with a different name, |SSL_get_servername|
+   // must return the new name.
+   ASSERT_TRUE(session);
+@@ -8059,11 +8103,13 @@
+ #ifdef BSSL_COMPAT
+ GTEST_SKIP() << "TODO: Investigate failure on BSSL_COMPAT";
+ #endif
++#ifdef DTLS1_3_EXPERIMENTAL_VERSION
+   if (version() == DTLS1_3_EXPERIMENTAL_VERSION) {
+     // TODO(crbug.com/boringssl/715): Enable the rest of this test for DTLS 1.3
+     // once it supports NewSessionTickets.
+     return;
+   }
++#endif // DTLS1_3_EXPERIMENTAL_VERSION
+   uint8_t key[48];
+   RAND_bytes(key, sizeof(key));
+ 

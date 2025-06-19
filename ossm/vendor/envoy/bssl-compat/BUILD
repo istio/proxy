@@ -14,8 +14,20 @@ cmake(
     out_static_libs = ["libbssl-compat.a"],
     visibility = ["//visibility:public"],
     generate_crosstool_file = False,
-
+    out_binaries = ["utests-bssl-compat"],
     build_args = [ "-j" ]
+)
+
+filegroup(
+    name = "bssl-compat-utests-bssl-compat",
+    srcs = [":bssl-compat"],
+    output_group = "utests-bssl-compat",
+)
+
+sh_test(
+    name = "utests-bssl-compat",
+    size = "small",
+    srcs = [":bssl-compat-utests-bssl-compat"],
 )
 
 alias(
