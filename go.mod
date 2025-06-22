@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/cncf/xds/go v0.0.0-20250326154945-ae57f3c0d45f
-	github.com/envoyproxy/go-control-plane v0.13.5-0.20250610191940-0951cb0e66fc
+	github.com/envoyproxy/go-control-plane v0.13.5-0.20250621192238-ca3f917f3347
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.7.0
