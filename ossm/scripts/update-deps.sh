@@ -41,6 +41,7 @@ function init(){
         "bazel_gazelle_go"
         "openssl"
         "go_sdk"
+        "host_platform"
         "remotejdk"
         "rust"
         "nodejs"
