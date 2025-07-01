@@ -709,7 +709,6 @@ def _v8():
         patches = [
             "@envoy//bazel:v8.patch",
             "@envoy//bazel:v8_include.patch",
-            "@envoy//bazel:v8_ppc64le.patch",
         ],
         patch_args = ["-p1"],
     )

@@ -61,7 +61,7 @@ config_setting(
 
 config_setting(
     name = "platform_cpu_ppc64le",
-    constraint_values = ["@platforms//cpu:ppc64le"],
+    constraint_values = ["@platforms//cpu:ppc"],
 )
 
 v8_target_cpu(

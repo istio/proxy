@@ -160,7 +160,7 @@ class Function {
     }
 
     std::string getStructMember() const {
-      return (m_node->isNoReturn() ? "ossl_noreturn " : "") + getTypedefName() + " " + getName(false);
+      return getTypedefName() + " " + getName(false);
     }
 
     std::string getParameters(bool types, bool names) const {
@@ -403,7 +403,9 @@ class CompilationDatabase : public clang::tooling::CompilationDatabase
       std::vector<std::string> cmdline = {
           "dummy",
           std::string("-I") + opt::incdir().string(),
+          // Some versions of clang ship with the full version string in the include path, others only with the major version number.
           "-I" LLVM_LIBRARY_DIR "/clang/" LLVM_VERSION_STRING "/include/",
+          "-I" LLVM_LIBRARY_DIR "/clang/" + std::to_string(LLVM_VERSION_MAJOR) + "/include/",
           file.str()
       };
       return { clang::tooling::CompileCommand(".", file, cmdline, "") };
