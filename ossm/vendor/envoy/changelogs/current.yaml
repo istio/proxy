@@ -26,5 +26,12 @@ removed_config_or_runtime:
 # *Normally occurs at the end of the* :ref:`deprecation period <deprecated>`
 
 new_features:
-
+- area: load_balancing
+  change: |
+    Added Override Host Load Balancing policy. See
+    :ref:`load balancing policies overview <arch_overview_load_balancing_policies>` for more details.
+- area: ext_proc
+  change: |
+    The :ref:`failure_mode_allow <envoy_v3_api_field_extensions.filters.http.ext_proc.v3.ExternalProcessor.failure_mode_allow>`
+    setting may now be overridden on a per-route basis.
 deprecated:
