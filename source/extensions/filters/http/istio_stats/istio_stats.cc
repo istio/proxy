@@ -420,7 +420,10 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
             absl::StrCat("failed to register built-in functions: ", register_status.message()));
       }
     }
-    parsed_exprs_.push_back(parse_status.value().expr());
+    const auto& parsed_expr = parse_status.value();
+    const cel::expr::Expr& cel_expr = parsed_expr.expr();
+
+    parsed_exprs_.push_back(cel_expr);
     compiled_exprs_.push_back(std::make_pair(
         Extensions::Filters::Common::Expr::createExpression(*expr_builder_, parsed_exprs_.back()),
         int_expr));
@@ -429,7 +432,7 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
     return {id};
   }
   Filters::Common::Expr::BuilderPtr expr_builder_;
-  std::vector<google::api::expr::v1alpha1::Expr> parsed_exprs_;
+  std::vector<cel::expr::Expr> parsed_exprs_;
   std::vector<std::pair<Filters::Common::Expr::ExpressionPtr, bool>> compiled_exprs_;
   absl::flat_hash_map<std::string, uint32_t> expression_ids_;
 };
