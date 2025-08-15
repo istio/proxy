@@ -61,7 +61,7 @@ absl::optional<absl::string_view> toSuffix(WorkloadType workload_type) {
 } // namespace
 
 Envoy::ProtobufTypes::MessagePtr WorkloadMetadataObject::serializeAsProto() const {
-  auto message = std::make_unique<Envoy::ProtobufWkt::Struct>();
+  auto message = std::make_unique<Envoy::Protobuf::Struct>();
   const auto suffix = toSuffix(workload_type_);
   if (suffix) {
     (*message->mutable_fields())[WorkloadTypeToken].set_string_value(*suffix);

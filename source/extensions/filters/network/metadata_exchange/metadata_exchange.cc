@@ -43,7 +43,7 @@ namespace {
 // which could indicate that the metadata is not received yet.
 const std::string kMetadataNotFoundValue = "envoy.wasm.metadata_exchange.peer_unknown";
 
-std::unique_ptr<Buffer::OwnedImpl> constructProxyHeaderData(const ProtobufWkt::Any& proxy_data) {
+std::unique_ptr<Buffer::OwnedImpl> constructProxyHeaderData(const Protobuf::Any& proxy_data) {
   MetadataExchangeInitialHeader initial_header;
   std::string proxy_data_str = proxy_data.SerializeAsString();
   // Converting from host to network byte order so that most significant byte is
@@ -187,7 +187,7 @@ void MetadataExchangeFilter::writeNodeMetadata() {
     return;
   }
   ENVOY_LOG(trace, "Writing metadata to the connection.");
-  ProtobufWkt::Struct data;
+  Protobuf::Struct data;
   const auto obj = Istio::Common::convertStructToWorkloadMetadata(local_info_.node().metadata(),
                                                                   config_->additional_labels_);
   *(*data.mutable_fields())[ExchangeMetadataHeader].mutable_struct_value() =
@@ -197,7 +197,7 @@ void MetadataExchangeFilter::writeNodeMetadata() {
     (*data.mutable_fields())[ExchangeMetadataHeaderId].set_string_value(metadata_id);
   }
   if (data.fields_size() > 0) {
-    ProtobufWkt::Any metadata_any_value;
+    Protobuf::Any metadata_any_value;
     metadata_any_value.set_type_url(StructTypeUrl);
     *metadata_any_value.mutable_value() = Istio::Common::serializeToStringDeterministic(data);
     ;
@@ -249,7 +249,7 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   }
   std::string proxy_data_buf =
       std::string(static_cast<const char*>(data.linearize(proxy_data_length_)), proxy_data_length_);
-  ProtobufWkt::Any proxy_data;
+  Protobuf::Any proxy_data;
   if (!proxy_data.ParseFromString(proxy_data_buf)) {
     config_->stats().header_not_found_.inc();
     setMetadataNotFoundFilterState();
@@ -260,7 +260,7 @@ void MetadataExchangeFilter::tryReadProxyData(Buffer::Instance& data) {
   data.drain(proxy_data_length_);
 
   // Set Metadata
-  ProtobufWkt::Struct value_struct = MessageUtil::anyConvert<ProtobufWkt::Struct>(proxy_data);
+  Protobuf::Struct value_struct = MessageUtil::anyConvert<Protobuf::Struct>(proxy_data);
   auto key_metadata_it = value_struct.fields().find(ExchangeMetadataHeader);
   if (key_metadata_it != value_struct.fields().end()) {
     updatePeer(*Istio::Common::convertStructToWorkloadMetadata(
