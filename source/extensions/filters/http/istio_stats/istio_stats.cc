@@ -70,7 +70,7 @@ absl::optional<absl::string_view> getNamespace(absl::string_view principal) {
 
 constexpr absl::string_view CustomStatNamespace = "istiocustom";
 
-absl::string_view extractString(const ProtobufWkt::Struct& metadata, absl::string_view key) {
+absl::string_view extractString(const Protobuf::Struct& metadata, absl::string_view key) {
   const auto& it = metadata.fields().find(key);
   if (it == metadata.fields().end()) {
     return {};
@@ -78,7 +78,7 @@ absl::string_view extractString(const ProtobufWkt::Struct& metadata, absl::strin
   return it->second.string_value();
 }
 
-absl::string_view extractMapString(const ProtobufWkt::Struct& metadata, const std::string& map_key,
+absl::string_view extractMapString(const Protobuf::Struct& metadata, const std::string& map_key,
                                    absl::string_view key) {
   const auto& it = metadata.fields().find(map_key);
   if (it == metadata.fields().end()) {
@@ -139,7 +139,7 @@ peerInfo(Reporter reporter, const StreamInfo::FilterState& filter_state) {
     return {};
   }
 
-  ProtobufWkt::Struct obj;
+  Protobuf::Struct obj;
   if (!obj.ParseFromString(absl::string_view(cel_state->value()))) {
     return {};
   }

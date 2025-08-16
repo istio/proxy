@@ -83,12 +83,12 @@ protected:
         stream_info_.filterState()
             ->getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
                 downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer);
-    ProtobufWkt::Struct obj;
+    Protobuf::Struct obj;
     ASSERT_TRUE(obj.ParseFromString(cel_state->value().data()));
     EXPECT_EQ(expected, extractString(obj, "namespace"));
   }
 
-  absl::string_view extractString(const ProtobufWkt::Struct& metadata, absl::string_view key) {
+  absl::string_view extractString(const Protobuf::Struct& metadata, absl::string_view key) {
     const auto& it = metadata.fields().find(key);
     if (it == metadata.fields().end()) {
       return {};
