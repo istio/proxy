@@ -412,28 +412,34 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
     }
     if (expr_builder_ == nullptr) {
       google::api::expr::runtime::InterpreterOptions options;
-      expr_builder_ = google::api::expr::runtime::CreateCelExpressionBuilder(options);
-      auto register_status = google::api::expr::runtime::RegisterBuiltinFunctions(
-          expr_builder_->GetRegistry(), options);
+      auto builder = google::api::expr::runtime::CreateCelExpressionBuilder(options);
+      auto register_status =
+          google::api::expr::runtime::RegisterBuiltinFunctions(builder->GetRegistry(), options);
       if (!register_status.ok()) {
         throw Extensions::Filters::Common::Expr::CelException(
             absl::StrCat("failed to register built-in functions: ", register_status.message()));
       }
+      expr_builder_ =
+          std::make_shared<Extensions::Filters::Common::Expr::BuilderInstance>(std::move(builder));
     }
     const auto& parsed_expr = parse_status.value();
     const cel::expr::Expr& cel_expr = parsed_expr.expr();
 
     parsed_exprs_.push_back(cel_expr);
-    compiled_exprs_.push_back(std::make_pair(
-        Extensions::Filters::Common::Expr::createExpression(*expr_builder_, parsed_exprs_.back()),
-        int_expr));
+    auto compiled_expr = Extensions::Filters::Common::Expr::CompiledExpression::Create(
+        expr_builder_, parsed_exprs_.back());
+    if (!compiled_expr.ok()) {
+      throw Extensions::Filters::Common::Expr::CelException(
+          absl::StrCat("failed to create compiled expression: ", compiled_expr.status().message()));
+    }
+    compiled_exprs_.push_back(std::make_pair(std::move(compiled_expr.value()), int_expr));
     uint32_t id = compiled_exprs_.size() - 1;
     expression_ids_.emplace(expr, id);
     return {id};
   }
-  Filters::Common::Expr::BuilderPtr expr_builder_;
+  Extensions::Filters::Common::Expr::BuilderInstanceSharedConstPtr expr_builder_;
   std::vector<cel::expr::Expr> parsed_exprs_;
-  std::vector<std::pair<Filters::Common::Expr::ExpressionPtr, bool>> compiled_exprs_;
+  std::vector<std::pair<Filters::Common::Expr::CompiledExpression, bool>> compiled_exprs_;
   absl::flat_hash_map<std::string, uint32_t> expression_ids_;
 };
 
@@ -678,7 +684,7 @@ struct Config : public Logger::Loggable<Logger::Id::filter> {
         expr_values_.reserve(compiled_exprs.size());
         for (size_t id = 0; id < compiled_exprs.size(); id++) {
           Protobuf::Arena arena;
-          auto eval_status = compiled_exprs[id].first->Evaluate(*this, &arena);
+          auto eval_status = compiled_exprs[id].first.evaluate(*this, &arena);
           if (!eval_status.ok() || eval_status.value().IsError()) {
             if (!eval_status.ok()) {
               ENVOY_LOG(debug, "Failed to evaluate metric expression: {}", eval_status.status());
