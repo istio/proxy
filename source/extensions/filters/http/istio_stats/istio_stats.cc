@@ -413,13 +413,14 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
     if (expr_builder_ == nullptr) {
       google::api::expr::runtime::InterpreterOptions options;
       auto builder = google::api::expr::runtime::CreateCelExpressionBuilder(options);
-      auto register_status = google::api::expr::runtime::RegisterBuiltinFunctions(
-          builder->GetRegistry(), options);
+      auto register_status =
+          google::api::expr::runtime::RegisterBuiltinFunctions(builder->GetRegistry(), options);
       if (!register_status.ok()) {
         throw Extensions::Filters::Common::Expr::CelException(
             absl::StrCat("failed to register built-in functions: ", register_status.message()));
       }
-      expr_builder_ = std::make_shared<Extensions::Filters::Common::Expr::BuilderInstance>(std::move(builder));
+      expr_builder_ =
+          std::make_shared<Extensions::Filters::Common::Expr::BuilderInstance>(std::move(builder));
     }
     const auto& parsed_expr = parse_status.value();
     const cel::expr::Expr& cel_expr = parsed_expr.expr();
