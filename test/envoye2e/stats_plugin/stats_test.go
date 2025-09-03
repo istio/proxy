@@ -898,9 +898,10 @@ func TestTCPStatsServerWaypointProxyCONNECT(t *testing.T) {
 
 func TestStatsExpiry(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
-		"RequestCount":            "1",
-		"StatsConfig":             driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
-		"StatsFilterClientConfig": driver.LoadTestJSON("testdata/stats/client_config_expiry.yaml"),
+		"RequestCount": "1",
+		"StatsConfig": driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl") + "\n" +
+			driver.LoadTestData("testdata/bootstrap/stats_expiry.yaml.tmpl"),
+		"StatsFilterClientConfig": driver.LoadTestJSON("testdata/stats/client_config.yaml"),
 		"StatsFilterServerConfig": driver.LoadTestJSON("testdata/stats/server_config.yaml"),
 	}, envoye2e.ProxyE2ETests)
 	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
