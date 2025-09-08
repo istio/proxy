@@ -5,6 +5,7 @@
 // bootstrap/otel_stats.yaml.tmpl
 // bootstrap/server.yaml.tmpl
 // bootstrap/stats.yaml.tmpl
+// bootstrap/stats_expiry.yaml.tmpl
 // listener/client.yaml.tmpl
 // listener/client_passthrough.yaml.tmpl
 // listener/internal_outbound.yaml.tmpl
@@ -508,6 +509,25 @@ func bootstrapStatsYamlTmpl() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "bootstrap/stats.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
+var _bootstrapStats_expiryYamlTmpl = []byte(`stats_flush_interval: 1s
+stats_eviction_interval: 1s
+`)
+
+func bootstrapStats_expiryYamlTmplBytes() ([]byte, error) {
+	return _bootstrapStats_expiryYamlTmpl, nil
+}
+
+func bootstrapStats_expiryYamlTmpl() (*asset, error) {
+	bytes, err := bootstrapStats_expiryYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "bootstrap/stats_expiry.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1095,6 +1115,7 @@ var _bindata = map[string]func() (*asset, error){
 	"bootstrap/otel_stats.yaml.tmpl":                         bootstrapOtel_statsYamlTmpl,
 	"bootstrap/server.yaml.tmpl":                             bootstrapServerYamlTmpl,
 	"bootstrap/stats.yaml.tmpl":                              bootstrapStatsYamlTmpl,
+	"bootstrap/stats_expiry.yaml.tmpl":                       bootstrapStats_expiryYamlTmpl,
 	"listener/client.yaml.tmpl":                              listenerClientYamlTmpl,
 	"listener/client_passthrough.yaml.tmpl":                  listenerClient_passthroughYamlTmpl,
 	"listener/internal_outbound.yaml.tmpl":                   listenerInternal_outboundYamlTmpl,
@@ -1153,6 +1174,7 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"otel_stats.yaml.tmpl":                         &bintree{bootstrapOtel_statsYamlTmpl, map[string]*bintree{}},
 		"server.yaml.tmpl":                             &bintree{bootstrapServerYamlTmpl, map[string]*bintree{}},
 		"stats.yaml.tmpl":                              &bintree{bootstrapStatsYamlTmpl, map[string]*bintree{}},
+		"stats_expiry.yaml.tmpl":                       &bintree{bootstrapStats_expiryYamlTmpl, map[string]*bintree{}},
 	}},
 	"listener": &bintree{nil, map[string]*bintree{
 		"client.yaml.tmpl":              &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
