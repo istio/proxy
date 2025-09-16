@@ -68,6 +68,8 @@ build:macos --cxxopt=-Wno-deprecated-declarations
 build:macos --host_cxxopt=-Wno-deprecated-declarations
 
 # OpenSSL build
-build:openssl --config=clang
+build:openssl --config=gcc
 build:openssl --action_env=ENVOY_OPENSSL=1
 build:openssl --deleted_packages=@envoy//test/common/quic,@envoy//test/common/quic/platform --@envoy//bazel:http3=false
+
+import %workspace%/ossm/bazelrc

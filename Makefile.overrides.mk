@@ -16,3 +16,5 @@
 BUILD_WITH_CONTAINER ?= 0
 IMAGE_NAME ?= build-tools-proxy
 CGO_ENABLED = 0
+
+include ossm/Makefile
