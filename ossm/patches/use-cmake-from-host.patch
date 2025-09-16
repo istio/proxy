@@ -1,0 +1,13 @@
+diff --git a/bazel/dependency_imports.bzl b/bazel/dependency_imports.bzl
+index ecfe356b3f..729f600d31 100644
+--- a/bazel/dependency_imports.bzl
++++ b/bazel/dependency_imports.bzl
+@@ -38,7 +38,7 @@ def envoy_dependency_imports(
+         yq_version = YQ_VERSION,
+         buf_sha = BUF_SHA,
+         buf_version = BUF_VERSION):
+-    rules_foreign_cc_dependencies()
++    rules_foreign_cc_dependencies(register_default_tools = False, register_built_tools = False)
+     go_rules_dependencies()
+     go_register_toolchains(go_version)
+     if go_version != "host":

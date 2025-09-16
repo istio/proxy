@@ -21,7 +21,7 @@ load("//bazel:repositories.bzl", "define_envoy_implementation")
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit date: 2025-12-18
+# Commit date: 01/12/26
 ENVOY_SHA = "0c30f2cfb88356984f8089fd973919deeb1cf7c2"
 
 ENVOY_SHA256 = "770566ff6e5018c498a22e71637f03b36ea5ccc83017b5f17bbcced5cf7c0ddf"
@@ -30,9 +30,9 @@ ENVOY_ORG = "envoyproxy"
 
 ENVOY_REPO = "envoy"
 
-OPENSSL_ENVOY_SHA = "3677e06b8750ab1b46637256029a82266f9e5b31"
-OPENSSL_ENVOY_SHA256 = "d3ca2e8d3b3a2effeb092f8ecd2a09a4fc2fd3188abdd0a558d20a58107c106e"
-OPENSSL_ENVOY_ORG = "dcillera"
+OPENSSL_ENVOY_SHA = "9b4094fc871ede4d2f0f0bf5303841cab78f689e"
+OPENSSL_ENVOY_SHA256 = "b2ec3fbaec889e5ad13b6f2fda309b14df5c45bf4f55ea5a1fdfbe57f1d96a6b"
+OPENSSL_ENVOY_ORG = "envoyproxy"
 OPENSSL_ENVOY_REPO = "envoy-openssl"
 
 boringssl = {
@@ -88,4 +88,4 @@ install_deps()
 
 load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 
-envoy_dependency_imports()
+envoy_dependency_imports(go_version = "host")
