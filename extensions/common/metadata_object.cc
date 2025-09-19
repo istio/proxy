@@ -54,6 +54,7 @@ absl::optional<absl::string_view> toSuffix(WorkloadType workload_type) {
   case WorkloadType::Pod:
     return PodSuffix;
   case WorkloadType::Unknown:
+  default:
     return {};
   }
 }
@@ -312,6 +313,7 @@ WorkloadMetadataObject::getField(absl::string_view field_name) const {
       if (const auto value = toSuffix(workload_type_); value.has_value()) {
         return *value;
       }
+      break;
     case BaggageToken::InstanceName:
       return instance_name_;
     }
