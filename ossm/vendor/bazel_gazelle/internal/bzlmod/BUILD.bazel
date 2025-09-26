@@ -1,0 +1,69 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "default_gazelle_overrides.bzl",
+        "go_deps.bzl",
+        "go_mod.bzl",
+        "non_module_deps.bzl",
+        "semver.bzl",
+        "utils.bzl",
+        "//internal/bzlmod/tools:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "go_deps",
+    srcs = ["go_deps.bzl"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":default_gazelle_overrides",
+        ":go_mod",
+        ":semver",
+        ":utils",
+        "//internal:go_repository",
+    ],
+)
+
+bzl_library(
+    name = "go_mod",
+    srcs = ["go_mod.bzl"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":semver",
+    ],
+)
+
+bzl_library(
+    name = "non_module_deps",
+    srcs = ["non_module_deps.bzl"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal:go_repository_cache",
+        "//internal:go_repository_config",
+        "//internal:go_repository_tools",
+    ],
+)
+
+bzl_library(
+    name = "semver",
+    srcs = ["semver.bzl"],
+    visibility = ["//:__subpackages__"],
+)
+
+bzl_library(
+    name = "utils",
+    srcs = ["utils.bzl"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@bazel_features//:features"],
+)
+
+bzl_library(
+    name = "default_gazelle_overrides",
+    srcs = ["default_gazelle_overrides.bzl"],
+    visibility = ["//:__subpackages__"],
+)

@@ -1,0 +1,3 @@
+load(":patch_whl_tests.bzl", "patch_whl_test_suite")
+
+patch_whl_test_suite(name = "patch_whl_tests")

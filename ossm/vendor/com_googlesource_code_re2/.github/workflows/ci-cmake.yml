@@ -1,0 +1,60 @@
+name: CI (CMake)
+on:
+  push:
+    branches: [main]
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    # The Benchmark package on Ubuntu 22.04 LTS is problematic whereas this
+    # Docker container is based on Debian bookworm and has a newer version.
+    container: gcc:13
+    strategy:
+      fail-fast: false
+      matrix:
+        build_shared_libs: [OFF, ON]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install CMake
+        run: |
+          apt update -y
+          apt install -y cmake
+        shell: bash
+      - name: Install Abseil, GoogleTest and Benchmark
+        run: |
+          apt update -y
+          apt install -y libabsl-dev libgtest-dev libbenchmark-dev
+        shell: bash
+      - run: .github/cmake.sh -D BUILD_SHARED_LIBS=${{ matrix.build_shared_libs }}
+        shell: bash
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_shared_libs: [OFF, ON]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Abseil, GoogleTest and Benchmark
+        run: |
+          brew update
+          brew install abseil googletest google-benchmark
+        shell: bash
+      - run: .github/cmake.sh -D BUILD_SHARED_LIBS=${{ matrix.build_shared_libs }}
+        shell: bash
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_shared_libs: [OFF, ON]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Abseil, GoogleTest and Benchmark
+        run: |
+          vcpkg update
+          vcpkg install abseil gtest benchmark
+        shell: bash
+      - run: |
+          .github/cmake.sh -D BUILD_SHARED_LIBS=${{ matrix.build_shared_libs }} \
+            -D CMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+        shell: bash

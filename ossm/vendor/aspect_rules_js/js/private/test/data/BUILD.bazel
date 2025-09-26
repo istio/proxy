@@ -1,0 +1,273 @@
+load("//js:defs.bzl", "js_binary", "js_library", "js_run_binary", "js_test")
+load(":data.bzl", "extract_test")
+
+# js_library(srcs) wrapper of the data
+js_library(
+    name = "data-js_library-srcs",
+    srcs = ["data.json"],
+)
+
+js_binary(
+    name = "write-js_library-srcs",
+    data = ["data.json"],
+    entry_point = "write.data.js",
+)
+
+# js_library(data) wrapper of the data
+js_library(
+    name = "data-js_library-data",
+    data = ["data.json"],
+)
+
+# filegroup() wrapper of the data
+filegroup(
+    name = "data-filegroup-srcs",
+    srcs = ["data.json"],
+)
+
+# genrule() generating the data
+genrule(
+    name = "data-genrule",
+    outs = ["data-generated.json"],
+    cmd = "echo '{\"answer\": 42}' > $@",
+)
+
+js_binary(
+    name = "write-genrule",
+    data = [":data-genrule"],
+    entry_point = "write.data.js",
+)
+
+# genrule() copying the data
+genrule(
+    name = "data-genrule-filegroup-srcs",
+    srcs = [":data-filegroup-srcs"],
+    outs = ["data-copied.json"],
+    cmd = "cat $(location :data-filegroup-srcs) > $@",
+)
+
+js_binary(
+    name = "write-genrule-filegroup-srcs",
+    data = [":data-genrule-filegroup-srcs"],
+    entry_point = "write.data.js",
+)
+
+# TEST: js_test(data) -------------------------------------
+
+js_test(
+    name = "from-data",
+    data = ["data.json"],
+    entry_point = "test.js",
+)
+
+# TEST: js_test(data = js_library(srcs)) ------------------
+js_test(
+    name = "from-js_library-srcs",
+    data = [":data-js_library-srcs"],
+    entry_point = "test.js",
+)
+
+# TEST: js_test(data = js_library(data)) ------------------
+js_test(
+    name = "from-js_library-data",
+    data = [":data-js_library-data"],
+    entry_point = "test.js",
+)
+
+js_test(
+    name = "from-parent-js_library-data",
+    args = ["../data-parent.json"],
+    data = ["//js/private/test:data-js_library-data"],
+    entry_point = "test.js",
+)
+
+# TEST: js_test(data = filegroup(srcs)) -------------------
+js_test(
+    name = "from-filegroup-srcs",
+    data = [":data-filegroup-srcs"],
+    entry_point = "test.js",
+)
+
+# TEST: js_test(data = genrule()) -------------------------
+js_test(
+    name = "from-genrule",
+    args = ["./data-generated.json"],
+    chdir = package_name(),
+    data = [":data-genrule"],
+    entry_point = "test.js",
+)
+
+js_test(
+    name = "from-parent-genrule",
+    args = ["../data-parent-generated.json"],
+    chdir = package_name(),
+    data = ["//js/private/test:data-genrule"],
+    entry_point = "test.js",
+)
+
+# TEST: js_test(data = genrule(data)) ---------------------
+js_test(
+    name = "from-genrule-data",
+    args = ["./data-copied.json"],
+    chdir = package_name(),
+    data = [":data-genrule-filegroup-srcs"],
+    entry_point = "test.js",
+)
+
+# TEST: js_test(data = js_run_binary(srcs)) ---------------
+js_run_binary(
+    name = "run-write-srcs",
+    outs = ["rb0.json"],
+    args = [
+        "rb0.json",
+        "data.json",
+    ],
+    chdir = package_name(),
+    tool = ":write-js_library-srcs",
+)
+
+extract_test(
+    name = "extract-js_run_binary-srcs",
+    target = ":run-write-srcs",
+)
+
+js_test(
+    name = "from-js_run_binary-srcs",
+    args = ["./rb0.json"],
+    chdir = package_name(),
+    data = ["rb0.json"],
+    entry_point = "test.js",
+)
+
+# TEST: js_test(data = js_run_binary(srcs = js_library(srcs))) ----------------
+js_run_binary(
+    name = "run-write-js_library-srcs",
+    outs = ["rb1.json"],
+    args = [
+        "rb1.json",
+        "data.json",
+    ],
+    chdir = package_name(),
+    tool = ":write-js_library-srcs",
+)
+
+extract_test(
+    name = "extract-write-js_library-srcs",
+    target = ":run-write-js_library-srcs",
+)
+
+js_test(
+    name = "from-js_run_binary-js_library-srcs",
+    args = ["./rb1.json"],
+    chdir = package_name(),
+    data = ["rb1.json"],
+    entry_point = "test.js",
+)
+
+# TEST: js_test(data = js_run_binary(srcs = js_library(data))) ----------------
+# Example: https://github.com/aspect-build/rules_jest/issues/128
+js_binary(
+    name = "write-js_library-data",
+    data = [":data-js_library-data"],
+    entry_point = "write.data.js",
+)
+
+js_run_binary(
+    name = "run-write-js_library-data",
+    outs = ["rb2.json"],
+    args = [
+        "rb2.json",
+        "data.json",
+    ],
+    chdir = package_name(),
+    tool = ":write-js_library-data",
+)
+
+extract_test(
+    name = "extract-write-js_library-data",
+    target = ":run-write-js_library-data",
+)
+
+js_test(
+    name = "from-js_run_binary-js_library-data",
+    args = ["./rb2.json"],
+    chdir = package_name(),
+    data = ["rb2.json"],
+    entry_point = "test.js",
+)
+
+# TEST: js_test(data = js_run_binary(srcs = genrule())) -----------------------
+js_run_binary(
+    name = "run-write-generated",
+    outs = ["rb3.json"],
+    args = [
+        "rb3.json",
+        "data-generated.json",
+    ],
+    chdir = package_name(),
+    tool = ":write-genrule",
+)
+
+extract_test(
+    name = "extract-write-generated",
+    target = ":run-write-generated",
+)
+
+js_test(
+    name = "from-js_run_binary-genrule",
+    args = ["./rb3.json"],
+    chdir = package_name(),
+    data = ["rb3.json"],
+    entry_point = "test.js",
+)
+
+# TEST: js_test(data = js_run_binary(srcs = genrule(srcs = filegroup))) -------
+js_run_binary(
+    name = "run-write-generated-copied",
+    outs = ["rb4.json"],
+    args = [
+        "rb4.json",
+        "data-copied.json",
+    ],
+    chdir = package_name(),
+    tool = ":write-genrule-filegroup-srcs",
+)
+
+js_test(
+    name = "from-js_run_binary-genrule-copied",
+    args = ["./rb4.json"],
+    chdir = package_name(),
+    data = ["rb4.json"],
+    entry_point = "test.js",
+)
+
+# TEST: js_library(srcs, data = []+) single output ----------------------------
+js_library(
+    name = "data-js_library-srcs-data",
+    srcs = ["data.json"],
+    data = [
+        "data.json",
+        "test.js",
+        "write.data.js",
+    ],
+)
+
+extract_test(
+    name = "extract-js_library-srcs-data",
+    target = ":data-js_library-srcs-data",
+)
+
+# TEST: js_library(srcs, data = js_library()+) single output ------------------
+js_library(
+    name = "data-js_library-srcs2",
+    srcs = [":data-js_library-srcs"],
+    data = [
+        ":data-genrule",
+        ":data-js_library-srcs",
+    ],
+)
+
+extract_test(
+    name = "extract-js_library-srcs2",
+    target = ":data-js_library-srcs2",
+)

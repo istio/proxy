@@ -1,0 +1,45 @@
+load("//rust:defs.bzl", "rust_library", "rust_proc_macro", "rust_test")
+
+# Data of both :rust_proc_macro and :proc_macro_helper needs to be available at
+# build time (which is run-time of the procedural macros).
+rust_test(
+    name = "proc_macro_data_test",
+    srcs = ["rust_test.rs"],
+    edition = "2021",
+    proc_macro_deps = [
+        ":rust_proc_macro",
+    ],
+    deps = [
+        ":nonmacro_library",
+    ],
+)
+
+# Data of both :rust_proc_macro and :proc_macro_helper needs to be available.
+rust_library(
+    name = "nonmacro_library",
+    srcs = ["nonmacro_library.rs"],
+    edition = "2021",
+    proc_macro_deps = [
+        ":rust_proc_macro",
+    ],
+)
+
+# No data needs to be available during this build.
+rust_proc_macro(
+    name = "rust_proc_macro",
+    srcs = ["rust_proc_macro.rs"],
+    data = ["proc_macro_data.txt"],
+    edition = "2021",
+    rustc_env = {"CARGO_MANIFEST_DIR": package_name()},
+    deps = [
+        ":proc_macro_helper",
+    ],
+)
+
+rust_library(
+    name = "proc_macro_helper",
+    srcs = ["proc_macro_helper.rs"],
+    data = ["helper_data.txt"],
+    edition = "2021",
+    rustc_env = {"CARGO_MANIFEST_DIR": package_name()},
+)

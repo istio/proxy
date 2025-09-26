@@ -1,0 +1,10 @@
+syntax = "proto3";
+package samples;
+import "options.proto";
+
+import "ImportedEnum.proto";
+
+message OptionEnumsAsConstants {
+  option (protoc.gen.jsonschema.message_options).enums_as_constants = true;
+  ImportedEnum importedEnum = 1;
+}

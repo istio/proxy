@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "descfmt",
+    srcs = ["stringer.go"],
+    importpath = "google.golang.org/protobuf/internal/descfmt",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/detrand",
+        "//internal/pragma",
+        "//reflect/protoreflect",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":descfmt",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "descfmt_test",
+    srcs = ["desc_test.go"],
+    embed = [":descfmt"],
+)

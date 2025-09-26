@@ -1,0 +1,9 @@
+load("//rust:defs.bzl", "rust_library")
+
+package(default_visibility = ["//test:__subpackages__"])
+
+rust_library(
+    name = "lib_a",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+)

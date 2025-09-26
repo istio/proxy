@@ -1,0 +1,1 @@
+go_binary(name = "naming_convention_binary_fail_bin")

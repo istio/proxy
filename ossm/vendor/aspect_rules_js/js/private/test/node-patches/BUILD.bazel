@@ -1,0 +1,90 @@
+load("//js:defs.bzl", "js_test")
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
+
+TESTS = [
+    "escape.js",
+    "lstat.js",
+    "opendir.js",
+    "readdir.js",
+    "readlink.js",
+    "realpath.js",
+]
+
+# Multiple node toolchains for testing across versions
+TOOLCHAINS_NAMES = [
+    "node16",
+    "node18",
+    "node20",
+]
+
+TOOLCHAINS_VERSIONS = [
+    select({
+        "@bazel_tools//src/conditions:linux_x86_64": "@node16_linux_amd64//:node_toolchain",
+        "@bazel_tools//src/conditions:darwin": "@node16_darwin_amd64//:node_toolchain",
+        "@bazel_tools//src/conditions:windows": "@node16_windows_amd64//:node_toolchain",
+    }),
+    select({
+        "@bazel_tools//src/conditions:linux_x86_64": "@node18_linux_amd64//:node_toolchain",
+        "@bazel_tools//src/conditions:darwin": "@node18_darwin_amd64//:node_toolchain",
+        "@bazel_tools//src/conditions:windows": "@node18_windows_amd64//:node_toolchain",
+    }),
+    select({
+        "@bazel_tools//src/conditions:linux_x86_64": "@node20_linux_amd64//:node_toolchain",
+        "@bazel_tools//src/conditions:darwin": "@node20_darwin_amd64//:node_toolchain",
+        "@bazel_tools//src/conditions:windows": "@node20_windows_amd64//:node_toolchain",
+    }),
+]
+
+# We need to copy the entry points to the bin so that the tests below don't follow the execroot
+# symlink back to the source tree since the fs patches are not on for the tests as they are the code
+# under test
+[
+    copy_to_bin(
+        name = "copy_entry_{}".format(t),
+        srcs = [t],
+    )
+    for t in TESTS
+]
+
+# Basic tests
+[
+    js_test(
+        name = "{}_test".format(t.replace(".js", "")),
+        data = [
+            "//:node_modules/inline-fixtures",
+            "//js/private/node-patches/src:compile",
+        ],
+        entry_point = "copy_entry_{}".format(t),
+        patch_node_fs = False,
+        # Without node patches on for these tests, the program is going to escape the sandbox if it
+        # is on since the fs patches are not on for the tests as they are the code under test
+        tags = ["no-sandbox"],
+    )
+    for t in TESTS
+]
+
+# Node process spawning tests
+[
+    js_test(
+        name = "spawn_test_%s" % toolchain_name,
+        args = [
+            "$(rootpath //js/private/test/node-patches:spawn_node_path.js)",
+            "$(rootpath //js/private/test/node-patches:spawn_node_path.sh)",
+            "$(rootpath //js/private/test/node-patches:spawn_patch_depth.js)",
+            "$(rootpath //js/private/test/node-patches:spawn_patch_depth.sh)",
+        ],
+        data = [
+            "//js/private/test/node-patches:spawn_node_path.js",
+            "//js/private/test/node-patches:spawn_node_path.sh",
+            "//js/private/test/node-patches:spawn_patch_depth.js",
+            "//js/private/test/node-patches:spawn_patch_depth.sh",
+        ],
+        entry_point = "spawn.js",
+        node_toolchain = toolchain,
+        patch_node_fs = True,
+    )
+    for toolchain_name, toolchain in zip(
+        TOOLCHAINS_NAMES,
+        TOOLCHAINS_VERSIONS,
+    )
+]

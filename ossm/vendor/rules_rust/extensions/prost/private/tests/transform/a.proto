@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "b/b.proto";
+import "types/types.proto";
+
+package a;
+
+message A {
+    string name = 1;
+
+    a.b.B b = 2;
+
+    google.protobuf.Timestamp timestamp = 3;
+
+    google.protobuf.Duration duration = 4;
+
+    Types types = 5;
+}

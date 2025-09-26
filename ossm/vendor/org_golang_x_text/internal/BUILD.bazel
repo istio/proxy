@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "internal",
+    srcs = [
+        "internal.go",
+        "match.go",
+    ],
+    importpath = "golang.org/x/text/internal",
+    visibility = ["//:__subpackages__"],
+    deps = ["//language"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":internal",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "internal_test",
+    srcs = [
+        "internal_test.go",
+        "match_test.go",
+    ],
+    embed = [":internal"],
+    deps = ["//language"],
+)

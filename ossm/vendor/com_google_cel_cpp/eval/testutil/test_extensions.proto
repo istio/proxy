@@ -1,0 +1,38 @@
+syntax = "proto2";
+
+package google.api.expr.runtime;
+
+import "google/protobuf/wrappers.proto";
+
+option cc_enable_arenas = true;
+option java_multiple_files = true;
+
+enum TestExtEnum {
+  TEST_EXT_UNSPECIFIED = 0;
+  TEST_EXT_1 = 10;
+  TEST_EXT_2 = 20;
+  TEST_EXT_3 = 30;
+}
+
+// This proto is used to show how extensions are tracked as fields
+// with fully qualified names.
+message TestExtensions {
+  optional string name = 1;
+
+  extensions 100 to max;
+}
+
+// Package scoped extensions.
+extend TestExtensions {
+  optional TestExtensions nested_ext = 100;
+  optional int32 int32_ext = 101;
+  optional google.protobuf.Int32Value int32_wrapper_ext = 102;
+}
+
+// Message scoped extensions.
+message TestMessageExtensions {
+  extend TestExtensions {
+    repeated string repeated_string_exts = 103;
+    optional TestExtEnum enum_ext = 104;
+  }
+}

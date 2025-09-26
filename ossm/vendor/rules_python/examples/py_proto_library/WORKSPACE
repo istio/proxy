@@ -1,0 +1,36 @@
+# NB: short workspace name is required to workaround PATH length limitation, see
+# https://github.com/bazelbuild/bazel/issues/18683#issuecomment-1843857373
+workspace(name = "p")
+
+# The following local_path_override is only needed to run this example as part of our CI.
+local_repository(
+    name = "rules_python",
+    path = "../..",
+)
+
+# When not using this example in the rules_python git repo you would load the python
+# rules using http_archive(), as documented in the release notes.
+
+load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
+
+# We install the rules_python dependencies using the function below.
+py_repositories()
+
+python_register_toolchains(
+    name = "python39",
+    python_version = "3.9",
+)
+
+# Then we need to setup dependencies in order to use py_proto_library
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "com_google_protobuf",
+    sha256 = "4fc5ff1b2c339fb86cd3a25f0b5311478ab081e65ad258c6789359cd84d421f8",
+    strip_prefix = "protobuf-26.1",
+    urls = ["https://github.com/protocolbuffers/protobuf/archive/v26.1.tar.gz"],
+)
+
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
+protobuf_deps()

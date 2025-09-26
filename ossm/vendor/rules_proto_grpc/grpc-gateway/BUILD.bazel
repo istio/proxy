@@ -1,0 +1,30 @@
+load("//:defs.bzl", "proto_plugin")
+
+proto_plugin(
+    name = "grpc_gateway_plugin",
+    empty_template = "empty.template",
+    exclusions = [
+        "google/api",
+        "google/protobuf",
+    ],
+    options = ["paths=source_relative"],
+    outputs = ["{protopath}.pb.gw.go"],
+    separate_options_flag = True,
+    tool = "@com_github_grpc_ecosystem_grpc_gateway_v2//protoc-gen-grpc-gateway",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "openapiv2_plugin",
+    exclusions = [
+        "google/api",
+        "google/protobuf",
+    ],
+    outputs = ["{protopath}.swagger.json"],
+    quirks = [
+        "QUIRK_DIRECT_MODE",
+    ],
+    separate_options_flag = True,
+    tool = "@com_github_grpc_ecosystem_grpc_gateway_v2//protoc-gen-openapiv2",
+    visibility = ["//visibility:public"],
+)

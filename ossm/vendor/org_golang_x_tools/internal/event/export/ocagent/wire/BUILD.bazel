@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "wire",
+    srcs = [
+        "common.go",
+        "core.go",
+        "metrics.go",
+        "trace.go",
+    ],
+    importpath = "golang.org/x/tools/internal/event/export/ocagent/wire",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":wire",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "wire_test",
+    srcs = ["metrics_test.go"],
+    embed = [":wire"],
+)

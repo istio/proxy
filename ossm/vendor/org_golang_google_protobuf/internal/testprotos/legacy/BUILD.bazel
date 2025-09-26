@@ -1,0 +1,57 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "legacy_proto",
+    srcs = ["legacy.proto"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/legacy/proto2_20160225_2fc053c5:proto2_20160225_2fc053c5_proto",
+        "//internal/testprotos/legacy/proto2_20160519_a4ab9ec5:proto2_20160519_a4ab9ec5_proto",
+        "//internal/testprotos/legacy/proto2_20180125_92554152:proto2_20180125_92554152_proto",
+        "//internal/testprotos/legacy/proto2_20180430_b4deda09:proto2_20180430_b4deda09_proto",
+        "//internal/testprotos/legacy/proto2_20180814_aa810b61:proto2_20180814_aa810b61_proto",
+        "//internal/testprotos/legacy/proto2_20190205_c823c79e:proto2_20190205_c823c79e_proto",
+        "//internal/testprotos/legacy/proto3_20160225_2fc053c5:proto3_20160225_2fc053c5_proto",
+        "//internal/testprotos/legacy/proto3_20160519_a4ab9ec5:proto3_20160519_a4ab9ec5_proto",
+        "//internal/testprotos/legacy/proto3_20180125_92554152:proto3_20180125_92554152_proto",
+        "//internal/testprotos/legacy/proto3_20180430_b4deda09:proto3_20180430_b4deda09_proto",
+        "//internal/testprotos/legacy/proto3_20180814_aa810b61:proto3_20180814_aa810b61_proto",
+        "//internal/testprotos/legacy/proto3_20190205_c823c79e:proto3_20190205_c823c79e_proto",
+    ],
+)
+
+go_proto_library(
+    name = "legacy_go_proto",
+    importpath = "google.golang.org/protobuf/internal/testprotos/legacy",
+    proto = ":legacy_proto",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/legacy/proto2_20160225_2fc053c5",
+        "//internal/testprotos/legacy/proto2_20160519_a4ab9ec5",
+        "//internal/testprotos/legacy/proto2_20180125_92554152",
+        "//internal/testprotos/legacy/proto2_20180430_b4deda09",
+        "//internal/testprotos/legacy/proto2_20180814_aa810b61",
+        "//internal/testprotos/legacy/proto2_20190205_c823c79e",
+        "//internal/testprotos/legacy/proto3_20160225_2fc053c5",
+        "//internal/testprotos/legacy/proto3_20160519_a4ab9ec5",
+        "//internal/testprotos/legacy/proto3_20180125_92554152",
+        "//internal/testprotos/legacy/proto3_20180430_b4deda09",
+        "//internal/testprotos/legacy/proto3_20180814_aa810b61",
+        "//internal/testprotos/legacy/proto3_20190205_c823c79e",
+    ],
+)
+
+go_library(
+    name = "legacy",
+    embed = [":legacy_go_proto"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/legacy",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":legacy",
+    visibility = ["//:__subpackages__"],
+)

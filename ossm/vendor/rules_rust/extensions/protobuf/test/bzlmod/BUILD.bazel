@@ -1,0 +1,12 @@
+load("@rules_rust//test/bzl_version:bzl_ext_version_test.bzl", "bzl_ext_version_test")
+load("@rules_rust//test/bzl_version:bzl_version_test.bzl", "bzl_version_test")
+
+bzl_ext_version_test(
+    name = "bzl_ext_version_test",
+    module_bazel = "//:MODULE.bazel",
+)
+
+bzl_version_test(
+    name = "bzl_version_test",
+    module_bazel = "//:MODULE.bazel",
+)

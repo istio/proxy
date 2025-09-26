@@ -1,0 +1,5 @@
+load(":stamp_test.bzl", "stamp_test_suite")
+
+stamp_test_suite(
+    name = "stamp_test_suite",
+)

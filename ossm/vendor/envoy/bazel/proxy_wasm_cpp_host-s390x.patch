@@ -1,0 +1,55 @@
+diff --git a/src/exports.cc b/src/exports.cc
+index 25ca06c..f952880 100644
+--- a/src/exports.cc
++++ b/src/exports.cc
+@@ -266,7 +266,7 @@ Word register_shared_queue(Word queue_name_ptr, Word queue_name_size, Word token
+   if (result != WasmResult::Ok) {
+     return result;
+   }
+-  if (!context->wasm()->setDatatype(token_ptr, token)) {
++  if (!context->wasm()->setDatatype(token_ptr, htowasm(token, context->wasmVm()->usesWasmByteOrder()))) {
+     return WasmResult::InvalidMemoryAccess;
+   }
+   return WasmResult::Ok;
+@@ -298,7 +298,7 @@ Word resolve_shared_queue(Word vm_id_ptr, Word vm_id_size, Word queue_name_ptr,
+   if (result != WasmResult::Ok) {
+     return result;
+   }
+-  if (!context->wasm()->setDatatype(token_ptr, token)) {
++  if (!context->wasm()->setDatatype(token_ptr, htowasm(token, context->wasmVm()->usesWasmByteOrder()))) {
+     return WasmResult::InvalidMemoryAccess;
+   }
+   return WasmResult::Ok;
+@@ -524,12 +524,12 @@ Word http_call(Word uri_ptr, Word uri_size, Word header_pairs_ptr, Word header_p
+   uint32_t token = 0;
+   // NB: try to write the token to verify the memory before starting the async
+   // operation.
+-  if (!context->wasm()->setDatatype(token_ptr, token)) {
++  if (!context->wasm()->setDatatype(token_ptr, htowasm(token, context->wasmVm()->usesWasmByteOrder()))) {
+     return WasmResult::InvalidMemoryAccess;
+   }
+   auto result =
+       context->httpCall(uri.value(), headers, body.value(), trailers, timeout_milliseconds, &token);
+-  context->wasm()->setDatatype(token_ptr, token);
++  context->wasm()->setDatatype(token_ptr, htowasm(token, context->wasmVm()->usesWasmByteOrder()));
+   return result;
+ }
+ 
+@@ -596,7 +596,7 @@ Word grpc_call(Word service_ptr, Word service_size, Word service_name_ptr, Word
+   if (result != WasmResult::Ok) {
+     return result;
+   }
+-  if (!context->wasm()->setDatatype(token_ptr, token)) {
++  if (!context->wasm()->setDatatype(token_ptr, htowasm(token, context->wasmVm()->usesWasmByteOrder()))) {
+     return WasmResult::InvalidMemoryAccess;
+   }
+   return WasmResult::Ok;
+@@ -621,7 +621,7 @@ Word grpc_stream(Word service_ptr, Word service_size, Word service_name_ptr, Wor
+   if (result != WasmResult::Ok) {
+     return result;
+   }
+-  if (!context->wasm()->setDatatype(token_ptr, token)) {
++  if (!context->wasm()->setDatatype(token_ptr, htowasm(token, context->wasmVm()->usesWasmByteOrder()))) {
+     return WasmResult::InvalidMemoryAccess;
+   }
+   return WasmResult::Ok;

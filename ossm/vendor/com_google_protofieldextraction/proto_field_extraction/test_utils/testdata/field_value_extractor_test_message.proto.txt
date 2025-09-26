@@ -1,0 +1,382 @@
+id: "field_value_extractor_test_message"
+
+singular_field {
+  string_field: "string_field"
+  byte_field: "byte_field"
+  enum_field: ALPHA
+  double_field: 1.111
+  float_field: 1.11
+  int64_field: 12
+  uint64_field: 123
+  int32_field: 1234
+  fixed64_field: 12345
+  fixed32_field: 123456
+  bool_field: true
+  uint32_field: 1234567
+  sfixed64_field: 12345678
+  sfixed32_field: 123456789
+  sint32_field: 1234567890
+  sint64_field: 12345678900
+  timestamp_field: {seconds: 1234567891,  nanos: 0}
+}
+
+repeated_field_leaf {
+  name: "leaf_name"
+
+  repeated_string: "leaf_string_0"
+  repeated_string: "leaf_string_1"
+  repeated_string: "leaf_string_2"
+  repeated_string: "leaf_string_3"
+
+  map_string { key: "map_string_field_key_0" value: "string_0" }
+  map_string { key: "map_string_field_key_1" value: "string_1" }
+
+  repeated_byte: "leaf_byte_0"
+  repeated_byte: "leaf_byte_1"
+
+  repeated_enum: ALPHA
+  repeated_enum: BETA
+
+  repeated_double: 1.111
+  repeated_double: 1.112
+
+  repeated_float: 1.11
+  repeated_float: 1.12
+
+  repeated_int64: 12
+  repeated_int64: 13
+
+  repeated_uint64: 123
+  repeated_uint64: 124
+
+  repeated_int32: 1234
+  repeated_int32: 1235
+
+  repeated_fixed64: 12345
+  repeated_fixed64: 12346
+
+  repeated_fixed32: 123456
+  repeated_fixed32: 123457
+
+  repeated_bool: true
+  repeated_bool: false
+
+  repeated_uint32: 1234567
+  repeated_uint32: 1234568
+
+  repeated_sfixed64: 12345678
+  repeated_sfixed64: 12345679
+
+  repeated_sfixed32: 123456789
+  repeated_sfixed32: 123456790
+
+  repeated_sint32: 1234567890
+  repeated_sint32: 1234567891
+
+  repeated_sint64: 12345678900
+  repeated_sint64: 12345678901
+
+  repeated_timestamp: { seconds: 1234567890, nanos: 0 }
+  repeated_timestamp: { seconds: 1234567891, nanos: 0 }
+
+  map_double { key: "map_double_field_key_0" value: 1.111 }
+  map_double { key: "map_double_field_key_1" value: 1.112 }
+
+  map_float { key: "map_float_field_key_0" value: 1.11 }
+  map_float { key: "map_float_field_key_1" value: 1.12 }
+
+  map_int64 { key: "map_int64_field_key_0" value: 12 }
+  map_int64 { key: "map_int64_field_key_1" value: 13 }
+
+  map_uint64 { key: "map_uint64_field_key_0" value: 123 }
+  map_uint64 { key: "map_uint64_field_key_1" value: 124 }
+
+  map_int32 { key: "map_int32_field_key_0" value: 1234 }
+  map_int32 { key: "map_int32_field_key_1" value: 1235 }
+
+  map_fixed64 { key: "map_fixed64_field_key_0" value: 12345 }
+  map_fixed64 { key: "map_fixed64_field_key_1" value: 12346 }
+
+  map_fixed32 { key: "map_fixed32_field_key_0" value: 12345 }
+  map_fixed32 { key: "map_fixed32_field_key_1" value: 12346 }
+
+  map_uint32 { key: "map_uint32_field_key_0" value: 1234567 }
+  map_uint32 { key: "map_uint32_field_key_1" value: 1234568 }
+
+  map_sfixed64 { key: "map_sfixed64_field_key_0" value: 1234567 }
+  map_sfixed64 { key: "map_sfixed64_field_key_1" value: 1234568 }
+
+  map_sfixed32 { key: "map_sfixed32_field_key_0" value: 1234567 }
+  map_sfixed32 { key: "map_sfixed32_field_key_1" value: 1234568 }
+
+  map_sint32 { key: "map_sint32_field_key_0" value: 1234567 }
+  map_sint32 { key: "map_sint32_field_key_1" value: 1234568 }
+
+  map_sint64 { key: "map_sint64_field_key_0" value: 1234567 }
+  map_sint64 { key: "map_sint64_field_key_1" value: 1234568 }
+
+  map_bool_bool { key: true value: false }
+  map_bool_bool { key: false value: true }
+
+  map_int64_int64 { key: 12 value: 12 }
+  map_int64_int64 { key: 13 value: 13 }
+
+  map_uint64_uint64 { key: 123 value: 123 }
+  map_uint64_uint64 { key: 124 value: 124 }
+
+  map_int32_int32 { key: 1234 value: 1234 }
+  map_int32_int32 { key: 1235 value: 1235 }
+
+  map_fixed64_fixed64 { key: 12345 value: 12345 }
+  map_fixed64_fixed64 { key: 12346 value: 12346 }
+
+  map_fixed32_fixed32 { key: 12345 value: 12345 }
+  map_fixed32_fixed32 { key: 12346 value: 12346 }
+
+  map_uint32_uint32 { key: 1234567 value: 1234567 }
+  map_uint32_uint32 { key: 1234568 value: 1234568 }
+
+  map_sfixed64_sfixed64 { key: 1234567 value: 1234567 }
+  map_sfixed64_sfixed64 { key: 1234568 value: 1234568 }
+
+  map_sfixed32_sfixed32 { key: 1234567 value: 1234567 }
+  map_sfixed32_sfixed32 { key: 1234568 value: 1234568 }
+
+  map_sint32_sint32 { key: 1234567 value: 1234567 }
+  map_sint32_sint32 { key: 1234568 value: 1234568 }
+
+  map_sint64_sint64 { key: 1234567 value: 1234567 }
+  map_sint64_sint64 { key: 1234568 value: 1234568 }
+}
+
+repeated_singular_fields {
+  string_field: "repeated_singular_string_field_0"
+  int64_field: 1
+}
+
+repeated_singular_fields {
+  string_field: "repeated_singular_string_field_1"
+  int64_field: 11
+}
+
+repeated_singular_fields {
+  string_field: "repeated_singular_string_field_2"
+  int64_field: 111
+}
+
+repeated_field {
+  name: "1_level1"
+  repeated_field {
+    name: "1_level1_1_level2"
+    repeated_field {
+      name: "1_level1_1_level2_1_leaf"
+      repeated_string: "1_level1_1_level2_1_leaf_string_0"
+      repeated_string: "1_level1_1_level2_1_leaf_string_1"
+      map_string { key: "map_string_field_key_0" value: "1_level1_1_level2_1_leaf_string_0" }
+      map_string { key: "map_string_field_key_1" value: "1_level1_1_level2_1_leaf_string_1" }
+    }
+    repeated_field {
+      name: "1_level1_1_level2_2_leaf"
+      repeated_string: "1_level1_1_level2_2_leaf_string_0"
+      repeated_string: "1_level1_1_level2_2_leaf_string_1"
+      map_string { key: "map_string_field_key_0" value: "1_level1_1_level2_2_leaf_string_0" }
+      map_string { key: "map_string_field_key_1" value: "1_level1_1_level2_2_leaf_string_1" }
+    }
+  }
+  repeated_field {
+    name: "1_level1_2_level2"
+    repeated_field {
+      name: "1_level1_2_level2_1_leaf"
+      repeated_string: "1_level1_2_level2_1_leaf_string_0"
+      repeated_string: "1_level1_2_level2_1_leaf_string_1"
+      map_string { key: "map_string_field_key_0" value: "1_level1_2_level2_1_leaf_string_0" }
+      map_string { key: "map_string_field_key_1" value: "1_level1_2_level2_1_leaf_string_1" }
+    }
+    repeated_field {
+      name: "1_level1_2_level2_2_leaf"
+      repeated_string: "1_level1_2_level2_2_leaf_string_0"
+      repeated_string: "1_level1_2_level2_2_leaf_string_1"
+      map_string { key: "map_string_field_key_0" value: "1_level1_2_level2_2_leaf_string_0" }
+      map_string { key: "map_string_field_key_1" value: "1_level1_2_level2_2_leaf_string_1" }
+    }
+  }
+}
+
+repeated_field {
+  name: "2_level1"
+  repeated_field {
+    name: "2_level1_1_level2"
+    repeated_field {
+      name: "2_level1_1_level2_1_leaf"
+      repeated_string: "2_level1_1_level2_1_leaf_string_0"
+      repeated_string: "2_level1_1_level2_1_leaf_string_1"
+    }
+    repeated_field {
+      name: "2_level1_1_level2_2_leaf"
+      repeated_string: "2_level1_1_level2_2_leaf_string_0"
+      repeated_string: "2_level1_1_level2_2_leaf_string_1"
+    }
+  }
+  repeated_field {
+    name: "2_level1_2_level2"
+    repeated_field {
+      name: "2_level1_2_level2_1_leaf"
+      repeated_string: "2_level1_2_level2_1_leaf_string_0"
+      repeated_string: "2_level1_2_level2_1_leaf_string_1"
+    }
+    repeated_field {
+      name: "2_level1_2_level2_2_leaf"
+      repeated_string: "2_level1_2_level2_2_leaf_string_0"
+      repeated_string: "2_level1_2_level2_2_leaf_string_1"
+    }
+  }
+}
+
+map_singular_field {
+  key: "map_singular_field_key_0"
+  value { string_field: "map_singular_field_value_string_0" int32_field: 2 }
+}
+map_singular_field {
+  key: "map_singular_field_key_1"
+  value { string_field: "map_singular_field_value_string_1" int32_field: 22 }
+}
+
+repeated_map_field {
+  key: "1_level1_key"
+  value {
+    name: "1_level1_value"
+    map_field {
+      key: "1_level1_1_level2_key"
+      value {
+        name: "1_level1_1_level2_value"
+        map_field {
+          key: "1_level1_1_level2_1_level3_key"
+          value {
+            name: "1_level1_1_level2_1_level3_value"
+            repeated_string: "leaf_value_01"
+            repeated_string: "leaf_value_02"
+          }
+        }
+        map_field {
+          key: "1_level1_1_level2_2_level3_key"
+          value {
+            name: "1_level1_1_level2_2_level3_value"
+            repeated_string: "leaf_value_03"
+            repeated_string: "leaf_value_04"
+          }
+        }
+      }
+    }
+    map_field {
+      key: "1_level1_2_level2_key"
+      value {
+        name: "1_level1_2_level2_value"
+        map_field {
+          key: "1_level1_2_level2_1_level3_key"
+          value {
+            name: "1_level1_2_level2_1_level3_value"
+            repeated_string: "leaf_value_05"
+            repeated_string: "leaf_value_06"
+          }
+        }
+        map_field {
+          key: "1_level1_2_level2_2_level3_key"
+          value {
+            name: "1_level1_2_level2_2_level3_value"
+            repeated_string: "leaf_value_07"
+            repeated_string: "leaf_value_08"
+          }
+        }
+      }
+    }
+  }
+}
+
+repeated_map_field {
+  key: "2_level1_key"
+  value {
+    name: "2_level1_value"
+    map_field {
+      key: "2_level1_1_level2_key"
+      value {
+        name: "2_level1_1_level2_value"
+        map_field {
+          key: "2_level1_1_level2_1_level3_key"
+          value {
+            name: "2_level1_1_level2_1_level3_value"
+            repeated_string: "leaf_value_09"
+            repeated_string: "leaf_value_10"
+          }
+        }
+        map_field {
+          key: "2_level1_1_level2_2_level3_key"
+          value {
+            name: "2_level1_1_level2_2_level3_value"
+            repeated_string: "leaf_value_11"
+            repeated_string: "leaf_value_12"
+          }
+        }
+      }
+    }
+    map_field {
+      key: "2_level1_2_level2_key"
+      value {
+        name: "2_level1_2_level2_value"
+        map_field {
+          key: "2_level1_2_level2_1_level3_key"
+          value {
+            name: "2_level1_2_level2_1_level3_value"
+            repeated_string: "leaf_value_13"
+            repeated_string: "leaf_value_14"
+          }
+        }
+        map_field {
+          key: "2_level1_2_level2_2_level3_key"
+          value {
+            name: "2_level1_2_level2_2_level3_value"
+            repeated_string: "leaf_value_15"
+            repeated_string: "leaf_value_16"
+          }
+        }
+      }
+    }
+  }
+}
+
+repeated_field_leaf_unpack {
+  repeated_double: 1.111
+  repeated_double: 1.112
+
+  repeated_float: 1.11
+  repeated_float: 1.12
+
+  repeated_int64: 12
+  repeated_int64: 13
+
+  repeated_uint64: 123
+  repeated_uint64: 124
+
+  repeated_int32: 1234
+  repeated_int32: 1235
+
+  repeated_fixed64: 12345
+  repeated_fixed64: 12346
+
+  repeated_fixed32: 123456
+  repeated_fixed32: 123457
+
+  repeated_uint32: 1234567
+  repeated_uint32: 1234568
+
+  repeated_sfixed64: 12345678
+  repeated_sfixed64: 12345679
+
+  repeated_sfixed32: 123456789
+  repeated_sfixed32: 123456790
+
+  repeated_sint32: 1234567890
+  repeated_sint32: 1234567891
+
+  repeated_sint64: 12345678900
+  repeated_sint64: 12345678901
+}

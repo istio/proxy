@@ -1,0 +1,7 @@
+module(
+    name = "foo_external",
+    version = "0.0.1",
+)
+
+bazel_dep(name = "rules_python", version = "1.0.0")
+bazel_dep(name = "protobuf", version = "28.2", repo_name = "com_google_protobuf")

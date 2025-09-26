@@ -1,0 +1,10 @@
+load(":bzl_test.bzl", "bzl_test")
+load(":test.bzl", "run_test")
+
+run_test(name = "tests")
+
+bzl_test(
+    name = "features_bzl_test",
+    src = "features_bzl_macro.bzl",
+    deps = ["//:features"],
+)

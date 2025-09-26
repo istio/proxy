@@ -1,0 +1,74 @@
+"Public API"
+
+load("@bazel_features//:features.bzl", "bazel_features")
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//js/private:is_bazel_7_or_greater.bzl", "is_bazel_7_or_greater")
+
+exports_files(
+    glob(["*.bzl"]),
+    visibility = ["//docs:__pkg__"],
+)
+
+config_setting(
+    name = "allow_unresolved_symlinks",
+    values = {bazel_features.flags.allow_unresolved_symlinks: "true"},
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "enable_runfiles",
+    values = {"enable_runfiles": "true"},
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "defs",
+    srcs = ["defs.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//js/private:js_binary",
+        "//js/private:js_image_layer",
+        "//js/private:js_library",
+        "//js/private:js_run_binary",
+        "//js/private:js_run_devserver",
+    ],
+)
+
+bzl_library(
+    name = "libs",
+    srcs = ["libs.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//js/private:js_binary",
+        "//js/private:js_library",
+    ],
+)
+
+bzl_library(
+    name = "providers",
+    srcs = ["providers.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//js/private:js_info",
+    ],
+)
+
+bzl_library(
+    name = "repositories",
+    srcs = ["repositories.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_tools//tools/build_defs/repo:http.bzl",
+        "@bazel_tools//tools/build_defs/repo:utils.bzl",
+    ] + (["@bazel_tools//tools/build_defs/repo:cache.bzl"] if is_bazel_7_or_greater() else []),
+)
+
+bzl_library(
+    name = "dev_repositories",
+    srcs = ["dev_repositories.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_tools//tools/build_defs/repo:http.bzl",
+        "@bazel_tools//tools/build_defs/repo:utils.bzl",
+    ] + (["@bazel_tools//tools/build_defs/repo:cache.bzl"] if is_bazel_7_or_greater() else []),
+)

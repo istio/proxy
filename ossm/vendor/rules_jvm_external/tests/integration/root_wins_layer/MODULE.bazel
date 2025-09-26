@@ -1,0 +1,16 @@
+module(name = "root_wins_layer")
+
+bazel_dep(name = "rules_jvm_external", version = "0.0")
+local_path_override(
+    module_name = "rules_jvm_external",
+    path = "../../../",
+)
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    name = "root_wins",
+    artifacts = [
+        "io.netty:netty-buffer:4.1.110.Final",
+    ],
+)
+use_repo(maven, "root_wins")

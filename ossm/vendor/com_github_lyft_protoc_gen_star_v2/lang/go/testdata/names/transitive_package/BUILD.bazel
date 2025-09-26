@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "foobar_proto",
+    srcs = [
+        "other.proto",
+        "transitive.proto",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+go_proto_library(
+    name = "foobar_go_proto",
+    importpath = "example.com/names/foobar",
+    proto = ":foobar_proto",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "foobar",
+    embed = [":foobar_go_proto"],
+    importpath = "example.com/names/foobar",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":foobar",
+    visibility = ["//visibility:public"],
+)

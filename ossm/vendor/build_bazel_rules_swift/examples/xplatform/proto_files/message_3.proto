@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package proto_files;
+
+import "examples/xplatform/proto_files/message_2.proto";
+
+message Message3 {
+  Message2 message2 = 1;
+}

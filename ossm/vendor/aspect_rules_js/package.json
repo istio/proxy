@@ -1,0 +1,50 @@
+{
+    "private": true,
+    "devDependencies": {
+        "@types/node": "16.18.11",
+        "chalk": "5.1.1",
+        "inline-fixtures": "1.1.0",
+        "jsonpath-plus": "7.2.0",
+        "typescript": "4.9.5"
+    },
+    "pnpm": {
+        "packageExtensions": {
+            "mocha": {
+                "peerDependencies": {
+                    "mocha-multi-reporters": "*"
+                }
+            },
+            "mocha-multi-reporters": {
+                "peerDependencies": {
+                    "mocha-junit-reporter": "*"
+                }
+            },
+            "segfault-handler": {
+                "dependencies": {
+                    "node-gyp": "*"
+                }
+            },
+            "unix-dgram": {
+                "dependencies": {
+                    "node-gyp": "*"
+                }
+            },
+            "@kubernetes/client-node": {
+                "//1": "these deps are from devDependencies of @kubernetes/client-node and needed for 'prepare' lifecycle hook",
+                "//2": "https://github.com/kubernetes-client/javascript/blob/fc681991e61c6808dd26012a2331f83671a11218/package.json",
+                "dependencies": {
+                    "@types/underscore": "^1.11.4",
+                    "typescript": "~4.9.4"
+                }
+            }
+        },
+        "overrides": {
+            "jsonify": "https://github.com/aspect-build/test-packages/releases/download/0.0.0/@foo-jsonify-0.0.0.tgz",
+            "semver-max": "file:./npm/private/test/vendored/semver-max",
+            "is-odd": "file:./npm/private/test/vendored/is-odd"
+        },
+        "patchedDependencies": {
+            "meaning-of-life@1.0.0": "examples/npm_deps/patches/meaning-of-life@1.0.0-pnpm.patch"
+        }
+    }
+}

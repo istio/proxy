@@ -1,0 +1,2 @@
+# Reset the default visibility to the default for all child packages.
+# gazelle:python_default_visibility DEFAULT

@@ -1,0 +1,396 @@
+# proto-file: google3/google/api/expr/checked.proto
+# proto-message: CheckedExpr
+# has(msg.old_field) || has(msg.old_field) ||
+# math.least(msg.old_field, msg.old_field) < 0
+reference_map: {
+  key: 2
+  value: {
+    name: "msg"
+  }
+}
+reference_map: {
+  key: 6
+  value: {
+    name: "msg"
+  }
+}
+reference_map: {
+  key: 9
+  value: {
+    overload_id: "logical_or"
+  }
+}
+reference_map: {
+  key: 12
+  value: {
+    name: "msg"
+  }
+}
+reference_map: {
+  key: 14
+  value: {
+    name: "msg"
+  }
+}
+reference_map: {
+  key: 16
+  value: {
+    overload_id: "math_@min_int_int"
+  }
+}
+reference_map: {
+  key: 17
+  value: {
+    overload_id: "less_int64"
+  }
+}
+reference_map: {
+  key: 19
+  value: {
+    overload_id: "logical_or"
+  }
+}
+type_map: {
+  key: 2
+  value: {
+    map_type: {
+      key_type: {
+        primitive: STRING
+      }
+      value_type: {
+        primitive: INT64
+      }
+    }
+  }
+}
+type_map: {
+  key: 4
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 6
+  value: {
+    map_type: {
+      key_type: {
+        primitive: STRING
+      }
+      value_type: {
+        primitive: INT64
+      }
+    }
+  }
+}
+type_map: {
+  key: 8
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 9
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 12
+  value: {
+    map_type: {
+      key_type: {
+        primitive: STRING
+      }
+      value_type: {
+        primitive: INT64
+      }
+    }
+  }
+}
+type_map: {
+  key: 13
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 14
+  value: {
+    map_type: {
+      key_type: {
+        primitive: STRING
+      }
+      value_type: {
+        primitive: INT64
+      }
+    }
+  }
+}
+type_map: {
+  key: 15
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 16
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 17
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 18
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 19
+  value: {
+    primitive: BOOL
+  }
+}
+source_info: {
+  location: "<input>"
+  line_offsets: 89
+  positions: {
+    key: 1
+    value: 3
+  }
+  positions: {
+    key: 2
+    value: 4
+  }
+  positions: {
+    key: 3
+    value: 7
+  }
+  positions: {
+    key: 4
+    value: 3
+  }
+  positions: {
+    key: 5
+    value: 25
+  }
+  positions: {
+    key: 6
+    value: 26
+  }
+  positions: {
+    key: 7
+    value: 29
+  }
+  positions: {
+    key: 8
+    value: 25
+  }
+  positions: {
+    key: 9
+    value: 19
+  }
+  positions: {
+    key: 10
+    value: 44
+  }
+  positions: {
+    key: 11
+    value: 54
+  }
+  positions: {
+    key: 12
+    value: 55
+  }
+  positions: {
+    key: 13
+    value: 58
+  }
+  positions: {
+    key: 14
+    value: 70
+  }
+  positions: {
+    key: 15
+    value: 73
+  }
+  positions: {
+    key: 16
+    value: 54
+  }
+  positions: {
+    key: 17
+    value: 85
+  }
+  positions: {
+    key: 18
+    value: 87
+  }
+  positions: {
+    key: 19
+    value: 41
+  }
+  macro_calls: {
+    key: 4
+    value: {
+      call_expr: {
+        function: "has"
+        args: {
+          id: 3
+          select_expr: {
+            operand: {
+              id: 2
+              ident_expr: {
+                name: "msg"
+              }
+            }
+            field: "old_field"
+          }
+        }
+      }
+    }
+  }
+  macro_calls: {
+    key: 8
+    value: {
+      call_expr: {
+        function: "has"
+        args: {
+          id: 7
+          select_expr: {
+            operand: {
+              id: 6
+              ident_expr: {
+                name: "msg"
+              }
+            }
+            field: "old_field"
+          }
+        }
+      }
+    }
+  }
+  macro_calls: {
+    key: 16
+    value: {
+      call_expr: {
+        target: {
+          id: 10
+          ident_expr: {
+            name: "math"
+          }
+        }
+        function: "least"
+        args: {
+          id: 13
+          select_expr: {
+            operand: {
+              id: 12
+              ident_expr: {
+                name: "msg"
+              }
+            }
+            field: "old_field"
+          }
+        }
+        args: {
+          id: 15
+          select_expr: {
+            operand: {
+              id: 14
+              ident_expr: {
+                name: "msg"
+              }
+            }
+            field: "old_field"
+          }
+        }
+      }
+    }
+  }
+}
+expr: {
+  id: 19
+  call_expr: {
+    function: "_||_"
+    args: {
+      id: 9
+      call_expr: {
+        function: "_||_"
+        args: {
+          id: 4
+          select_expr: {
+            operand: {
+              id: 2
+              ident_expr: {
+                name: "msg"
+              }
+            }
+            field: "old_field"
+            test_only: true
+          }
+        }
+        args: {
+          id: 8
+          select_expr: {
+            operand: {
+              id: 6
+              ident_expr: {
+                name: "msg"
+              }
+            }
+            field: "old_field"
+            test_only: true
+          }
+        }
+      }
+    }
+    args: {
+      id: 17
+      call_expr: {
+        function: "_<_"
+        args: {
+          id: 16
+          call_expr: {
+            function: "math.@min"
+            args: {
+              id: 13
+              select_expr: {
+                operand: {
+                  id: 12
+                  ident_expr: {
+                    name: "msg"
+                  }
+                }
+                field: "old_field"
+              }
+            }
+            args: {
+              id: 15
+              select_expr: {
+                operand: {
+                  id: 14
+                  ident_expr: {
+                    name: "msg"
+                  }
+                }
+                field: "old_field"
+              }
+            }
+          }
+        }
+        args: {
+          id: 18
+          const_expr: {
+            int64_value: 0
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+syntax = "proto3";
+package samples;
+
+// PayloadMessage2 contains some common types
+// 
+// PayloadMessage2 is used throughout the test suite
+// and can have multi-line comments
+message PayloadMessage2 {
+    enum Topology {
+        FLAT             = 0;
+        NESTED_OBJECT    = 1;
+        NESTED_MESSAGE   = 2;
+        ARRAY_OF_TYPE    = 3;
+        ARRAY_OF_OBJECT  = 4;
+        ARRAY_OF_MESSAGE = 5;
+    }
+
+    string name       = 1;
+    string timestamp  = 2;
+    int32 id          = 3;
+    float rating      = 4;
+    bool complete     = 5;
+    Topology topology = 6;
+}

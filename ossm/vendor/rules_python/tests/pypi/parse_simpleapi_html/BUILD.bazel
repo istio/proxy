@@ -1,0 +1,3 @@
+load(":parse_simpleapi_html_tests.bzl", "parse_simpleapi_html_test_suite")
+
+parse_simpleapi_html_test_suite(name = "parse_simpleapi_html_tests")

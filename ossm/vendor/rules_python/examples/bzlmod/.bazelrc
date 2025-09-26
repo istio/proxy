@@ -1,0 +1,10 @@
+common --enable_bzlmod
+common --lockfile_mode=update
+
+coverage --java_runtime_version=remotejdk_11
+
+test --test_output=errors --enable_runfiles
+
+# Windows requires these for multi-python support:
+build --enable_runfiles
+common:bazel7.x --incompatible_python_disallow_native_rules

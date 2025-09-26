@@ -1,0 +1,12 @@
+load("@rules_proto_grpc//ruby:defs.bzl", "ruby_grpc_library")
+
+ruby_grpc_library(
+    name = "thing_ruby_grpc",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)
+
+ruby_grpc_library(
+    name = "greeter_ruby_grpc",
+    protos = ["@rules_proto_grpc//example/proto:greeter_grpc"],
+    deps = ["thing_ruby_grpc"],
+)

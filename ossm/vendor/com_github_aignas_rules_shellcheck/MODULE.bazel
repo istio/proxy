@@ -1,0 +1,27 @@
+module(
+    name = "rules_shellcheck",
+    version = "0.0.0",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "platforms", version = "0.0.8")
+
+deps = use_extension("//internal:extensions.bzl", "shellcheck_dependencies")
+use_repo(
+    deps,
+    "shellcheck_darwin_aarch64",
+    "shellcheck_darwin_x86_64",
+    "shellcheck_linux_aarch64",
+    "shellcheck_linux_armv6hf",
+    "shellcheck_linux_x86_64",
+    "shellcheck_windows_x86_64",
+)
+
+# Dev dependencies
+
+bazel_dep(name = "rules_pkg", version = "0.9.1", dev_dependency = True)
+bazel_dep(
+    name = "rules_bazel_integration_test",
+    version = "0.21.0",
+    dev_dependency = True,
+)

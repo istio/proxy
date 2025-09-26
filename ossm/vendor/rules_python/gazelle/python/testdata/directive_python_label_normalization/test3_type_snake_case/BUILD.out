@@ -1,0 +1,10 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_label_normalization snake_case
+
+py_library(
+    name = "test3_type_snake_case",
+    srcs = ["bar.py"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@gazelle_python_test//google_cloud_storage"],
+)

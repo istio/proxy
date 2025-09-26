@@ -1,0 +1,5 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "com_google_protobuf-v3.10.0-bzl_visibility.patch",
+])

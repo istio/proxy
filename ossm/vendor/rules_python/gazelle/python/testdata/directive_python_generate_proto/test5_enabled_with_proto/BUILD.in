@@ -1,0 +1,9 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+# gazelle:python_generate_proto true
+
+proto_library(
+    name = "foo_proto",
+    srcs = ["foo.proto"],
+    visibility = ["//:__subpackages__"],
+)

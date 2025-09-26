@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "protoc-gen-go_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/golang/protobuf/protoc-gen-go",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/gengogrpc",
+        "@org_golang_google_protobuf//cmd/protoc-gen-go/internal_gengo:go_default_library",
+        "@org_golang_google_protobuf//compiler/protogen:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "protoc-gen-go",
+    embed = [":protoc-gen-go_lib"],
+    visibility = ["//visibility:public"],
+)

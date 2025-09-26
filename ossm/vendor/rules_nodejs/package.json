@@ -1,0 +1,31 @@
+{
+  "name": "@bazel/javascript",
+  "description": "Build JavaScript with Bazel",
+  "private": true,
+  "version": "0.0.0",
+  "keywords": [
+    "javascript",
+    "bazel"
+  ],
+  "homepage": "https://github.com/bazel-contrib/rules_nodejs",
+  "repository": "https://github.com/bazel-contrib/rules_nodejs.git",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=12 <=18"
+  },
+  "packageManager": "pnpm@8.11.0",
+  "devDependencies": {
+    "@bazel/bazelisk": "^1.10.1",
+    "@bazel/buildifier": "^3.2.0",
+    "@bazel/buildozer": "^3.2.0",
+    "@commitlint/cli": "^12.1.4",
+    "@commitlint/config-conventional": "^12.1.4",
+    "@types/node": "^15.12.2",
+    "conventional-changelog-cli": "^2.0.21"
+  },
+  "scripts": {
+    "// See comment in .bazelrc": "",
+    "update-nodejs-versions": "node ./scripts/update-nodejs-versions.js > nodejs/private/node_versions.bzl",
+    "update-changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
+  }
+}

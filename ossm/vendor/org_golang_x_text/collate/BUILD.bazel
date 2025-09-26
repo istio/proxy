@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "collate",
+    srcs = [
+        "collate.go",
+        "index.go",
+        "option.go",
+        "sort.go",
+        "tables.go",
+    ],
+    importpath = "golang.org/x/text/collate",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/colltab",
+        "//language",
+        "//unicode/norm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":collate",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "collate_test",
+    srcs = [
+        "collate_test.go",
+        "example_sort_test.go",
+        "examples_test.go",
+        "export_test.go",
+        "option_test.go",
+        "reg_test.go",
+        "sort_test.go",
+        "table_test.go",
+    ],
+    embed = [":collate"],
+    deps = [
+        "//collate/build",
+        "//internal/colltab",
+        "//internal/gen",
+        "//language",
+        "//unicode/norm",
+    ],
+)

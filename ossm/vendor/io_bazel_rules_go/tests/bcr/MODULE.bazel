@@ -1,0 +1,62 @@
+module(
+    name = "rules_go_bcr_tests",
+    # Test that the default SDK is registered by not registering one from the test module.
+    version = "1.2.3",
+)
+
+# Keep this dep first so that its toolchain takes precedence over the default SDK registered by
+# rules_go.
+bazel_dep(name = "other_module", version = "")
+local_path_override(
+    module_name = "other_module",
+    path = "other_module",
+)
+
+bazel_dep(name = "rules_go", version = "", repo_name = "my_rules_go")
+local_path_override(
+    module_name = "rules_go",
+    path = "../..",
+)
+
+bazel_dep(name = "gazelle", version = "0.33.0")
+bazel_dep(name = "protobuf", version = "3.19.6")
+
+# Required with --incompatible_enable_proto_toolchain_resolution.
+# Avoids building protoc from source, which speeds up CI runs.
+bazel_dep(name = "toolchains_protoc", version = "0.2.1")
+
+go_sdk = use_extension("@my_rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(
+    patch_strip = 1,
+    patches = [
+        "//:test_go_sdk.patch",
+    ],
+    version = "1.23.1",
+)
+
+# Request an invalid SDK to verify that it isn't fetched since the first tag takes precedence.
+go_sdk.host(version = "3.0.0")
+go_sdk.nogo(
+    # This directory contains a file that would trigger a nogo error if not excluded.
+    excludes = ["//third_party:__subpackages__"],
+    nogo = "//:my_nogo",
+)
+
+# Bring the default SDK into scope to verify that it exists.
+use_repo(go_sdk, "go_default_sdk")
+
+# Bring the selected host compatible SDK into scope to verify that it exists.
+use_repo(go_sdk, "go_host_compatible_sdk_label")
+
+go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
+go_deps.module(
+    path = "google.golang.org/grpc",
+    sum = "h1:pnP7OclFFFgFi4VHQDQDaoXUVauOFyktqTsqqgzFKbc=",
+    version = "v1.40.1",
+)
+
+# Read in go_tool_test.sh.
+go_deps.config(
+    go_env = {"GOPRIVATE": "example.com"},
+)
+use_repo(go_deps, "org_golang_google_grpc")

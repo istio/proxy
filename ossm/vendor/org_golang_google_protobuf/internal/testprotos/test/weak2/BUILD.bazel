@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "weak2_proto",
+    srcs = ["test_weak.proto"],
+    visibility = ["//:__subpackages__"],
+)
+
+go_proto_library(
+    name = "weak2_go_proto",
+    importpath = "google.golang.org/protobuf/internal/testprotos/test/weak2",
+    proto = ":weak2_proto",
+    visibility = ["//:__subpackages__"],
+)
+
+go_library(
+    name = "weak2",
+    embed = [":weak2_go_proto"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/test/weak2",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":weak2",
+    visibility = ["//:__subpackages__"],
+)

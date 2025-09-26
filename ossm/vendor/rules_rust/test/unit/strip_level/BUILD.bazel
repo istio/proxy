@@ -1,0 +1,5 @@
+load(":strip_level_test_suite.bzl", "strip_level_test_suite")
+
+strip_level_test_suite(
+    name = "strip_level_test_suite",
+)

@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "asmdecl",
+    srcs = [
+        "arches_go118.go",
+        "arches_go119.go",
+        "asmdecl.go",
+    ],
+    importpath = "golang.org/x/tools/go/analysis/passes/asmdecl",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/internal/analysisutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":asmdecl",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "asmdecl_test",
+    srcs = ["asmdecl_test.go"],
+    deps = [
+        ":asmdecl",
+        "//go/analysis/analysistest",
+    ],
+)

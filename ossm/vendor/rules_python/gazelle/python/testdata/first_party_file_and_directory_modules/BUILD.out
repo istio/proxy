@@ -1,0 +1,25 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+# gazelle:resolve py foo //foo
+
+py_library(
+    name = "first_party_file_and_directory_modules",
+    srcs = [
+        "baz.py",
+        "foo.py",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+py_binary(
+    name = "first_party_file_and_directory_modules_bin",
+    srcs = ["__main__.py"],
+    main = "__main__.py",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":first_party_file_and_directory_modules",
+        "//foo",
+        "//one",
+        "//undiscoverable/package1/subpackage1",
+    ],
+)

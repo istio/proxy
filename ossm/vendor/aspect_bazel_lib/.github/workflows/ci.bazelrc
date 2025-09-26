@@ -1,0 +1,6 @@
+# Directories caches by GitHub actions
+common:local --disk_cache=~/.cache/bazel-disk-cache
+common --repository_cache=~/.cache/bazel-repository-cache
+
+# Debug where options came from
+common --announce_rc

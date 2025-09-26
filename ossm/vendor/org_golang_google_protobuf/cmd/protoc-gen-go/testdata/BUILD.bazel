@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "testdata_test",
+    srcs = [
+        "gen_test.go",
+        "registry_test.go",
+    ],
+    deps = [
+        "//cmd/protoc-gen-go/testdata/annotations",
+        "//cmd/protoc-gen-go/testdata/comments",
+        "//cmd/protoc-gen-go/testdata/extensions/base",
+        "//cmd/protoc-gen-go/testdata/extensions/ext",
+        "//cmd/protoc-gen-go/testdata/extensions/extra",
+        "//cmd/protoc-gen-go/testdata/extensions/proto3",
+        "//cmd/protoc-gen-go/testdata/fieldnames",
+        "//cmd/protoc-gen-go/testdata/import_public",
+        "//cmd/protoc-gen-go/testdata/import_public/sub",
+        "//cmd/protoc-gen-go/testdata/import_public/sub2",
+        "//cmd/protoc-gen-go/testdata/imports",
+        "//cmd/protoc-gen-go/testdata/imports/fmt",
+        "//cmd/protoc-gen-go/testdata/imports/test_a_1",
+        "//cmd/protoc-gen-go/testdata/imports/test_a_2",
+        "//cmd/protoc-gen-go/testdata/imports/test_b_1",
+        "//cmd/protoc-gen-go/testdata/issue780_oneof_conflict",
+        "//cmd/protoc-gen-go/testdata/nopackage",
+        "//cmd/protoc-gen-go/testdata/proto2",
+        "//cmd/protoc-gen-go/testdata/proto3",
+        "//cmd/protoc-gen-go/testdata/retention",
+        "//internal/filedesc",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+    ],
+)

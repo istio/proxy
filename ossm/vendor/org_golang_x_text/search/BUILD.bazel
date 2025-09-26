@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "search",
+    srcs = [
+        "index.go",
+        "pattern.go",
+        "search.go",
+        "tables.go",
+    ],
+    importpath = "golang.org/x/text/search",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/colltab",
+        "//language",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":search",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "search_test",
+    srcs = ["pattern_test.go"],
+    embed = [":search"],
+    deps = ["//language"],
+)

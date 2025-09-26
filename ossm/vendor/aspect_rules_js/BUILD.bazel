@@ -1,0 +1,115 @@
+load("@acorn__8.4.0__links//:defs.bzl", npm_link_acorn = "npm_link_imported_package")
+load("@aspect_bazel_lib//lib:diff_test.bzl", "diff_test")
+load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+load("@npm//:defs.bzl", "npm_link_all_packages", "npm_link_targets")
+load("@pnpm__links//:defs.bzl", npm_link_pnpm = "npm_link_imported_package")
+load("//npm:defs.bzl", "npm_link_package")
+load("//js:defs.bzl", "js_library")
+
+# Link all packages from the /WORKSPACE npm_translate_lock(name = "npm") and also packages from
+# manual /WORKSPACE npm_import rules to bazel-bin/node_modules as well as the virtual store
+# bazel-bin/node_modules/.aspect_rules_js since /pnpm-lock.yaml is the root of the pnpm workspace
+npm_link_all_packages(
+    name = "node_modules",
+    imported_links = [
+        npm_link_acorn,
+        npm_link_pnpm,
+    ],
+)
+
+# Ensure that jsonplus-plus is in the output tree for the @kubernetes/client-node sandboxed lifecycle
+# hook test case
+build_test(
+    name = "node_modules_build_test",
+    targets = ["//:node_modules"],
+)
+
+# buildifier: disable=duplicated-name
+NODE_MODULES = npm_link_targets(
+    name = "node_modules",
+    package = package_name(),
+) + [
+    "//:node_modules/acorn",
+    "//:node_modules/pnpm",
+]
+
+js_library(
+    name = "npm_link_targets_node_modules",
+    srcs = NODE_MODULES,
+)
+
+build_test(
+    name = "npm_link_targets_node_modules_build_test",
+    targets = ["//:npm_link_targets_node_modules"],
+)
+
+genquery(
+    name = "query_node_modules",
+    expression = "deps(//:node_modules) - //:node_modules",
+    scope = ["//:node_modules"],
+)
+
+genquery(
+    name = "query_npm_link_targets_node_modules",
+    expression = "deps(//:npm_link_targets_node_modules) - //:npm_link_targets_node_modules",
+    scope = ["//:npm_link_targets_node_modules"],
+)
+
+# Verifies that the targets list in //:npm_link_targets_node_modules is the same as //:node_modules
+diff_test(
+    name = "npm_link_targets_test",
+    file1 = "query_node_modules",
+    file2 = "query_npm_link_targets_node_modules",
+)
+
+# Example of manually linking a first-party dependency. Its transitive npm dependencies
+# are picked up automatically via 'npm_package_store_deps' in the js_library targets that
+# the `npm_package` target depends on.
+npm_link_package(
+    name = "node_modules/@mycorp/pkg-b",
+    src = "//examples/npm_package/packages/pkg_b",
+)
+
+# Manually linked pkg-c with additional use cases.
+npm_link_package(
+    name = "node_modules/@mycorp/pkg-c1",
+    src = "//examples/npm_package/packages/pkg_c:pkg_c1",
+)
+
+npm_link_package(
+    name = "node_modules/@mycorp/pkg-c2",
+    src = "//examples/npm_package/packages/pkg_c:pkg_c2",
+)
+
+gazelle_binary(
+    name = "gazelle_bin",
+    languages = ["@bazel_skylib_gazelle_plugin//bzl"],
+)
+
+gazelle(
+    name = "gazelle",
+    gazelle = "gazelle_bin",
+)
+
+buildifier(
+    name = "buildifier",
+    exclude_patterns = ["./.git/*"],
+    lint_mode = "fix",
+    lint_warnings = ["-out-of-order-load"],  # TODO: enable out-of-order-load
+    mode = "fix",
+)
+
+buildifier(
+    name = "buildifier.check",
+    exclude_patterns = ["./.git/*"],
+    lint_mode = "warn",
+    lint_warnings = ["-out-of-order-load"],  # TODO: enable out-of-order-load
+    mode = "diff",
+)
+
+alias(
+    name = "format",
+    actual = "//tools:format",
+)

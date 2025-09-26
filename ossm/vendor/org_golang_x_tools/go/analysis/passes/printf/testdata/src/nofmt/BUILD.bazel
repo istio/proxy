@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "nofmt",
+    srcs = ["nofmt.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/printf/testdata/src/nofmt",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":nofmt",
+    visibility = ["//visibility:public"],
+)

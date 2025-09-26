@@ -1,0 +1,75 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library_group", "rust_test")
+load("//:defs.bzl", "rust_prost_toolchain")
+load(":legacy_proto_toolchain.bzl", "legacy_proto_toolchain")
+load(":prost.bzl", "RUST_EDITION", "current_prost_runtime")
+
+current_prost_runtime(
+    name = "current_prost_runtime",
+)
+
+rust_binary(
+    name = "protoc_wrapper",
+    srcs = ["protoc_wrapper.rs"],
+    edition = RUST_EDITION,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":current_prost_runtime",
+        "@rrprd__heck//:heck",
+    ],
+)
+
+rust_test(
+    name = "protoc_wrapper_test",
+    crate = ":protoc_wrapper",
+    edition = RUST_EDITION,
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]),
+    visibility = ["//:__pkg__"],
+    deps = [
+        "//private/3rdparty:bzl_lib",
+        "@rules_proto//proto:defs",
+        "@rules_proto//proto:repositories",
+        "@rules_rust//rust:bzl_lib",
+    ],
+)
+
+rust_library_group(
+    name = "prost_runtime",
+    visibility = [
+        "//:__subpackages__",
+    ],
+    deps = [
+        "//private/3rdparty/crates:prost",
+    ],
+)
+
+rust_library_group(
+    name = "tonic_runtime",
+    visibility = [
+        "//:__subpackages__",
+    ],
+    deps = [
+        ":prost_runtime",
+        "//private/3rdparty/crates:tonic",
+    ],
+)
+
+rust_prost_toolchain(
+    name = "default_prost_toolchain_impl",
+    prost_plugin = "//private/3rdparty/crates:protoc-gen-prost__protoc-gen-prost",
+    prost_plugin_flag = "--plugin=protoc-gen-prost=%s",
+    prost_runtime = ":prost_runtime",
+    prost_types = "//private/3rdparty/crates:prost-types",
+    tonic_plugin = "//private/3rdparty/crates:protoc-gen-tonic__protoc-gen-tonic",
+    tonic_plugin_flag = "--plugin=protoc-gen-tonic=%s",
+    tonic_runtime = ":tonic_runtime",
+)
+
+legacy_proto_toolchain(
+    name = "legacy_proto_toolchain",
+    visibility = ["//visibility:public"],
+)

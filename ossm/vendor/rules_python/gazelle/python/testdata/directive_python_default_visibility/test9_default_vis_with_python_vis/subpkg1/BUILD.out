@@ -1,0 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_visibility //some/new:target
+
+py_library(
+    name = "subpkg1",
+    srcs = ["foo.py"],
+    visibility = [
+        "//some/new:target",
+        "//tests:__pkg__",
+    ],
+)

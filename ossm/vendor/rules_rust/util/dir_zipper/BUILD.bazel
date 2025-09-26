@@ -1,0 +1,8 @@
+load("//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "dir_zipper",
+    srcs = ["dir_zipper.rs"],
+    edition = "2018",
+    visibility = ["//visibility:public"],
+)

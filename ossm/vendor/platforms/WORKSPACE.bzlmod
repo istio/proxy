@@ -1,0 +1,4 @@
+# Include dependencies which are only needed for development here.
+#
+# Even if this is empty, you need it with bzlmod enable to prevent
+# bzlmod from bringing in WORKSPACE too.

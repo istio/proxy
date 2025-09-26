@@ -1,0 +1,98 @@
+name: clang-tidy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  clang-tidy:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cmake_options: all-options-abiv1-preview
+            warning_limit: 61
+          - cmake_options: all-options-abiv2-preview
+            warning_limit: 61
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          submodules: recursive
+
+      - name: Setup Environment
+        run: |
+          sudo apt update -y
+          sudo apt install -y --no-install-recommends --no-install-suggests \
+          build-essential \
+          cmake \
+          zlib1g-dev \
+          libssl-dev \
+          libcurl4-openssl-dev \
+          nlohmann-json3-dev \
+          libabsl-dev \
+          libprotobuf-dev \
+          libgrpc++-dev \
+          protobuf-compiler \
+          protobuf-compiler-grpc \
+          libgmock-dev \
+          libgtest-dev \
+          libbenchmark-dev
+
+          if ! command -v clang-tidy &> /dev/null; then
+            echo "clang-tidy could not be found"
+            exit 1
+          fi
+          echo "Using clang-tidy version: $(clang-tidy --version)"
+          echo "clang-tidy installed at: $(which clang-tidy)"
+
+      - name: Prepare CMake
+        env:
+          CC: clang
+          CXX: clang++
+        run: |
+          echo "Running cmake..."
+          cmake -B build-${{ matrix.cmake_options }} \
+            -C ./test_common/cmake/${{ matrix.cmake_options }}.cmake \
+            -DCMAKE_CXX_STANDARD=14 \
+            -DWITH_STL=CXX14 \
+            -DWITH_OPENTRACING=OFF \
+            -DCMAKE_CXX_FLAGS="-Wno-deprecated-declarations" \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DCMAKE_CXX_CLANG_TIDY="clang-tidy;--quiet;-p;build-${{ matrix.cmake_options }}"
+
+      - name: Run clang-tidy
+        run: |
+          cmake --build build-${{ matrix.cmake_options }} -- -j$(nproc) 2>&1 | tee clang-tidy-${{ matrix.cmake_options }}.log
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Logs-clang-tidy-${{ matrix.cmake_options }}
+          path: ./clang-tidy-${{ matrix.cmake_options }}.log
+
+      - name: Count warnings
+        run: |
+          COUNT=$(grep -c "warning:" clang-tidy-${{ matrix.cmake_options }}.log)
+          echo "clang-tidy reported ${COUNT} warning(s) with cmake options preset '${{ matrix.cmake_options }}'"
+
+          readonly WARNING_LIMIT=${{ matrix.warning_limit }}
+
+          # FAIL the build if COUNT > WARNING_LIMIT
+          if [ $COUNT -gt $WARNING_LIMIT ] ; then
+            echo "clang-tidy reported ${COUNT} warning(s) exceeding the existing warning limit of ${WARNING_LIMIT} with cmake options preset '${{ matrix.cmake_options }}'"
+            exit 1
+          # WARN in annotations if COUNT > 0
+          elif [ $COUNT -gt 0 ] ; then
+            echo "::warning::clang-tidy reported ${COUNT} warning(s) with cmake options preset '${{ matrix.cmake_options }}'"
+          fi
+

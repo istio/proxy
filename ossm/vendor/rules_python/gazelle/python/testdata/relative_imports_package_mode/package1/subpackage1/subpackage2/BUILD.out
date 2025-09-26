@@ -1,0 +1,16 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "subpackage2",
+    srcs = [
+        "__init__.py",
+        "script.py",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//package1/my_library",
+        "//package1/my_library/foo",
+        "//package1/subpackage1",
+        "//package1/subpackage1/subpackage2/library",
+    ],
+)

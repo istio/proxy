@@ -1,0 +1,2 @@
+# For funzies, also throw in some additional visibility.
+# gazelle:python_visibility //tests:__pkg__

@@ -1,0 +1,18 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+package(default_visibility = ["//:__subpackages__"])
+
+bzl_library(
+    name = "repos_bzl",
+    srcs = ["repos.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//python/private:local_runtime_repo_bzl",
+        "//python/private:local_runtime_toolchains_repo_bzl",
+    ],
+)
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+)

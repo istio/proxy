@@ -1,0 +1,303 @@
+module(
+    name = "example_bzlmod",
+    version = "0.0.0",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "platforms", version = "0.0.4")
+bazel_dep(name = "rules_python", version = "0.0.0")
+local_path_override(
+    module_name = "rules_python",
+    path = "../..",
+)
+
+# (py_proto_library specific) Add the protobuf library for well-known types (e.g. `Any`, `Timestamp`, etc)
+bazel_dep(name = "protobuf", version = "27.0", repo_name = "com_google_protobuf")
+
+# Only needed to make rules_python's CI happy. rules_java 8.3.0+ is needed so
+# that --java_runtime_version=remotejdk_11 works with Bazel 8.
+bazel_dep(name = "rules_java", version = "8.3.1")
+
+# Only needed to make rules_python's CI happy. A test verifies that
+# MODULE.bazel.lock is cross-platform friendly, and there are transitive
+# dependencies on rules_rust, so we need rules_rust 0.54.1+ where such issues
+# were fixed.
+bazel_dep(name = "rules_rust", version = "0.54.1")
+
+# We next initialize the python toolchain using the extension.
+# You can set different Python versions in this block.
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.defaults(
+    # Use python.defaults if you have defined multiple toolchain versions.
+    python_version = "3.9",
+    python_version_env = "BAZEL_PYTHON_VERSION",
+)
+python.toolchain(
+    configure_coverage_tool = True,
+    python_version = "3.9",
+)
+
+# We are also using a second version of Python in this project.
+# Typically you will only need a single version of Python, but
+# If you need a different vesion we support more than one.
+# Note: we do not supporting using multiple pip extensions, this is
+# work in progress.
+python.toolchain(
+    configure_coverage_tool = True,
+    python_version = "3.10",
+)
+
+# One can override the actual toolchain versions that are available, which can be useful
+# when optimizing what gets downloaded and when.
+python.override(
+    # NOTE: These are disabled in the example because transitive dependencies
+    # require versions not listed here.
+    # available_python_versions = [
+    #     "3.10.9",
+    #     "3.9.18",
+    #     "3.9.19",
+    #     # The following is used by the `other_module` and we need to include it here
+    #     # as well.
+    #     "3.11.8",
+    # ],
+    # Also override the `minor_mapping` so that the root module,
+    # instead of rules_python's defaulting to the latest available version,
+    # controls what full version is used when `3.x` is requested.
+    minor_mapping = {
+        "3.9": "3.9.19",
+    },
+)
+
+# Or the sources that the toolchains come from for all platforms
+python.single_version_override(
+    patch_strip = 1,
+    # The user can specify patches to be applied to all interpreters.
+    patches = [],
+    python_version = "3.10.2",
+    sha256 = {
+        "aarch64-apple-darwin": "1409acd9a506e2d1d3b65c1488db4e40d8f19d09a7df099667c87a506f71c0ef",
+        "aarch64-unknown-linux-gnu": "8f351a8cc348bb45c0f95b8634c8345ec6e749e483384188ad865b7428342703",
+        "x86_64-apple-darwin": "8146ad4390710ec69b316a5649912df0247d35f4a42e2aa9615bffd87b3e235a",
+        "x86_64-pc-windows-msvc": "a1d9a594cd3103baa24937ad9150c1a389544b4350e859200b3e5c036ac352bd",
+        "x86_64-unknown-linux-gnu": "9b64eca2a94f7aff9409ad70bdaa7fbbf8148692662e764401883957943620dd",
+    },
+    urls = ["20220227/cpython-{python_version}+20220227-{platform}-{build}.tar.gz"],
+)
+
+# Or a single platform. This can be used in combination with the
+# `single_version_override` and `single_version_platform_override` will be
+# applied after `single_version_override`. Any values present in this override
+# will overwrite the values set by the `single_version_override`
+python.single_version_platform_override(
+    patch_strip = 1,
+    patches = [],
+    platform = "aarch64-apple-darwin",
+    python_version = "3.10.2",
+    sha256 = "1409acd9a506e2d1d3b65c1488db4e40d8f19d09a7df099667c87a506f71c0ef",
+    urls = ["20220227/cpython-{python_version}+20220227-{platform}-{build}.tar.gz"],
+)
+
+# You only need to load this repositories if you are using multiple Python versions.
+# See the tests folder for various examples on using multiple Python versions.
+# The names "python_3_9" and "python_3_10" are autmatically created by the repo
+# rules based on the `python_version` arg values.
+use_repo(python, "python_3_10", "python_3_9", "python_versions", "pythons_hub")
+
+# EXPERIMENTAL: This is experimental and may be changed or removed without notice
+uv = use_extension(
+    "@rules_python//python/uv:uv.bzl",
+    "uv",
+    # Use `dev_dependency` so that the toolchains are not defined pulled when your
+    # module is used elsewhere.
+    dev_dependency = True,
+)
+uv.configure(version = "0.6.2")
+
+# This extension allows a user to create modifications to how rules_python
+# creates different wheel repositories.  Different attributes allow the user
+# to modify the BUILD file, and copy files.
+# See @rules_python//python/extensions:whl_mods.bzl attributes for more information
+# on each of the attributes.
+# You are able to set a hub name, so that you can have different modifications of the same
+# wheel in different pip hubs.
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+
+# Call whl_mods.create for the requests package.
+pip.whl_mods(
+    # we are using the appended_build_content.BUILD file
+    # to add content to the request wheel BUILD file.
+    additive_build_content_file = "//whl_mods:appended_build_content.BUILD",
+    data = [":generated_file"],
+    hub_name = "whl_mods_hub",
+    whl_name = "requests",
+)
+
+ADDITIVE_BUILD_CONTENT = """\
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+write_file(
+    name = "generated_file",
+    out = "generated_file.txt",
+    content = ["Hello world from build content file"],
+)
+"""
+
+# Call whl_mods.create for the wheel package.
+pip.whl_mods(
+    additive_build_content = ADDITIVE_BUILD_CONTENT,
+    copy_executables = {
+        "@@//whl_mods:data/copy_executable.py": "copied_content/executable.py",
+    },
+    copy_files = {
+        "@@//whl_mods:data/copy_file.txt": "copied_content/file.txt",
+    },
+    data = [":generated_file"],
+    data_exclude_glob = ["site-packages/*.dist-info/WHEEL"],
+    hub_name = "whl_mods_hub",
+    whl_name = "wheel",
+)
+use_repo(pip, "whl_mods_hub")
+
+# Because below we are using `windows_aarch64` platform, we have to define various
+# properties for it.
+pip.default(
+    arch_name = "aarch64",
+    config_settings = [
+        "@platforms//os:windows",
+        "@platforms//cpu:aarch64",
+    ],
+    env = {
+        "platform_version": "0",
+    },
+    os_name = "windows",
+    platform = "windows_aarch64",
+    whl_abi_tags = [],  # default to all ABIs
+    whl_platform_tags = ["win_amd64"],
+)
+
+# To fetch pip dependencies, use pip.parse. We can pass in various options,
+# but typically we pass requirements and the Python version. The Python
+# version must have been configured by a corresponding `python.toolchain()`
+# call.
+# Alternatively, `python_interpreter_target` can be used to directly specify
+# the Python interpreter to run to resolve dependencies.
+pip.parse(
+    # We can use `envsubst in the above
+    envsubst = ["PIP_INDEX_URL"],
+    # Use the bazel downloader to query the simple API for downloading the sources
+    # Note, that we can use envsubst for this value.
+    experimental_index_url = "${PIP_INDEX_URL:-https://pypi.org/simple}",
+    # One can also select a particular index for a particular package.
+    # This ensures that the setup is resistant against confusion attacks.
+    # experimental_index_url_overrides = {
+    #    "my_package": "https://different-index-url.com",
+    # },
+    # Or you can specify extra indexes like with `pip`:
+    # experimental_extra_index_urls = [
+    #    "https://different-index-url.com",
+    # ],
+    experimental_requirement_cycles = {
+        "sphinx": [
+            "sphinx",
+            "sphinxcontrib-qthelp",
+            "sphinxcontrib-htmlhelp",
+            "sphinxcontrib-devhelp",
+            "sphinxcontrib-applehelp",
+            "sphinxcontrib-serializinghtml",
+        ],
+    },
+    # You can use one of the values below to specify the target platform
+    # to generate the dependency graph for.
+    experimental_target_platforms = [
+        # Specifying the target platforms explicitly
+        "cp39_linux_x86_64",
+        "cp39_linux_*",
+        "cp39_*",
+    ],
+    extra_hub_aliases = {
+        "wheel": ["generated_file"],
+    },
+    hub_name = "pip",
+    python_version = "3.9",
+    requirements_lock = "requirements_lock_3_9.txt",
+    # These modifications were created above and we
+    # are providing pip.parse with the label of the mod
+    # and the name of the wheel.
+    whl_modifications = {
+        "@whl_mods_hub//:requests.json": "requests",
+        "@whl_mods_hub//:wheel.json": "wheel",
+    },
+)
+pip.parse(
+    experimental_requirement_cycles = {
+        "sphinx": [
+            "sphinx",
+            "sphinxcontrib-qthelp",
+            "sphinxcontrib-htmlhelp",
+            "sphinxcontrib-devhelp",
+            "sphinxcontrib-applehelp",
+            "sphinxcontrib-serializinghtml",
+        ],
+    },
+    # You can use one of the values below to specify the target platform
+    # to generate the dependency graph for.
+    experimental_target_platforms = [
+        # Using host python version
+        "linux_*",
+        "osx_*",
+        "windows_*",
+        # Or specifying an exact platform
+        "linux_x86_64",
+        # Or the following to get the `host` platform only
+        "host",
+    ],
+    hub_name = "pip",
+    python_version = "3.10",
+    # The requirements files for each platform that we want to support.
+    requirements_by_platform = {
+        # Default requirements file for needs to explicitly provide the platforms
+        "//:requirements_lock_3_10.txt": "linux_*,osx_*",
+        # This API allows one to specify additional platforms that the users
+        # configure the toolchains for themselves. In this example we add
+        # `windows_aarch64` to illustrate that `rules_python` won't fail to
+        # process the value, but it does not mean that this example will work
+        # on Windows ARM.
+        "//:requirements_windows_3_10.txt": "windows_x86_64,windows_aarch64",
+    },
+    # These modifications were created above and we
+    # are providing pip.parse with the label of the mod
+    # and the name of the wheel.
+    whl_modifications = {
+        "@whl_mods_hub//:requests.json": "requests",
+        "@whl_mods_hub//:wheel.json": "wheel",
+    },
+)
+
+# You can add patches that will be applied on the whl contents.
+#
+# The patches have to be in the unified-diff format.
+pip.override(
+    file = "requests-2.25.1-py2.py3-none-any.whl",
+    patch_strip = 1,
+    patches = [
+        "@//patches:empty.patch",
+        "@//patches:requests_metadata.patch",
+        "@//patches:requests_record.patch",
+    ],
+)
+use_repo(pip, "pip")
+
+bazel_dep(name = "other_module", version = "", repo_name = "our_other_module")
+local_path_override(
+    module_name = "other_module",
+    path = "other_module",
+)
+
+bazel_dep(name = "foo_external", version = "")
+local_path_override(
+    module_name = "foo_external",
+    path = "py_proto_library/foo_external",
+)
+
+# example test dependencies
+bazel_dep(name = "rules_shell", version = "0.3.0", dev_dependency = True)

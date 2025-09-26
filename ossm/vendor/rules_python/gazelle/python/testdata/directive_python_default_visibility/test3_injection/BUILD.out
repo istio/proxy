@@ -1,0 +1,13 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_root
+# gazelle:python_default_visibility //foo/$python_root$/bar:__pkg__
+
+py_library(
+    name = "test3_injection",
+    srcs = [
+        "__init__.py",
+        "test3.py",
+    ],
+    visibility = ["//foo/test3_injection/bar:__pkg__"],
+)

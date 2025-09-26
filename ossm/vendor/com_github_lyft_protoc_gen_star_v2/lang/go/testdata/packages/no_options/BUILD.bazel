@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "no_options_proto",
+    srcs = ["no_options.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//targets/fully_qualified:fully_qualified_proto",
+        "//targets/none:none_proto",
+        "//targets/unqualified:unqualified_proto",
+    ],
+)
+
+go_proto_library(
+    name = "no_options_go_proto",
+    importpath = "example.com/packages/no_options",
+    proto = ":no_options_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//targets/fully_qualified:fully_qualified_proto",
+        "//targets/none:none_proto",
+        "//targets/unqualified:unqualified_proto",
+    ],
+)
+
+go_library(
+    name = "no_options",
+    embed = [":no_options_go_proto"],
+    importpath = "example.com/packages/no_options",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":no_options",
+    visibility = ["//visibility:public"],
+)

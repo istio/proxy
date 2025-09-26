@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "msgfmt",
+    srcs = ["format.go"],
+    importpath = "google.golang.org/protobuf/internal/msgfmt",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//encoding/protowire",
+        "//internal/detrand",
+        "//internal/genid",
+        "//internal/order",
+        "//proto",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":msgfmt",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "msgfmt_test",
+    srcs = ["format_test.go"],
+    deps = [
+        ":msgfmt",
+        "//internal/detrand",
+        "//internal/testprotos/test",
+        "//internal/testprotos/textpb2",
+        "//proto",
+        "//testing/protocmp",
+        "//testing/protopack",
+        "//types/dynamicpb",
+        "//types/known/anypb",
+        "//types/known/durationpb",
+        "//types/known/timestamppb",
+        "//types/known/wrapperspb",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

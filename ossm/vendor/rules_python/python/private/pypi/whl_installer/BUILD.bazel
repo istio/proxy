@@ -1,0 +1,36 @@
+load("//python:py_binary.bzl", "py_binary")
+load("//python:py_library.bzl", "py_library")
+
+py_library(
+    name = "lib",
+    srcs = [
+        "arguments.py",
+        "namespace_pkgs.py",
+        "platform.py",
+        "wheel.py",
+        "wheel_installer.py",
+    ],
+    visibility = [
+        "//:__subpackages__",
+    ],
+    deps = [
+        "@pypi__installer//:lib",
+        "@pypi__packaging//:lib",
+        "@pypi__pip//:lib",
+        "@pypi__setuptools//:lib",
+    ],
+)
+
+py_binary(
+    name = "wheel_installer",
+    srcs = [
+        "wheel_installer.py",
+    ],
+    deps = [":lib"],
+)
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["*"]),
+    visibility = ["//:__subpackages__"],
+)

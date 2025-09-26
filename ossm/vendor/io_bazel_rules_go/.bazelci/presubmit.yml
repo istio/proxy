@@ -1,0 +1,254 @@
+---
+matrix:
+  platform:
+    - ubuntu2404
+    - macos_arm64
+    - windows
+
+tasks:
+  debian11_bazel6:
+    platform: debian11
+    bazel: 6.5.0 # test minimum supported version of bazel
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+      # Nogo includes/excludes doesn't work before bazel 7
+      - "-//tests/core/nogo/includes_excludes:includes_exclude_test"
+      - "-//tests/core/nogo/bzlmod:includes_exclude_test"
+      # _repo_mapping is missing
+      - "-//tests/runfiles:runfiles_test"
+      # TODO: Investigate why this fails.
+      - "-//tests/core/starlark/cgo:missing_cc_toolchain_explicit_pure_off_test"
+  ubuntu2404:
+    # enable some unflipped incompatible flags on this platform to ensure we don't regress.
+    build_flags:
+      - "--config=incompatible"
+    test_flags:
+      - "--config=incompatible"
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  debian11_zig_cc:
+    platform: debian11
+    build_flags:
+      - "--config=incompatible"
+      - "--extra_toolchains=@zig_sdk//toolchain:linux_amd64_gnu.2.31"
+    test_flags:
+      - "--config=incompatible"
+      - "--extra_toolchains=@zig_sdk//toolchain:linux_amd64_gnu.2.31"
+      - "--test_env=ZIG_CC=1"
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  bcr_tests:
+    name: BCR test module
+    platform: ${{ platform }}
+    working_directory: tests/bcr
+    build_flags:
+      - "--allow_yanked_versions=all"
+    test_flags:
+      - "--allow_yanked_versions=all"
+    build_targets:
+      - "//..."
+      - "@go_default_sdk//..."
+    test_targets:
+      - "//..."
+  bcr_tests_proto:
+    name: BCR test module (--incompatible_enable_proto_toolchain_resolution)
+    platform: ${{ platform }}
+    working_directory: tests/bcr
+    build_flags:
+      - "--allow_yanked_versions=all"
+      - "--incompatible_enable_proto_toolchain_resolution"
+    test_flags:
+      - "--allow_yanked_versions=all"
+      - "--incompatible_enable_proto_toolchain_resolution"
+    build_targets:
+      - "//..."
+      - "@go_default_sdk//..."
+    test_targets:
+      - "//..."
+  macos_arm64:
+    build_flags:
+      - "--apple_crosstool_top=@local_config_apple_cc//:toolchain"
+      - "--crosstool_top=@local_config_apple_cc//:toolchain"
+      - "--host_crosstool_top=@local_config_apple_cc//:toolchain"
+    build_targets:
+      - "//..."
+      - "--"
+    test_flags:
+      - "--apple_crosstool_top=@local_config_apple_cc//:toolchain"
+      - "--crosstool_top=@local_config_apple_cc//:toolchain"
+      - "--host_crosstool_top=@local_config_apple_cc//:toolchain"
+    test_targets:
+      - "//..."
+  rbe_ubuntu2404:
+    build_targets:
+      - "//..."
+    test_flags:
+      # Some tests depend on this feature being disabled. However, because it's
+      # enabled by default in the rbe_ubuntu1604 platform, we cannot simply remove
+      # this flag here, we have to explicitly override it with 0.
+      - "--action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=0"
+      # go_bazel_test rules are marked local, since the executors don't have bazel
+      # installed. It appears bazel is no longer in PATH on the host machines
+      # in this configuration either.
+      - "--test_tag_filters=-local"
+    test_targets:
+      - "--"
+      - "//..."
+      - "-//tests/core/stdlib:buildid_test"
+      # Source directories in runfiles are not supported with RBE.
+      - "-//tests/runfiles:runfiles_test"
+  windows:
+    build_flags:
+      - '--action_env=PATH=C:\tools\msys64\usr\bin;C:\tools\msys64\bin;C:\tools\msys64\mingw64\bin;C:\python3\Scripts\;C:\python3;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0;C:\Windows\System32\OpenSSH;C:\ProgramData\GooGet;C:\Program Files\Google\Compute Engine\metadata_scripts;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\Google\Compute Engine\sysprep;C:\ProgramData\chocolatey\bin;C:\Program Files\Git\cmd;C:\tools\msys64\usr\bin;c:\openjdk\bin;C:\Program Files (x86)\Windows Kits\8.1\Windows Performance Toolkit\;C:\Program Files\CMake\bin;c:\ninja;c:\bazel;c:\buildkite'
+    build_targets:
+      - "//..."
+      - "-//tests/core/cgo:generated_dylib_client"
+      - "-//tests/core/cgo:generated_dylib_test"
+      - "-//tests/core/cgo:generated_versioned_dylib_test"
+      - "-//tests/legacy/examples/cgo:generate_go_src"
+      - "-//tests/legacy/examples/cgo:cgo_lib_test"
+      - "-//tests/legacy/examples/cgo:go_default_library"
+      - "-//tests/legacy/examples/cgo:sub"
+      - "-//tests/legacy/examples/cgo/cc_dependency:version"
+      - "-//tests/legacy/examples/cgo/cc_dependency:c_version_so"
+      - "-//tests/legacy/examples/cgo/example_command:example_command"
+      - "-//tests/legacy/examples/cgo/example_command:example_command_script"
+      - "-//tests/legacy/examples/cgo/example_command:example_command_test"
+      # Plugins aren't supported on Windows.
+      - "-//tests/core/go_plugin/..."
+      - "-//tests/core/go_plugin_with_proto_library/..."
+    test_flags:
+      - '--action_env=PATH=C:\tools\msys64\usr\bin;C:\tools\msys64\bin;C:\tools\msys64\mingw64\bin;C:\python3\Scripts\;C:\python3;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0;C:\Windows\System32\OpenSSH;C:\ProgramData\GooGet;C:\Program Files\Google\Compute Engine\metadata_scripts;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\Google\Compute Engine\sysprep;C:\ProgramData\chocolatey\bin;C:\Program Files\Git\cmd;C:\tools\msys64\usr\bin;c:\openjdk\bin;C:\Program Files (x86)\Windows Kits\8.1\Windows Performance Toolkit\;C:\Program Files\CMake\bin;c:\ninja;c:\bazel;c:\buildkite'
+      # On Windows CI, bazel (bazelisk) needs %LocalAppData% to find the cache directory.
+      # We invoke bazel in tests, so the tests need this, too.
+      - "--test_env=LOCALAPPDATA"
+      # go_bazel_test runs bazel in a test workspace. It needs the same flags as above.
+      - "--test_env=GO_BAZEL_TEST_BAZELFLAGS=--cpu=x64_windows --compiler=mingw-gcc --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows_mingw --action_env=PATH --host_platform=@io_bazel_rules_go//go/toolchain:windows_amd64_cgo --incompatible_enable_cc_toolchain_resolution"
+      - "--test_env=PATH"
+    test_targets:
+      - "//..."
+      - "-//go/tools/builders:stdliblist_test"
+      - "-//tests:buildifier_test"
+      - "-//tests/core/cgo:generated_dylib_client"
+      - "-//tests/core/cgo:generated_dylib_test"
+      - "-//tests/core/cgo:generated_versioned_dylib_test"
+      - "-//tests/core/coverage:coverage_test"
+      - "-//tests/core/coverage:issue3017_test"
+      - "-//tests/core/go_binary:go_default_test"
+      - "-//tests/core/go_path:go_path_test"
+      - "-//tests/core/go_test:data_test"
+      - "-//tests/core/go_test:pwd_test"
+      - "-//tests/core/nogo/coverage:coverage_cgo_test"
+      - "-//tests/core/nogo/coverage:coverage_test"
+      - "-//tests/core/nogo/coverage:gen_code_test"
+      - "-//tests/core/stdlib:buildid_test"
+      - "-//tests/examples/executable_name:executable_name"
+      - "-//tests/integration/gazelle:gazelle_test" # exceeds command line length limit
+      - "-//tests/integration/reproducibility:reproducibility_test"
+      - "-//tests/legacy/examples/cgo:generate_go_src"
+      - "-//tests/legacy/examples/cgo:cgo_lib_test"
+      - "-//tests/legacy/examples/cgo:go_default_library"
+      - "-//tests/legacy/examples/cgo:sub"
+      - "-//tests/legacy/examples/cgo/cc_dependency:version"
+      - "-//tests/legacy/examples/cgo/cc_dependency:c_version_so"
+      - "-//tests/legacy/examples/cgo/example_command:example_command"
+      - "-//tests/legacy/examples/cgo/example_command:example_command_script"
+      - "-//tests/legacy/examples/cgo/example_command:example_command_test"
+      - "-//tests/legacy/extldflags_rpath:extldflags_rpath_test"
+      - "-//tests/legacy/info:info"
+      - "-//tests/legacy/test_chdir:go_default_test"
+      - "-//tests/legacy/test_rundir:go_default_test"
+      - "-//tests/legacy/transitive_data:go_default_test"
+      - "-@org_golang_x_crypto//sha3:sha3_test"
+      - "-@org_golang_x_sys//windows/svc:svc_test"
+      - "-@org_golang_x_text//language:language_test"
+      - "-@org_golang_x_tools//cmd/splitdwarf/internal/macho:macho_test"
+      - "-@test_chdir_remote//sub:go_default_test"
+      # Plugins aren't supported on Windows.
+      - "-//tests/core/go_plugin/..."
+      - "-//tests/core/go_plugin_with_proto_library/..."
+      # TODO: Update stardoc for consistent line endings.
+      - "-//docs:all"
+  # The following configurations test a seperate WORKSPACE under the examples folder
+  ubuntu_hello_example:
+    name: Hello example on Ubuntu
+    platform: ubuntu2404
+    working_directory: examples/hello
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  macos_hello_example:
+    name: Hello example on macOS
+    platform: macos_arm64
+    working_directory: examples/hello
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  windows_examples:
+    name: Hello example on Windows
+    platform: windows
+    working_directory: examples/hello
+    build_flags:
+      # Go requires a C toolchain that accepts options and emits errors like
+      # gcc or clang. The Go SDK does not support MSVC.
+      - '--action_env=PATH=C:\tools\msys64\usr\bin;C:\tools\msys64\bin;C:\tools\msys64\mingw64\bin;C:\python3\Scripts\;C:\python3;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0;C:\Windows\System32\OpenSSH;C:\ProgramData\GooGet;C:\Program Files\Google\Compute Engine\metadata_scripts;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\Google\Compute Engine\sysprep;C:\ProgramData\chocolatey\bin;C:\Program Files\Git\cmd;C:\tools\msys64\usr\bin;c:\openjdk\bin;C:\Program Files (x86)\Windows Kits\8.1\Windows Performance Toolkit\;C:\Program Files\CMake\bin;c:\ninja;c:\bazel;c:\buildkite'
+    # NOTE(bazelbuild/bazel#10529): bazel doesn't register the mingw toolchain automatically.
+    # We also need the host and target platforms to have the mingw constraint value.
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    test_flags:
+      - '--action_env=PATH=C:\tools\msys64\usr\bin;C:\tools\msys64\bin;C:\tools\msys64\mingw64\bin;C:\python3\Scripts\;C:\python3;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0;C:\Windows\System32\OpenSSH;C:\ProgramData\GooGet;C:\Program Files\Google\Compute Engine\metadata_scripts;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\Google\Compute Engine\sysprep;C:\ProgramData\chocolatey\bin;C:\Program Files\Git\cmd;C:\tools\msys64\usr\bin;c:\openjdk\bin;C:\Program Files (x86)\Windows Kits\8.1\Windows Performance Toolkit\;C:\Program Files\CMake\bin;c:\ninja;c:\bazel;c:\buildkite'
+      # On Windows CI, bazel (bazelisk) needs %LocalAppData% to find the cache directory.
+      # We invoke bazel in tests, so the tests need this, too.
+      - "--test_env=LOCALAPPDATA"
+      # go_bazel_test runs bazel in a test workspace. It needs the same flags as above.
+      - "--test_env=GO_BAZEL_TEST_BAZELFLAGS=--cpu=x64_windows --compiler=mingw-gcc --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows_mingw --action_env=PATH --host_platform=@io_bazel_rules_go//go/toolchain:windows_amd64_cgo --incompatible_enable_cc_toolchain_resolution"
+      - "--test_env=PATH"
+  ubuntu_basic_gazelle_example:
+    name: Basic Gazelle example on Ubuntu
+    platform: ubuntu2404
+    working_directory: examples/basic_gazelle
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  macos_basic_gazelle_example:
+    name: Basic Gazelle example on macOS
+    platform: macos_arm64
+    working_directory: examples/basic_gazelle
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  windows_basic_gazelle_example:
+    name: Basic Gazelle example on Windows
+    platform: windows
+    working_directory: examples/basic_gazelle
+    build_flags:
+      # Go requires a C toolchain that accepts options and emits errors like
+      # gcc or clang. The Go SDK does not support MSVC.
+      - '--action_env=PATH=C:\tools\msys64\usr\bin;C:\tools\msys64\bin;C:\tools\msys64\mingw64\bin;C:\python3\Scripts\;C:\python3;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0;C:\Windows\System32\OpenSSH;C:\ProgramData\GooGet;C:\Program Files\Google\Compute Engine\metadata_scripts;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\Google\Compute Engine\sysprep;C:\ProgramData\chocolatey\bin;C:\Program Files\Git\cmd;C:\tools\msys64\usr\bin;c:\openjdk\bin;C:\Program Files (x86)\Windows Kits\8.1\Windows Performance Toolkit\;C:\Program Files\CMake\bin;c:\ninja;c:\bazel;c:\buildkite'
+    # NOTE(bazelbuild/bazel#10529): bazel doesn't register the mingw toolchain automatically.
+    # We also need the host and target platforms to have the mingw constraint value.
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    test_flags:
+      - '--action_env=PATH=C:\tools\msys64\usr\bin;C:\tools\msys64\bin;C:\tools\msys64\mingw64\bin;C:\python3\Scripts\;C:\python3;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0;C:\Windows\System32\OpenSSH;C:\ProgramData\GooGet;C:\Program Files\Google\Compute Engine\metadata_scripts;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\Google\Compute Engine\sysprep;C:\ProgramData\chocolatey\bin;C:\Program Files\Git\cmd;C:\tools\msys64\usr\bin;c:\openjdk\bin;C:\Program Files (x86)\Windows Kits\8.1\Windows Performance Toolkit\;C:\Program Files\CMake\bin;c:\ninja;c:\bazel;c:\buildkite'
+      # On Windows CI, bazel (bazelisk) needs %LocalAppData% to find the cache directory.
+      # We invoke bazel in tests, so the tests need this, too.
+      - "--test_env=LOCALAPPDATA"
+      # go_bazel_test runs bazel in a test workspace. It needs the same flags as above.
+      - "--test_env=GO_BAZEL_TEST_BAZELFLAGS=--cpu=x64_windows --compiler=mingw-gcc --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows_mingw --action_env=PATH --host_platform=@io_bazel_rules_go//go/toolchain:windows_amd64_cgo --incompatible_enable_cc_toolchain_resolution"
+      - "--test_env=PATH"

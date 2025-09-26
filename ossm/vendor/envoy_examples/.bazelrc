@@ -1,0 +1,22 @@
+common --enable_bzlmod=0
+common --color=yes
+common:ci --noshow_progress
+common:ci --noshow_loading_progress
+common:ci --test_output=errors
+
+common:examples --action_env=DEV_CONTAINER_ID
+common:examples --host_action_env=DEV_CONTAINER_ID
+common:examples --action_env=DEV_CONTAINER_ID
+common:examples --host_action_env=DEV_CONTAINER_ID
+common:examples --action_env=DOCKER_BUILDKIT
+common:examples --host_action_env=DOCKER_BUILDKIT
+common:examples --action_env=COMPOSE_BAKE
+common:examples --host_action_env=COMPOSE_BAKE
+common:examples --action_env=BUILDKIT_PROGRESS
+common:examples --host_action_env=BUILDKIT_PROGRESS
+common:examples --sandbox_writable_path=/var/run/docker.sock
+
+common --@rules_python//python/config_settings:bootstrap_impl=script
+
+try-import %workspace%/user.bazelrc
+try-import %workspace%/repo.bazelrc

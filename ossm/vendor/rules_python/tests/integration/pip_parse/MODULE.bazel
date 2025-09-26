@@ -1,0 +1,20 @@
+module(name = "compile_pip_requirements")
+
+bazel_dep(name = "rules_python", version = "0.0.0")
+local_path_override(
+    module_name = "rules_python",
+    path = "../../..",
+)
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    python_version = "3.9",
+)
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "pip_empty",
+    python_version = "3.9",
+    requirements_lock = "//empty:requirements.txt",
+)
+use_repo(pip, "pip_empty")

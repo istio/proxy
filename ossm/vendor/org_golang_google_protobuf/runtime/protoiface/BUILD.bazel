@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "protoiface",
+    srcs = [
+        "legacy.go",
+        "methods.go",
+    ],
+    importpath = "google.golang.org/protobuf/runtime/protoiface",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/pragma",
+        "//reflect/protoreflect",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protoiface",
+    visibility = ["//visibility:public"],
+)

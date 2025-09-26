@@ -1,0 +1,8 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//test:__subpackages__"])
+
+cc_library(
+    name = "native",
+    srcs = ["native.cc"],
+)

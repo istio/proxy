@@ -1,0 +1,96 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library", "js_test")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_shared_library")
+load("@rules_rust_wasm_bindgen//rules_js:defs.bzl", "js_rust_wasm_bindgen")
+
+rust_binary(
+    name = "hello_world_bin_wasm",
+    srcs = ["//test:main.rs"],
+    edition = "2018",
+    deps = [
+        "@rules_rust_wasm_bindgen//3rdparty:wasm_bindgen",
+    ],
+)
+
+rust_shared_library(
+    name = "hello_world_lib_wasm",
+    srcs = ["//test:main.rs"],
+    edition = "2018",
+    deps = [
+        "@rules_rust_wasm_bindgen//3rdparty:wasm_bindgen",
+    ],
+)
+
+js_rust_wasm_bindgen(
+    name = "hello_world_bundler_wasm_bindgen",
+    wasm_file = ":hello_world_bin_wasm",
+)
+
+js_rust_wasm_bindgen(
+    name = "hello_world_web_wasm_bindgen",
+    target = "web",
+    wasm_file = ":hello_world_lib_wasm",
+)
+
+js_rust_wasm_bindgen(
+    name = "hello_world_deno_wasm_bindgen",
+    target = "deno",
+    wasm_file = ":hello_world_lib_wasm",
+)
+
+js_rust_wasm_bindgen(
+    name = "hello_world_nomodules_wasm_bindgen",
+    target = "no-modules",
+    wasm_file = ":hello_world_lib_wasm",
+)
+
+js_rust_wasm_bindgen(
+    name = "hello_world_nodejs_wasm_bindgen",
+    target = "nodejs",
+    wasm_file = ":hello_world_lib_wasm",
+)
+
+js_rust_wasm_bindgen(
+    name = "hello_world_nodejs_no_typescript_wasm_bindgen",
+    bindgen_flags = [
+        "--no-typescript",
+    ],
+    target = "nodejs",
+    wasm_file = ":hello_world_lib_wasm",
+)
+
+_WASM_DATA = [
+    ":hello_world_bundler_wasm_bindgen",
+    ":hello_world_deno_wasm_bindgen",
+    ":hello_world_nodejs_wasm_bindgen",
+    ":hello_world_nomodules_wasm_bindgen",
+    ":hello_world_web_wasm_bindgen",
+]
+
+js_test(
+    name = "hello_world_wasm_direct_test",
+    data = _WASM_DATA,
+    entry_point = "hello_world_wasm_test.js",
+)
+
+js_library(
+    name = "hello_world_wasm_lib",
+    srcs = [
+        "hello_world_wasm_test.js",
+    ],
+    data = _WASM_DATA,
+    deps = [],
+)
+
+js_test(
+    name = "hello_world_wasm_lib_test",
+    data = [
+        ":hello_world_wasm_lib",
+    ],
+    entry_point = ":hello_world_wasm_lib",
+)
+
+build_test(
+    name = "build_test",
+    targets = _WASM_DATA,
+)

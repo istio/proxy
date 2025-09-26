@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+import "common.proto";
+
+message message_a {
+    CommonProto field = 1;
+}

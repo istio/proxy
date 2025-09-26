@@ -1,0 +1,8 @@
+syntax = "proto3";
+package samples;
+import "options.proto";
+
+message BigIntAsString {
+    option (protoc.gen.jsonschema.message_options).allow_null_values = true;
+    int64 big_number = 1;
+}

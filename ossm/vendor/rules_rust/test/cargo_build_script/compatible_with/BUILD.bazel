@@ -1,0 +1,41 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_library", "rust_test")
+
+environment_group(
+    name = "foo_environment",
+    defaults = [":foo"],
+    environments = [
+        ":foo",
+        ":bar",
+    ],
+)
+
+environment(
+    name = "foo",
+)
+
+environment(
+    name = "bar",
+)
+
+rust_library(
+    name = "build_script_dep_without_compatible_with",
+    srcs = ["lib.rs"],
+    edition = "2018",
+)
+
+cargo_build_script(
+    name = "empty_build_script",
+    srcs = ["do_nothing.rs"],
+    compatible_with = [":bar"],
+    edition = "2018",
+    deps = [":build_script_dep_without_compatible_with"],
+)
+
+rust_test(
+    name = "test_compatible_with",
+    srcs = ["lib.rs"],
+    compatible_with = [":bar"],
+    edition = "2018",
+    deps = [":empty_build_script"],
+)

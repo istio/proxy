@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "conformance",
+    srcs = [
+        "conformance.pb.go",
+        "test_messages_proto2.pb.go",
+        "test_messages_proto3.pb.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/testprotos/conformance",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/known/anypb",
+        "//types/known/durationpb",
+        "//types/known/fieldmaskpb",
+        "//types/known/structpb",
+        "//types/known/timestamppb",
+        "//types/known/wrapperspb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":conformance",
+    visibility = ["//:__subpackages__"],
+)

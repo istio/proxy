@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "src",
+    srcs = [
+        "callgraph_collections.go",
+        "callgraph_field_funcs.go",
+        "callgraph_fields.go",
+        "callgraph_generics.go",
+        "callgraph_ho.go",
+        "callgraph_interfaces.go",
+        "callgraph_issue_57756.go",
+        "callgraph_nested_ptr.go",
+        "callgraph_pointers.go",
+        "callgraph_recursive_types.go",
+        "callgraph_static.go",
+        "channels.go",
+        "closures.go",
+        "dynamic_calls.go",
+        "fields.go",
+        "function_alias.go",
+        "go117.go",
+        "maps.go",
+        "node_uniqueness.go",
+        "panic.go",
+        "phi.go",
+        "phi_alias.go",
+        "ranges.go",
+        "returns.go",
+        "select.go",
+        "simple.go",
+        "static_calls.go",
+        "store.go",
+        "store_load_alias.go",
+        "stores_arrays.go",
+        "type_assertions.go",
+        "type_conversions.go",
+    ],
+    importpath = "golang.org/x/tools/go/callgraph/vta/testdata/src",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":src",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,210 @@
+version: 2.1
+
+orbs:
+  codecov: codecov/codecov@4.0.1
+
+executors:
+  docker-amd64:
+    docker:
+      - image: "datadog/docker-library:dd-trace-cpp-ci"
+    resource_class: xlarge
+  docker-arm64:
+    docker:
+      - image: "datadog/docker-library:dd-trace-cpp-ci"
+    resource_class: arm.xlarge
+
+jobs:
+  format:
+    docker:
+    - image: "datadog/docker-library:dd-trace-cpp-ci"
+    resource_class: small
+    steps:
+    - checkout
+    - run: bin/check-format
+
+  shellcheck:
+    docker:
+    - image: "datadog/docker-library:dd-trace-cpp-ci"
+    resource_class: small
+    steps:
+    - checkout
+    - run: find bin/ -executable -type f -print0 | xargs -0 shellcheck
+
+  build-bazel:
+    parameters:
+      toolchain:
+        type: string
+      arch:
+        type: string
+      bazelrc:
+        type: string
+    executor: docker-<< parameters.arch >>
+    environment:
+      MAKE_JOB_COUNT: 8
+    steps:
+    - checkout
+    - run: bin/with-toolchain << parameters.toolchain >> bazelisk --bazelrc=<< parameters.bazelrc >> build --jobs $MAKE_JOB_COUNT dd_trace_cpp
+
+  build-and-test-windows-bazel:
+    parameters:
+      # `bazelrc` is the path to the .bazelrc file to use in the build/test.
+      # The repository has two flavors: one that uses Abseil types (for use with
+      # Envoy), and one that uses std types.
+      bazelrc:
+        type: string
+    machine:
+      image: "windows-server-2022-gui:current"
+      resource_class: windows.medium
+      shell: powershell.exe -ExecutionPolicy Bypass
+    environment:
+      MAKE_JOB_COUNT: 4
+    steps:
+    - checkout
+    - run: choco install -y bazelisk
+    - run: bazelisk.exe --bazelrc=<< parameters.bazelrc >> build --jobs $env:MAKE_JOB_COUNT dd_trace_cpp
+
+  build-and-test-windows-cmake:
+    parameters:
+      arch:
+        type: string
+    machine:
+      image: "windows-server-2022-gui:current"
+      shell: powershell.exe -ExecutionPolicy Bypass 
+      resource_class: "windows.large"
+    environment:
+      MAKE_JOB_COUNT: 8
+    steps:
+    - checkout
+    - run:
+        name: Install dependencies
+        command: |
+          choco install -y cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+          choco install -y ninja
+    - run: 
+        name: Building
+        command: |
+          & 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\Launch-VsDevShell.ps1' -arch << parameters.arch >> 
+          cmake -B build -DCMAKE_BUILD_TYPE=Debug -DDD_TRACE_BUILD_TESTING=1 -G Ninja .
+          cmake --build build -j $env:MAKE_JOB_COUNT -v
+    - run:
+        name: Testing
+        command: |
+          & 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\Launch-VsDevShell.ps1' -arch << parameters.arch >> 
+          .\build\test\tests.exe 
+
+  build-and-test-cmake:
+    parameters:
+      toolchain:
+        type: string
+      arch:
+        type: string
+    executor: docker-<< parameters.arch >>
+    environment:
+      MAKE_JOB_COUNT: 8
+      # See <https://github.com/llvm/llvm-project/issues/59432>.
+      ASAN_OPTIONS: alloc_dealloc_mismatch=0
+    steps:
+    - checkout
+    - run: bin/with-toolchain << parameters.toolchain >> cmake . -B .build -DCMAKE_BUILD_TYPE=Debug -DDD_TRACE_BUILD_TESTING=1 
+    - run: cmake --build .build -j ${MAKE_JOB_COUNT} -v
+    - run: cd .build && test/tests
+
+  coverage:
+    docker:
+    - image: "datadog/docker-library:dd-trace-cpp-ci"
+    resource_class: xlarge
+    environment:
+      MAKE_JOB_COUNT: 8
+    steps:
+    - checkout
+    - run: bin/test --coverage --verbose
+    - codecov/upload:
+        file: .coverage/filtered.info
+        upload_args: --disable-search
+
+  # Copy-pasta from dd-trace-java. Thank you <3
+  system-tests:
+    parameters:
+      systemTestsCommit:
+        type: string
+        default: main
+    machine:
+      image: ubuntu-2004:current
+    resource_class: large
+    steps:
+      - run:
+          name: Install python 3.9
+          command: |
+            sudo apt-get install python3.9-full python3.9-dev python3.9-venv
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >>"$BASH_ENV"
+      - run:
+          name: Clone system-tests
+          command: |
+            git init system-tests
+            cd system-tests
+            git remote add origin https://github.com/DataDog/system-tests.git
+            git fetch origin << parameters.systemTestsCommit >>
+            git reset --hard FETCH_HEAD
+      - run:
+          name: Install requirements
+          command: |
+            cd system-tests
+            pyenv local system
+            python3.9 --version
+            python3.9 -m pip install wheel
+            python3.9 -m pip install -r requirements.txt
+            sudo ln -sf /usr/bin/python3.9 /usr/bin/python
+
+      - run:
+          name: Run Parametric tests
+          environment:
+            TEST_LIBRARY: cpp
+            DD_TRACE_CPP_COMMIT: << pipeline.git.revision >>
+          command: |
+            echo "https://github.com/DataDog/dd-trace-cpp@$DD_TRACE_CPP_COMMIT" > ~/project/system-tests/binaries/cpp-load-from-git
+            cd system-tests && ./build.sh -i runner && ./run.sh PARAMETRIC --log-cli-level=DEBUG 
+      - run:
+          name: Collect artifacts
+          command: tar -cvzf logs_cpp_parametric_dev.tar.gz -C system-tests logs_parametric
+      - store_test_results:
+          path: system-tests/logs_parametric
+      - store_artifacts:
+          path: logs_cpp_parametric_dev.tar.gz
+
+workflows:
+  pull-request:
+    jobs:
+    - format
+    - shellcheck
+    - build-and-test-cmake:
+        matrix:
+          parameters:
+            toolchain: ["gnu", "llvm"]
+            arch: ["amd64", "arm64"]
+    - build-bazel:
+        matrix:
+          parameters:
+            toolchain: ["gnu", "llvm"]
+            arch: ["amd64", "arm64"]
+            bazelrc: [".bazelrc.absl", ".bazelrc.std"]
+    - build-and-test-windows-cmake:
+        matrix:
+          parameters:
+            arch: ["amd64"]
+    - build-and-test-windows-bazel:
+        matrix:
+          parameters:
+            bazelrc: [".bazelrc.absl", ".bazelrc.std"]
+    - coverage:
+        requires:
+          - build-and-test-cmake
+    - system-tests:
+        requires:
+          - build-bazel
+          - build-and-test-cmake
+          - build-and-test-windows-bazel
+          - build-and-test-windows-cmake
+        filters:
+          branches:
+            only:
+              - main

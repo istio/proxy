@@ -1,0 +1,14 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+py_binary(
+    name = "fetch_shas",
+    srcs = ["fetch_shas.py"],
+    data = [
+        "fetch_shas_HOST_TOOLS.txt",
+        "fetch_shas_NIGHTLY_ISO_DATES.txt",
+        "fetch_shas_TARGETS.txt",
+        "fetch_shas_TOOLS.txt",
+        "fetch_shas_VERSIONS.txt",
+    ],
+    tags = ["manual"],
+)

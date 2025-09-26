@@ -1,0 +1,36 @@
+module(name = "hessian2-codec")
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.4.1",
+)
+bazel_dep(
+    name = "abseil-cpp",
+    version = "20220623.1",
+    repo_name = "com_google_absl",
+)
+bazel_dep(
+    name = "fmt",
+    version = "8.1.1",
+    repo_name = "com_github_fmtlib_fmt",
+)
+bazel_dep(
+    name = "googletest",
+    version = "1.11.0",
+    repo_name = "com_google_googletest",
+)
+bazel_dep(
+    name = "hedron_compile_commands",
+    dev_dependency = True,
+)
+bazel_dep(
+    name = "platforms",
+    version = "0.0.8",
+)
+# -- bazel_dep definitions -- #
+
+git_override(
+    module_name = "hedron_compile_commands",
+    commit = "5bcb0bd8a917b2b48fb5dc55818515f4be3b63ff",
+    remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
+)

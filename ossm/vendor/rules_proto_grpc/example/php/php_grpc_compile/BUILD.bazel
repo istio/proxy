@@ -1,0 +1,11 @@
+load("@rules_proto_grpc//php:defs.bzl", "php_grpc_compile")
+
+php_grpc_compile(
+    name = "thing_php_grpc",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)
+
+php_grpc_compile(
+    name = "greeter_php_grpc",
+    protos = ["@rules_proto_grpc//example/proto:greeter_grpc"],
+)

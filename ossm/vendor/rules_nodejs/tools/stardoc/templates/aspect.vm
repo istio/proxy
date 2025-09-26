@@ -1,0 +1,33 @@
+#[[##]]# ${aspectName}
+
+**USAGE**
+
+<pre>
+${util.aspectSummary($aspectName, $aspectInfo)}
+</pre>
+
+$aspectInfo.getDocString()
+
+**ASPECT ATTRIBUTES**
+
+#if (!$aspectInfo.getAttributeList().isEmpty())
+#foreach ($aspectAttribute in $aspectInfo.getAspectAttributeList())
+<h4>${aspectAttribute}</h4>
+#end
+#end
+
+**ATTRIBUTES**
+
+#if (!$aspectInfo.getAttributeList().isEmpty())
+#foreach ($attribute in $aspectInfo.getAttributeList())
+<h4 id="${aspectName}-${attribute.name}">${attribute.name}</h4>
+
+(*${util.attributeTypeString($attribute)}, {util.mandatoryString($attribute)}*)
+#if(!$attribute.docString.isEmpty()) $attribute.docString.trim() #else - #end
+
+#if( !$attribute.defaultValue.isEmpty() )
+Defaults to `$attribute.defaultValue`
+#end
+
+#end
+#end

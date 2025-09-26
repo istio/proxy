@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+
+if [ "$DD_API_KEY" = '' ]; then
+    >&2 echo "The DD_API_KEY environment variable must be set to a Datadog API key."
+    exit 1
+fi
+
+REPO=$(dirname "$0")/..
+cd "$REPO"
+
+cd examples/http-server
+docker compose up --build --abort-on-container-exit

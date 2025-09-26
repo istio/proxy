@@ -1,0 +1,40 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+
+# gazelle:exclude *.py
+
+py_binary(
+    name = "generator",
+    srcs = ["generator.py"],
+    visibility = ["//visibility:public"],
+)
+
+copy_file(
+    name = "pytest_wheel",
+    src = "@pytest//file",
+    out = "pytest-8.3.3-py3-none-any.whl",
+)
+
+copy_file(
+    name = "django_types_wheel",
+    src = "@django-types//file",
+    out = "django_types-0.19.1-py3-none-any.whl",
+)
+
+py_test(
+    name = "test_generator",
+    srcs = ["test_generator.py"],
+    data = [
+        "django_types_wheel",
+        "pytest_wheel",
+    ],
+    imports = ["."],
+    main = "test_generator.py",
+    deps = [":generator"],
+)
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+    visibility = ["//:__pkg__"],
+)

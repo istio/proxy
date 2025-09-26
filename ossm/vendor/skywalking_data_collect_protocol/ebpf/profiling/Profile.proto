@@ -1,0 +1,97 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+syntax = "proto3";
+
+package skywalking.v3;
+
+option java_multiple_files = true;
+option java_package = "org.apache.skywalking.apm.network.ebpf.profiling.v3";
+option go_package = "skywalking.apache.org/repo/goapi/collect/ebpf/profiling/v3";
+
+import "common/Command.proto";
+
+// Define the Rover Process profiling task and upload profiling data.
+service EBPFProfilingService {
+    // Query profiling (start or stop) tasks
+    rpc queryTasks (EBPFProfilingTaskQuery) returns (Commands) {
+    }
+
+    // collect profiling data
+    rpc collectProfilingData (stream EBPFProfilingData) returns (Commands) {
+    }
+}
+
+message EBPFProfilingTaskQuery {
+    // rover instance id
+    string roverInstanceId = 1;
+
+    // latest task update time
+    int64 latestUpdateTime = 2;
+}
+
+message EBPFProfilingData {
+    // task metadata
+    EBPFProfilingTaskMetadata task = 1;
+    // profiling data
+    oneof profiling {
+        EBPFOnCPUProfiling onCPU = 2;
+        EBPFOffCPUProfiling offCPU = 3;
+    }
+}
+
+message EBPFProfilingTaskMetadata {
+    // profiling task id
+    string taskId = 1;
+    // profiling process id
+    string processId = 2;
+    // the start time of this profiling process
+    int64 profilingStartTime = 3;
+    // report time
+    int64 currentTime = 4;
+}
+
+message EBPFProfilingStackMetadata {
+    // stack type
+    EBPFProfilingStackType stackType = 1;
+    // stack id from kernel provide
+    int32 stackId = 2;
+    // stack symbols
+    repeated string stackSymbols = 3;
+}
+
+enum EBPFProfilingStackType {
+    PROCESS_KERNEL_SPACE = 0;
+    PROCESS_USER_SPACE = 1;
+}
+
+message EBPFOnCPUProfiling {
+    // stack data in one task(thread)
+    repeated EBPFProfilingStackMetadata stacks = 1;
+    // stack counts
+    int32 dumpCount = 2;
+}
+
+message EBPFOffCPUProfiling {
+    // stack data in one task(thread)
+    repeated EBPFProfilingStackMetadata stacks = 1;
+    // total count of the process is switched to off cpu by the scheduler.
+    int32 switchCount = 2;
+    // where time(nanoseconds) is spent waiting while blocked on I/O, locks, timers, paging/swapping, etc.
+    int64 duration = 3;
+}

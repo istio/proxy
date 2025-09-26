@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = glob(["*.go"]),
+    importpath = "github.com/rules-proto-grpc/rules_proto_grpc/tools/rulegen",
+    deps = [
+        "@com_github_urfave_cli//:go_default_library",
+    ],
+)
+
+# Utility program to generate documentation and examples
+go_binary(
+    name = "rulegen",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,18 @@
+load("@rules_python//python:py_test.bzl", "py_test")
+
+py_test(
+    name = "runfiles_test",
+    srcs = ["runfiles_test.py"],
+    data = [
+        "data/data.txt",
+        "@our_other_module//other_module/pkg:data/data.txt",
+    ],
+    env = {
+        "DATA_RLOCATIONPATH": "$(rlocationpath data/data.txt)",
+        "OTHER_MODULE_DATA_RLOCATIONPATH": "$(rlocationpath @our_other_module//other_module/pkg:data/data.txt)",
+    },
+    deps = [
+        "@our_other_module//other_module/pkg:lib",
+        "@rules_python//python/runfiles",
+    ],
+)

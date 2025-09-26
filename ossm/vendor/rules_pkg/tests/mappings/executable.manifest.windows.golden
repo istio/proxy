@@ -1,0 +1,9 @@
+[
+{"dest":"an_executable.exe.runfiles/_main/tests/foo.cc","gid":null,"group":null,"mode":"","origin":"@//tests:an_executable","src":"tests/foo.cc","type":"file","uid":null,"user":null},
+{"dest":"an_executable.exe.runfiles/_main/tests/an_executable.exe","gid":null,"group":null,"mode":"0755","origin":"@//tests:an_executable","src":"tests/an_executable.exe","type":"file","uid":null,"user":null},
+{"dest":"an_executable.exe.runfiles/_main/tests/testdata/hello.txt","gid":null,"group":null,"mode":"","origin":"@//tests:an_executable","src":"tests/testdata/hello.txt","type":"file","uid":null,"user":null},
+{"dest":"an_executable.exe","gid":null,"group":null,"mode":"0755","origin":"@//tests:an_executable","src":"tests/an_executable.exe","type":"file","uid":null,"user":null},
+{"dest":"an_executable.exe.repo_mapping","gid":null,"group":null,"mode":"","origin":"@//tests:an_executable","src": "tests/an_executable.exe.repo_mapping","type": "file","uid":null,"user":null},
+{"dest":"an_executable.exe.runfiles/_repo_mapping","gid":null,"group":null,"mode":"","origin":"@//tests:an_executable","src": "tests/an_executable.exe.repo_mapping","type": "file","uid":null,"user":null},
+{"dest":"mappings_test.bzl","gid":null,"group":null,"mode":"","origin":"@//tests/mappings:mappings_test.bzl","src":"tests/mappings/mappings_test.bzl","type":"file","uid":null,"user":null}
+]

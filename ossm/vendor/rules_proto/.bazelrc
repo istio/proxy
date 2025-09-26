@@ -1,0 +1,3 @@
+build:bzlmod --enable_bzlmod
+build:nobzlmod --noenable_bzlmod --enable_workspace
+

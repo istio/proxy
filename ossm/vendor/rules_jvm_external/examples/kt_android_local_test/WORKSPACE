@@ -1,0 +1,53 @@
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+android_sdk_repository(
+    name = "androidsdk",
+    api_level = 29,
+)
+
+# BEGIN Robolectric
+http_archive(
+    name = "robolectric",
+    sha256 = "b2d2164bae80fcfbdd078eb2f0935ba06557402b8c814928d9e3bec7358e2b7b",
+    strip_prefix = "robolectric-bazel-4.14.1.2",
+    urls = ["https://github.com/robolectric/robolectric-bazel/releases/download/4.14.1.2/robolectric-bazel-4.14.1.2.tar.gz"],
+)
+
+load("@robolectric//bazel:robolectric.bzl", "robolectric_repositories")
+
+robolectric_repositories()
+# END Robolectric
+
+local_repository(
+    name = "rules_jvm_external",
+    path = "../../",
+)
+
+load("@rules_jvm_external//:repositories.bzl", "rules_jvm_external_deps")
+
+rules_jvm_external_deps()
+
+load("@rules_jvm_external//:setup.bzl", "rules_jvm_external_setup")
+
+rules_jvm_external_setup()
+
+load("@rules_jvm_external//:defs.bzl", "maven_install")
+
+maven_install(
+    artifacts = [
+        "androidx.appcompat:appcompat:1.0.2",
+        "androidx.annotation:annotation:1.1.0",
+        "androidx.test.ext:junit:1.1.0",
+        "org.robolectric:robolectric:4.14.1",
+        "org.assertj:assertj-core:3.12.1",
+    ],
+    maven_install_json = "//:maven_install.json",
+    repositories = [
+        "https://maven.google.com",
+        "https://repo1.maven.org/maven2",
+    ],
+)
+
+load("@maven//:defs.bzl", "pinned_maven_install")
+
+pinned_maven_install()

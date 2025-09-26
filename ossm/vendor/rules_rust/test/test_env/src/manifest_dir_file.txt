@@ -1,0 +1,1 @@
+This file tests that CARGO_MANIFEST_DIR is set for the test environment

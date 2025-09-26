@@ -1,0 +1,61 @@
+# syntax=docker/dockerfile:1
+
+# Prep:
+#   docker run --rm --privileged tonistiigi/binfmt --install all
+#   docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+#   Need to see "F" flag: cat /proc/sys/fs/binfmt_misc/qemu-*
+#
+# Build:
+#   docker buildx build --platform linux/s390x -t $IMAGE -f Dockerfile.bazel
+#
+# Push:
+#   docker image tag $IMAGE ghcr.io/proxy-wasm/$IMAGE
+#   docker push ghcr.io/proxy-wasm/$IMAGE
+#
+# Test:
+#   docker run --rm --volume $(pwd):/mnt --workdir /mnt \
+#     --platform linux/s390x $IMAGE \
+#     bazel test --verbose_failures --test_output=errors \
+#     --define engine=null --config=clang --test_timeout=1800 \
+#     -- //test/...
+
+# Update base image
+ARG UBUNTU_VERSION=22.04
+FROM ubuntu:${UBUNTU_VERSION} as build
+RUN apt update && apt upgrade -y
+RUN apt autoremove -y
+
+# Install Bazel deps
+RUN apt install -y software-properties-common
+RUN add-apt-repository ppa:openjdk-r/ppa
+RUN apt install -y \
+    build-essential \
+    openjdk-11-jdk \
+    python3 \
+    curl \
+    zip \
+    unzip
+
+# Download Bazel source
+ARG BAZEL_VERSION=6.5.0
+RUN cd ~ && mkdir bazel && cd bazel
+RUN curl -LO https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-dist.zip
+RUN unzip -q bazel-${BAZEL_VERSION}-dist.zip
+
+# Build Bazel
+# NOTE: This step is flaky and frequently hangs for multiarch / buildx.
+# If it takes more than 2 hours, restart the Docker build and try again.
+ENV EXTRA_BAZEL_ARGS="--tool_java_runtime_version=local_jdk"
+RUN bash ./compile.sh
+
+# Copy output to /usr/bin
+RUN cp /output/bazel /usr/bin/bazel
+
+# Install ProxyWasm build deps
+RUN apt install -y \
+    git \
+    python3-distutils \
+    clang \
+    libstdc++6 \
+    libssl-dev \
+    libz-dev

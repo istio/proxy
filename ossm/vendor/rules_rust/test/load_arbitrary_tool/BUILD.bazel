@@ -1,0 +1,16 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+filegroup(
+    name = "load_arbitrary_tool_test_src",
+    srcs = select({
+        "//rust/platform:windows": ["@rules_rust_test_load_arbitrary_tool//:bin/cargo.exe"],
+        "//conditions:default": ["@rules_rust_test_load_arbitrary_tool//:bin/cargo"],
+    }),
+)
+
+build_test(
+    name = "load_arbitrary_tool_test",
+    targets = [
+        ":load_arbitrary_tool_test_src",
+    ],
+)

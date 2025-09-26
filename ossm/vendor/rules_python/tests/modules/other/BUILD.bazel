@@ -1,0 +1,14 @@
+load("@rules_python//tests/support:py_reconfig.bzl", "py_reconfig_binary")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+py_reconfig_binary(
+    name = "external_main",
+    srcs = [":external_main.py"],
+    # We're testing a system_python specific code path,
+    # so force using that bootstrap
+    bootstrap_impl = "system_python",
+    main = "external_main.py",
+)

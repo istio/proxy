@@ -1,0 +1,31 @@
+t a/toolchains/built_toolchains.bzl b/toolchains/built_toolchains.bzl
+index e2b5e5e..9613308 100644
+--- a/toolchains/built_toolchains.bzl
++++ b/toolchains/built_toolchains.bzl
+@@ -343,6 +343,9 @@ cc_import(
+ 
+                 # This patch fixes explicit integer conversion which causes errors in clang >= 15 and gcc >= 14
+                 Label("//toolchains/patches:pkgconfig-builtin-glib-int-conversion.patch"),
++
++                # This patch is required to overcome type mismatch error
++                Label("//toolchains/patches:pkgconfig-valgrind.patch"),
+             ],
+             urls = [
+                 "https://pkgconfig.freedesktop.org/releases/pkg-config-0.29.2.tar.gz",
+diff --git a/toolchains/patches/pkgconfig-valgrind.patch b/toolchains/patches/pkgconfig-valgrind.patch
+new file mode 100644
+index 0000000..d376dfb
+--- /dev/null
++++ b/toolchains/patches/pkgconfig-valgrind.patch
+@@ -0,0 +1,11 @@
++--- glib/glib/valgrind.h
+++++ glib/glib/valgrind.h.new
++@@ -643,7 +643,7 @@
++                     /* results = r3 */                           \
++                     "lgr %0, 3\n\t"                              \
++                     : "=d" (_zzq_result)                         \
++-                    : "a" (&_zzq_args[0]), "0" (_zzq_default)    \
+++                    : "a" (&_zzq_args[0]), "0" ((unsigned long long int)(_zzq_default))    \
++                     : "cc", "2", "3", "memory"                   \
++                    );                                            \
++    _zzq_result;                                                  \

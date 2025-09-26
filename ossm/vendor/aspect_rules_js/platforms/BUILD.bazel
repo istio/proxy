@@ -1,0 +1,12 @@
+platform(
+    name = "x86_64_linux_remote",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+    exec_properties = {
+        "OSFamily": "Linux",
+        "container-image": "docker://public.ecr.aws/docker/library/python@sha256:247105bbbe7f7afc7c12ac893be65b5a32951c1d0276392dc2bf09861ba288a6",
+    },
+    visibility = ["//visibility:public"],
+)

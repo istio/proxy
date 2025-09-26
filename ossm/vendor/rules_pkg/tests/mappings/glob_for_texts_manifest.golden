@@ -1,0 +1,6 @@
+[
+    {"type": "file", "dest": "file_with_a_ridiculously_long_name_consectetur_adipiscing_elit_fusce_laoreet_lorem_neque_sed_pharetra_erat.txt", "src": "tests/testdata/file_with_a_ridiculously_long_name_consectetur_adipiscing_elit_fusce_laoreet_lorem_neque_sed_pharetra_erat.txt", "mode": "", "user": null, "group": null, "uid": null, "gid": null, "origin": "@//tests:glob_for_texts"},
+    {"type": "file", "dest": "hello.txt", "src": "tests/testdata/hello.txt", "mode": "", "user": null, "group": null, "uid": null, "gid": null, "origin": "@//tests:glob_for_texts"},
+    {"type": "file", "dest": "loremipsum.txt", "src": "tests/testdata/loremipsum.txt", "mode": "", "user": null, "group": null, "uid": null, "gid": null, "origin": "@//tests:glob_for_texts"},
+    {"type": "file", "dest": "test_tar_package_dir_file.txt", "src": "tests/testdata/test_tar_package_dir_file.txt", "mode": "", "user": null, "group": null, "uid": null, "gid": null, "origin": "@//tests:glob_for_texts"}
+]

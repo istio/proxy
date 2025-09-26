@@ -1,0 +1,4 @@
+load(":linker_inputs_propagation_test.bzl", "linker_inputs_propagation_test_suite")
+
+############################ UNIT TESTS #############################
+linker_inputs_propagation_test_suite(name = "linker_inputs_propagation_test_suite")

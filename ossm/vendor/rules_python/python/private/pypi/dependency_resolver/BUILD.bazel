@@ -1,0 +1,7 @@
+exports_files(["dependency_resolver.py"])
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+    visibility = ["//python/private/pypi:__subpackages__"],
+)

@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "google_message3",
+    srcs = [
+        "benchmark_message3.pb.go",
+        "benchmark_message3_1.pb.go",
+        "benchmark_message3_2.pb.go",
+        "benchmark_message3_3.pb.go",
+        "benchmark_message3_4.pb.go",
+        "benchmark_message3_5.pb.go",
+        "benchmark_message3_6.pb.go",
+        "benchmark_message3_7.pb.go",
+        "benchmark_message3_8.pb.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/testprotos/benchmarks/datasets/google_message3",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":google_message3",
+    visibility = ["//:__subpackages__"],
+)

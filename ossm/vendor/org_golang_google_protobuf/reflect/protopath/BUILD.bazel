@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "protopath",
+    srcs = [
+        "path.go",
+        "step.go",
+    ],
+    importpath = "google.golang.org/protobuf/reflect/protopath",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/encoding/text",
+        "//internal/msgfmt",
+        "//reflect/protoreflect",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protopath",
+    visibility = ["//visibility:public"],
+)

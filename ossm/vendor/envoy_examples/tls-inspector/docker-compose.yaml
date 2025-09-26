@@ -1,0 +1,44 @@
+services:
+
+  tls-inspector:
+    build:
+      context: .
+      dockerfile: ../shared/envoy/Dockerfile
+    depends_on:
+      service-https0:
+        condition: service_started
+      service-https1:
+        condition: service_started
+      service-http:
+        condition: service_started
+    ports:
+    - "${PORT_PROXY:-10000}:10000"
+    - "${PORT_ADMIN:-12345}:12345"
+
+  service-https0:
+    build:
+      context: ../shared/echo
+    environment:
+      ECHO_HOSTNAME: service-https0
+      ECHO_HTTPS_HOST: 0.0.0.0
+      ECHO_HTTPS_PORT: 443
+      ECHO_TLS_CERT: /tmp/snakeoil/tls.cert
+      ECHO_TLS_KEY: /tmp/snakeoil/tls.key
+
+  service-https1:
+    build:
+      context: ../shared/echo
+    environment:
+      ECHO_HOSTNAME: service-https1
+      ECHO_HTTPS_HOST: 0.0.0.0
+      ECHO_HTTPS_PORT: 443
+      ECHO_TLS_CERT: /tmp/snakeoil/tls.cert
+      ECHO_TLS_KEY: /tmp/snakeoil/tls.key
+
+  service-http:
+    build:
+      context: ../shared/echo
+    environment:
+      ECHO_HOSTNAME: service-http
+      ECHO_HTTP_HOST: 0.0.0.0
+      ECHO_HTTP_PORT: 80

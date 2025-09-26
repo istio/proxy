@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "unsafeheader",
+    srcs = ["unsafeheader.go"],
+    importpath = "golang.org/x/sys/internal/unsafeheader",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":unsafeheader",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "unsafeheader_test",
+    srcs = ["unsafeheader_test.go"],
+    deps = [":unsafeheader"],
+)

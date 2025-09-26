@@ -1,0 +1,20 @@
+module(name = "ignore_root_user_error")
+
+bazel_dep(name = "rules_python", version = "0.0.0")
+local_path_override(
+    module_name = "rules_python",
+    path = "../../..",
+)
+
+bazel_dep(name = "submodule")
+local_path_override(
+    module_name = "submodule",
+    path = "submodule",
+)
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    ignore_root_user_error = True,
+    python_version = "3.11",
+)
+use_repo(python, "rules_python_bzlmod_debug")

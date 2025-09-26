@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "proto2_proto",
+    srcs = [
+        "enum.proto",
+        "fields.proto",
+        "nested_messages.proto",
+        "proto2.proto",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+go_proto_library(
+    name = "proto2_go_proto",
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/proto2",
+    proto = ":proto2_proto",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "proto2",
+    embed = [":proto2_go_proto"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/proto2",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":proto2",
+    visibility = ["//visibility:public"],
+)

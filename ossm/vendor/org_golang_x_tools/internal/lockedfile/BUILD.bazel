@@ -1,0 +1,123 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "lockedfile",
+    srcs = [
+        "lockedfile.go",
+        "lockedfile_filelock.go",
+        "lockedfile_plan9.go",
+        "mutex.go",
+    ],
+    importpath = "golang.org/x/tools/internal/lockedfile",
+    visibility = ["//:__subpackages__"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:android": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:osx": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:qnx": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//internal/lockedfile/internal/filelock",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":lockedfile",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "lockedfile_test",
+    srcs = [
+        "lockedfile_test.go",
+        "transform_test.go",
+    ],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:android": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:osx": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:qnx": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            ":lockedfile",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            ":lockedfile",
+        ],
+        "//conditions:default": [],
+    }),
+)

@@ -1,0 +1,34 @@
+#!/bin/sh
+
+set -e
+
+desired="$1"
+pattern='^v[0-9]\+\.[0-9]\+\.[0-9]\+$'
+if echo "$desired" | grep -v "$pattern" >/dev/null 2>&1; then
+    >&2 echo "Specified version \"$desired\" does not match the grep pattern $pattern"
+    exit 1
+fi
+
+scratch=$(mktemp -d)
+version_cpp="$(dirname "$0")/../src/datadog/version.cpp"
+cp "$version_cpp" "$scratch"
+cp "${version_cpp%.cpp}.h" "$scratch"
+>"$scratch/print_version.cpp" cat <<'END_CPP'
+
+#include "version.h"
+#include <iostream>
+
+int main() {
+    std::cout << datadog::tracing::tracer_version;
+}
+END_CPP
+
+/usr/bin/c++ -o "$scratch/print_version" "$scratch"/*.cpp
+actual=$("$scratch/print_version")
+rm -r "$scratch"
+
+if [ "$actual" != "$desired" ]; then
+    version_cpp="$(realpath --relative-to="$(pwd)" "$version_cpp")"
+    >&2 echo "Desired release version \"$desired\" is different from that in $version_cpp: \"$actual\""
+    exit 1
+fi

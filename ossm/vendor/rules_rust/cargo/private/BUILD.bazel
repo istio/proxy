@@ -1,0 +1,15 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "copy_file",
+    srcs = ["copy_file.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]),
+    visibility = ["//:__subpackages__"],
+)

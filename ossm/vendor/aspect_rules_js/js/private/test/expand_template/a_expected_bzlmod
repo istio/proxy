@@ -1,0 +1,6 @@
+WORKSPACE: _main
+VERSION: v0.0.0
+TMPL_PATH: js/private/test/expand_template/a.tmpl
+WORKSPACE: _main
+VERSION: v0.0.0
+TMPL_PATH: js/private/test/expand_template/a.tmpl

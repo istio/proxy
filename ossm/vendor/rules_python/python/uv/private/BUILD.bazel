@@ -1,0 +1,106 @@
+# Copyright 2024 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//python/private:bzlmod_enabled.bzl", "BZLMOD_ENABLED")  # buildifier: disable=bzl-visibility
+
+exports_files(
+    srcs = [
+        "lock_copier.py",
+    ],
+    # only because this is used from a macro to template
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+    visibility = ["//python/uv:__pkg__"],
+)
+
+bzl_library(
+    name = "current_toolchain_bzl",
+    srcs = ["current_toolchain.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+)
+
+bzl_library(
+    name = "lock_bzl",
+    srcs = ["lock.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+    deps = [
+        ":toolchain_types_bzl",
+        "//python:py_binary_bzl",
+        "//python/private:bzlmod_enabled_bzl",
+        "//python/private:toolchain_types_bzl",
+        "@bazel_skylib//lib:shell",
+    ],
+)
+
+bzl_library(
+    name = "toolchain_types_bzl",
+    srcs = ["toolchain_types.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+)
+
+bzl_library(
+    name = "uv_bzl",
+    srcs = ["uv.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+    deps = [
+        ":toolchain_types_bzl",
+        ":uv_repository_bzl",
+        ":uv_toolchains_repo_bzl",
+        "//python/private:auth_bzl",
+    ],
+)
+
+bzl_library(
+    name = "uv_repository_bzl",
+    srcs = ["uv_repository.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+    deps = ["//python/private:auth_bzl"],
+)
+
+bzl_library(
+    name = "uv_toolchain_bzl",
+    srcs = ["uv_toolchain.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+    deps = [":uv_toolchain_info_bzl"],
+)
+
+bzl_library(
+    name = "uv_toolchain_info_bzl",
+    srcs = ["uv_toolchain_info.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+)
+
+bzl_library(
+    name = "uv_toolchains_repo_bzl",
+    srcs = ["uv_toolchains_repo.bzl"],
+    visibility = ["//python/uv:__subpackages__"],
+    deps = [
+        "//python/private:text_util_bzl",
+    ],
+)
+
+filegroup(
+    name = "lock_template",
+    srcs = select({
+        "@platforms//os:windows": ["lock.bat"],
+        "//conditions:default": ["lock.sh"],
+    }),
+    target_compatible_with = [] if BZLMOD_ENABLED else ["@platforms//:incompatible"],
+    visibility = ["//visibility:public"],
+)

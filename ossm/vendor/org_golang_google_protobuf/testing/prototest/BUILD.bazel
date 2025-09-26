@@ -1,0 +1,42 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "prototest",
+    srcs = [
+        "enum.go",
+        "message.go",
+    ],
+    importpath = "google.golang.org/protobuf/testing/prototest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding/prototext",
+        "//encoding/protowire",
+        "//proto",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":prototest",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "prototest_test",
+    srcs = ["prototest_test.go"],
+    deps = [
+        ":prototest",
+        "//internal/flags",
+        "//internal/testprotos/irregular",
+        "//internal/testprotos/legacy",
+        "//internal/testprotos/legacy/proto2_20160225_2fc053c5",
+        "//internal/testprotos/test",
+        "//internal/testprotos/test/weak1",
+        "//internal/testprotos/test/weak2",
+        "//internal/testprotos/test3",
+        "//proto",
+        "//runtime/protoimpl",
+    ],
+)

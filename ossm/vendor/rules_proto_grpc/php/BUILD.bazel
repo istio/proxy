@@ -1,0 +1,15 @@
+load("//:defs.bzl", "proto_plugin")
+
+proto_plugin(
+    name = "php_plugin",
+    output_directory = True,  # Plugin outputs cannot be predicted as they depend on service/package name
+    protoc_plugin_name = "php",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "grpc_php_plugin",
+    output_directory = True,  # Plugin outputs cannot be predicted as they depend on service/package name
+    tool = "@com_github_grpc_grpc//src/compiler:grpc_php_plugin",
+    visibility = ["//visibility:public"],
+)

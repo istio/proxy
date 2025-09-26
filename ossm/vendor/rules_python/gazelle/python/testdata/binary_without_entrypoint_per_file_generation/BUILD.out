@@ -1,0 +1,46 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+# gazelle:python_generation_mode file
+
+# gazelle:resolve py numpy @pip//:numpy
+# gazelle:resolve py pandas @pip//:pandas
+
+py_library(
+    name = "lib",
+    srcs = ["lib.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@pip//:numpy",
+        "@pip//:pandas",
+    ],
+)
+
+py_library(
+    name = "lib2",
+    srcs = ["lib2.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":lib",
+        ":lib_and_main",
+    ],
+)
+
+py_binary(
+    name = "lib_and_main",
+    srcs = ["lib_and_main.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_binary(
+    name = "main",
+    srcs = ["main.py"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@pip//:pandas"],
+)
+
+py_binary(
+    name = "main2",
+    srcs = ["main2.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [":lib2"],
+)

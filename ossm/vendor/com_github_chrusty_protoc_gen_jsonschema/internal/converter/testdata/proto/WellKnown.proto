@@ -1,0 +1,16 @@
+syntax = "proto3";
+package samples;
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/wrappers.proto";
+
+message WellKnown {
+    google.protobuf.StringValue string_value = 1;
+    map<int32, google.protobuf.Int32Value> map_of_integers = 2;
+    map<int32, int32> map_of_scalar_integers = 3;
+    repeated google.protobuf.Int32Value list_of_integers = 4;
+    // This is a duration:
+    google.protobuf.Duration duration = 5;
+    google.protobuf.Struct struct = 6;
+}
+

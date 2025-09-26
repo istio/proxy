@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package google.api.expr.runtime;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+option cc_enable_arenas = true;
+
+enum TestEnum {
+  TEST_ENUM_UNSPECIFIED = 0;
+  TEST_ENUM_1 = 10;
+  TEST_ENUM_2 = 20;
+  TEST_ENUM_3 = 30;
+}
+
+message TestMessage {
+  int32 int32_value = 1;
+  int64 int64_value = 2;
+
+  uint32 uint32_value = 3;
+  uint64 uint64_value = 4;
+
+  float float_value = 5;
+  double double_value = 6;
+
+  string string_value = 7;
+  string cord_value = 8 [ctype = CORD];
+  bytes bytes_value = 9;
+
+  bool bool_value = 10;
+
+  enum TestEnum {
+    TEST_ENUM_UNSPECIFIED = 0;
+    TEST_ENUM_1 = 1;
+    TEST_ENUM_2 = 2;
+  }
+
+  TestEnum enum_value = 11;
+
+  TestMessage message_value = 12;
+
+  reserved 99;
+
+  repeated int32 int32_list = 101;
+  repeated int64 int64_list = 102;
+  repeated uint32 uint32_list = 103;
+  repeated uint64 uint64_list = 104;
+  repeated float float_list = 105;
+  repeated double double_list = 106;
+  repeated string string_list = 107;
+  repeated string cord_list = 108 [ctype = CORD];
+  repeated bytes bytes_list = 109;
+  repeated bool bool_list = 110;
+  repeated TestEnum enum_list = 111;
+  repeated TestMessage message_list = 112;
+  repeated google.protobuf.Timestamp timestamp_list = 113;
+
+  map<int64, int32> int64_int32_map = 201;
+  map<uint64, int32> uint64_int32_map = 202;
+  map<string, int32> string_int32_map = 203;
+  map<bool, int32> bool_int32_map = 204;
+  map<int32, int32> int32_int32_map = 205;
+  map<uint32, uint32> uint32_uint32_map = 206;
+  map<int32, float> int32_float_map = 207;
+  map<int64, TestEnum> int64_enum_map = 208;
+  map<string, google.protobuf.Timestamp> string_timestamp_map = 209;
+  map<string, TestMessage> string_message_map = 210;
+  map<int64, google.protobuf.Timestamp> int64_timestamp_map = 211;
+
+  // Well-known types.
+  google.protobuf.Any any_value = 300;
+  google.protobuf.Duration duration_value = 301;
+  google.protobuf.Timestamp timestamp_value = 302;
+  google.protobuf.Struct struct_value = 303;
+  google.protobuf.Value value_value = 304;
+  google.protobuf.Int64Value int64_wrapper_value = 305;
+  google.protobuf.Int32Value int32_wrapper_value = 306;
+  google.protobuf.DoubleValue double_wrapper_value = 307;
+  google.protobuf.FloatValue float_wrapper_value = 308;
+  google.protobuf.UInt64Value uint64_wrapper_value = 309;
+  google.protobuf.UInt32Value uint32_wrapper_value = 310;
+  google.protobuf.StringValue string_wrapper_value = 311;
+  google.protobuf.BoolValue bool_wrapper_value = 312;
+  google.protobuf.BytesValue bytes_wrapper_value = 313;
+}

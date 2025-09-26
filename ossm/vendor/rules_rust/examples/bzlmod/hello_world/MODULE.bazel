@@ -1,0 +1,60 @@
+"""bazelbuild/rules_rust - bzlmod example"""
+
+module(
+    name = "hello_world_example",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
+bazel_dep(
+    name = "rules_rust",
+    version = "0.0.0",
+)
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../..",
+)
+
+# To do third party dependencies, you have multiple options:
+
+# Option 1: Fully transient (Cargo.toml / Cargo.lock as source of truth).
+crate = use_extension(
+    "@rules_rust//crate_universe:extensions.bzl",
+    "crate",
+)
+crate.from_cargo(
+    name = "crates_in_workspace",
+    cargo_lockfile = "//third-party-in-workspace:Cargo.lock",
+    manifests = ["//third-party-in-workspace:Cargo.toml"],
+)
+use_repo(crate, "crates_in_workspace")
+crate.annotation(
+    additive_build_file = "//:BUILD.anyhow.bazel",
+    crate = "anyhow",
+    # Defined in additive_build_file.
+    data = [":cargo_toml"],
+    # Optional, you probably don't need this. Defaults to all from_cargo
+    # invocations in this module.
+    repositories = [
+        "crates_in_workspace",
+        "crates_without_workspace",
+    ],
+    # Optional, you probably don't need this, defaults to "*".
+    version = "*",
+)
+
+# Option 2: Vendored crates
+crate_repositories = use_extension("//third-party-in-workspace:extension.bzl", "crate_repositories")
+use_repo(crate_repositories, "vendor__anyhow-1.0.77")
+
+# Another example of Option 1, but where the Cargo.toml file isn't a [workspace]
+crate.from_cargo(
+    name = "crates_without_workspace",
+    cargo_lockfile = "//third-party-without-workspace:Cargo.lock",
+    manifests = ["//third-party-without-workspace:Cargo.toml"],
+)
+use_repo(crate, "crates_without_workspace")

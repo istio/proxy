@@ -1,0 +1,6 @@
+arg with\
+new line
+arg with\\
+no new line
+arg with\\\
+new line and a trailing backslash

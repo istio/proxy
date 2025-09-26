@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "bidirule",
+    srcs = [
+        "bidirule.go",
+        "bidirule10.0.0.go",
+        "bidirule9.0.0.go",
+    ],
+    importpath = "golang.org/x/text/secure/bidirule",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//transform",
+        "//unicode/bidi",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":bidirule",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "bidirule_test",
+    srcs = [
+        "bench_test.go",
+        "bidirule10.0.0_test.go",
+        "bidirule9.0.0_test.go",
+        "bidirule_test.go",
+    ],
+    embed = [":bidirule"],
+    deps = [
+        "//internal/testtext",
+        "//transform",
+        "//unicode/bidi",
+    ],
+)

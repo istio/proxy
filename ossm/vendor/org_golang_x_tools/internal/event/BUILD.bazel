@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "event",
+    srcs = [
+        "doc.go",
+        "event.go",
+    ],
+    importpath = "golang.org/x/tools/internal/event",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/event/core",
+        "//internal/event/keys",
+        "//internal/event/label",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":event",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "event_test",
+    srcs = ["bench_test.go"],
+    deps = [
+        ":event",
+        "//internal/event/core",
+        "//internal/event/export",
+        "//internal/event/keys",
+        "//internal/event/label",
+    ],
+)

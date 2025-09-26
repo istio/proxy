@@ -1,0 +1,211 @@
+<!-- Generated with Stardoc: http://skydoc.bazel.build -->
+# Cargo
+
+* [cargo_bootstrap_repository](#cargo_bootstrap_repository)
+* [cargo_build_script](#cargo_build_script)
+* [cargo_dep_env](#cargo_dep_env)
+* [cargo_env](#cargo_env)
+
+<a id="cargo_dep_env"></a>
+
+## cargo_dep_env
+
+<pre>
+cargo_dep_env(<a href="#cargo_dep_env-name">name</a>, <a href="#cargo_dep_env-src">src</a>, <a href="#cargo_dep_env-out_dir">out_dir</a>)
+</pre>
+
+A rule for generating variables for dependent `cargo_build_script`s without a build script. This is useful for using Bazel rules instead of a build script, while also generating configuration information for build scripts which depend on this crate.
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="cargo_dep_env-name"></a>name |  A unique name for this target.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+| <a id="cargo_dep_env-src"></a>src |  File containing additional environment variables to set for build scripts of direct dependencies.<br><br>This has the same effect as a `cargo_build_script` which prints `cargo:VAR=VALUE` lines, but without requiring a build script.<br><br>This files should  contain a single variable per line, of format `NAME=value`, and newlines may be included in a value by ending a line with a trailing back-slash (`\\`).   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="cargo_dep_env-out_dir"></a>out_dir |  Folder containing additional inputs when building all direct dependencies.<br><br>This has the same effect as a `cargo_build_script` which prints puts files into `$OUT_DIR`, but without requiring a build script.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
+
+
+<a id="cargo_build_script"></a>
+
+## cargo_build_script
+
+<pre>
+cargo_build_script(<a href="#cargo_build_script-name">name</a>, <a href="#cargo_build_script-edition">edition</a>, <a href="#cargo_build_script-crate_name">crate_name</a>, <a href="#cargo_build_script-crate_root">crate_root</a>, <a href="#cargo_build_script-srcs">srcs</a>, <a href="#cargo_build_script-crate_features">crate_features</a>, <a href="#cargo_build_script-version">version</a>, <a href="#cargo_build_script-deps">deps</a>,
+                   <a href="#cargo_build_script-link_deps">link_deps</a>, <a href="#cargo_build_script-proc_macro_deps">proc_macro_deps</a>, <a href="#cargo_build_script-build_script_env">build_script_env</a>, <a href="#cargo_build_script-use_default_shell_env">use_default_shell_env</a>, <a href="#cargo_build_script-data">data</a>,
+                   <a href="#cargo_build_script-compile_data">compile_data</a>, <a href="#cargo_build_script-tools">tools</a>, <a href="#cargo_build_script-links">links</a>, <a href="#cargo_build_script-rundir">rundir</a>, <a href="#cargo_build_script-rustc_env">rustc_env</a>, <a href="#cargo_build_script-rustc_env_files">rustc_env_files</a>, <a href="#cargo_build_script-rustc_flags">rustc_flags</a>,
+                   <a href="#cargo_build_script-visibility">visibility</a>, <a href="#cargo_build_script-tags">tags</a>, <a href="#cargo_build_script-aliases">aliases</a>, <a href="#cargo_build_script-pkg_name">pkg_name</a>, <a href="#cargo_build_script-kwargs">kwargs</a>)
+</pre>
+
+Compile and execute a rust build script to generate build attributes
+
+This rules take the same arguments as rust_binary.
+
+Example:
+
+Suppose you have a crate with a cargo build script `build.rs`:
+
+```output
+[workspace]/
+    hello_lib/
+        BUILD
+        build.rs
+        src/
+            lib.rs
+```
+
+Then you want to use the build script in the following:
+
+`hello_lib/BUILD`:
+```python
+package(default_visibility = ["//visibility:public"])
+
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
+
+# This will run the build script from the root of the workspace, and
+# collect the outputs.
+cargo_build_script(
+    name = "build_script",
+    srcs = ["build.rs"],
+    # Optional environment variables passed during build.rs compilation
+    rustc_env = {
+       "CARGO_PKG_VERSION": "0.1.2",
+    },
+    # Optional environment variables passed during build.rs execution.
+    # Note that as the build script's working directory is not execroot,
+    # execpath/location will return an absolute path, instead of a relative
+    # one.
+    build_script_env = {
+        "SOME_TOOL_OR_FILE": "$(execpath @tool//:binary)"
+    },
+    # Optional data/tool dependencies
+    data = ["@tool//:binary"],
+)
+
+rust_library(
+    name = "hello_lib",
+    srcs = [
+        "src/lib.rs",
+    ],
+    deps = [":build_script"],
+)
+```
+
+The `hello_lib` target will be build with the flags and the environment variables declared by the     build script in addition to the file generated by it.
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="cargo_build_script-name"></a>name |  The name for the underlying rule. This should be the name of the package being compiled, optionally with a suffix of `_bs`. Otherwise, you can set the package name via `pkg_name`.   |  none |
+| <a id="cargo_build_script-edition"></a>edition |  The rust edition to use for the internal binary crate.   |  `None` |
+| <a id="cargo_build_script-crate_name"></a>crate_name |  Crate name to use for build script.   |  `None` |
+| <a id="cargo_build_script-crate_root"></a>crate_root |  The file that will be passed to rustc to be used for building this crate.   |  `None` |
+| <a id="cargo_build_script-srcs"></a>srcs |  Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made.   |  `[]` |
+| <a id="cargo_build_script-crate_features"></a>crate_features |  A list of features to enable for the build script.   |  `[]` |
+| <a id="cargo_build_script-version"></a>version |  The semantic version (semver) of the crate.   |  `None` |
+| <a id="cargo_build_script-deps"></a>deps |  The build-dependencies of the crate.   |  `[]` |
+| <a id="cargo_build_script-link_deps"></a>link_deps |  The subset of the (normal) dependencies of the crate that have the links attribute and therefore provide environment variables to this build script.   |  `[]` |
+| <a id="cargo_build_script-proc_macro_deps"></a>proc_macro_deps |  List of rust_proc_macro targets used to build the script.   |  `[]` |
+| <a id="cargo_build_script-build_script_env"></a>build_script_env |  Environment variables for build scripts.   |  `{}` |
+| <a id="cargo_build_script-use_default_shell_env"></a>use_default_shell_env |  Whether or not to include the default shell environment for the build script action. If unset the global setting `@rules_rust//cargo/settings:use_default_shell_env` will be used to determine this value.   |  `None` |
+| <a id="cargo_build_script-data"></a>data |  Files needed by the build script.   |  `[]` |
+| <a id="cargo_build_script-compile_data"></a>compile_data |  Files needed for the compilation of the build script.   |  `[]` |
+| <a id="cargo_build_script-tools"></a>tools |  Tools (executables) needed by the build script.   |  `[]` |
+| <a id="cargo_build_script-links"></a>links |  Name of the native library this crate links against.   |  `None` |
+| <a id="cargo_build_script-rundir"></a>rundir |  A directory to `cd` to before the cargo_build_script is run. This should be a path relative to the exec root.<br><br>The default behaviour (and the behaviour if rundir is set to the empty string) is to change to the relative path corresponding to the cargo manifest directory, which replicates the normal behaviour of cargo so it is easy to write compatible build scripts.<br><br>If set to `.`, the cargo build script will run in the exec root.   |  `None` |
+| <a id="cargo_build_script-rustc_env"></a>rustc_env |  Environment variables to set in rustc when compiling the build script.   |  `{}` |
+| <a id="cargo_build_script-rustc_env_files"></a>rustc_env_files |  Files containing additional environment variables to set for rustc when building the build script.   |  `[]` |
+| <a id="cargo_build_script-rustc_flags"></a>rustc_flags |  List of compiler flags passed to `rustc`.   |  `[]` |
+| <a id="cargo_build_script-visibility"></a>visibility |  Visibility to apply to the generated build script output.   |  `None` |
+| <a id="cargo_build_script-tags"></a>tags |  (list of str, optional): Tags to apply to the generated build script output.   |  `None` |
+| <a id="cargo_build_script-aliases"></a>aliases |  Remap crates to a new name or moniker for linkage to this target.             These are other `rust_library` targets and will be presented as the new name given.   |  `None` |
+| <a id="cargo_build_script-pkg_name"></a>pkg_name |  Override the package name used for the build script. This is useful if the build target name gets too long otherwise.   |  `None` |
+| <a id="cargo_build_script-kwargs"></a>kwargs |  Forwards to the underlying `rust_binary` rule. An exception is the `compatible_with` attribute, which shouldn't be forwarded to the `rust_binary`, as the `rust_binary` is only built and used in `exec` mode. We propagate the `compatible_with` attribute to the `_build_scirpt_run` target.   |  none |
+
+
+<a id="cargo_env"></a>
+
+## cargo_env
+
+<pre>
+cargo_env(<a href="#cargo_env-env">env</a>)
+</pre>
+
+A helper for generating platform specific environment variables
+
+```python
+load("@rules_rust//rust:defs.bzl", "rust_common")
+load("@rules_rust//cargo:defs.bzl", "cargo_bootstrap_repository", "cargo_env")
+
+cargo_bootstrap_repository(
+    name = "bootstrapped_bin",
+    cargo_lockfile = "//:Cargo.lock",
+    cargo_toml = "//:Cargo.toml",
+    srcs = ["//:resolver_srcs"],
+    version = rust_common.default_version,
+    binary = "my-crate-binary",
+    env = {
+        "x86_64-unknown-linux-gnu": cargo_env({
+            "FOO": "BAR",
+        }),
+    },
+    env_label = {
+        "aarch64-unknown-linux-musl": cargo_env({
+            "DOC": "//:README.md",
+        }),
+    }
+)
+```
+
+
+**PARAMETERS**
+
+
+| Name  | Description | Default Value |
+| :------------- | :------------- | :------------- |
+| <a id="cargo_env-env"></a>env |  A map of environment variables   |  none |
+
+**RETURNS**
+
+str: A json encoded string of the environment variables
+
+
+<a id="cargo_bootstrap_repository"></a>
+
+## cargo_bootstrap_repository
+
+<pre>
+cargo_bootstrap_repository(<a href="#cargo_bootstrap_repository-name">name</a>, <a href="#cargo_bootstrap_repository-srcs">srcs</a>, <a href="#cargo_bootstrap_repository-binary">binary</a>, <a href="#cargo_bootstrap_repository-build_mode">build_mode</a>, <a href="#cargo_bootstrap_repository-cargo_config">cargo_config</a>, <a href="#cargo_bootstrap_repository-cargo_lockfile">cargo_lockfile</a>, <a href="#cargo_bootstrap_repository-cargo_toml">cargo_toml</a>,
+                           <a href="#cargo_bootstrap_repository-compressed_windows_toolchain_names">compressed_windows_toolchain_names</a>, <a href="#cargo_bootstrap_repository-env">env</a>, <a href="#cargo_bootstrap_repository-env_label">env_label</a>, <a href="#cargo_bootstrap_repository-repo_mapping">repo_mapping</a>,
+                           <a href="#cargo_bootstrap_repository-rust_toolchain_cargo_template">rust_toolchain_cargo_template</a>, <a href="#cargo_bootstrap_repository-rust_toolchain_rustc_template">rust_toolchain_rustc_template</a>, <a href="#cargo_bootstrap_repository-timeout">timeout</a>,
+                           <a href="#cargo_bootstrap_repository-version">version</a>)
+</pre>
+
+A rule for bootstrapping a Rust binary using [Cargo](https://doc.rust-lang.org/cargo/)
+
+**ATTRIBUTES**
+
+
+| Name  | Description | Type | Mandatory | Default |
+| :------------- | :------------- | :------------- | :------------- | :------------- |
+| <a id="cargo_bootstrap_repository-name"></a>name |  A unique name for this repository.   | <a href="https://bazel.build/concepts/labels#target-names">Name</a> | required |  |
+| <a id="cargo_bootstrap_repository-srcs"></a>srcs |  Souce files of the crate to build. Passing source files here can be used to trigger rebuilds when changes are made   | <a href="https://bazel.build/concepts/labels">List of labels</a> | optional |  `[]`  |
+| <a id="cargo_bootstrap_repository-binary"></a>binary |  The binary to build (the `--bin` parameter for Cargo). If left empty, the repository name will be used.   | String | optional |  `""`  |
+| <a id="cargo_bootstrap_repository-build_mode"></a>build_mode |  The build mode the binary should be built with   | String | optional |  `"release"`  |
+| <a id="cargo_bootstrap_repository-cargo_config"></a>cargo_config |  The path of the Cargo configuration (`Config.toml`) file.   | <a href="https://bazel.build/concepts/labels">Label</a> | optional |  `None`  |
+| <a id="cargo_bootstrap_repository-cargo_lockfile"></a>cargo_lockfile |  The lockfile of the crate_universe resolver   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="cargo_bootstrap_repository-cargo_toml"></a>cargo_toml |  The path of the `Cargo.toml` file.   | <a href="https://bazel.build/concepts/labels">Label</a> | required |  |
+| <a id="cargo_bootstrap_repository-compressed_windows_toolchain_names"></a>compressed_windows_toolchain_names |  Wether or not the toolchain names of windows toolchains are expected to be in a `compressed` format.   | Boolean | optional |  `True`  |
+| <a id="cargo_bootstrap_repository-env"></a>env |  A mapping of platform triple to a set of environment variables. See [cargo_env](#cargo_env) for usage details. Additionally, the platform triple `*` applies to all platforms.   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional |  `{}`  |
+| <a id="cargo_bootstrap_repository-env_label"></a>env_label |  A mapping of platform triple to a set of environment variables. This attribute differs from `env` in that all variables passed here must be fully qualified labels of files. See [cargo_env](#cargo_env) for usage details. Additionally, the platform triple `*` applies to all platforms.   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional |  `{}`  |
+| <a id="cargo_bootstrap_repository-repo_mapping"></a>repo_mapping |  In `WORKSPACE` context only: a dictionary from local repository name to global repository name. This allows controls over workspace dependency resolution for dependencies of this repository.<br><br>For example, an entry `"@foo": "@bar"` declares that, for any time this repository depends on `@foo` (such as a dependency on `@foo//some:target`, it should actually resolve that dependency within globally-declared `@bar` (`@bar//some:target`).<br><br>This attribute is _not_ supported in `MODULE.bazel` context (when invoking a repository rule inside a module extension's implementation function).   | <a href="https://bazel.build/rules/lib/dict">Dictionary: String -> String</a> | optional |  |
+| <a id="cargo_bootstrap_repository-rust_toolchain_cargo_template"></a>rust_toolchain_cargo_template |  The template to use for finding the host `cargo` binary. `{version}` (eg. '1.53.0'), `{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), `{system}` (eg. 'darwin'), `{channel}` (eg. 'stable'), and `{tool}` (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional |  `"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"`  |
+| <a id="cargo_bootstrap_repository-rust_toolchain_rustc_template"></a>rust_toolchain_rustc_template |  The template to use for finding the host `rustc` binary. `{version}` (eg. '1.53.0'), `{triple}` (eg. 'x86_64-unknown-linux-gnu'), `{arch}` (eg. 'aarch64'), `{vendor}` (eg. 'unknown'), `{system}` (eg. 'darwin'), `{channel}` (eg. 'stable'), and `{tool}` (eg. 'rustc.exe') will be replaced in the string if present.   | String | optional |  `"@rust_{system}_{arch}__{triple}__{channel}_tools//:bin/{tool}"`  |
+| <a id="cargo_bootstrap_repository-timeout"></a>timeout |  Maximum duration of the Cargo build command in seconds   | Integer | optional |  `600`  |
+| <a id="cargo_bootstrap_repository-version"></a>version |  The version of Rust the currently registered toolchain is using. Eg. `1.56.0`, or `nightly/2021-09-08`   | String | optional |  `"1.83.0"`  |
+
+

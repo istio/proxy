@@ -1,0 +1,6 @@
+[submodule "benchmark/google-benchmark"]
+	path = benchmark/google-benchmark
+	url = https://github.com/google/benchmark.git
+[submodule "benchmark/tinycc"]
+	path = benchmark/tinycc
+	url = https://github.com/TinyCC/tinycc.git

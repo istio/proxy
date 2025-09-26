@@ -1,0 +1,26 @@
+# @generated
+# Input hashes for repository rule npm_translate_lock(name = "npm", pnpm_lock = "//:pnpm-lock.yaml").
+# This file should be checked into version control along with the pnpm-lock.yaml file.
+.npmrc=-2065072158
+pnpm-lock.yaml=915811237
+examples/npm_deps/patches/meaning-of-life@1.0.0-pnpm.patch=-442666336
+package.json=-275319675
+pnpm-workspace.yaml=-871530930
+examples/js_binary/package.json=-41174383
+examples/macro/package.json=857146175
+examples/npm_deps/package.json=283109008
+examples/npm_package/libs/lib_a/package.json=-1377103079
+examples/npm_package/packages/pkg_a/package.json=1006424040
+examples/npm_package/packages/pkg_b/package.json=1041247977
+examples/webpack_cli/package.json=1911342006
+js/private/coverage/bundle/package.json=-1543718929
+js/private/worker/src/package.json=1608383745
+npm/private/test/package.json=1756993924
+npm/private/test/vendored/lodash-4.17.21.tgz=-1206623349
+npm/private/test/npm_package/package.json=-1991705133
+npm/private/test/vendored/is-odd/package.json=1041695223
+npm/private/test/vendored/semver-max/package.json=578664053
+examples/linked_empty_node_modules/package.json=-1039372825
+js/private/image/package.json=-1260474848
+js/private/test/image/package.json=1286417612
+js/private/test/js_run_devserver/package.json=-260856079

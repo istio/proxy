@@ -1,0 +1,199 @@
+---
+matrix:
+  platform:
+    - ubuntu2204
+    - macos
+  bazel: [6.*, 7.*, 8.*]
+  bcr_variant:
+    - tests/bcr/go_work
+    - tests/bcr/go_mod
+tasks:
+  ubuntu2204:
+    name: Ubuntu 22.04 with WORKSPACE
+    platform: ubuntu2204
+    build_flags:
+    - "--noenable_bzlmod"
+    - "--enable_workspace"
+    test_flags:
+    - "--noenable_bzlmod"
+    - "--enable_workspace"
+    build_targets:
+    - "..."
+    run_targets:
+    # Run Gazelle on repo to verify BUILD files are up-to-date. The output shouldn't differ
+    # between platforms, so we only run it from one.
+    - "//:gazelle_ci"
+    test_targets:
+    - "..."
+  ubuntu2204_bzlmod:
+    name: Ubuntu 22.04 with Bzlmod
+    platform: ubuntu2204
+    build_targets:
+    - "..."
+    run_targets:
+    # Run Gazelle on repo to verify BUILD files are up-to-date. The output shouldn't differ
+    # between platforms, so we only run it from one.
+    - "//:gazelle_ci"
+    test_targets:
+    - "..."
+    - "-//internal:bazel_test"
+    - "-//cmd/gazelle:gazelle_test"
+  bcr_tests:
+    name: BCR test module
+    platform: ${{ platform }}
+    bazel: ${{ bazel }}
+    working_directory: ${{ bcr_variant }}
+    shell_commands:
+    # Regenerate the BUILD files for the test module using Gazelle.
+    # Also verify -repo_config are generated correctly in gazelle.bash
+    - rm pkg/BUILD.bazel proto/BUILD.bazel
+    - touch pkg/BUILD.bazel proto/BUILD.bazel
+    - bazel run //:gazelle -- pkg proto
+    - bazel run //:gazelle -- update pkg proto
+    # Verify that bazel mod tidy doesn't remove use_repos required to build and test.
+    - bazel mod tidy || true # Unsupported on Bazel 6
+    build_targets:
+    - "//..."
+    - "//:gazelle"
+    test_targets:
+    # Specify these targets explicitly to verify that Gazelle generates them correctly.
+    - "//pkg:pkg_test"
+    - "//proto:proto_test"
+    - "//..."
+    - "@test_dep//..."
+  bcr_test_windows:
+    name: BCR test on Windows
+    platform: windows
+    bazel: ${{ bazel }}
+    working_directory: ${{ bcr_variant }}
+    shell_commands:
+    # Regenerate the BUILD file for the test module using Gazelle.
+    # Also verify -repo_config are generated correctly in gazelle.bash
+    - rm pkg/BUILD.bazel
+    - bazel run //:gazelle -- pkg
+    - bazel run //:gazelle -- update pkg
+      # Verify that bazel mod tidy doesn't remove use_repos required to build and test.
+    - bazel mod tidy || true # Unsupported on Bazel 6
+    build_flags:
+    # Since go_sdk is platform-dependent, the lockfile will differ between
+    # platforms. We will skip the check on windows.
+    - "--lockfile_mode=update"
+    test_flags:
+    # See above.
+    - "--lockfile_mode=update"
+    build_targets:
+    - "//..."
+    - "//:gazelle"
+    test_targets:
+    # Specify this target explicitly to verify that Gazelle generated it correctly.
+    - "//pkg:pkg_test"
+    - "//..."
+    - "@test_dep//..."
+  macos_arm64_bzlmod:
+    name: Mac OS Arm 64 with Bzlmod
+    platform: macos_arm64
+    build_targets:
+    - "..."
+    test_targets:
+    - "..."
+    - "-//internal:bazel_test"
+  macos_arm64:
+    name: Mac OS Arm 64 with WORKSPACE
+    platform: macos_arm64
+    build_flags:
+    - "--noenable_bzlmod"
+    - "--enable_workspace"
+    test_flags:
+    - "--noenable_bzlmod"
+    - "--enable_workspace"
+    build_targets:
+    - "..."
+    test_targets:
+    - "..."
+    # TODO: This is currently timing out due to infrastructure issues. We should
+    # unblock development by temporarily disabling on MacOS.
+    - "-//internal:bazel_test"
+  macos_bzlmod:
+    name: Mac OS with Bzlmod
+    platform: macos
+    build_targets:
+    - "..."
+    test_targets:
+    - "..."
+    - "-//internal:bazel_test"
+  macos:
+    name: Mac OS with WORKSPACE
+    platform: macos
+    build_flags:
+    - "--noenable_bzlmod"
+    - "--enable_workspace"
+    test_flags:
+    - "--noenable_bzlmod"
+    - "--enable_workspace"
+    build_targets:
+    - "..."
+    test_targets:
+    - "..."
+  windows_bzlmod:
+    name: Windows with Bzlmod
+    platform: windows
+    build_targets:
+    - "--"
+    - "..."
+    - "-//cmd/autogazelle/..."
+    test_targets:
+    - "--"
+    - "..."
+    # autogazelle is only supported on UNIX-like platforms.
+    # It requires UNIX domain sockets.
+    - "-//cmd/autogazelle/..."
+    # Stardoc produces different line-endings on windows,
+    # so the documentation it generates doesn't match the checked in files
+    - "-//docs:all"
+    # Fails to execute, apparently due to command-line length limit.
+    - "-//internal:bazel_test"
+    # gazelle prints file paths with backward slashes on windows,
+    # which doesn't match the golden files generated on *nix.
+    - "-//tests:fix_mode_print0"
+    - "-//tests:fix_mode_strict"
+  windows:
+    name: Windows with WORKSPACE
+    platform: windows
+    build_flags:
+    - "--noenable_bzlmod"
+    - "--enable_workspace"
+    test_flags:
+    - "--noenable_bzlmod"
+    - "--enable_workspace"
+    build_targets:
+    - "--"
+    - "..."
+    - "-//cmd/autogazelle/..."
+    test_targets:
+    - "--"
+    - "..."
+    # autogazelle is only supported on UNIX-like platforms.
+    # It requires UNIX domain sockets.
+    - "-//cmd/autogazelle/..."
+    # Stardoc produces different line-endings on windows,
+    # so the documentation it generates doesn't match the checked in files
+    - "-//docs:all"
+    # Fails to execute, apparently due to command-line length limit.
+    - "-//internal:bazel_test"
+    # gazelle prints file paths with backward slashes on windows,
+    # which doesn't match the golden files generated on *nix.
+    - "-//tests:fix_mode_print0"
+    - "-//tests:fix_mode_strict"
+  incompatible:
+    name: Ubuntu 22.04 with --config=incompatible
+    platform: ubuntu2204
+    build_flags:
+      - "--config=incompatible"
+    build_targets:
+      - "..."
+    run_targets:
+      - "//:gazelle_ci"
+    test_flags:
+      - "--config=incompatible"
+    test_targets:
+      - "..."

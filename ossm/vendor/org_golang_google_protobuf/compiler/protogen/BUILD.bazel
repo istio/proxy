@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "protogen",
+    srcs = ["protogen.go"],
+    importpath = "google.golang.org/protobuf/compiler/protogen",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding/prototext",
+        "//internal/genid",
+        "//internal/strs",
+        "//proto",
+        "//reflect/protodesc",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+        "//types/descriptorpb",
+        "//types/dynamicpb",
+        "//types/pluginpb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protogen",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "protogen_test",
+    srcs = ["protogen_test.go"],
+    embed = [":protogen"],
+    deps = [
+        "//proto",
+        "//reflect/protoreflect",
+        "//types/descriptorpb",
+        "//types/pluginpb",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

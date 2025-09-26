@@ -1,0 +1,51 @@
+services:
+
+  proxy:
+    depends_on:
+    - service-http0
+    - service-http1
+    - service-https
+    build:
+      context: .
+      dockerfile: ../shared/envoy/Dockerfile
+      target: envoy-certs
+    ports:
+    - "${PORT_PROXY:-10000}:10000"
+
+  proxy-client:
+    depends_on:
+    - proxy
+    build:
+      context: .
+      dockerfile: ../shared/envoy/Dockerfile
+      target: envoy-certs
+      args:
+        ENVOY_CONFIG: envoy-client.yaml
+    ports:
+    - "${PORT_PROXY_CLIENT:-20000}:10000"
+
+  service-http0:
+    build:
+      context: ../shared/echo
+    environment:
+      ECHO_HOSTNAME: service-http0
+      ECHO_HTTP_HOST: 0.0.0.0
+      ECHO_HTTP_PORT: 80
+
+  service-http1:
+    build:
+      context: ../shared/echo
+    environment:
+      ECHO_HOSTNAME: service-http1
+      ECHO_HTTP_HOST: 0.0.0.0
+      ECHO_HTTP_PORT: 80
+
+  service-https:
+    build:
+      context: ../shared/echo
+    environment:
+      ECHO_HOSTNAME: service-https
+      ECHO_HTTPS_HOST: 0.0.0.0
+      ECHO_HTTPS_PORT: 443
+      ECHO_TLS_CERT: /tmp/snakeoil/tls.cert
+      ECHO_TLS_KEY: /tmp/snakeoil/tls.key

@@ -1,0 +1,17 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+load(":toolchain.bzl", "dummy_env_var_toolchain")
+
+cargo_build_script(
+    name = "bs",
+    srcs = ["build.rs"],
+    build_script_env = {
+        "FROM_TOOLCHAIN": "$(FROM_TOOLCHAIN)",
+        "MODIFIED_FROM_TOOLCHAIN": "modified$(FROM_TOOLCHAIN)",
+    },
+    edition = "2021",
+    toolchains = [":dummy_env_var_toolchain"],
+)
+
+dummy_env_var_toolchain(
+    name = "dummy_env_var_toolchain",
+)

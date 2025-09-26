@@ -1,0 +1,74 @@
+{% block html %}
+{% set active_page = active_page | default('') %}
+<!DOCTYPE html>
+<html lang="{% block html_lang %}{{ DEFAULT_LANG }}{% endblock html_lang %}">
+  <head>
+    {% block head %}
+    <title>
+      {%- block title %}{{ SITENAME | escape }}{% if active_page %} - {{ active_page | escape }}{% endif %}{% endblock title -%}
+    </title>
+    {% block meta %}
+    <meta charset="utf-8" />
+    <meta name="generator" content="Pelican" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% endblock meta %}
+    {% block atomic %}
+    {% include 'atomic.html' %}
+    {% endblock atomic %}
+    {% block assets %}
+    {% block fonts %}
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700"
+          type="text/css"
+          media="all" />
+    {% endblock fonts %}
+    {% block css %}
+    {% assets filters="libsass,cssmin", output="css/main.min.css", "css/main.scss" %}
+    <link rel="stylesheet"
+          href="/{{ ASSET_URL }}">
+    {% endassets %}
+    {% endblock css %}
+    {% block favicon %}
+    {% endblock favicon %}
+    {% block js %}
+    {% endblock js %}
+    {% endblock assets %}
+    {% endblock head %}
+  </head>
+
+  <body class="page"
+        id="page">
+    {% block body %}
+    {% block banner %}
+    {% if SITE.banner %}
+    <div id="banner">
+      {{ SITE.banner }}
+    </div>
+    {% endif %}
+    {% endblock banner %}
+    <main class="page-content"
+          id="page-content">
+      {% block page %}
+      {% block page_header %}
+      <header class="header container-fluid"
+              id="page-header">
+        {% block nav %}
+        {% if NAV %}
+        {% include 'nav.html' %}
+        {% endif %}
+        {% endblock nav %}
+      </header>
+      {% endblock page_header %}
+      {% block page_content %}
+      {% endblock page_content %}
+      {% endblock page %}
+    </main>
+    {% block footer %}
+    {% include 'footer.html' %}
+    {% endblock footer %}
+    {% endblock body %}
+    {% block js_post %}
+    {% endblock js_post %}
+  </body>
+</html>
+{% endblock html %}

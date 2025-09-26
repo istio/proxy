@@ -1,0 +1,57 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_test")
+load(":symlink_exec_root_transition.bzl", "symlink_execroot_cargo_build_script")
+
+###############################################################################
+# Test that the build script can access files in the exec root.
+#
+# All assertions are done in the build script. If it succeeds in execution, the
+# test passes.
+###############################################################################
+
+write_file(
+    name = "cargo_manifest_dir_file",
+    out = "cargo_manifest_dir_file.txt",
+    content = ["This is a file to be found alongside the build script."],
+)
+
+symlink_execroot_cargo_build_script(
+    name = "test_exec_root_access.build.feature_enabled",
+    script = ":test_exec_root_access.build.feature_disabled",
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+cargo_build_script(
+    name = "test_exec_root_access.build.feature_disabled",
+    srcs = ["test_exec_root_access.build.rs"],
+    crate_name = "test_exec_root_access",
+    data = [
+        ":cargo_manifest_dir_file.txt",
+    ],
+    edition = "2021",
+)
+
+# This is an empty test file, it is only needed to trigger the build script.
+write_file(
+    name = "test_exec_root_access_rs",
+    out = "test_exec_root_access.rs",
+    content = [""],
+)
+
+rust_test(
+    name = "test_exec_root_access_feature_enabled",
+    srcs = ["test_exec_root_access.rs"],
+    edition = "2021",
+    deps = [":test_exec_root_access.build.feature_enabled"],
+)
+
+rust_test(
+    name = "test_exec_root_access_feature_disabled",
+    srcs = ["test_exec_root_access.rs"],
+    edition = "2021",
+    deps = [":test_exec_root_access.build.feature_disabled"],
+)

@@ -1,0 +1,336 @@
+What:		/sys/bus/pci/devices/.../sequence_numbers/group<N>_sns_per_queue
+Date:		August 3, 2018
+KernelVersion:	TBD
+Contact:	gage.eads@intel.com
+Description:	Interface for configuring dlb2 load-balanced sequence numbers.
+
+		The DLB 2.0 has a fixed number of sequence numbers used for
+		ordered scheduling. They are divided among two sequence number
+		groups. A group can be configured to contain one queue with
+		1,024 sequence numbers, or two queues with 512 sequence numbers
+		each, and so on, down to 16 queues with 64 sequence numbers
+		each.
+
+		When a load-balanced queue is configured with non-zero sequence
+		numbers, the driver finds a group configured for the same
+		number of sequence numbers and an available slot. If no such
+		groups are found, the queue cannot be configured.
+
+		Once the first ordered queue is configured, the sequence number
+		configurations are locked. The driver returns an error on writes
+		to locked sequence number configurations. When all ordered
+		queues are unconfigured, the sequence number configurations can
+		be changed again.
+
+		This file is only accessible for physical function DLB 2.0
+		devices.
+
+What:		/sys/bus/pci/devices/.../total_resources/num_atomic_inflights
+What:		/sys/bus/pci/devices/.../total_resources/num_dir_credits
+What:		/sys/bus/pci/devices/.../total_resources/num_dir_ports
+What:		/sys/bus/pci/devices/.../total_resources/num_hist_list_entries
+What:		/sys/bus/pci/devices/.../total_resources/num_ldb_credits
+What:		/sys/bus/pci/devices/.../total_resources/num_ldb_ports
+What:		/sys/bus/pci/devices/.../total_resources/num_cos0_ldb_ports
+What:		/sys/bus/pci/devices/.../total_resources/num_cos1_ldb_ports
+What:		/sys/bus/pci/devices/.../total_resources/num_cos2_ldb_ports
+What:		/sys/bus/pci/devices/.../total_resources/num_cos3_ldb_ports
+What:		/sys/bus/pci/devices/.../total_resources/num_ldb_queues
+What:		/sys/bus/pci/devices/.../total_resources/num_sched_domains
+Date:		August 7, 2019
+KernelVersion:	TBD
+Contact:	gage.eads@intel.com
+Description:
+		The total_resources subdirectory contains read-only files that
+		indicate the total number of resources in the device.
+
+		num_atomic_inflights:  Total number of atomic inflights in the
+				       device. Atomic inflights refers to the
+				       on-device storage used by the atomic
+				       scheduler.
+
+		num_dir_credits:       Total number of directed credits in the
+				       device.
+
+		num_dir_ports:	       Total number of directed ports (and
+				       queues) in the device.
+
+		num_hist_list_entries: Total number of history list entries in
+				       the device.
+
+		num_ldb_credits:       Total number of load-balanced credits in
+				       the device.
+
+		num_ldb_ports:	       Total number of load-balanced ports in
+				       the device.
+
+		num_cos<M>_ldb_ports:  Total number of load-balanced ports
+				       belonging to class-of-service M in the
+				       device.
+
+		num_ldb_queues:	       Total number of load-balanced queues in
+				       the device.
+
+		num_sched_domains:     Total number of scheduling domains in the
+				       device.
+
+What:		/sys/bus/pci/devices/.../avail_resources/num_atomic_inflights
+What:		/sys/bus/pci/devices/.../avail_resources/num_dir_credits
+What:		/sys/bus/pci/devices/.../avail_resources/num_dir_ports
+What:		/sys/bus/pci/devices/.../avail_resources/num_hist_list_entries
+What:		/sys/bus/pci/devices/.../avail_resources/num_ldb_credits
+What:		/sys/bus/pci/devices/.../avail_resources/num_ldb_ports
+What:		/sys/bus/pci/devices/.../avail_resources/num_cos0_ldb_ports
+What:		/sys/bus/pci/devices/.../avail_resources/num_cos1_ldb_ports
+What:		/sys/bus/pci/devices/.../avail_resources/num_cos2_ldb_ports
+What:		/sys/bus/pci/devices/.../avail_resources/num_cos3_ldb_ports
+What:		/sys/bus/pci/devices/.../avail_resources/num_ldb_queues
+What:		/sys/bus/pci/devices/.../avail_resources/num_sched_domains
+What:		/sys/bus/pci/devices/.../avail_resources/max_ctg_hl_entries
+Date:		August 7, 2019
+KernelVersion:	TBD
+Contact:	gage.eads@intel.com
+Description:
+		The avail_resources subdirectory contains read-only files that
+		indicate the available number of resources in the device.
+		"Available" here means resources that are not currently in use
+		by an application or, in the case of a physical function
+		device, assigned to a virtual function.
+
+		num_atomic_inflights:  Available number of atomic inflights in
+				       the device.
+
+		num_dir_ports:	       Available number of directed ports (and
+				       queues) in the device.
+
+		num_hist_list_entries: Available number of history list entries
+				       in the device.
+
+		num_ldb_credits:       Available number of load-balanced credits
+				       in the device.
+
+		num_ldb_ports:	       Available number of load-balanced ports
+				       in the device.
+
+		num_cos<M>_ldb_ports:  Available number of load-balanced ports
+				       belonging to class-of-service M in the
+				       device.
+
+		num_ldb_queues:	       Available number of load-balanced queues
+				       in the device.
+
+		num_sched_domains:     Available number of scheduling domains in
+				       the device.
+
+		max_ctg_hl_entries:    Maximum contiguous history list entries
+				       available in the device.
+
+				       Each scheduling domain is created with
+				       an allocation of history list entries,
+				       and each domain's allocation of entries
+				       must be contiguous.
+
+What:		/sys/bus/pci/devices/.../vf<N>_resources/num_atomic_inflights
+What:		/sys/bus/pci/devices/.../vf<N>_resources/num_dir_credits
+What:		/sys/bus/pci/devices/.../vf<N>_resources/num_dir_ports
+What:		/sys/bus/pci/devices/.../vf<N>_resources/num_hist_list_entries
+What:		/sys/bus/pci/devices/.../vf<N>_resources/num_ldb_credits
+What:		/sys/bus/pci/devices/.../vf<N>_resources/num_ldb_ports
+What:		/sys/bus/pci/devices/.../vf<N>_resources/num_cos0_ldb_ports
+What:		/sys/bus/pci/devices/.../vf<N>_resources/num_cos1_ldb_ports
+What:		/sys/bus/pci/devices/.../vf<N>_resources/num_cos2_ldb_ports
+What:		/sys/bus/pci/devices/.../vf<N>_resources/num_cos3_ldb_ports
+What:		/sys/bus/pci/devices/.../vf<N>_resources/num_ldb_queues
+Date:		August 7, 2019
+KernelVersion:	TBD
+Contact:	gage.eads@intel.com
+Description:
+		The vf<N>_resources subdirectory contains a set of read-write
+		files used to assign/remove device resources to/from virtual
+		function (VF) devices.
+
+		Writing a resource's file causes the driver to reassign that
+		many of the resource from the physical function (PF) to the VF.
+		This operation will fail if the PF does not contain sufficient
+		available resources.
+
+		When an assignment is reduced, i.e. a smaller number is written
+		to a file than its current value, the difference is returned
+		to the physical function.
+
+		Reading a file returns the VF's current allocation of the
+		resource.
+
+		This subdirectory is only present for physical function DLB 2.0
+		devices, and its contents are only writable when VF N is not
+		locked.
+
+		num_atomic_inflights:  Number of atomic inflights assigned to
+				       VF N.
+
+		num_dir_credits:       Number of directed credits assigned to
+				       VF N.
+
+		num_dir_ports:	       Number of directed ports (and queues)
+				       assigned to VF N.
+
+		num_hist_list_entries: Number of history list entries assigned
+				       to VF N.
+
+		num_ldb_credits:       Number of load-balanced credits assigned
+				       to VF N.
+
+		num_ldb_ports:	       Number of load-balanced ports assigned
+				       to VF N.
+
+		num_cos<M>_ldb_ports:  Number of load-balanced ports belonging
+				       to class-of-service M assigned to VF N.
+
+		num_ldb_queues:	       Number of load-balanced queues assigned
+				       to VF N.
+
+		num_sched_domains:     Number of scheduling domains assigned to
+				       VF N.
+
+What:		/sys/bus/pci/devices/.../vf<N>_resources/locked
+Date:		August 7, 2019
+KernelVersion:	TBD
+Contact:	gage.eads@intel.com
+Description:	Read-only file that indicates if virtual function N is locked
+
+		When a VF is locked, its resource allocation is fixed. A VF is
+		locked when it is bound to a kernel driver.
+
+What:		/sys/bus/pci/devices/.../vf<N>_resources/aux_vf_ids
+Date:		August 7, 2019
+KernelVersion:	TBD
+Contact:	gage.eads@intel.com
+Description:	Interface for assigning auxiliary VFs to a primary VF.
+
+		Each DLB 2.0 VF is limited to 32 MSI interrupt vectors, 31 of
+		which are available for CQ interrupts. If a VF user (e.g. a
+		guest OS) needs more CQ interrupts, they have to use more than
+		one VF.
+		To support this, the driver has a notion of "primary" and
+		"auxiliary" VFs:
+		* Primary: the VF is used as a normal DLB device. The
+		  primary VF has 0+ auxiliary VFs supporting it.
+		* Auxiliary: the VF doesn't have any resources of its
+		  own, and serves only to provide the primary
+		  VF with MSI vectors for its CQ interrupts.
+
+		This file is used to assign auxiliary VFs. When a VF is made
+		auxiliary to another, any resources it had are relinquished to
+		the PF.
+
+		When a primary VF has one or more auxiliary VFs, the entire VF
+		group must be assigned to the same virtual machine, or else the
+		primary VF will not function correctly.
+
+What:		/sys/bus/pci/devices/.../vf<N>_resources/func_bar_en
+Date:		January 23, 2019
+KernelVersion:	TBD
+Contact:	gage.eads@intel.com
+Description:	Interface for re-enabling the VF BAR
+
+		If the PF driver detects an overload of VF mailbox interrupts,
+		it will -- to prevent a possible denial-of-service attack --
+		disable the VF's FUNC BAR, effectively preventing access to the
+		device through the VF.
+
+		If the BAR is disabled, it will be re-enabled when the device
+		is reset or the driver is reloaded. This interface can be used
+		to re-enable the BAR as well, and can be read to determine
+		whether the BAR is enabled.
+
+What:		/sys/bus/pci/drivers/dlb2/module/parameters/reset_timeout_s
+Date:		August 3, 2018
+KernelVersion:	TBD
+Contact:	gage.eads@intel.com
+Description:	Interface for setting the driver's reset timeout.
+		When a device reset (FLR) is issued, the driver waits for
+		user-space to stop using the device before allowing the FLR to
+		proceed, with a timeout. The device is considered in use if
+		there are any open domain device file descriptors or memory
+		mapped producer ports. (For PF device resets, this includes all
+		VF-owned domains and producer ports.)
+
+		The amount of time the driver waits for userspace to stop using
+		the device is controlled by the module parameter
+		reset_timeout_s, which is in units of seconds and defaults to
+		5. If reset_timeout_s seconds elapse and any user is still
+		using the device, the driver zaps those processes' memory
+		mappings and marks their device file descriptors as invalid.
+		This is necessary because user processes that do not relinquish
+		their device mappings can interfere with processes that use the
+		device after the reset completes. To ensure that user processes
+		have enough time to clean up, reset_timeout_s can be increased.
+
+What:		/sys/bus/pci/devices/.../cos_bw/cos<N>_bw_percent
+Date:		August 3, 2019
+KernelVersion:	TBD
+Contact:	gage.eads@intel.com
+Description:	Interface for configuring dlb2 class-of-service bandwidths.
+
+		The DLB 2.0 supports four load-balanced port classes of service
+		(CoS). Each CoS receives a guaranteed percentage of the
+		load-balanced scheduler's bandwidth, and any unreserved
+		bandwidth is divided among the four CoS.
+
+		By default, each CoS is guaranteed 25% of the bandwidth. Writing
+		these files allows the user to change the CoS, subject to the
+		constraint that the total reserved bandwidth of all CoS cannot
+		exceed 100%.
+
+		Bandwidth reservations can be modified during run-time.
+
+		These files are only accessible for physical function DLB 2.0
+		devices.
+
+What:		/sys/bus/pci/devices/.../dev_id
+Date:		August 6, 2019
+KernelVersion:	TBD
+Contact:	gage.eads@intel.com
+Description:	Device ID used in /dev, i.e. /dev/dlb<device ID>
+
+		Each DLB 2.0 PF and VF device is granted a unique ID by the
+		kernel driver, and this ID is used to construct the device's
+		/dev directory: /dev/dlb<device ID>. This sysfs file can be read
+		to determine a device's ID, which allows the user to map a
+		device file to a PCI BDF.
+
+What:		/sys/bus/pci/drivers/dlb2/module/parameters/wdto_disable
+Date:		October 14, 2019
+KernelVersion:	TBD
+Contact:	gage.eads@intel.com
+Description:	Interface for disabling the per-CQ watchdog timers.
+
+		The DLB .02 has per-CQ watchdog timers that detect when a
+		non-empty CQ is not serviced for an extended period of time.
+		By default, the kernel driver enables the watchdog timer for
+		all CQs with a timeout of 10 seconds.
+
+		If the watchdog timeout elapses, the kernel driver notifies the
+		application that owns the affected CQ through the domain alert
+		interface. If the application uses a virtual DLB device,
+		the PF driver will notify the virtual device driver which
+		will then notify the application. The timeout for that CQ
+		will not fire again until the CQ is serviced.
+
+		This option is only available for physical function DLB 2.0
+		devices, and is only settable at driver load time.
+
+What:		/sys/bus/pci/devices/.../ingress_err_en
+Date:		January 19, 2019
+KernelVersion:	TBD
+Contact:	gage.eads@intel.com
+Description:	Interface for re-enabling ingress error interrupts
+
+		If the PF driver detects an overload of ingress error
+		interrupts, it will -- to prevent a possible denial-of-service
+		attack -- disable them.
+
+		If the ingress error interrupt is disabled, they will be
+		re-enabled when the device is reset or the driver is reloaded.
+		This interface can be used to re-enable the interrupt as well,
+		and can be read to determine whether the interrupt is enabled.

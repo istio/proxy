@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "extract_lib",
+    srcs = [
+        "catalog.go",
+        "main.go",
+    ],
+    importpath = "golang.org/x/text/cmd/gotext/examples/extract",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//language",
+        "//message",
+        "//message/catalog",
+    ],
+)
+
+go_binary(
+    name = "extract",
+    embed = [":extract_lib"],
+    visibility = ["//visibility:public"],
+)

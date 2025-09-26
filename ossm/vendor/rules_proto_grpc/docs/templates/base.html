@@ -1,0 +1,42 @@
+{% extends "!base.html" %}
+{% block extrahead %}
+
+    <!-- Metadata -->
+    {%- if meta %}
+    {%- for tag in ('description', 'author', 'keywords') %}
+    {%- if tag in meta %}
+    <meta name="{{ tag }}" content="{{ meta[tag].replace('\n', ' ')|e }}"/>
+    {%- endif %}
+    {%- endfor %}
+    {%- endif %}
+
+    <!-- Icons -->
+    {%- if favicon %}
+    <link rel="shortcut icon" href="{{ pathto('_static/' + favicon, 1)|e }}"/>
+    {%- endif %}
+    {%- if icon_png %}
+    <link rel="apple-touch-icon" href="{{ pathto('_static/' + icon_png, 1)|e }}"/>
+    {%- endif %}
+
+    <!-- Canonical URL -->
+    {%- if pageurl %}
+    <link rel="canonical" href="{{ pageurl|e }}"/>
+    {%- endif %}
+
+    <!-- Open Graph -->
+    {%- if pageurl %}
+    <meta property="og:url" content="{{ pageurl|e }}"/>
+    {%- endif %}
+    <meta property="og:title" content="{{ title|striptags|e }}{{ titlesuffix }}"/>
+    {%- if absolute_icon_png %}
+    <meta property="og:image" content="{{ absolute_icon_png|e }}"/>
+    {%- endif %}
+    <meta property="og:type" content="website">
+    {%- if meta and 'description' in meta %}
+    <meta property="og:description" content="{{ meta['description'].replace('\n', ' ') }}"/>
+    {%- endif %}
+
+    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "e3e6c3cfbf5646aa93d4b98ce5f97a4d"}'></script>
+
+    {{ super() }}
+{% endblock %}

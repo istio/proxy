@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "internal_gengo",
+    srcs = [
+        "init.go",
+        "main.go",
+        "reflect.go",
+        "well_known_types.go",
+    ],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/internal_gengo",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//compiler/protogen",
+        "//encoding/protowire",
+        "//internal/encoding/tag",
+        "//internal/genid",
+        "//internal/version",
+        "//proto",
+        "//reflect/protopath",
+        "//reflect/protorange",
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/descriptorpb",
+        "//types/pluginpb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":internal_gengo",
+    visibility = ["//visibility:public"],
+)

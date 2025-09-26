@@ -1,0 +1,26 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_proto_grpc//python:defs.bzl", "python_proto_library")
+
+package(default_visibility = ["//visibility:private"])
+
+# Use both strip_import_prefix and import_prefix attributes
+
+proto_library(
+    name = "proto_lib",
+    srcs = ["a/b/demo.proto"],
+    import_prefix = "c/d",
+    strip_import_prefix = "/package/a/b",
+)
+
+python_proto_library(
+    name = "py_lib",
+    protos = ["proto_lib"],
+)
+
+py_test(
+    name = "test",
+    srcs = ["main.py"],
+    main = "main.py",
+    deps = ["py_lib"],
+)

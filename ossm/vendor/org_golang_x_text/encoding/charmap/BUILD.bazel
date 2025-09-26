@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "charmap",
+    srcs = [
+        "charmap.go",
+        "tables.go",
+    ],
+    importpath = "golang.org/x/text/encoding/charmap",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding",
+        "//encoding/internal",
+        "//encoding/internal/identifier",
+        "//transform",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":charmap",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "charmap_test",
+    srcs = ["charmap_test.go"],
+    embed = [":charmap"],
+    deps = [
+        "//encoding",
+        "//encoding/internal",
+        "//encoding/internal/enctest",
+        "//transform",
+    ],
+)

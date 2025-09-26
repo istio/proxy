@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "xml",
+    srcs = ["xml.go"],
+    importpath = "golang.org/x/tools/go/ssa/testdata/src/encoding/xml",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":xml",
+    visibility = ["//visibility:public"],
+)

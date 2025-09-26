@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "apipb",
+    srcs = ["api.pb.go"],
+    importpath = "google.golang.org/protobuf/types/known/apipb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/known/sourcecontextpb",
+        "//types/known/typepb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":apipb",
+    visibility = ["//visibility:public"],
+)

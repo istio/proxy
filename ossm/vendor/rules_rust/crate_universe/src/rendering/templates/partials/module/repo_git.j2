@@ -1,0 +1,41 @@
+    maybe(
+        new_git_repository,
+        name = "{{ crate_repository(name = crate.name, version = crate.version) }}",
+    {%- for type, commitish in attrs.commitish %}
+    {%- if type in ["Rev"] %}
+        commit = "{{ commitish }}",
+    {%- elif type in ["Tag"] %}
+        tag = "{{ commitish }}",
+    {%- elif type in ["Branch"] %}
+        branch = "{{ commitish }}",
+    {%- else %}
+        {{ throw(message= "Unexpected git commitish '" ~ type ~ "' for '" ~ crate.name ~ "'") }}
+    {%- endif %}
+    {%- endfor %}
+        init_submodules = True,
+    {%- if attrs | get(key="patch_args", default=Null) %}
+        patch_args = [
+    {%- for arg in attrs.patch_args %}
+            "{{ arg }}",
+    {%- endfor %}
+        ],
+    {%- endif %}
+    {%- if attrs | get(key="patch_tool", default=Null) %}
+        patch_tool = "{{ attrs.patch_tool }}",
+    {%- endif %}
+    {%- if attrs | get(key="patches", default=Null) %}
+        patches = [
+    {%- for patch in attrs.patches %}
+            "{{ patch }}",
+    {%- endfor %}
+        ],
+    {%- endif %}
+    {%- if attrs | get(key="shallow_since", default=Null) %}
+        shallow_since = "{{ attrs.shallow_since }}",
+    {%- endif %}
+        remote = "{{ attrs.remote }}",
+        build_file = Label("{{ crate_build_file(name = crate.name, version = crate.version)}}"),
+    {%- if attrs.strip_prefix %}
+        strip_prefix = "{{ attrs.strip_prefix }}",
+    {%- endif %}
+    )

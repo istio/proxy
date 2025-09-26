@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sftpfs",
+    srcs = [
+        "file.go",
+        "sftp.go",
+    ],
+    importpath = "github.com/spf13/afero/sftpfs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:afero",
+        "@com_github_pkg_sftp//:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sftpfs",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sftpfs_test",
+    srcs = ["sftp_test.go"],
+    embed = [":sftpfs"],
+    deps = [
+        "@com_github_pkg_sftp//:go_default_library",
+        "@org_golang_x_crypto//ssh:go_default_library",
+    ],
+)

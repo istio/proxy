@@ -1,0 +1,73 @@
+# proto-file: google3/google/api/expr/checked.proto
+# proto-message: CheckedExpr
+# x && y
+reference_map {
+  key: 1
+  value {
+    name: "x"
+  }
+}
+reference_map {
+  key: 2
+  value {
+    name: "y"
+  }
+}
+reference_map {
+  key: 3
+  value {
+    overload_id: "logical_and"
+  }
+}
+type_map {
+  key: 1
+  value {
+    primitive: BOOL
+  }
+}
+type_map {
+  key: 2
+  value {
+    primitive: BOOL
+  }
+}
+type_map {
+  key: 3
+  value {
+    primitive: BOOL
+  }
+}
+expr {
+  id: 3
+  call_expr {
+    function: "_&&_"
+    args {
+      id: 1
+      ident_expr {
+        name: "x"
+      }
+    }
+    args {
+      id: 2
+      ident_expr {
+        name: "y"
+      }
+    }
+  }
+}
+source_info {
+  location: "<input>"
+  line_offsets: 7
+  positions {
+    key: 1
+    value: 0
+  }
+  positions {
+    key: 2
+    value: 5
+  }
+  positions {
+    key: 3
+    value: 2
+  }
+}

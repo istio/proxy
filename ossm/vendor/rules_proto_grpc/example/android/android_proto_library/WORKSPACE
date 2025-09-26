@@ -1,0 +1,44 @@
+local_repository(
+    name = "rules_proto_grpc",
+    path = "../../../",
+)
+
+load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
+
+rules_proto_grpc_toolchains()
+
+rules_proto_grpc_repos()
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
+rules_proto_dependencies()
+
+rules_proto_toolchains()
+
+# The set of dependencies loaded here is excessive for android proto alone
+# (but simplifies our setup)
+load("@rules_proto_grpc//android:repositories.bzl", rules_proto_grpc_android_repos = "android_repos")
+
+rules_proto_grpc_android_repos()
+
+load("@rules_jvm_external//:defs.bzl", "maven_install")
+load("@io_grpc_grpc_java//:repositories.bzl", "IO_GRPC_GRPC_JAVA_ARTIFACTS", "IO_GRPC_GRPC_JAVA_OVERRIDE_TARGETS", "grpc_java_repositories")
+
+maven_install(
+    artifacts = IO_GRPC_GRPC_JAVA_ARTIFACTS,
+    generate_compat_repositories = True,
+    override_targets = IO_GRPC_GRPC_JAVA_OVERRIDE_TARGETS,
+    repositories = [
+        "https://repo.maven.apache.org/maven2/",
+    ],
+)
+
+load("@maven//:compat.bzl", "compat_repositories")
+
+compat_repositories()
+
+grpc_java_repositories()
+
+load("@build_bazel_rules_android//android:sdk_repository.bzl", "android_sdk_repository")
+
+android_sdk_repository(name = "androidsdk")

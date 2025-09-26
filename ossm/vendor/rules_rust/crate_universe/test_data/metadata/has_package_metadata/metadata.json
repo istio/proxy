@@ -1,0 +1,73 @@
+{
+    "metadata": null,
+    "packages": [
+        {
+            "authors": [],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [],
+            "description": null,
+            "documentation": null,
+            "edition": "2021",
+            "features": {},
+            "homepage": null,
+            "id": "path+file://{TEMP_DIR}/has_package_metadata#0.0.0",
+            "keywords": [],
+            "license": null,
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{TEMP_DIR}/has_package_metadata/Cargo.toml",
+            "metadata": {
+                "bazel": {
+                    "additive_build_file_content": "genrule(**kwargs)\n",
+                    "rustc_env": {
+                        "FOO": "foo is set"
+                    }
+                }
+            },
+            "name": "has_package_metadata",
+            "publish": null,
+            "readme": null,
+            "repository": null,
+            "rust_version": null,
+            "source": null,
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2021",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "has_package_metadata",
+                    "src_path": "{TEMP_DIR}/has_package_metadata/lib.rs",
+                    "test": true
+                }
+            ],
+            "version": "0.0.0"
+        }
+    ],
+    "resolve": {
+        "nodes": [
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [],
+                "id": "path+file://{TEMP_DIR}/has_package_metadata#0.0.0"
+            }
+        ],
+        "root": "path+file://{TEMP_DIR}/has_package_metadata#0.0.0"
+    },
+    "target_directory": "{TEMP_DIR}/has_package_metadata/target",
+    "version": 1,
+    "workspace_default_members": [
+        "path+file://{TEMP_DIR}/has_package_metadata#0.0.0"
+    ],
+    "workspace_members": [
+        "path+file://{TEMP_DIR}/has_package_metadata#0.0.0"
+    ],
+    "workspace_root": "{TEMP_DIR}/has_package_metadata"
+}

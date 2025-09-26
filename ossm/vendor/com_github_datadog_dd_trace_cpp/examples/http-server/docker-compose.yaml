@@ -1,0 +1,55 @@
+version: "3.2"
+services:
+
+    # The C++ proxy that sits in front of the C++ server.
+    proxy:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        command: /dd-trace-cpp/dist/bin/http-proxy-example
+        ports:
+            - "127.0.0.1:8000:80"
+        environment:
+            - DD_AGENT_HOST=datadog-agent
+            - DD_SERVICE=dd-trace-cpp-http-server-example-proxy
+        depends_on:
+            - datadog-agent
+
+    # The C++ HTTP server to which we added Datadog tracing
+    server:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        command: /dd-trace-cpp/dist/bin/http-server-example
+        environment:
+            # This will override any value of `datadog::tracing::TracerConfig`'s
+            # `.agent.url` in `server.cpp`.
+            - DD_AGENT_HOST=datadog-agent
+        depends_on:
+            - datadog-agent
+
+    # A Python HTTP server that acts as a database backed by SQLite.
+    # It also has Datadog tracing.
+    database:
+        build:
+            context: ./database
+            dockerfile: ./Dockerfile
+        environment:
+            - DD_AGENT_HOST=datadog-agent
+            - DD_SERVICE=dd-trace-cpp-http-server-example-database
+        depends_on:
+            - datadog-agent
+
+    # The Datadog trace agent
+    datadog-agent:
+        image: datadog/agent
+        volumes:
+            - '/var/run/docker.sock:/var/run/docker.sock:ro'
+            - '/run/user:/run/user:ro'
+            - '/proc/:/host/proc/:ro'
+            - '/sys/fs/cgroup/:/host/sys/fs/cgroup:ro'
+        environment:
+            - DD_API_KEY
+            - DD_APM_ENABLED=true
+            - DD_LOG_LEVEL=ERROR
+            - DOCKER_HOST

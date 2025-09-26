@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+import "adjusted/adjusted_b.proto";
+import "adjusted/adjusted_c.proto";
+
+package adjusted.a;
+
+message A {
+  adjusted.b.B x = 1;
+  adjusted.c.C y = 2;
+}

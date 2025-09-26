@@ -1,0 +1,22 @@
+load("//python:py_test.bzl", "py_test")
+load("//python/private:bzlmod_enabled.bzl", "BZLMOD_ENABLED")  # buildifier: disable=bzl-visibility
+
+# We only test this feature when `bzlmod` is enabled.
+_TARGET_COMPATIBLE_WITH = [] if BZLMOD_ENABLED else ["@platforms//:incompatible"]
+
+genrule(
+    name = "uv_help",
+    outs = ["uv_help.txt"],
+    cmd = "$(UV_BIN) --python-fetch manual --help >$@",
+    target_compatible_with = _TARGET_COMPATIBLE_WITH,
+    toolchains = ["//python/uv:current_toolchain"],
+)
+
+py_test(
+    name = "uv_help_test",
+    srcs = ["uv_help_test.py"],
+    data = [":uv_help"],
+    env = {"DATA": "$(rlocationpath :uv_help)"},
+    target_compatible_with = _TARGET_COMPATIBLE_WITH,
+    deps = ["//python/runfiles"],
+)

@@ -1,0 +1,12 @@
+load("@rules_proto_grpc//cpp:defs.bzl", "cpp_grpc_library")
+
+cpp_grpc_library(
+    name = "thing_cpp_grpc",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)
+
+cpp_grpc_library(
+    name = "greeter_cpp_grpc",
+    protos = ["@rules_proto_grpc//example/proto:greeter_grpc"],
+    deps = ["thing_cpp_grpc"],
+)

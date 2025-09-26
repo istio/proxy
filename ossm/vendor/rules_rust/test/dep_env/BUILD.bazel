@@ -1,0 +1,117 @@
+"""Tests for passing configuration to cargo_build_script rules"""
+
+load("//cargo:defs.bzl", "cargo_build_script", "cargo_dep_env")
+load("//rust:defs.bzl", "rust_library", "rust_test")
+load(":dep_env.bzl", "create_dep_dir")
+
+cargo_build_script(
+    name = "set_a_build",
+    srcs = ["set_a.rs"],
+    edition = "2018",
+    links = "X",
+)
+
+cargo_build_script(
+    name = "set_c_build",
+    srcs = ["set_c.rs"],
+    edition = "2018",
+    link_deps = [":set_a"],
+    links = "Y",
+)
+
+rust_library(
+    name = "set_a",
+    srcs = ["empty.rs"],
+    edition = "2018",
+    deps = [":set_a_build"],
+)
+
+cargo_dep_env(
+    name = "set_b",
+    src = "set_b.env",
+)
+
+rust_library(
+    name = "set_c",
+    srcs = ["empty.rs"],
+    edition = "2018",
+    deps = [
+        ":set_a",
+        ":set_c_build",
+    ],
+)
+
+cargo_build_script(
+    name = "read_a",
+    srcs = ["read_a.rs"],
+    edition = "2018",
+    link_deps = [":set_a"],
+)
+
+cargo_build_script(
+    name = "read_b",
+    srcs = ["read_b.rs"],
+    edition = "2018",
+    link_deps = [":set_b"],
+)
+
+cargo_build_script(
+    name = "read_c",
+    srcs = ["read_c.rs"],
+    edition = "2018",
+    link_deps = [":set_c"],
+    deps = [":set_a"],
+)
+
+cargo_build_script(
+    name = "read_dep_dir",
+    srcs = ["read_dep_dir.rs"],
+    edition = "2018",
+    link_deps = [":set_dep_dir"],
+)
+
+rust_test(
+    name = "build_read_a",
+    srcs = ["read_a.rs"],
+    edition = "2018",
+    deps = [":read_a"],
+)
+
+rust_test(
+    name = "build_read_b",
+    srcs = ["read_b.rs"],
+    edition = "2018",
+    deps = [":read_b"],
+)
+
+rust_test(
+    name = "build_read_c",
+    srcs = ["read_c.rs"],
+    edition = "2018",
+    deps = [":read_c"],
+)
+
+rust_test(
+    name = "build_read_dep_dir",
+    srcs = ["read_dep_dir.rs"],
+    edition = "2018",
+    deps = [":read_dep_dir"],
+)
+
+create_dep_dir(
+    name = "dep_dir",
+)
+
+cargo_dep_env(
+    name = "set_dep_dir",
+    src = "set_dep_dir.env",
+    out_dir = "dep_dir",
+)
+
+genrule(
+    name = "gen_set_dep_dir",
+    srcs = ["dep_dir"],
+    outs = ["set_dep_dir.env"],
+    cmd = "echo DEP_DIR=\\$${pwd}/$(execpath dep_dir) > $@",
+    cmd_bat = "echo DEP_DIR=$${pwd}/$(execpath dep_dir) > $@",
+)

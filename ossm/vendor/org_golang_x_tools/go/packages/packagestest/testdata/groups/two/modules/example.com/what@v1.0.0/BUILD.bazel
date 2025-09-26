@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "what@v1_0_0",
+    srcs = ["main.go"],
+    importpath = "golang.org/x/tools/go/packages/packagestest/testdata/groups/two/modules/example.com/what@v1.0.0",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":what@v1_0_0",
+    visibility = ["//visibility:public"],
+)

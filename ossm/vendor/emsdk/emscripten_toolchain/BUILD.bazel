@@ -1,0 +1,119 @@
+load("@python3_12//:defs.bzl", "py_binary")
+load(":toolchain.bzl", "emscripten_cc_toolchain_config_rule")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "common_files",
+    srcs = [
+        "@emscripten_cache//:emscripten_config",
+        "env.sh",
+        "env.bat",
+        "@nodejs//:node_files",
+        "@python3_12//:files",
+    ],
+)
+
+filegroup(
+    name = "compiler_files",
+    srcs = [
+        "emcc.sh",
+        "emcc.bat",
+        "@emsdk//:compiler_files",
+        ":common_files",
+    ],
+)
+
+filegroup(
+    name = "linker_files",
+    srcs = [
+        "emcc_link.sh",
+        "emcc_link.bat",
+        "link_wrapper.py",
+        "@emsdk//:linker_files",
+        ":common_files",
+    ],
+)
+
+filegroup(
+    name = "ar_files",
+    srcs = [
+        "emar.sh",
+        "emar.bat",
+        "@emsdk//:ar_files",
+        ":common_files",
+    ],
+)
+
+filegroup(
+    name = "dwp_files",
+    srcs = [
+        "emdwp-emscripten_bin_linux_arm64.sh",
+        "emdwp-emscripten_bin_linux.sh",
+        "emdwp-emscripten_bin_mac_arm64.sh",
+        "emdwp-emscripten_bin_mac.sh",
+        "emdwp-emscripten_bin_win.bat",
+        "@emsdk//:dwp_files",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    srcs = [
+        ":ar_files",
+        ":compiler_files",
+        ":linker_files",
+        ":dwp_files",
+    ],
+)
+
+filegroup(name = "empty")
+
+# dlmalloc.bc is implicitly added by the emscripten toolchain
+cc_library(name = "malloc")
+
+emscripten_cc_toolchain_config_rule(
+    name = "wasm",
+    cpu = "wasm",
+    em_config = "@emscripten_cache//:emscripten_config",
+    emscripten_binaries = "@emsdk//:compiler_files",
+    nodejs_bin = "@nodejs//:node",
+    is_windows = select({
+        "@bazel_tools//src/conditions:host_windows": True,
+        "//conditions:default": False,
+    }),
+)
+
+cc_toolchain(
+    name = "cc-compiler-wasm",
+    all_files = ":all_files",
+    ar_files = ":ar_files",
+    as_files = ":empty",
+    compiler_files = ":compiler_files",
+    dwp_files = ":dwp_files",
+    linker_files = ":linker_files",
+    objcopy_files = ":empty",
+    strip_files = ":empty",
+    toolchain_config = "wasm",
+    toolchain_identifier = "emscripten-wasm",
+)
+
+cc_toolchain_suite(
+    name = "everything",
+    toolchains = {
+        "wasm": ":cc-compiler-wasm",
+        "wasm|emscripten": ":cc-compiler-wasm",
+    },
+)
+
+toolchain(
+    name = "cc-toolchain-wasm",
+    target_compatible_with = ["@platforms//cpu:wasm32"],
+    toolchain = ":cc-compiler-wasm",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
+py_binary(
+    name = "wasm_binary",
+    srcs = ["wasm_binary.py"],
+)

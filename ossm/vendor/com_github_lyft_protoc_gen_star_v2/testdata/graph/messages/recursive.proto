@@ -1,0 +1,17 @@
+syntax="proto3";
+package graph.messages;
+
+message Recursive {
+    Recursive recurse = 1;
+}
+
+message Circular {
+    message Rock { Scissors beats = 1; }
+    message Paper { Rock beats = 1; }
+    message Scissors { Paper beats = 1; }
+}
+
+message RepeatedRecursive {
+    map<string, RepeatedRecursive> map_val = 1;
+    repeated RepeatedRecursive list_val = 2;
+}

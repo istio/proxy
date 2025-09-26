@@ -1,0 +1,70 @@
+name: Auto-merge Bot PRs
+
+on:
+  workflow_run:
+    workflows: ["OpenSSL testing"]
+    types:
+    - completed
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  enable-auto-merge:
+    if: |
+      github.repository == 'envoyproxy/envoy-openssl'
+      && github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.repository.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Get PR info
+      id: pr
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const prs = context.payload.workflow_run.pull_requests;
+          if (prs.length === 0) {
+            core.notice("No pull request associated with this workflow_run (likely from a fork). Skipping workflow.");
+            // Explicitly set a flag so next steps can check
+            core.setOutput("skip", "true");
+            return;
+          }
+          const prNumber = prs[0].number;
+          const { data: pr } = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: prNumber
+          });
+          core.setOutput("pr_number", pr.number);
+          core.setOutput("pr_author", pr.user.login);
+          core.setOutput("labels", pr.labels.map(l => l.name).join(","));
+
+    - name: Print info
+      if: ${{ steps.pr.outputs.skip != 'true' }}
+      run: |
+        echo "PR author: ${{ steps.pr.outputs.pr_author }}"
+        echo "Labels: ${{ steps.pr.outputs.labels }}"
+        if [[ "${{ steps.pr.outputs.pr_author }}" != "update-openssl-envoy[bot]" ]]; then
+          echo "::notice title=Skip reason::PR author is not update-openssl-envoy[bot]"
+        fi
+        if [[ "${{ steps.pr.outputs.labels }}" != *"auto-merge"* ]]; then
+          echo "::notice title=Skip reason::Label 'auto-merge' not found"
+        fi
+
+    - name: Merge PR
+      if: ${{ steps.pr.outputs.skip != 'true' && contains(steps.pr.outputs.labels, 'auto-merge') && steps.pr.outputs.pr_author == 'update-openssl-envoy[bot]' }}
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const prNumber = parseInt('${{ steps.pr.outputs.pr_number }}');
+          await github.rest.pulls.merge({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: prNumber,
+            merge_method: 'merge'
+          });
+          core.notice(`✅ PR #${prNumber} merged automatically.`);

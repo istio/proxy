@@ -1,0 +1,9 @@
+load("//:defs.bzl", "foreign_cc_framework_toolchain")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["defs.bzl"])
+
+foreign_cc_framework_toolchain(
+    name = "commands"
+)

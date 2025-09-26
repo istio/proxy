@@ -1,0 +1,64 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//rust:defs.bzl", "rust_binary", "rust_clippy", "rust_library", "rust_test")
+load("//tools:tool_utils.bzl", "aspect_repository")
+
+rust_binary(
+    name = "gen_rust_project",
+    srcs = ["main.rs"],
+    edition = "2018",
+    rustc_env = {
+        "ASPECT_REPOSITORY": aspect_repository(),
+    },
+    visibility = ["//visibility:public"],
+    deps = [
+        ":gen_rust_project_lib",
+        "//tools/rust_analyzer/3rdparty/crates:anyhow",
+        "//tools/rust_analyzer/3rdparty/crates:clap",
+        "//tools/rust_analyzer/3rdparty/crates:env_logger",
+        "//tools/rust_analyzer/3rdparty/crates:log",
+        "//util/label",
+    ],
+)
+
+rust_library(
+    name = "gen_rust_project_lib",
+    srcs = glob(
+        ["**/*.rs"],
+        exclude = ["main.rs"],
+    ),
+    data = [
+        "//rust/private:rust_analyzer_detect_sysroot",
+    ],
+    edition = "2018",
+    deps = [
+        "//tools/runfiles",
+        "//tools/rust_analyzer/3rdparty/crates:anyhow",
+        "//tools/rust_analyzer/3rdparty/crates:log",
+        "//tools/rust_analyzer/3rdparty/crates:serde",
+        "//tools/rust_analyzer/3rdparty/crates:serde_json",
+    ],
+)
+
+rust_test(
+    name = "gen_rust_project_lib_test",
+    crate = ":gen_rust_project_lib",
+    deps = [
+        "//tools/rust_analyzer/3rdparty/crates:itertools",
+    ],
+)
+
+rust_clippy(
+    name = "gen_rust_project_clippy",
+    testonly = True,
+    visibility = ["//visibility:private"],
+    deps = [
+        ":gen_rust_project",
+    ],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]),
+    visibility = ["//visibility:public"],
+    deps = ["//tools/rust_analyzer/3rdparty:bzl_lib"],
+)

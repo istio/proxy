@@ -1,0 +1,4 @@
+load(":debug_info_analysis_test.bzl", "debug_info_analysis_test_suite")
+
+############################ UNIT TESTS #############################
+debug_info_analysis_test_suite(name = "debug_info_analysis_test_suite")

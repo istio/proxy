@@ -1,0 +1,4 @@
+# The equivalent bzlmod behavior is covered by examples/bzlmod/py_proto_library
+common --noenable_bzlmod
+common --enable_workspace
+common --incompatible_python_disallow_native_rules

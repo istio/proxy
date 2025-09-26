@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary")
+
+go_binary(
+    name = "bin",
+    srcs = ["bin.go"],
+    data = ["bin.go"],  # test duplicate
+    importpath = "example.com/repo/cmd/bin",
+    visibility = ["//visibility:public"],
+)
+
+go_binary(
+    name = "pie",
+    srcs = ["bin.go"],
+    importpath = "example.com/repo/cmd/bin",
+    linkmode = "pie",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tests/core/go_path/pkg/lib:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "cross",
+    srcs = ["bin.go"],
+    goarch = "arm",
+    goos = "plan9",
+    importpath = "example.com/repo/cmd/bin",
+    pure = "on",
+    visibility = ["//visibility:public"],
+)

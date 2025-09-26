@@ -1,0 +1,16 @@
+load("@rules_proto_grpc//fsharp:defs.bzl", "fsharp_proto_compile")
+
+fsharp_proto_compile(
+    name = "person_fsharp_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+)
+
+fsharp_proto_compile(
+    name = "place_fsharp_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+)
+
+fsharp_proto_compile(
+    name = "thing_fsharp_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

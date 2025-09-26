@@ -1,0 +1,4 @@
+# gazelle:python_generation_mode file
+
+# gazelle:resolve py numpy @pip//:numpy
+# gazelle:resolve py pandas @pip//:pandas

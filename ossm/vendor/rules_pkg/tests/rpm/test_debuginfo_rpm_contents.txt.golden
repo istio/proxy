@@ -1,0 +1,29 @@
+===== main RPM =====
+Name        : test_debuginfo_rpm
+Version     : 1
+Release     : 0
+Install Date: (not installed)
+Group       : Unspecified
+License     : Some license
+Signature   : (none)
+Source RPM  : test_debuginfo_rpm-1-0.src.rpm
+Summary     : Summary
+Description :
+Description
+/test_debuginfo
+===== sub RPM ======
+Name        : test_debuginfo_rpm-debuginfo
+Version     : 1
+Release     : 0
+Install Date: (not installed)
+Group       : Development/Debug
+License     : Some license
+Signature   : (none)
+Source RPM  : test_debuginfo_rpm-1-0.src.rpm
+Summary     : Debug information for package test_debuginfo_rpm
+Description :
+This package provides debug information for package test_debuginfo_rpm.
+Debug information is useful when developing applications that use this
+package or when debugging this package.
+/usr/lib/debug
+/usr/lib/debug/test_debuginfo.debug

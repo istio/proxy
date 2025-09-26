@@ -1,0 +1,3 @@
+aiohttp>=3.11.6
+pyyaml
+yarl>=1.17.2

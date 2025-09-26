@@ -1,0 +1,12 @@
+[workspace]
+[package]
+name = "override_targets"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+path = "fake.rs"
+
+[dependencies.foo]
+version = "0.0.0"

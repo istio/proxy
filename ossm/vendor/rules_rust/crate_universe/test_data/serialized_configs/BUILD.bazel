@@ -1,0 +1,83 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//crate_universe:defs.bzl", "crate", "render_config", "splicing_config")
+
+# buildifier: disable=bzl-visibility
+load("//crate_universe/private:generate_utils.bzl", "compile_config")
+
+# buildifier: disable=bzl-visibility
+load("//crate_universe/private:splicing_utils.bzl", "compile_splicing_manifest")
+
+write_file(
+    name = "config",
+    out = "config.json",
+    content = [json.encode(
+        compile_config(
+            cargo_config = None,
+            crate_annotations = {
+                "rand": [crate.annotation(
+                    crate_features = ["small_rng"],
+                    version = "0.8.5",
+                )],
+            },
+            generate_binaries = False,
+            generate_build_scripts = False,
+            generate_target_compatible_with = True,
+            render_config = json.decode(render_config(
+                platforms_template = "//custom/platform:{triple}",
+                regen_command = "cargo_bazel_regen_command",
+            )),
+            repository_name = "mock_config",
+            supported_platform_triples = [
+                "x86_64-unknown-linux-gnu",
+                "x86_64-pc-windows-msvc",
+                "x86_64-apple-darwin",
+            ],
+        ),
+    ).strip()],
+    newline = "unix",
+)
+
+write_file(
+    name = "splicing_manifest",
+    out = "splicing_manifest.json",
+    content = [json.encode(compile_splicing_manifest(
+        cargo_config_path = "/tmp/abs/path/workspace/.cargo/config.toml",
+        manifests = {
+            "${build_workspace_directory}/submod/Cargo.toml": "//submod:Cargo.toml",
+            "${output_base}/external_crate/Cargo.toml": "@external_crate//:Cargo.toml",
+            "/tmp/abs/path/workspace/Cargo.toml": "//:Cargo.toml",
+        },
+        packages = {
+            "cargo_toml": crate.spec(
+                git = "https://gitlab.com/crates.rs/cargo_toml.git",
+                tag = "v0.15.2",
+            ),
+            "cfg-if": crate.spec(
+                git = "https://github.com/rust-lang/cfg-if.git",
+                rev = "b9c2246a",
+            ),
+            "log": crate.spec(
+                branch = "master",
+                git = "https://github.com/rust-lang/log.git",
+            ),
+            "rand": crate.spec(
+                default_features = False,
+                features = ["small_rng"],
+                version = "0.8.5",
+            ),
+        },
+        splicing_config = dict(json.decode(splicing_config(
+            resolver_version = "2",
+        ))),
+    )).strip()],
+    newline = "unix",
+)
+
+filegroup(
+    name = "serialized_configs",
+    srcs = [
+        "config.json",
+        "splicing_manifest.json",
+    ],
+    visibility = ["//crate_universe:__pkg__"],
+)

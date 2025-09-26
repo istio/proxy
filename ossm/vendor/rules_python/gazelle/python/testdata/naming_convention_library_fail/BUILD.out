@@ -1,0 +1,1 @@
+go_library(name = "naming_convention_library_fail")

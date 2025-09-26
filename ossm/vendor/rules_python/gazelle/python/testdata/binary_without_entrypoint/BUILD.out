@@ -1,0 +1,47 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+
+# gazelle:python_library_naming_convention py_default_library
+# gazelle:resolve py numpy @pip//:numpy
+# gazelle:resolve py pandas @pip//:pandas
+
+filegroup(
+    name = "collided_main",
+    srcs = ["collided_main.py"],
+)
+
+py_binary(
+    name = "main",
+    srcs = ["main.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":py_default_library",
+        "@pip//:pandas",
+    ],
+)
+
+py_binary(
+    name = "main2",
+    srcs = ["main2.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [":py_default_library"],
+)
+
+py_library(
+    name = "py_default_library",
+    srcs = [
+        "__init__.py",
+        "collided_main.py",
+        "main.py",
+        "main2.py",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@pip//:numpy",
+        "@pip//:pandas",
+    ],
+)
+
+py_test(
+    name = "main_test",
+    srcs = ["main_test.py"],
+)

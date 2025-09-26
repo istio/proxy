@@ -1,0 +1,10 @@
+version: v1
+build:
+  excludes:
+    - bar
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT

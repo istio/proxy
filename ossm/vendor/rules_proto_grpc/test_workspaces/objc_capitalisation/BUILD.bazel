@@ -1,0 +1,29 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_proto_grpc//objc:defs.bzl", "objc_proto_compile")
+
+package(default_visibility = ["//visibility:private"])
+
+# Test that Objective-C files are correctly capitalised
+
+proto_library(
+    name = "proto_lib",
+    srcs = [
+        "demo.proto",
+        "folder/dashes-demo.proto",
+        "folder/nested_demo.proto",
+        "folder/vector3f.proto",
+    ],
+)
+
+objc_proto_compile(
+    name = "objc_lib",
+    protos = ["proto_lib"],
+)
+
+py_test(
+    name = "test",
+    srcs = ["main.py"],
+    data = ["objc_lib"],
+    main = "main.py",
+)

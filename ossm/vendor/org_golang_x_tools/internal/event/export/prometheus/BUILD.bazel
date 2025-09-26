@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "prometheus",
+    srcs = ["prometheus.go"],
+    importpath = "golang.org/x/tools/internal/event/export/prometheus",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/event",
+        "//internal/event/core",
+        "//internal/event/export/metric",
+        "//internal/event/label",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":prometheus",
+    visibility = ["//:__subpackages__"],
+)

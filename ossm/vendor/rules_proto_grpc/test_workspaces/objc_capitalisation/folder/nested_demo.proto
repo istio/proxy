@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message nested_demo {
+    bool field = 1;
+}

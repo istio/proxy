@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "modfile",
+    srcs = [
+        "print.go",
+        "read.go",
+        "rule.go",
+        "work.go",
+    ],
+    importpath = "golang.org/x/mod/modfile",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/lazyregexp",
+        "//module",
+        "//semver",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":modfile",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "modfile_test",
+    srcs = [
+        "read_test.go",
+        "rule_test.go",
+        "work_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":modfile"],
+    deps = ["//module"],
+)

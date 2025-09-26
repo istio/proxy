@@ -1,0 +1,11 @@
+enabled: false
+flag_sets {
+  actions: "c++-link-dynamic-library"
+  actions: "c++-link-nodeps-dynamic-library"
+  actions: "lto-index-for-dynamic-library"
+  actions: "lto-index-for-nodeps-dynamic-library"
+  flag_groups {
+    flags: "-shared"
+  }
+}
+name: "shared_flag_test"

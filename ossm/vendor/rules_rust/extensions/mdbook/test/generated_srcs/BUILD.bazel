@@ -1,0 +1,35 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load("//:defs.bzl", "mdbook", "mdbook_server")
+
+write_file(
+    name = "src/chapter_1",
+    out = "src/chapter_1.md",
+    content = [
+        "# Chapter 1",
+        "This is a generated source file!",
+        "La-Li-Lu-Le-Lo",
+        "",
+    ],
+    newline = "unix",
+)
+
+mdbook(
+    name = "generated_srcs",
+    srcs = [":src/chapter_1.md"] + glob(["src/**/*.md"]),
+    book = "book.toml",
+)
+
+mdbook_server(
+    name = "generated_srcs_server",
+    book = ":generated_srcs",
+)
+
+rust_test(
+    name = "generated_srcs_test",
+    srcs = ["generated_srcs_test.rs"],
+    data = [":generated_srcs"],
+    edition = "2021",
+    rustc_env = {"MDBOOK_OUTPUT_RLOCATIONPATH": "$(rlocationpath :generated_srcs)"},
+    deps = ["@rules_rust//tools/runfiles"],
+)

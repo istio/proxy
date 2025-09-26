@@ -1,0 +1,343 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+# Common rules
+proto_library(
+    name = "foo_proto",
+    srcs = ["foo.proto"],
+)
+
+go_proto_library(
+    name = "foo_go_proto",
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/foo",
+    proto = ":foo_proto",
+)
+
+proto_library(
+    name = "bar_proto",
+    srcs = ["bar.proto"],
+    deps = [":foo_proto"],
+)
+
+go_proto_library(
+    name = "bar_go_proto",
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/bar",
+    proto = ":bar_proto",
+    deps = [":foo_go_proto"],
+)
+
+proto_library(
+    name = "grpc_proto",
+    srcs = ["grpc.proto"],
+)
+
+proto_library(
+    name = "enum_proto",
+    srcs = ["enum.proto"],
+    deps = [
+        "@com_google_protobuf//:descriptor_proto",
+    ],
+)
+
+# embed_test
+go_proto_library(
+    name = "embed_go_proto",
+    embed = [":extra_lib"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/foo",
+    proto = ":foo_proto",
+)
+
+go_library(
+    name = "extra_lib",
+    srcs = ["extra.go"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/foo",
+)
+
+go_test(
+    name = "embed_test",
+    srcs = ["embed_test.go"],
+    deps = [
+        ":embed_go_proto",
+        "@com_github_golang_protobuf//proto:go_default_library",
+    ],
+)
+
+# transitive_test
+go_proto_library(
+    name = "transitive_go_proto",
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/bar",
+    proto = ":bar_proto",
+    deps = [":wrap_lib"],
+)
+
+go_library(
+    name = "wrap_lib",
+    srcs = ["extra.go"],
+    embed = [":foo_go_proto"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/foo",
+)
+
+go_test(
+    name = "transitive_test",
+    srcs = ["transitive_test.go"],
+    deps = [
+        ":transitive_go_proto",
+        ":wrap_lib",
+    ],
+)
+
+# proxy_test
+go_test(
+    name = "proxy_test",
+    srcs = ["proxy_test.go"],
+    deps = [":proxy_go_proto"],
+)
+
+go_proto_library(
+    name = "proxy_go_proto",
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/proxy",
+    proto = ":proxy_proto",
+)
+
+proto_library(
+    name = "proxy_proto",
+    deps = [
+        ":proxy_a_proto",
+        ":proxy_b_proto",
+    ],
+)
+
+proto_library(
+    name = "proxy_a_proto",
+    srcs = ["proxy_a.proto"],
+)
+
+proto_library(
+    name = "proxy_b_proto",
+    srcs = ["proxy_b.proto"],
+)
+
+# protos_test (multiple entries in protos argument)
+go_test(
+    name = "protos_test",
+    srcs = ["protos_test.go"],
+    deps = [":protos_go_proto"],
+)
+
+go_test(
+    name = "protos_alias_test",
+    srcs = ["protos_alias_test.go"],
+    deps = [":protos_go_proto"],
+)
+
+go_proto_library(
+    name = "protos_go_proto",
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/protos",
+    importpath_aliases = ["myalias/protos"],
+    protos = [
+        ":protos_a_proto",
+        ":protos_b_proto",
+    ],
+)
+
+proto_library(
+    name = "protos_a_proto",
+    srcs = ["protos_a.proto"],
+)
+
+proto_library(
+    name = "protos_b_proto",
+    srcs = ["protos_b.proto"],
+)
+
+# gofast test
+go_test(
+    name = "gofast_test",
+    srcs = ["gofast_test.go"],
+    deps = [":gofast_proto"],
+)
+
+go_proto_library(
+    name = "gofast_proto",
+    compilers = ["@io_bazel_rules_go//proto:gofast_proto"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/foo",
+    protos = [":foo_proto"],
+)
+
+# gofast gRPC test
+go_test(
+    name = "gofast_grpc_test",
+    srcs = ["gofast_grpc_test.go"],
+    deps = [":gofast_grpc"],
+)
+
+go_proto_library(
+    name = "gofast_grpc",
+    compilers = ["@io_bazel_rules_go//proto:gofast_grpc"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/grpc",
+    protos = [":grpc_proto"],
+)
+
+# gogofast test
+go_test(
+    name = "gogofast_test",
+    srcs = ["gogofast_test.go"],
+    deps = [":gogofast_proto"],
+)
+
+go_proto_library(
+    name = "gogofast_proto",
+    compilers = ["@io_bazel_rules_go//proto:gogofast_proto"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/foo",
+    protos = [":foo_proto"],
+)
+
+# gogofast gRPC test
+go_test(
+    name = "gogofast_grpc_test",
+    srcs = ["gogofast_grpc_test.go"],
+    deps = [":gogofast_grpc"],
+)
+
+go_proto_library(
+    name = "gogofast_grpc",
+    compilers = ["@io_bazel_rules_go//proto:gogofast_grpc"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/grpc",
+    protos = [":grpc_proto"],
+)
+
+# compilers with multiple suffixes
+go_test(
+    name = "compilers_multi_suffix_test",
+    srcs = ["compiler_multi_suffix_test.go"],
+    deps = [
+        ":compilers_multi_suffix",
+    ],
+)
+
+go_proto_library(
+    name = "compilers_multi_suffix",
+    compilers = ["//tests/core/go_proto_library/compilers:dbenum_compiler"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/enum",
+    protos = [":enum_proto"],
+    deps = [
+        "@com_github_gogo_protobuf//proto",
+        "@com_github_gogo_protobuf//protoc-gen-gogo/descriptor",
+        "@com_github_gogo_protobuf//types",
+    ],
+)
+
+# adjusted_import_test
+# TODO(#1851): uncomment when Bazel 0.22.0 is the minimum version.
+# go_test(
+#     name = "adjusted_import_test",
+#     srcs = ["adjusted_import_test.go"],
+#     deps = [
+#         ":adjusted_a_go_proto",
+#         ":adjusted_b_go_library",
+#         ":adjusted_c_go_proto",
+#     ],
+# )
+
+# go_proto_library(
+#     name = "adjusted_a_go_proto",
+#     importpath = "adjusted/a",
+#     proto = "adjusted_a_proto",
+#     deps = [
+#         ":adjusted_b_go_library",
+#         ":adjusted_c_go_proto",
+#     ],
+# )
+
+# proto_library(
+#     name = "adjusted_a_proto",
+#     srcs = ["adjusted_a.proto"],
+#     import_prefix = "adjusted",
+#     strip_import_prefix = "",
+#     deps = [
+#         ":adjusted_b_proto",
+#         ":adjusted_c_proto",
+#     ],
+# )
+
+# go_library(
+#     name = "adjusted_b_go_library",
+#     embed = [":adjusted_b_go_proto"],
+#     importpath = "adjusted/b",
+# )
+
+# go_proto_library(
+#     name = "adjusted_b_go_proto",
+#     importpath = "adjusted/b",
+#     proto = "adjusted_b_proto",
+#     deps = [":adjusted_c_go_proto"],
+# )
+
+# proto_library(
+#     name = "adjusted_b_proto",
+#     srcs = ["adjusted_b.proto"],
+#     import_prefix = "adjusted",
+#     strip_import_prefix = "",
+#     deps = [":adjusted_c_proto"],
+# )
+
+# go_proto_library(
+#     name = "adjusted_c_go_proto",
+#     importpath = "adjusted/c",
+#     proto = ":adjusted_c_proto",
+# )
+
+# proto_library(
+#     name = "adjusted_c_proto",
+#     srcs = ["adjusted_c.proto"],
+#     import_prefix = "adjusted",
+#     strip_import_prefix = "",
+# )
+
+# proto_package_test
+proto_library(
+    name = "no_go_package_proto",
+    srcs = ["no_go_package.proto"],
+)
+
+go_proto_library(
+    name = "no_go_package_go_proto",
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/package_name_derived_from_importpath",
+    protos = [":no_go_package_proto"],
+)
+
+go_test(
+    name = "proto_package_test",
+    srcs = ["proto_package_test.go"],
+    deps = [":no_go_package_go_proto"],
+)
+
+go_test(
+    name = "wkt_wrapper_test",
+    srcs = ["wkt_wrapper_test.go"],
+    deps = [
+        "//proto/wkt:any_go_proto",
+        "//proto/wkt:compiler_plugin_go_proto",
+        "//proto/wkt:descriptor_go_proto",
+        "//proto/wkt:duration_go_proto",
+        "//proto/wkt:empty_go_proto",
+        "//proto/wkt:field_mask_go_proto",
+        "//proto/wkt:source_context_go_proto",
+        "//proto/wkt:struct_go_proto",
+        "//proto/wkt:timestamp_go_proto",
+        "//proto/wkt:type_go_proto",
+        "//proto/wkt:wrappers_go_proto",
+        "@org_golang_google_protobuf//types/descriptorpb:go_default_library",
+        "@org_golang_google_protobuf//types/known/anypb:go_default_library",
+        "@org_golang_google_protobuf//types/known/durationpb:go_default_library",
+        "@org_golang_google_protobuf//types/known/emptypb:go_default_library",
+        "@org_golang_google_protobuf//types/known/fieldmaskpb:go_default_library",
+        "@org_golang_google_protobuf//types/known/sourcecontextpb:go_default_library",
+        "@org_golang_google_protobuf//types/known/structpb:go_default_library",
+        "@org_golang_google_protobuf//types/known/timestamppb:go_default_library",
+        "@org_golang_google_protobuf//types/known/typepb:go_default_library",
+        "@org_golang_google_protobuf//types/known/wrapperspb:go_default_library",
+        "@org_golang_google_protobuf//types/pluginpb:go_default_library",
+    ],
+)

@@ -1,0 +1,39 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_proto_grpc//go:defs.bzl", "go_proto_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+package(default_visibility = ["//visibility:private"])
+
+# Test that importpath on go_proto_library works
+
+proto_library(
+    name = "proto_lib_a",
+    srcs = ["demo.proto"],
+)
+
+proto_library(
+    name = "proto_lib_b",
+    srcs = ["folder/nested_demo.proto"],
+)
+
+go_proto_library(
+    name = "go_lib_a",
+    importpath = "test_import_path/root",
+    protos = ["proto_lib_a"],
+)
+
+go_proto_library(
+    name = "go_lib_b",
+    importpath = "test_import_path/folder",
+    protos = ["proto_lib_b"],
+)
+
+go_test(
+    name = "test",
+    srcs = ["main.go"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "go_lib_a",
+        "go_lib_b",
+    ],
+)

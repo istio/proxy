@@ -1,0 +1,1 @@
+workspace(name = "aspect_bazel_lib")

@@ -1,0 +1,90 @@
+module(
+    name = "cel-cpp",
+)
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
+bazel_dep(
+    name = "googleapis",
+    version = "0.0.0-20241220-5e258e33.bcr.1",
+    repo_name = "com_google_googleapis",
+)
+bazel_dep(
+    name = "googleapis-cc",
+    version = "1.0.0",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.1.1",
+)
+bazel_dep(
+    name = "rules_java",
+    version = "7.6.5",
+)
+bazel_dep(
+    name = "rules_proto",
+    version = "7.0.2",
+)
+bazel_dep(
+    name = "rules_python",
+    version = "1.3.0",
+)
+bazel_dep(
+    name = "protobuf",
+    version = "30.2",
+    repo_name = "com_google_protobuf",
+)
+bazel_dep(
+    name = "abseil-cpp",
+    version = "20250512.1",
+    repo_name = "com_google_absl",
+)
+bazel_dep(
+    name = "googletest",
+    version = "1.16.0",
+    repo_name = "com_google_googletest",
+)
+bazel_dep(
+    name = "google_benchmark",
+    version = "1.9.2",
+    repo_name = "com_github_google_benchmark",
+)
+bazel_dep(
+    name = "re2",
+    version = "2024-07-02",
+    repo_name = "com_googlesource_code_re2",
+)
+bazel_dep(
+    name = "flatbuffers",
+    version = "25.2.10",
+    repo_name = "com_github_google_flatbuffers",
+)
+bazel_dep(
+    name = "cel-spec",
+    version = "0.23.0",
+    repo_name = "com_google_cel_spec",
+)
+
+ANTLR4_VERSION = "4.13.2"
+
+bazel_dep(
+    name = "antlr4-cpp-runtime",
+    version = ANTLR4_VERSION,
+)
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    configure_coverage_tool = False,
+    ignore_root_user_error = True,
+    python_version = "3.11",
+)
+
+http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
+
+http_jar(
+    name = "antlr4_jar",
+    sha256 = "eae2dfa119a64327444672aff63e9ec35a20180dc5b8090b7a6ab85125df4d76",
+    urls = ["https://www.antlr.org/download/antlr-" + ANTLR4_VERSION + "-complete.jar"],
+)

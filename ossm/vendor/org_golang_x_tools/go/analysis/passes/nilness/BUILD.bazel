@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "nilness",
+    srcs = ["nilness.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/nilness",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/buildssa",
+        "//go/ssa",
+        "//internal/typeparams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":nilness",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "nilness_test",
+    srcs = [
+        "nilness_go117_test.go",
+        "nilness_test.go",
+    ],
+    deps = [
+        ":nilness",
+        "//go/analysis/analysistest",
+        "//internal/typeparams",
+    ],
+)

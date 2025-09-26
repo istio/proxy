@@ -1,0 +1,356 @@
+name: "grpc-httpjson-transcoding-benchmark.googleapis.com"
+apis {
+  methods {
+    name: "BytesPayloadBM"
+    request_type_url: "type.googleapis.com/BytesPayload"
+    response_type_url: "type.googleapis.com/BytesPayload"
+  }
+  methods {
+    name: "StringPayloadBM"
+    request_type_url: "type.googleapis.com/StringPayload"
+    response_type_url: "type.googleapis.com/StringPayload"
+  }
+  methods {
+    name: "Int32ArrayPayloadBM"
+    request_type_url: "type.googleapis.com/Int32ArrayPayload"
+    response_type_url: "type.googleapis.com/Int32ArrayPayload"
+  }
+  methods {
+    name: "DoubleArrayPayloadBM"
+    request_type_url: "type.googleapis.com/DoubleArrayPayload"
+    response_type_url: "type.googleapis.com/DoubleArrayPayload"
+  }
+  methods {
+    name: "StringArrayPayloadBM"
+    request_type_url: "type.googleapis.com/StringArrayPayload"
+    response_type_url: "type.googleapis.com/StringArrayPayload"
+  }
+  methods {
+    name: "NestedPayloadBM"
+    request_type_url: "type.googleapis.com/NestedPayload"
+    response_type_url: "type.googleapis.com/NestedPayload"
+  }
+  methods {
+    name: "StructPayloadBM"
+    request_type_url: "type.googleapis.com/google.protobuf.Struct"
+    response_type_url: "type.googleapis.com/google.protobuf.Struct"
+  }
+  methods {
+    name: "MultiStringFieldPayloadBM"
+    request_type_url: "type.googleapis.com/MultiStringFieldPayload"
+    response_type_url: "type.googleapis.com/MultiStringFieldPayload"
+  }
+}
+types {
+  name: "BytesPayload"
+  fields {
+    kind: TYPE_BYTES
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "payload"
+    json_name: "payload"
+  }
+  source_context {
+  }
+}
+types {
+  name: "StringPayload"
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "payload"
+    json_name: "payload"
+  }
+  source_context {
+  }
+}
+types {
+  name: "Int32ArrayPayload"
+  fields {
+    kind: TYPE_INT32
+    cardinality: CARDINALITY_REPEATED
+    number: 1
+    name: "payload"
+    json_name: "payload"
+  }
+  source_context {
+  }
+}
+types {
+  name: "DoubleArrayPayload"
+  fields {
+    kind: TYPE_DOUBLE
+    cardinality: CARDINALITY_REPEATED
+    number: 1
+    name: "payload"
+    json_name: "payload"
+  }
+  source_context {
+  }
+}
+types {
+  name: "StringArrayPayload"
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_REPEATED
+    number: 1
+    name: "payload"
+    json_name: "payload"
+  }
+  source_context {
+  }
+}
+types {
+  name: "NestedPayload"
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "nested"
+    type_url: "type.googleapis.com/NestedPayload"
+    json_name: "nested"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "payload"
+    json_name: "payload"
+  }
+  source_context {
+  }
+}
+types {
+  name: "MultiStringFieldPayload"
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "f1"
+    json_name: "f1"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "f2"
+    json_name: "f2"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 3
+    name: "f3"
+    json_name: "f3"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 4
+    name: "f4"
+    json_name: "f4"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 5
+    name: "f5"
+    json_name: "f5"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 6
+    name: "f6"
+    json_name: "f6"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 7
+    name: "f7"
+    json_name: "f7"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 8
+    name: "f8"
+    json_name: "f8"
+  }
+  source_context {
+  }
+}
+types {
+  name: "google.protobuf.ListValue"
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_REPEATED
+    number: 1
+    name: "values"
+    type_url: "type.googleapis.com/google.protobuf.Value"
+    json_name: "values"
+  }
+  source_context {
+    file_name: "struct.proto"
+  }
+}
+types {
+  name: "google.protobuf.Struct"
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_REPEATED
+    number: 1
+    name: "fields"
+    type_url: "type.googleapis.com/google.protobuf.Struct.FieldsEntry"
+    json_name: "fields"
+  }
+  source_context {
+    file_name: "struct.proto"
+  }
+}
+types {
+  name: "google.protobuf.Struct.FieldsEntry"
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "key"
+    json_name: "key"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "value"
+    type_url: "type.googleapis.com/google.protobuf.Value"
+    json_name: "value"
+  }
+  options {
+    name: "map_entry"
+    value {
+      type_url: "type.googleapis.com/google.protobuf.BoolValue"
+      value: ""
+    }
+  }
+  source_context {
+    file_name: "struct.proto"
+  }
+}
+types {
+  name: "google.protobuf.Empty"
+  source_context {
+    file_name: "struct.proto"
+  }
+}
+types {
+  name: "google.protobuf.Value"
+  fields {
+    kind: TYPE_ENUM
+    cardinality: CARDINALITY_OPTIONAL
+    number: 1
+    name: "null_value"
+    type_url: "type.googleapis.com/google.protobuf.NullValue"
+    json_name: "nullValue"
+  }
+  fields {
+    kind: TYPE_DOUBLE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 2
+    name: "number_value"
+    json_name: "numberValue"
+  }
+  fields {
+    kind: TYPE_STRING
+    cardinality: CARDINALITY_OPTIONAL
+    number: 3
+    name: "string_value"
+    json_name: "stringValue"
+  }
+  fields {
+    kind: TYPE_BOOL
+    cardinality: CARDINALITY_OPTIONAL
+    number: 4
+    name: "bool_value"
+    json_name: "boolValue"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 5
+    name: "struct_value"
+    type_url: "type.googleapis.com/google.protobuf.Struct"
+    json_name: "structValue"
+  }
+  fields {
+    kind: TYPE_MESSAGE
+    cardinality: CARDINALITY_OPTIONAL
+    number: 6
+    name: "list_value"
+    type_url: "type.googleapis.com/google.protobuf.ListValue"
+    json_name: "listValue"
+  }
+  source_context {
+    file_name: "struct.proto"
+  }
+}
+types {
+  name: "google.protobuf.BoolValue"
+  fields {
+    kind: TYPE_BOOL
+    cardinality: CARDINALITY_REQUIRED
+    number: 1
+    name: "value"
+    json_name: "value"
+  }
+  source_context {
+    file_name: "wrappers.proto"
+  }
+}
+enums {
+  name: "google.protobuf.NullValue"
+  enumvalue {
+    name: "NULL_VALUE"
+  }
+  source_context {
+    file_name: "struct.proto"
+  }
+}
+http {
+  rules {
+    selector: "BytesPayload"
+    post: "/payload/bytes"
+    body: "*"
+  }
+  rules {
+    selector: "StringPayload"
+    post: "/payload/string"
+    body: "*"
+  }
+  rules {
+    selector: "Int32ArrayPayload"
+    post: "/payload/int32_array"
+    body: "*"
+  }
+  rules {
+    selector: "DoubleArrayPayload"
+    post: "/payload/double_array"
+    body: "*"
+  }
+  rules {
+    selector: "StringArrayPayloadBM"
+    post: "/payload/string_array"
+    body: "*"
+  }
+  rules {
+    selector: "NestedPayloadBM"
+    post: "/payload/nested"
+    body: "*"
+  }
+  rules {
+    selector: "StructPayloadBM"
+    post: "/payload/struct"
+    body: "*"
+  }
+}

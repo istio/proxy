@@ -1,0 +1,11 @@
+UseColor: true
+
+Checks: >
+    bugprone-*,
+    cppcoreguidelines-*,
+    google-*,
+    performance-*,
+
+HeaderFilterRegex: ".*"
+
+WarningsAsErrors: "*"

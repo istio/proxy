@@ -1,0 +1,262 @@
+version: 2
+updates:
+
+# We currently have CI to make sure that all python `requirements.txt` files
+# are listed here, and only existing `requirements.txt` files are listed here.
+#
+# Until https://github.com/envoyproxy/envoy/issues/26163 is resolved `Dockerfiles`,
+# and `go.mod` files need to be kept in sync manually.
+#
+# Please ensure any new ones are added here, and any that are removed are removed here also.
+
+- package-ecosystem: "pip"
+  directory: "/.github/workflows"
+  groups:
+    github-workflows:
+      patterns:
+      - "*"
+  schedule:
+    interval: "daily"
+    time: "06:00"
+
+- package-ecosystem: "pip"
+  directory: "/grpc-bridge/client"
+  groups:
+    examples-grpc-bridge:
+      patterns:
+      - "*"
+  schedule:
+    interval: "daily"
+    time: "06:00"
+
+- package-ecosystem: "pip"
+  directory: "/cache"
+  groups:
+    examples-cache:
+      patterns:
+      - "*"
+  schedule:
+    interval: "daily"
+    time: "06:00"
+
+- package-ecosystem: "pip"
+  directory: "/shared/python/aiohttp"
+  groups:
+    examples-shared-python:
+      patterns:
+      - "*"
+  schedule:
+    interval: "daily"
+    time: "06:00"
+
+- package-ecosystem: "pip"
+  directory: "/shared/python/postgres"
+  groups:
+    examples-postgres:
+      patterns:
+      - "*"
+  schedule:
+    interval: "daily"
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/ext_authz"
+  groups:
+    examples-ext-authz:
+      patterns:
+      - "*"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/fault-injection"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/golang-network"
+  groups:
+    examples-golang-network:
+      patterns:
+      - "*"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/grpc-bridge"
+  groups:
+    examples-grpc-bridge:
+      patterns:
+      - "*"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/kafka"
+  groups:
+    examples-kafka:
+      patterns:
+      - "*"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/local_ratelimit"
+  groups:
+    examples-local-ratelimit:
+      patterns:
+      - "*"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/mysql"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/opentelemetry"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/redis"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/shared/build"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/shared/echo"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/shared/golang"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/shared/jaeger"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/shared/node"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/shared/postgres"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/shared/python"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/shared/websocket"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/skywalking"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/udp"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "docker"
+  directory: "/zipkin"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "gomod"
+  directory: "/ext_authz/auth/grpc-service"
+  groups:
+    examples-ext-authz:
+      patterns:
+      - "*"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "gomod"
+  directory: "/load-reporting-service"
+  groups:
+    examples-load-reporting:
+      patterns:
+      - "*"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "gomod"
+  directory: "/grpc-bridge/server"
+  groups:
+    examples-grpc-bridge:
+      patterns:
+      - "*"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "gomod"
+  directory: "/golang-http/simple"
+  groups:
+    examples-golang-http:
+      patterns:
+      - "*"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "gomod"
+  directory: "/golang-network/simple"
+  groups:
+    examples-golang-network:
+      patterns:
+      - "*"
+  schedule:
+    interval: daily
+    time: "06:00"
+
+- package-ecosystem: "npm"
+  directory: "/single-page-app/ui"
+  schedule:
+    interval: daily
+    time: "06:00"

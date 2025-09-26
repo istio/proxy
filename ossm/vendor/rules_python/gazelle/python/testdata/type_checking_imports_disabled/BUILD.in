@@ -1,0 +1,2 @@
+# gazelle:python_generation_mode file
+# gazelle:python_generate_pyi_deps false

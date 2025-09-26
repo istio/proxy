@@ -1,0 +1,32 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//js/private/image:rollup/package_json.bzl", rollup_bin = "bin")
+
+npm_link_all_packages(name = "node_modules")
+
+rollup_bin.rollup(
+    name = "bundle",
+    srcs = [
+        "index.ts",
+        "rollup.config.js",
+        ":node_modules/@rollup/plugin-commonjs",
+        ":node_modules/@rollup/plugin-node-resolve",
+        ":node_modules/@rollup/plugin-typescript",
+        ":node_modules/@types/node",
+        ":node_modules/@types/tar-stream",
+        ":node_modules/tar-stream",
+    ],
+    outs = [
+        "image.mjs",
+    ],
+    args = [
+        "index.ts",
+        "--config",
+        "rollup.config.js",
+        "--format",
+        "es",
+        "--file",
+        "image.mjs",
+    ],
+    chdir = package_name(),
+    visibility = ["//js/private:__pkg__"],
+)

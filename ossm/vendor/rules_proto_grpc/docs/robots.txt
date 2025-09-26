@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://rules-proto-grpc.com/en/latest/sitemap-override.xml

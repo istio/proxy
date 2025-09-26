@@ -1,0 +1,3 @@
+# gazelle:python_extension enabled
+# gazelle:python_root
+# gazelle:resolve py foo //one/foo

@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "textpb2_proto",
+    srcs = ["test.proto"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:empty_proto",
+        "@com_google_protobuf//:field_mask_proto",
+        "@com_google_protobuf//:struct_proto",
+        "@com_google_protobuf//:timestamp_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ],
+)
+
+go_proto_library(
+    name = "textpb2_go_proto",
+    importpath = "google.golang.org/protobuf/internal/testprotos/textpb2",
+    proto = ":textpb2_proto",
+    visibility = ["//:__subpackages__"],
+)
+
+go_library(
+    name = "textpb2",
+    embed = [":textpb2_go_proto"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/textpb2",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":textpb2",
+    visibility = ["//:__subpackages__"],
+)

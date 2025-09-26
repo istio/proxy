@@ -1,0 +1,18 @@
+[package]
+name = "target_cfg_features"
+version = "0.1.0"
+edition = "2018"
+
+# Required to satisfy cargo but no `lib.rs` is expected to
+# exist within test data.
+[lib]
+path = "lib.rs"
+
+[dependencies]
+tokio = "1.25.0"
+
+[target.'cfg(unix)'.dependencies.tokio]
+features = ["fs"]
+# A version is currently required as of 2024/05/02.
+# see https://github.com/rust-lang/cargo/issues/13854
+version = "1.25.0"

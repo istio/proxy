@@ -1,0 +1,5 @@
+load(":py_runtime_info_tests.bzl", "py_runtime_info_test_suite")
+
+py_runtime_info_test_suite(
+    name = "py_runtime_info_tests",
+)

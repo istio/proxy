@@ -1,0 +1,7 @@
+package(default_visibility = ["//visibility:public"])
+
+sh_library(
+    name = "assertions",
+    testonly = True,
+    srcs = ["assertions.sh"],
+)

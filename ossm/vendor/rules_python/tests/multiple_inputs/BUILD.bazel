@@ -1,0 +1,30 @@
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+
+compile_pip_requirements(
+    name = "multiple_requirements_in",
+    srcs = [
+        "requirements_1.in",
+        "requirements_2.in",
+    ],
+    requirements_txt = "multiple_requirements_in.txt",
+)
+
+compile_pip_requirements(
+    name = "multiple_pyproject_toml",
+    srcs = [
+        "a/pyproject.toml",
+        "b/pyproject.toml",
+    ],
+    requirements_txt = "multiple_pyproject_toml.txt",
+)
+
+compile_pip_requirements(
+    name = "multiple_inputs",
+    srcs = [
+        "a/pyproject.toml",
+        "b/pyproject.toml",
+        "requirements_1.in",
+        "requirements_2.in",
+    ],
+    requirements_txt = "multiple_inputs.txt",
+)

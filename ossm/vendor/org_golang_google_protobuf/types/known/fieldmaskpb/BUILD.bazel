@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "fieldmaskpb",
+    srcs = ["field_mask.pb.go"],
+    importpath = "google.golang.org/protobuf/types/known/fieldmaskpb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//proto",
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fieldmaskpb",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "fieldmaskpb_test",
+    srcs = ["field_mask_test.go"],
+    deps = [
+        ":fieldmaskpb",
+        "//internal/testprotos/test",
+        "//proto",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp/cmpopts:go_default_library",
+    ],
+)

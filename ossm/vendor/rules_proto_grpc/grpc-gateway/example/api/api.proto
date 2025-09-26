@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package example.api;
+
+option go_package = "github.com/rules-proto-grpc/rules_proto_grpc/grpc-gateway/examples/api";
+
+import "google/api/annotations.proto";
+
+service CustomerService {
+    rpc GetCustomer(GetCustomerRequest) returns (GetCustomerResponse) {
+		option (google.api.http) = {
+			get: "/v1/customer/{id}"
+		};
+	}
+}
+
+message Customer {
+    string id = 1;
+    string name = 2;
+}
+
+message GetCustomerRequest {
+    string id = 1;
+}
+
+message GetCustomerResponse {
+    Customer customer = 1;
+}

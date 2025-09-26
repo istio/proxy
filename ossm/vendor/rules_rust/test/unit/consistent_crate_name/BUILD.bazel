@@ -1,0 +1,4 @@
+load(":consistent_crate_name_test.bzl", "consistent_crate_name_test_suite")
+
+############################ UNIT TESTS #############################
+consistent_crate_name_test_suite(name = "consistent_crate_name_test_suite")

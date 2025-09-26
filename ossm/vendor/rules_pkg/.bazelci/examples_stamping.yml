@@ -1,0 +1,16 @@
+common: &common
+  working_directory: ../examples/time_stamping
+  build_targets:
+  - "..."
+
+tasks:
+  centos7:
+    platform: centos7_java11_devtoolset10
+    <<: *common
+  ubuntu2204:
+    platform: ubuntu2204
+    <<: *common
+  macos:
+    <<: *common
+  windows:
+    <<: *common

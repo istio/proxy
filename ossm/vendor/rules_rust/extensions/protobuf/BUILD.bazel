@@ -1,0 +1,60 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load(":legacy_proto_toolchain.bzl", "legacy_proto_toolchain")
+load(":toolchain.bzl", "rust_proto_toolchain")
+
+package(default_visibility = ["//visibility:public"])
+
+toolchain_type(
+    name = "toolchain_type",
+)
+
+exports_files([
+    "defs.bzl",
+    "MODULE.bazel",
+])
+
+rust_binary(
+    name = "optional_output_wrapper",
+    srcs = ["optional_output_wrapper.rs"],
+    edition = "2018",
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "default_proto_toolchain",
+    toolchain = ":default_proto_toolchain_impl",
+    toolchain_type = "@rules_rust_protobuf//:toolchain_type",
+)
+
+rust_proto_toolchain(
+    name = "default_proto_toolchain_impl",
+    edition = "2018",
+)
+
+bzl_library(
+    name = "protobuf_bzl_lib",
+    srcs = ["@com_google_protobuf//:bzl_srcs"],
+    visibility = ["//visibility:private"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = [
+        "defs.bzl",
+        "proto.bzl",
+        "toolchain.bzl",
+    ],
+    deps = [
+        ":protobuf_bzl_lib",
+        "//3rdparty:bzl_lib",
+        "@rules_proto//proto:defs",
+        "@rules_proto//proto:repositories",
+        "@rules_rust//rust:bzl_lib",
+    ],
+)
+
+legacy_proto_toolchain(
+    name = "legacy_proto_toolchain",
+    visibility = ["//visibility:public"],
+)

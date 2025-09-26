@@ -1,0 +1,10 @@
+#compdef test25
+
+# test25 version 0.99
+
+_arguments -s -S \
+  '*(-A --sA)'{-A,--sA}'[exist Test A]:integer' \
+  '(-s --Bs -B --sB)'{-B,--sB}'[exist Test B]' \
+  '(-s --Bs -B --sB)'{-s,--Bs}'[string test]:string' \
+  '(-)--version[displays version information and exits]' \
+  '(-)'{-h,--help}'[displays usage information and exits]'

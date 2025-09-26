@@ -1,0 +1,638 @@
+---
+tasks:
+  main_ubuntu2204:
+    name: build & test all
+    platform: ubuntu2204
+    environment:
+      CC: clang
+    build_flags:
+    - "--host_platform=@io_bazel_rules_dotnet//dotnet/toolchain:linux_amd64_6.0.101"
+    - "--platforms=@io_bazel_rules_dotnet//dotnet/toolchain:linux_amd64_6.0.101"
+    - "--cxxopt=-std=c++17"
+    - "--host_cxxopt=-std=c++17"
+    build_targets:
+    - "//buf/..."
+    - "//c/..."
+    - "//cpp/..."
+    - "//csharp/..."
+    - "//d/..."
+    - "//doc/..."
+    - "//fsharp/..."
+    - "//go/..."
+    - "//grpc-gateway/..."
+    - "//java/..."
+    - "//js/..."
+    - "//php/..."
+    - "//python/..."
+    - "//rust/..."
+    - "//scala/..."
+    test_flags:
+    - "--test_output=errors"
+    - "--host_platform=@io_bazel_rules_dotnet//dotnet/toolchain:linux_amd64_6.0.101"
+    - "--platforms=@io_bazel_rules_dotnet//dotnet/toolchain:linux_amd64_6.0.101"
+    - "--cxxopt=-std=c++17"
+    - "--host_cxxopt=-std=c++17"
+    test_targets:
+    - "//example/routeguide:cpp_cpp"
+    - "//example/routeguide:cpp_csharp"
+    - "//example/routeguide:cpp_fsharp"
+    - "//example/routeguide:cpp_go"
+    - "//example/routeguide:cpp_java"
+    - "//example/routeguide:cpp_js"
+    - "//example/routeguide:cpp_python"
+    - "//example/routeguide:cpp_rust"
+    - "//example/routeguide:csharp_cpp"
+    - "//example/routeguide:csharp_csharp"
+    - "//example/routeguide:csharp_fsharp"
+    - "//example/routeguide:csharp_go"
+    - "//example/routeguide:csharp_java"
+    - "//example/routeguide:csharp_js"
+    - "//example/routeguide:csharp_python"
+    - "//example/routeguide:fsharp_cpp"
+    - "//example/routeguide:fsharp_csharp"
+    - "//example/routeguide:fsharp_fsharp"
+    - "//example/routeguide:fsharp_go"
+    - "//example/routeguide:fsharp_java"
+    - "//example/routeguide:fsharp_python"
+    - "//example/routeguide:go_cpp"
+    - "//example/routeguide:go_csharp"
+    - "//example/routeguide:go_fsharp"
+    - "//example/routeguide:go_go"
+    - "//example/routeguide:go_java"
+    - "//example/routeguide:go_js"
+    - "//example/routeguide:go_python"
+    - "//example/routeguide:go_rust"
+    - "//example/routeguide:java_cpp"
+    - "//example/routeguide:java_csharp"
+    - "//example/routeguide:java_fsharp"
+    - "//example/routeguide:java_go"
+    - "//example/routeguide:java_java"
+    - "//example/routeguide:java_js"
+    - "//example/routeguide:java_python"
+    - "//example/routeguide:java_rust"
+    - "//example/routeguide:js_cpp"
+    - "//example/routeguide:js_csharp"
+    - "//example/routeguide:js_fsharp"
+    - "//example/routeguide:js_go"
+    - "//example/routeguide:js_java"
+    - "//example/routeguide:js_js"
+    - "//example/routeguide:js_python"
+    - "//example/routeguide:js_rust"
+    - "//example/routeguide:python_cpp"
+    - "//example/routeguide:python_csharp"
+    - "//example/routeguide:python_fsharp"
+    - "//example/routeguide:python_go"
+    - "//example/routeguide:python_java"
+    - "//example/routeguide:python_js"
+    - "//example/routeguide:python_python"
+    - "//example/routeguide:python_rust"
+    - "//example/routeguide:rust_cpp"
+    - "//example/routeguide:rust_csharp"
+    - "//example/routeguide:rust_fsharp"
+    - "//example/routeguide:rust_go"
+    - "//example/routeguide:rust_java"
+    - "//example/routeguide:rust_js"
+    - "//example/routeguide:rust_python"
+    - "//example/routeguide:rust_rust"
+    - "//example/routeguide:scala_cpp"
+    - "//example/routeguide:scala_csharp"
+    - "//example/routeguide:scala_fsharp"
+    - "//example/routeguide:scala_go"
+    - "//example/routeguide:scala_java"
+    - "//example/routeguide:scala_js"
+    - "//example/routeguide:scala_python"
+    - "//example/routeguide:scala_rust"
+
+  main_macos:
+    name: build & test all
+    platform: macos
+    environment:
+      CC: clang
+    build_flags:
+    - "--host_platform=@io_bazel_rules_dotnet//dotnet/toolchain:darwin_amd64_6.0.101"
+    - "--platforms=@io_bazel_rules_dotnet//dotnet/toolchain:darwin_amd64_6.0.101"
+    - "--cxxopt=-std=c++17"
+    - "--host_cxxopt=-std=c++17"
+    build_targets:
+    - "//buf/..."
+    - "//c/..."
+    - "//cpp/..."
+    - "//csharp/..."
+    - "//doc/..."
+    - "//fsharp/..."
+    - "//go/..."
+    - "//grpc-gateway/..."
+    - "//java/..."
+    - "//js/..."
+    - "//objc/..."
+    - "//php/..."
+    - "//python/..."
+    - "//ruby/..."
+    - "//scala/..."
+    - "//swift/..."
+    test_flags:
+    - "--test_output=errors"
+    - "--host_platform=@io_bazel_rules_dotnet//dotnet/toolchain:darwin_amd64_6.0.101"
+    - "--platforms=@io_bazel_rules_dotnet//dotnet/toolchain:darwin_amd64_6.0.101"
+    - "--cxxopt=-std=c++17"
+    - "--host_cxxopt=-std=c++17"
+    test_targets:
+    - "//example/routeguide:cpp_cpp"
+    - "//example/routeguide:cpp_csharp"
+    - "//example/routeguide:cpp_fsharp"
+    - "//example/routeguide:cpp_go"
+    - "//example/routeguide:cpp_java"
+    - "//example/routeguide:cpp_js"
+    - "//example/routeguide:cpp_python"
+    - "//example/routeguide:cpp_ruby"
+    - "//example/routeguide:csharp_cpp"
+    - "//example/routeguide:csharp_csharp"
+    - "//example/routeguide:csharp_fsharp"
+    - "//example/routeguide:csharp_go"
+    - "//example/routeguide:csharp_java"
+    - "//example/routeguide:csharp_js"
+    - "//example/routeguide:csharp_python"
+    - "//example/routeguide:csharp_ruby"
+    - "//example/routeguide:fsharp_cpp"
+    - "//example/routeguide:fsharp_csharp"
+    - "//example/routeguide:fsharp_fsharp"
+    - "//example/routeguide:fsharp_go"
+    - "//example/routeguide:fsharp_java"
+    - "//example/routeguide:fsharp_python"
+    - "//example/routeguide:fsharp_ruby"
+    - "//example/routeguide:go_cpp"
+    - "//example/routeguide:go_csharp"
+    - "//example/routeguide:go_fsharp"
+    - "//example/routeguide:go_go"
+    - "//example/routeguide:go_java"
+    - "//example/routeguide:go_js"
+    - "//example/routeguide:go_python"
+    - "//example/routeguide:go_ruby"
+    - "//example/routeguide:java_cpp"
+    - "//example/routeguide:java_csharp"
+    - "//example/routeguide:java_fsharp"
+    - "//example/routeguide:java_go"
+    - "//example/routeguide:java_java"
+    - "//example/routeguide:java_js"
+    - "//example/routeguide:java_python"
+    - "//example/routeguide:java_ruby"
+    - "//example/routeguide:js_cpp"
+    - "//example/routeguide:js_csharp"
+    - "//example/routeguide:js_fsharp"
+    - "//example/routeguide:js_go"
+    - "//example/routeguide:js_java"
+    - "//example/routeguide:js_js"
+    - "//example/routeguide:js_python"
+    - "//example/routeguide:js_ruby"
+    - "//example/routeguide:python_cpp"
+    - "//example/routeguide:python_csharp"
+    - "//example/routeguide:python_fsharp"
+    - "//example/routeguide:python_go"
+    - "//example/routeguide:python_java"
+    - "//example/routeguide:python_js"
+    - "//example/routeguide:python_python"
+    - "//example/routeguide:python_ruby"
+    - "//example/routeguide:ruby_cpp"
+    - "//example/routeguide:ruby_csharp"
+    - "//example/routeguide:ruby_fsharp"
+    - "//example/routeguide:ruby_go"
+    - "//example/routeguide:ruby_java"
+    - "//example/routeguide:ruby_js"
+    - "//example/routeguide:ruby_python"
+    - "//example/routeguide:ruby_ruby"
+    - "//example/routeguide:scala_cpp"
+    - "//example/routeguide:scala_csharp"
+    - "//example/routeguide:scala_fsharp"
+    - "//example/routeguide:scala_go"
+    - "//example/routeguide:scala_java"
+    - "//example/routeguide:scala_js"
+    - "//example/routeguide:scala_python"
+    - "//example/routeguide:scala_ruby"
+
+  android_ubuntu2204_examples:
+    name: android examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make android_android_proto_compile_example
+     - make android_android_grpc_compile_example
+     - make android_android_proto_library_example
+     - make android_android_grpc_library_example
+
+  android_macos_examples:
+    name: android examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make android_android_proto_compile_example
+     - make android_android_grpc_compile_example
+     - make android_android_proto_library_example
+     - make android_android_grpc_library_example
+
+  buf_ubuntu2204_examples:
+    name: buf examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make buf_buf_proto_breaking_test_example
+     - make buf_buf_proto_lint_test_example
+
+  buf_macos_examples:
+    name: buf examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make buf_buf_proto_breaking_test_example
+     - make buf_buf_proto_lint_test_example
+
+  c_ubuntu2204_examples:
+    name: c examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make c_c_proto_compile_example
+     - make c_c_proto_library_example
+
+  c_macos_examples:
+    name: c examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make c_c_proto_compile_example
+     - make c_c_proto_library_example
+
+  cpp_ubuntu2204_examples:
+    name: cpp examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make cpp_cpp_proto_compile_example
+     - make cpp_cpp_grpc_compile_example
+     - make cpp_cpp_proto_library_example
+     - make cpp_cpp_grpc_library_example
+
+  cpp_macos_examples:
+    name: cpp examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make cpp_cpp_proto_compile_example
+     - make cpp_cpp_grpc_compile_example
+     - make cpp_cpp_proto_library_example
+     - make cpp_cpp_grpc_library_example
+
+  csharp_ubuntu2204_examples:
+    name: csharp examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - export BAZEL_EXTRA_FLAGS="--host_platform=@io_bazel_rules_dotnet//dotnet/toolchain:linux_amd64_6.0.101 $BAZEL_EXTRA_FLAGS"
+     - export BAZEL_EXTRA_FLAGS="--platforms=@io_bazel_rules_dotnet//dotnet/toolchain:linux_amd64_6.0.101 $BAZEL_EXTRA_FLAGS"
+     - make csharp_csharp_proto_compile_example
+     - make csharp_csharp_grpc_compile_example
+     - make csharp_csharp_proto_library_example
+     - make csharp_csharp_grpc_library_example
+
+  csharp_macos_examples:
+    name: csharp examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - export BAZEL_EXTRA_FLAGS="--host_platform=@io_bazel_rules_dotnet//dotnet/toolchain:darwin_amd64_6.0.101 $BAZEL_EXTRA_FLAGS"
+     - export BAZEL_EXTRA_FLAGS="--platforms=@io_bazel_rules_dotnet//dotnet/toolchain:darwin_amd64_6.0.101 $BAZEL_EXTRA_FLAGS"
+     - make csharp_csharp_proto_compile_example
+     - make csharp_csharp_grpc_compile_example
+     - make csharp_csharp_proto_library_example
+     - make csharp_csharp_grpc_library_example
+
+  d_ubuntu2204_examples:
+    name: d examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make d_d_proto_compile_example
+     - make d_d_proto_library_example
+
+  doc_ubuntu2204_examples:
+    name: doc examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make doc_doc_docbook_compile_example
+     - make doc_doc_html_compile_example
+     - make doc_doc_json_compile_example
+     - make doc_doc_markdown_compile_example
+     - make doc_doc_template_compile_example
+
+  doc_macos_examples:
+    name: doc examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make doc_doc_docbook_compile_example
+     - make doc_doc_html_compile_example
+     - make doc_doc_json_compile_example
+     - make doc_doc_markdown_compile_example
+     - make doc_doc_template_compile_example
+
+  fsharp_ubuntu2204_examples:
+    name: fsharp examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - export BAZEL_EXTRA_FLAGS="--host_platform=@io_bazel_rules_dotnet//dotnet/toolchain:linux_amd64_6.0.101 $BAZEL_EXTRA_FLAGS"
+     - export BAZEL_EXTRA_FLAGS="--platforms=@io_bazel_rules_dotnet//dotnet/toolchain:linux_amd64_6.0.101 $BAZEL_EXTRA_FLAGS"
+     - make fsharp_fsharp_proto_compile_example
+     - make fsharp_fsharp_grpc_compile_example
+     - make fsharp_fsharp_proto_library_example
+     - make fsharp_fsharp_grpc_library_example
+
+  fsharp_macos_examples:
+    name: fsharp examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - export BAZEL_EXTRA_FLAGS="--host_platform=@io_bazel_rules_dotnet//dotnet/toolchain:darwin_amd64_6.0.101 $BAZEL_EXTRA_FLAGS"
+     - export BAZEL_EXTRA_FLAGS="--platforms=@io_bazel_rules_dotnet//dotnet/toolchain:darwin_amd64_6.0.101 $BAZEL_EXTRA_FLAGS"
+     - make fsharp_fsharp_proto_compile_example
+     - make fsharp_fsharp_grpc_compile_example
+     - make fsharp_fsharp_proto_library_example
+     - make fsharp_fsharp_grpc_library_example
+
+  go_ubuntu2204_examples:
+    name: go examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make go_go_proto_compile_example
+     - make go_go_grpc_compile_example
+     - make go_go_validate_compile_example
+     - make go_go_proto_library_example
+     - make go_go_grpc_library_example
+     - make go_go_validate_library_example
+
+  go_macos_examples:
+    name: go examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make go_go_proto_compile_example
+     - make go_go_grpc_compile_example
+     - make go_go_validate_compile_example
+     - make go_go_proto_library_example
+     - make go_go_grpc_library_example
+     - make go_go_validate_library_example
+
+  grpc-gateway_ubuntu2204_examples:
+    name: grpc-gateway examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make grpc-gateway_gateway_grpc_compile_example
+     - make grpc-gateway_gateway_openapiv2_compile_example
+     - make grpc-gateway_gateway_grpc_library_example
+
+  grpc-gateway_macos_examples:
+    name: grpc-gateway examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make grpc-gateway_gateway_grpc_compile_example
+     - make grpc-gateway_gateway_openapiv2_compile_example
+     - make grpc-gateway_gateway_grpc_library_example
+
+  java_ubuntu2204_examples:
+    name: java examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make java_java_proto_compile_example
+     - make java_java_grpc_compile_example
+     - make java_java_proto_library_example
+     - make java_java_grpc_library_example
+
+  java_macos_examples:
+    name: java examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make java_java_proto_compile_example
+     - make java_java_grpc_compile_example
+     - make java_java_proto_library_example
+     - make java_java_grpc_library_example
+
+  js_ubuntu2204_examples:
+    name: js examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make js_js_proto_compile_example
+     - make js_js_grpc_node_compile_example
+     - make js_js_grpc_web_compile_example
+     - make js_js_proto_library_example
+     - make js_js_grpc_node_library_example
+     - make js_js_grpc_web_library_example
+
+  js_macos_examples:
+    name: js examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make js_js_proto_compile_example
+     - make js_js_grpc_node_compile_example
+     - make js_js_grpc_web_compile_example
+     - make js_js_proto_library_example
+     - make js_js_grpc_node_library_example
+     - make js_js_grpc_web_library_example
+
+  objc_macos_examples:
+    name: objc examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make objc_objc_proto_compile_example
+     - make objc_objc_grpc_compile_example
+     - make objc_objc_proto_library_example
+     - make objc_objc_grpc_library_example
+
+  php_ubuntu2204_examples:
+    name: php examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make php_php_proto_compile_example
+     - make php_php_grpc_compile_example
+
+  php_macos_examples:
+    name: php examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make php_php_proto_compile_example
+     - make php_php_grpc_compile_example
+
+  python_ubuntu2204_examples:
+    name: python examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make python_python_proto_compile_example
+     - make python_python_grpc_compile_example
+     - make python_python_grpclib_compile_example
+     - make python_python_proto_library_example
+     - make python_python_grpc_library_example
+     - make python_python_grpclib_library_example
+
+  python_macos_examples:
+    name: python examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make python_python_proto_compile_example
+     - make python_python_grpc_compile_example
+     - make python_python_proto_library_example
+     - make python_python_grpc_library_example
+
+  ruby_ubuntu2204_examples:
+    name: ruby examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make ruby_ruby_proto_compile_example
+     - make ruby_ruby_grpc_compile_example
+     - make ruby_ruby_proto_library_example
+     - make ruby_ruby_grpc_library_example
+
+  ruby_macos_examples:
+    name: ruby examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make ruby_ruby_proto_compile_example
+     - make ruby_ruby_grpc_compile_example
+     - make ruby_ruby_proto_library_example
+     - make ruby_ruby_grpc_library_example
+
+  rust_ubuntu2204_examples:
+    name: rust examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make rust_rust_prost_proto_compile_example
+     - make rust_rust_tonic_grpc_compile_example
+     - make rust_rust_prost_proto_library_example
+     - make rust_rust_tonic_grpc_library_example
+
+  scala_ubuntu2204_examples:
+    name: scala examples
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make scala_scala_proto_compile_example
+     - make scala_scala_grpc_compile_example
+     - make scala_scala_proto_library_example
+     - make scala_scala_grpc_library_example
+
+  scala_macos_examples:
+    name: scala examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make scala_scala_proto_compile_example
+     - make scala_scala_grpc_compile_example
+     - make scala_scala_proto_library_example
+     - make scala_scala_grpc_library_example
+
+  swift_macos_examples:
+    name: swift examples
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make swift_swift_proto_compile_example
+     - make swift_swift_grpc_compile_example
+     - make swift_swift_proto_library_example
+     - make swift_swift_grpc_library_example
+
+  ubuntu2204_test_workspaces:
+    name: test workspaces
+    platform: ubuntu2204
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make test_workspace_absolute_strip_import_prefix
+     - make test_workspace_combined_strip_and_add_prefix
+     - make test_workspace_common_cpp_library
+     - make test_workspace_empty_output_directory
+     - make test_workspace_exclusions
+     - make test_workspace_generated_proto
+     - make test_workspace_go_fixer
+     - make test_workspace_go_importpath
+     - make test_workspace_import_prefix
+     - make test_workspace_nested_output_directory
+     - make test_workspace_objc_capitalisation
+     - make test_workspace_python3_grpc
+     - make test_workspace_python_dashes
+     - make test_workspace_python_deps
+     - make test_workspace_readme_http_archive
+     - make test_workspace_relative_strip_import_prefix
+     - make test_workspace_shared_proto
+     - make test_workspace_special_characters
+
+  macos_test_workspaces:
+    name: test workspaces
+    platform: macos
+    shell_commands:
+     - set -x
+     - export CC=clang
+     - make test_workspace_absolute_strip_import_prefix
+     - make test_workspace_combined_strip_and_add_prefix
+     - make test_workspace_common_cpp_library
+     - make test_workspace_empty_output_directory
+     - make test_workspace_exclusions
+     - make test_workspace_generated_proto
+     - make test_workspace_go_fixer
+     - make test_workspace_go_importpath
+     - make test_workspace_import_prefix
+     - make test_workspace_nested_output_directory
+     - make test_workspace_objc_capitalisation
+     - make test_workspace_python3_grpc
+     - make test_workspace_python_dashes
+     - make test_workspace_python_deps
+     - make test_workspace_readme_http_archive
+     - make test_workspace_relative_strip_import_prefix
+     - make test_workspace_shared_proto
+     - make test_workspace_special_characters

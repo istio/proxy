@@ -1,0 +1,22 @@
+load("//:defs.bzl", "proto_plugin")
+
+proto_plugin(
+    name = "objc_plugin",
+    outputs = [
+        "{protopath|pascal|objc}.pbobjc.h",
+        "{protopath|pascal|objc}.pbobjc.m",
+    ],
+    protoc_plugin_name = "objc",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "grpc_objc_plugin",
+    empty_template = "empty.template",
+    outputs = [
+        "{protopath|pascal|objc}.pbrpc.h",
+        "{protopath|pascal|objc}.pbrpc.m",
+    ],
+    tool = "@com_github_grpc_grpc//src/compiler:grpc_objective_c_plugin",
+    visibility = ["//visibility:public"],
+)

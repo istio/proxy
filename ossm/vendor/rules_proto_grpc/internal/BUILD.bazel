@@ -1,0 +1,17 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+bzl_library(
+    name = "internal",
+    srcs = [
+        "common.bzl",
+        "compile.bzl",
+        "filter_files.bzl",
+        "plugin.bzl",
+        "protoc.bzl",
+        "providers.bzl",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@rules_proto//proto:defs",
+    ],
+)

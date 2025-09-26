@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "width",
+    srcs = [
+        "kind_string.go",
+        "tables10.0.0.go",
+        "tables11.0.0.go",
+        "tables12.0.0.go",
+        "tables13.0.0.go",
+        "tables9.0.0.go",
+        "transform.go",
+        "trieval.go",
+        "width.go",
+    ],
+    importpath = "golang.org/x/text/width",
+    visibility = ["//visibility:public"],
+    deps = ["//transform"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":width",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "width_test",
+    srcs = [
+        "common_test.go",
+        "example_test.go",
+        "runes_test.go",
+        "tables_test.go",
+        "transform_test.go",
+    ],
+    embed = [":width"],
+    deps = [
+        "//internal/gen",
+        "//internal/testtext",
+        "//internal/ucd",
+        "//transform",
+    ],
+)

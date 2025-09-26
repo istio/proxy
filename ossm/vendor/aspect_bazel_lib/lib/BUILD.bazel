@@ -1,0 +1,327 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("//lib:utils.bzl", "is_bzlmod_enabled")
+load("//lib/private:stamping.bzl", "stamp_build_setting")
+
+# Ensure that users building their own rules can dep on our bzl_library targets for their stardoc
+package(default_visibility = ["//visibility:public"])
+
+exports_files(
+    glob(["*.bzl"]),
+    visibility = ["//visibility:public"],
+)
+
+# Macro that creates targets enabling the use of `--stamp` in Starlark rules
+stamp_build_setting(name = "stamp")
+
+# Add a config indicating that bzlmod is enabled so that we can use select()
+# to skip bzlmod-incompatible targets.
+config_setting(
+    name = "bzlmod",
+    flag_values = {
+        ":flag_bzlmod": "true",
+    },
+)
+
+bool_flag(
+    name = "flag_bzlmod",
+    build_setting_default = True if is_bzlmod_enabled() else False,
+)
+
+# TODO(3.0): change default to True.
+bool_flag(
+    name = "tar_compute_unused_inputs",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "enable_runfiles",
+    values = {"enable_runfiles": "true"},
+)
+
+toolchain_type(
+    name = "jq_toolchain_type",
+)
+
+toolchain_type(
+    name = "yq_toolchain_type",
+)
+
+toolchain_type(
+    name = "copy_directory_toolchain_type",
+)
+
+toolchain_type(
+    name = "copy_to_directory_toolchain_type",
+)
+
+toolchain_type(
+    name = "coreutils_toolchain_type",
+)
+
+toolchain_type(
+    name = "expand_template_toolchain_type",
+)
+
+toolchain_type(
+    name = "tar_toolchain_type",
+)
+
+toolchain_type(
+    name = "zstd_toolchain_type",
+)
+
+toolchain_type(
+    name = "bats_toolchain_type",
+)
+
+bzl_library(
+    name = "expand_make_vars",
+    srcs = ["expand_make_vars.bzl"],
+    deps = [
+        "//lib/private:expand_locations",
+        "//lib/private:expand_variables",
+    ],
+)
+
+bzl_library(
+    name = "expand_template",
+    srcs = ["expand_template.bzl"],
+    deps = [
+        "//lib/private:expand_template",
+        "@bazel_skylib//lib:types",
+        "@bazel_skylib//rules:write_file",
+    ],
+)
+
+bzl_library(
+    name = "params_file",
+    srcs = ["params_file.bzl"],
+    deps = ["//lib/private:params_file"],
+)
+
+bzl_library(
+    name = "paths",
+    srcs = ["paths.bzl"],
+    deps = ["//lib/private:paths"],
+)
+
+bzl_library(
+    name = "utils",
+    srcs = ["utils.bzl"],
+    deps = ["//lib/private:utils"],
+)
+
+bzl_library(
+    name = "tar",
+    srcs = ["tar.bzl"],
+    deps = [
+        "//lib:expand_template",
+        "//lib:utils",
+        "//lib/private:tar",
+        "@bazel_skylib//lib:types",
+    ],
+)
+
+bzl_library(
+    name = "jq",
+    srcs = ["jq.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/private:jq",
+    ],
+)
+
+bzl_library(
+    name = "directory_path",
+    srcs = ["directory_path.bzl"],
+    deps = ["//lib/private:directory_path"],
+)
+
+bzl_library(
+    name = "output_files",
+    srcs = ["output_files.bzl"],
+    deps = ["//lib/private:output_files"],
+)
+
+bzl_library(
+    name = "copy_file",
+    srcs = ["copy_file.bzl"],
+    deps = ["//lib/private:copy_file"],
+)
+
+bzl_library(
+    name = "copy_directory",
+    srcs = ["copy_directory.bzl"],
+    deps = ["//lib/private:copy_directory"],
+)
+
+bzl_library(
+    name = "copy_to_directory",
+    srcs = ["copy_to_directory.bzl"],
+    deps = ["//lib/private:copy_to_directory"],
+)
+
+bzl_library(
+    name = "copy_to_bin",
+    srcs = ["copy_to_bin.bzl"],
+    deps = ["//lib/private:copy_to_bin"],
+)
+
+#keep
+bzl_library(
+    name = "diff_test",
+    srcs = ["diff_test.bzl"],
+    deps = ["//lib/private:diff_test"],
+)
+
+bzl_library(
+    name = "write_source_files",
+    srcs = ["write_source_files.bzl"],
+    deps = [
+        ":diff_test",
+        ":utils",
+        # "//lib/private:fail_with_message_test",
+        "//lib/private:write_source_file",
+    ],
+)
+
+bzl_library(
+    name = "run_binary",
+    srcs = ["run_binary.bzl"],
+    deps = ["//lib/private:run_binary"],
+)
+
+bzl_library(
+    name = "repo_utils",
+    srcs = ["repo_utils.bzl"],
+    deps = [
+        "//lib/private:patch",
+        "//lib/private:repo_utils",
+    ],
+)
+
+bzl_library(
+    name = "yq",
+    srcs = ["yq.bzl"],
+    deps = ["//lib/private:yq"],
+)
+
+bzl_library(
+    name = "glob_match",
+    srcs = ["glob_match.bzl"],
+    deps = ["//lib/private:glob_match"],
+)
+
+bzl_library(
+    name = "host_repo",
+    srcs = ["host_repo.bzl"],
+    deps = [
+        "//lib/private:host_repo",
+        "@bazel_skylib//lib:versions",
+    ],
+)
+
+bzl_library(
+    name = "stamping",
+    srcs = ["stamping.bzl"],
+    deps = ["//lib/private:stamping"],
+)
+
+bzl_library(
+    name = "testing",
+    srcs = ["testing.bzl"],
+    deps = [
+        ":diff_test",
+        ":jq",
+        ":params_file",
+        ":utils",
+        "@bazel_skylib//lib:types",
+        "@bazel_skylib//rules:write_file",
+    ],
+)
+
+bzl_library(
+    name = "extensions",
+    srcs = ["extensions.bzl"],
+    deps = ["@aspect_bazel_lib//lib:repositories"],
+)
+
+bzl_library(
+    name = "repositories",
+    srcs = ["repositories.bzl"],
+    deps = [
+        ":utils",
+        "//lib/private:bats_toolchain",
+        "//lib/private:copy_directory_toolchain",
+        "//lib/private:copy_to_directory_toolchain",
+        "//lib/private:coreutils_toolchain",
+        "//lib/private:expand_template_toolchain",
+        "//lib/private:jq_toolchain",
+        "//lib/private:source_toolchains_repo",
+        "//lib/private:tar_toolchain",
+        "//lib/private:yq_toolchain",
+        "//lib/private:zstd_toolchain",
+    ],
+)
+
+bzl_library(
+    name = "transitions",
+    srcs = ["transitions.bzl"],
+    deps = [
+        "@bazel_skylib//lib:paths",
+    ],
+)
+
+bzl_library(
+    name = "platform_utils",
+    srcs = ["platform_utils.bzl"],
+    deps = ["//lib/private:platform_utils"],
+)
+
+bzl_library(
+    name = "base64",
+    srcs = ["base64.bzl"],
+    deps = ["//lib/private:base64"],
+)
+
+bzl_library(
+    name = "bazelrc_presets",
+    srcs = ["bazelrc_presets.bzl"],
+    deps = [":write_source_files"],
+)
+
+bzl_library(
+    name = "strings",
+    srcs = ["strings.bzl"],
+    deps = ["//lib/private:strings"],
+)
+
+bzl_library(
+    name = "lists",
+    srcs = ["lists.bzl"],
+    deps = ["//lib/private:lists"],
+)
+
+bzl_library(
+    name = "docs",
+    srcs = ["docs.bzl"],
+    deps = ["//lib/private:docs"],
+)
+
+bzl_library(
+    name = "windows_utils",
+    srcs = ["windows_utils.bzl"],
+    deps = ["//lib/private:paths"],
+)
+
+bzl_library(
+    name = "bats",
+    srcs = ["bats.bzl"],
+    deps = ["//lib/private:bats"],
+)
+
+bzl_library(
+    name = "resource_sets",
+    srcs = ["resource_sets.bzl"],
+)

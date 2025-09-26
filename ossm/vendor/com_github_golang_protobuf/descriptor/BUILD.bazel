@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "descriptor",
+    srcs = ["descriptor.go"],
+    importpath = "github.com/golang/protobuf/descriptor",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//proto",
+        "//protoc-gen-go/descriptor",
+        "@org_golang_google_protobuf//reflect/protodesc:go_default_library",
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library_gen",
+    actual = ":go_default_library",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":descriptor",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "descriptor_test",
+    srcs = ["descriptor_test.go"],
+    embed = [":descriptor"],
+    deps = [
+        "//protoc-gen-go/descriptor",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+    ],
+)

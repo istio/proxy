@@ -1,0 +1,5 @@
+# gazelle:python_extension enabled
+# gazelle:python_root
+# gazelle:resolve py bar //one/bar
+# gazelle:resolve py bar.baz //one/bar/baz:modified_name_baz
+# gazelle:resolve py foo //one/foo

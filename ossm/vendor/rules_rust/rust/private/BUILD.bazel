@@ -1,0 +1,52 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//rust/private:rust_analyzer.bzl", "rust_analyzer_detect_sysroot")
+load("//rust/private:rustc.bzl", "is_proc_macro_dep", "is_proc_macro_dep_enabled")
+load("//rust/private:stamp.bzl", "stamp_build_setting")
+
+bzl_library(
+    name = "bazel_tools_bzl_lib",
+    srcs = ["@bazel_tools//tools:bzl_srcs"],
+)
+
+bzl_library(
+    name = "rules_cc_bzl_lib",
+    srcs = ["@rules_cc//cc:bzl_srcs"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]),
+    visibility = ["//rust:__subpackages__"],
+    deps = [
+        ":bazel_tools_bzl_lib",
+        ":rules_cc_bzl_lib",
+        "//rust/platform:bzl_lib",
+        "@bazel_skylib//lib:paths",
+        "@bazel_skylib//rules:common_settings",
+    ],
+)
+
+stamp_build_setting(name = "stamp")
+
+# This setting may be used to identify dependencies of proc-macro-s.
+# This feature is only enabled if `is_proc_macro_dep_enabled` is true.
+# Its value controls the BAZEL_RULES_RUST_IS_PROC_MACRO_DEP environment variable
+# made available to the rustc invocation.
+is_proc_macro_dep(
+    name = "is_proc_macro_dep",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+# This setting enables the feature to identify dependencies of proc-macro-s,
+# see `is_proc_macro_dep`.
+is_proc_macro_dep_enabled(
+    name = "is_proc_macro_dep_enabled",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+rust_analyzer_detect_sysroot(
+    name = "rust_analyzer_detect_sysroot",
+    visibility = ["//visibility:public"],
+)

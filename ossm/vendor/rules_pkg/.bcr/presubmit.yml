@@ -1,0 +1,17 @@
+build_targets: &build_targets
+- '@rules_pkg//...'
+# Re-enable those targets when toolchain registration is supported.
+- '-@rules_pkg//toolchains/...'
+- '-@rules_pkg//pkg:make_rpm'
+
+platforms:
+  centos7_java11_devtoolset10:
+    build_targets: *build_targets
+  debian10:
+    build_targets: *build_targets
+  macos:
+    build_targets: *build_targets
+  ubuntu2204:
+    build_targets: *build_targets
+  windows:
+    build_targets: *build_targets

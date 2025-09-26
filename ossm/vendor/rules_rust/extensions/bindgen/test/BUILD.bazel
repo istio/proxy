@@ -1,0 +1,3 @@
+load(":bindgen_test.bzl", "bindgen_test_suite")
+
+bindgen_test_suite(name = "cc_bindgen_test_suite")

@@ -1,0 +1,66 @@
+# Copyright 2023 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("//sphinxdocs/private:sphinx.bzl", "repeated_string_list_flag")
+
+package(
+    default_visibility = ["//:__subpackages__"],
+)
+
+# Additional -D values to add to every Sphinx build.
+# This is usually used to override the version when building
+repeated_string_list_flag(
+    name = "extra_defines",
+    build_setting_default = [],
+)
+
+repeated_string_list_flag(
+    name = "extra_env",
+    build_setting_default = [],
+)
+
+# Whether to add the `-q` arg to Sphinx invocations, which determines if
+# stdout has any output or not (logging INFO messages and progress messages).
+# If true, add `-q`. If false, don't add `-q`. This is mostly useful for
+# debugging invocations or developing extensions.
+bool_flag(
+    name = "quiet",
+    build_setting_default = True,
+)
+
+bzl_library(
+    name = "sphinx_bzl",
+    srcs = ["sphinx.bzl"],
+    deps = ["//sphinxdocs/private:sphinx_bzl"],
+)
+
+bzl_library(
+    name = "sphinx_docs_library_bzl",
+    srcs = ["sphinx_docs_library.bzl"],
+    deps = ["//sphinxdocs/private:sphinx_docs_library_macro_bzl"],
+)
+
+bzl_library(
+    name = "sphinx_stardoc_bzl",
+    srcs = ["sphinx_stardoc.bzl"],
+    deps = ["//sphinxdocs/private:sphinx_stardoc_bzl"],
+)
+
+bzl_library(
+    name = "readthedocs_bzl",
+    srcs = ["readthedocs.bzl"],
+    deps = ["//sphinxdocs/private:readthedocs_bzl"],
+)

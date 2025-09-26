@@ -1,0 +1,76 @@
+# Copyright 2024 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("//python/private:py_exec_tools_toolchain.bzl", "py_exec_tools_toolchain")  # buildifier: disable=bzl-visibility
+load(
+    ":exec_toolchain_matching_tests.bzl",
+    "define_py_runtime",
+    "exec_toolchain_matching_test_suite",
+)
+
+exec_toolchain_matching_test_suite(
+    name = "exec_toolchain_matching_tests",
+)
+
+define_py_runtime(
+    name = "target_3.12_linux",
+    interpreter_path = "/linux/python3.12",
+    interpreter_version_info = {
+        "major": "3",
+        "minor": "12",
+    },
+)
+
+define_py_runtime(
+    name = "target_3.12_mac",
+    interpreter_path = "/mac/python3.12",
+    interpreter_version_info = {
+        "major": "3",
+        "minor": "12",
+    },
+)
+
+define_py_runtime(
+    name = "target_3.12_any",
+    interpreter_path = "/any/python3.11",
+    interpreter_version_info = {
+        "major": "3",
+        "minor": "11",
+    },
+)
+
+define_py_runtime(
+    name = "target_default",
+    interpreter_path = "/should_not_match_anything",
+    interpreter_version_info = {
+        "major": "-1",
+        "minor": "-1",
+    },
+)
+
+# While these have the same definition, we register duplicates with different
+# names because it makes understanding toolchain resolution easier. Toolchain
+# resolution debug output shows the implementation name, not the toolchain()
+# call that was being evaluated.
+py_exec_tools_toolchain(
+    name = "exec_3.12",
+)
+
+py_exec_tools_toolchain(
+    name = "exec_3.11_any",
+)
+
+py_exec_tools_toolchain(
+    name = "exec_default",
+)

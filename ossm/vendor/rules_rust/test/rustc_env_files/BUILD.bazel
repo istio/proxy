@@ -1,0 +1,42 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "hello_env",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+    rustc_env_files = [":generate_rustc_env_file"],
+)
+
+write_file(
+    name = "generate_rustc_env_file",
+    out = "rustc_env_file",
+    content = [
+        "CARGO_PKG_VERSION=1.2.3",
+        "GREETING=Howdy",
+        "",
+    ],
+)
+
+rust_test(
+    name = "output_test",
+    srcs = ["output_test.rs"],
+    args = ["$(rootpath :hello_env)"],
+    data = [":hello_env"],
+    edition = "2018",
+    use_libtest_harness = False,
+)
+
+rust_library(
+    name = "hello_env_crate",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+    rustc_env_files = [":generate_rustc_env_file"],
+)
+
+rust_test(
+    name = "hello_env_crate_test",
+    crate = ":hello_env_crate",
+)

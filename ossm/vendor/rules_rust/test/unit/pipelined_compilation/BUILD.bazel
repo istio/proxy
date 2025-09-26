@@ -1,0 +1,4 @@
+load(":pipelined_compilation_test.bzl", "pipelined_compilation_test_suite")
+
+############################ UNIT TESTS #############################
+pipelined_compilation_test_suite(name = "pipelined_compilation_test_suite")

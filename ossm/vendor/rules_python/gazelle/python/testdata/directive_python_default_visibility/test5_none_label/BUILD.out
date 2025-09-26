@@ -1,0 +1,8 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_default_visibility NONE
+
+py_library(
+    name = "test5_none_label",
+    srcs = ["test5.py"],
+)

@@ -1,0 +1,13 @@
+services:
+
+  proxy:
+    build:
+      context: .
+      dockerfile: ../shared/envoy/Dockerfile
+      target: envoy-lua
+    ports:
+    - "${PORT_PROXY:-10000}:10000"
+
+  web_service:
+    build:
+      context: ../shared/echo

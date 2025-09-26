@@ -1,0 +1,9 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# python_default_visibility is not set.
+
+py_library(
+    name = "test1_default",
+    srcs = ["test1.py"],
+    visibility = ["//:__subpackages__"],
+)

@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "atom",
+    srcs = ["atom.go"],
+    importpath = "golang.org/x/tools/blog/atom",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":atom",
+    visibility = ["//visibility:public"],
+)

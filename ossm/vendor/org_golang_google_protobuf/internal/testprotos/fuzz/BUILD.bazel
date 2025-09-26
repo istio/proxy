@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "fuzz_proto",
+    srcs = ["fuzz.proto"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/test:test_proto",
+        "//internal/testprotos/test3:test3_proto",
+    ],
+)
+
+go_proto_library(
+    name = "fuzz_go_proto",
+    importpath = "google.golang.org/protobuf/internal/testprotos/fuzz",
+    proto = ":fuzz_proto",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/test",
+        "//internal/testprotos/test3",
+    ],
+)
+
+go_library(
+    name = "fuzz",
+    embed = [":fuzz_go_proto"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/fuzz",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fuzz",
+    visibility = ["//:__subpackages__"],
+)

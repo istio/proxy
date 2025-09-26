@@ -1,0 +1,8 @@
+:orphan:
+
+Page not found
+==============
+
+No page was found here :(
+
+.. image:: _static/404.gif

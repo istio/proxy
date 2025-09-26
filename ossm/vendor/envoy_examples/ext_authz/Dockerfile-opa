@@ -1,0 +1,3 @@
+FROM openpolicyagent/opa:1.6.0-envoy-6-static@sha256:21cb0d2b56b06ba42c8aceee865dbf8053bc2dd7fda267442c673531fdad648d
+
+COPY --chmod=644 ./config/opa-service/policy.rego /etc/policy.rego

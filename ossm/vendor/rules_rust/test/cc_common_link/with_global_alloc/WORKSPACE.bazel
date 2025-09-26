@@ -1,0 +1,23 @@
+workspace(name = "test_cc_common_link_with_global_alloc")
+
+local_repository(
+    name = "rules_rust",
+    path = "../../../",
+)
+
+local_repository(
+    name = "test_cc_common_link",
+    path = "../",
+)
+
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+
+rules_rust_dependencies()
+
+rust_register_toolchains(
+    edition = "2018",
+)
+
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+
+bazel_skylib_workspace()

@@ -1,0 +1,10 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "deps_with_no_srcs_library",
+    deps = [
+        "//:remove_invalid_library",
+        "@pypi//bar",
+        "@pypi//foo",
+    ],
+)

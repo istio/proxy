@@ -1,0 +1,23 @@
+load("//crate_universe:defs.bzl", "crate", "crates_vendor")
+
+package(default_visibility = ["//visibility:public"])
+
+crates_vendor(
+    name = "crates_vendor",
+    mode = "remote",
+    packages = {
+        "serde": crate.spec(
+            features = ["derive"],
+            version = "1",
+        ),
+        "serde_json": crate.spec(
+            version = "1",
+        ),
+    },
+    # Short for 'test 3rdparty'. Keep this short to reduce the risk to
+    # bump into absolute path length issues on Windows. See:
+    # https://github.com/bazelbuild/rules_rust/issues/1120
+    repository_name = "t3p",
+    tags = ["manual"],
+    vendor_path = "crates",
+)

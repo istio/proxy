@@ -1,0 +1,20 @@
+
+load("@package_metadata//rules:package_metadata.bzl", "package_metadata")
+load("@rules_license//rules:package_info.bzl", "package_info")
+
+package_metadata(
+    name = "package_metadata",
+    purl = "pkg:golang/google.golang.org/protobuf@v1.30.0",
+    visibility = [
+        "//:__subpackages__",
+    ],
+)
+
+package_info(
+    name = "gazelle_generated_package_info",
+    package_name = "google.golang.org/protobuf",
+    package_url = "https://google.golang.org/protobuf",
+    package_version = "1.30.0",
+    purl = "pkg:golang/google.golang.org/protobuf@v1.30.0",
+    visibility = ["//:__subpackages__"],
+)

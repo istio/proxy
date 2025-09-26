@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package nested_messages;
+
+message A {
+    string name = 1;
+
+    message B {
+        string name = 1;
+
+        message C {
+            string name = 1;
+        }
+
+        enum D {
+            E = 0;
+            F = 1;
+        }
+
+        C c = 2;
+
+        D d = 3;
+    }
+
+    B b = 2;
+}

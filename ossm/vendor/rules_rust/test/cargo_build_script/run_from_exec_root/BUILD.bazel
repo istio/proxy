@@ -1,0 +1,17 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_test")
+
+cargo_build_script(
+    name = "rundir_build_rs",
+    srcs = ["build.rs"],
+    data = ["data.txt"],
+    edition = "2018",
+    rundir = ".",
+)
+
+rust_test(
+    name = "test",
+    srcs = ["test.rs"],
+    edition = "2018",
+    deps = [":rundir_build_rs"],
+)

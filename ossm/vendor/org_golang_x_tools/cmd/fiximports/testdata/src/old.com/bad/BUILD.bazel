@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bad",
+    srcs = ["bad.go"],
+    importpath = "golang.org/x/tools/cmd/fiximports/testdata/src/old.com/bad",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":bad",
+    visibility = ["//visibility:public"],
+)

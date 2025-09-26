@@ -1,0 +1,11 @@
+load("@rules_buf//buf:defs.bzl", "buf_breaking_test")
+
+# gazelle:buf_breaking_against //:against_file
+
+buf_breaking_test(
+    name = "buf_breaking",
+    against = "//:against_file",
+    config = "//:buf.yaml",
+    module = "petapis",
+    targets = ["//petapis/pets/v1:pets_v1_proto"],
+)

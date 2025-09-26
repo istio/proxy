@@ -1,0 +1,73 @@
+#!/bin/sh
+
+set -e
+
+# Go to the repository root directory.
+cd "$(dirname "$0")"/..
+
+# clang-format's behavior changes between versions, even given the same
+# configuration.
+# This project fixes the version (based on the maintainers' setup) and
+# occasionally bumps the required version, reformatting everything.
+version=14
+formatter=clang-format-$version
+formatter_options="--style=file -i $*"
+
+find_sources() {
+    find src/ examples/ test/ fuzz/ -type f \( -name '*.h' -o -name '*.cpp' \) "$@"
+}
+
+# If the correct version of clang-format is installed, then use it and quit.
+if >/dev/null command -v "$formatter"; then
+    # shellcheck disable=SC2086
+    find_sources -print0 | xargs -0 "$formatter" $formatter_options
+    exit
+fi
+
+if ! >/dev/null command -v docker; then
+    >&2 echo "Neither $formatter nor docker is installed. Unable to format code."
+    exit 1
+fi
+
+# If they haven't downloaded the clang docker image before, then prompt the
+# user before telling docker to download it (it's large).
+image=silkeh/clang:$version
+if [ "$(docker image ls --quiet $image | wc -l)" -eq 0 ]; then
+    printf '%s is not installed. Download docker image %s instead? [Y/n] ' "$formatter" "$image"
+    read -r response
+    case "$response" in
+        y|Y|yes|Yes|YES|'') ;;
+        *) exit ;;
+    esac
+fi
+
+mount_path=/mnt/host
+
+# File paths passed to the dockerized clang-format need to be resolved and
+# prefixed with the bind mount path.
+#
+# Non-path arguments (flags) are left alone.
+process_arg() {
+  case "$1" in
+    -*) printf '%s\0' "$1" ;;
+    *) printf '%s/%s\0' "$mount_path" "$(realpath "$1")" ;;
+  esac
+}
+
+docker_clang_format() {
+    # shellcheck disable=SC2086
+    find_sources | while IFS= read -r arg; do
+        process_arg "$arg"
+    done | xargs -0 \
+      docker run \
+      --interactive \
+      --rm \
+      --volume /etc/passwd:/etc/passwd:ro \
+      --volume /etc/group:/etc/group:ro \
+      --user "$(id -u):$(id -g)" \
+      --mount "type=bind,source=/,destination=$mount_path" \
+      "$image" \
+      clang-format $formatter_options
+}
+
+docker_clang_format

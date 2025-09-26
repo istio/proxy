@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "test3_proto",
+    srcs = [
+        "test.proto",
+        "test_extension.proto",
+        "test_import.proto",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["@com_google_protobuf//:descriptor_proto"],
+)
+
+go_proto_library(
+    name = "test3_go_proto",
+    importpath = "google.golang.org/protobuf/internal/testprotos/test3",
+    proto = ":test3_proto",
+    visibility = ["//:__subpackages__"],
+)
+
+go_library(
+    name = "test3",
+    embed = [":test3_go_proto"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/test3",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":test3",
+    visibility = ["//:__subpackages__"],
+)

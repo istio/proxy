@@ -1,0 +1,23 @@
+commit 677356a2a00a2cb3b10e458c8586a2ea8bd562a4
+Author: Daniel Wagner-Hall <dwagnerhall@apple.com>
+Date:   Wed Nov 30 13:00:47 2022 +0000
+
+    Use backtick not `<code>` for attr default values
+    
+    GitHub Pages doesn't recognise <code> blocks, so renders these
+    attributes with smart-quotes, which means you can't copy-paste them into
+    a starlark file.
+
+diff --git stardoc/templates/markdown_tables/func.vm stardoc/templates/markdown_tables/func.vm
+index 5275d08..e0d2496 100644
+--- stardoc/templates/markdown_tables/func.vm
++++ stardoc/templates/markdown_tables/func.vm
+@@ -15,7 +15,7 @@ ${util.htmlEscape($funcInfo.docString)}
+ | Name  | Description | Default Value |
+ | :------------- | :------------- | :------------- |
+ #foreach ($param in $funcInfo.getParameterList())
+-| <a id="${funcInfo.functionName}-${param.name}"></a>$param.name | #if(!$param.docString.isEmpty()) ${util.markdownCellFormat($param.docString)} #else <p align="center"> - </p> #end  | #if(!$param.getDefaultValue().isEmpty()) <code>${util.htmlEscape($param.getDefaultValue())}</code> #else none #end|
++| <a id="${funcInfo.functionName}-${param.name}"></a>$param.name | #if(!$param.docString.isEmpty()) ${util.markdownCellFormat($param.docString)} #else <p align="center"> - </p> #end  | #if(!$param.getDefaultValue().isEmpty()) `${util.htmlEscape($param.getDefaultValue())}` #else none #end|
+ #end
+ #end
+ #if (!$funcInfo.getReturn().docString.isEmpty())

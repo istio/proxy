@@ -1,0 +1,48 @@
+#!/bin/sh
+
+set -e
+
+# Install a recent binary release of cmake.
+# Kitware produces a self-installing tarball.
+
+if [ "$(uname)" != Linux ]; then
+    >&2 echo "This installer requires Linux, but instead you're running $(uname)."
+    exit 1
+fi
+
+VERSION=3.24.2
+REPO=$(dirname "$0")/..
+
+# If a suitably recent version of cmake is already installed, then don't bother.
+if >/dev/null command -v cmake && >/dev/null 2>&1 cmake -P "$REPO/CheckRequiredCMakeVersion.cmake"; then
+    echo 'A suitable version of cmake is already installed.'
+    exit
+fi
+
+for required in wget sed; do
+    if ! >/dev/null command -v "$required"; then
+        >&2 echo "This installer requires $required."
+        exit 2
+    fi
+done
+
+ARCHITECTURE=$(uname -m)
+INSTALLER=cmake-${VERSION}-linux-${ARCHITECTURE}.sh
+URL=https://github.com/Kitware/CMake/releases/download/v${VERSION}/${INSTALLER}
+
+maybe_sudo() {
+    if [ "$(id -u)" -eq 0 ]; then
+        "$@"
+    else
+        sudo "$@"
+    fi
+}
+
+cd /tmp
+if ! wget "${URL}"; then
+    >&2 echo "wget failed to download \"${URL}\"."
+    exit 3
+fi
+chmod +x "${INSTALLER}"
+maybe_sudo ./"${INSTALLER}" --skip-license --prefix=/usr/local --exclude-subdir
+rm "${INSTALLER}"

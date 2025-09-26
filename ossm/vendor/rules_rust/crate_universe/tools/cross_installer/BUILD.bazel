@@ -1,0 +1,37 @@
+load("@cui//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+exports_files(
+    ["Cargo.toml"],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "cross",
+    actual = "@cross_rs_host_bin//:cross",
+)
+
+rust_binary(
+    name = "cross_installer",
+    srcs = glob(["src/**/*.rs"]),
+    aliases = aliases(),
+    data = [
+        "Cross.toml",
+        ":cross",
+        "@rules_rust//rust/toolchain:current_cargo_files",
+    ],
+    edition = "2021",
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    rustc_env = {
+        "CARGO": "$(rootpath @rules_rust//rust/toolchain:current_cargo_files)",
+        "CROSS_BIN": "$(rootpath :cross)",
+        "CROSS_CONFIG": "$(rootpath :Cross.toml)",
+    },
+    deps = all_crate_deps(normal = True),
+)
+
+filegroup(
+    name = "bzl_srcs",
+    srcs = glob(["**/*.bzl"]),
+    visibility = ["//crate_universe/tools:__pkg__"],
+)

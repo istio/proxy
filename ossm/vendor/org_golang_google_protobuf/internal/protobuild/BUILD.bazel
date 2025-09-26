@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "protobuild",
+    srcs = ["build.go"],
+    importpath = "google.golang.org/protobuf/internal/protobuild",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protobuild",
+    visibility = ["//:__subpackages__"],
+)

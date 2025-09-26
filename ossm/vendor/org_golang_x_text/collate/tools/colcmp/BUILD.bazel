@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "colcmp_lib",
+    srcs = [
+        "chars.go",
+        "col.go",
+        "colcmp.go",
+        "darwin.go",
+        "gen.go",
+    ],
+    cgo = True,
+    clinkopts = select({
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "-framework CoreFoundation",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "-framework CoreFoundation",
+        ],
+        "//conditions:default": [],
+    }),
+    importpath = "golang.org/x/text/collate/tools/colcmp",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//collate",
+        "//language",
+        "//unicode/norm",
+    ],
+)
+
+go_binary(
+    name = "colcmp",
+    embed = [":colcmp_lib"],
+    visibility = ["//visibility:public"],
+)

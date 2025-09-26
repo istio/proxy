@@ -1,0 +1,389 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+syntax = "proto3";
+
+package skywalking.v3;
+
+option java_multiple_files = true;
+option java_package = "org.apache.skywalking.apm.network.ebpf.accesslog.v3";
+option go_package = "skywalking.apache.org/repo/goapi/collect/ebpf/accesslog/v3";
+
+import "common/Common.proto";
+
+service EBPFAccessLogService {
+    rpc collect(stream EBPFAccessLogMessage) returns (EBPFAccessLogDownstream) {
+    }
+}
+
+message EBPFAccessLogMessage {
+    // current node information, only not null when first message or have update
+    EBPFAccessLogNodeInfo node = 1;
+    // local process and remote process connection information
+    AccessLogConnection connection = 2;
+    // kernel level metrics
+    repeated AccessLogKernelLog kernelLogs = 3;
+    // application protocol log
+    // if the protocol is detected, the kernel logs is works the related logs
+    // otherwise, the kernel log is not related and is sent periodically
+    AccessLogProtocolLogs protocolLog = 4;
+}
+
+message EBPFAccessLogNodeInfo {
+    // Node name
+    string name = 1;
+    // All net interfaces list
+    repeated EBPFAccessLogNodeNetInterface netInterfaces = 2;
+    // System boot time
+    Instant bootTime = 3;
+    // Cluster name
+    string clusterName = 4;
+    // Policy for the access log
+    EBPFAccessLogPolicy policy = 5;
+}
+
+message EBPFAccessLogPolicy {
+    // Which namespaces should be excluded to generate the connection
+    repeated string excludeNamespaces = 1;
+}
+
+message EBPFAccessLogNodeNetInterface {
+    int32 index = 1;
+    int32 mtu = 2;
+    string name = 3;
+}
+
+// Connection information
+message AccessLogConnection {
+    // local address
+    ConnectionAddress local = 1;
+    // remote/peer address
+    ConnectionAddress remote = 2;
+    // local address detect point
+    DetectPoint role = 3;
+    // is the connection using TLS or not
+    AccessLogConnectionTLSMode tlsMode = 4;
+    // application protocol type
+    AccessLogProtocolType protocol = 5;
+    // the attachment information about the connection
+    ConnectionAttachment attachment = 6;
+}
+
+message ConnectionAttachment {
+    // detect contains the environment information
+    oneof environment {
+        // detect the connection have a zTunnel environment(ambient istio)
+        ZTunnelAttachmentEnvironment zTunnel = 1;
+    }
+}
+
+message ZTunnelAttachmentEnvironment {
+    // the real destination ip address of the connection
+    string real_destination_ip = 1;
+    // how the environment detected
+    ZTunnelAttachmentEnvironmentDetectBy by = 2;
+    // the security policy of the ztunnel communicate with upstream
+    ZTunnelAttachmentSecurityPolicy security_policy = 3;
+}
+
+enum ZTunnelAttachmentEnvironmentDetectBy {
+    ZTUNNEL_OUTBOUND_FUNC = 0;
+}
+
+enum ZTunnelAttachmentSecurityPolicy {
+    MTLS = 0;
+    NONE = 1;
+}
+
+message ConnectionAddress {
+    oneof address {
+        // if the address is monitored under the local machine, then return the kubernetes
+        KubernetesProcessAddress kubernetes = 1;
+        // if the address cannot be aware, then return the ip address
+        IPAddress ip = 2;
+    }
+}
+
+message KubernetesProcessAddress {
+    string serviceName = 1;
+    string podName = 2;
+    string containerName = 3;
+    string processName = 4;
+    int32 port = 5;
+}
+
+message IPAddress {
+    string host = 1;
+    int32 port = 2;
+}
+
+enum AccessLogConnectionTLSMode {
+    Plain = 0;
+    TLS = 1;
+}
+
+message AccessLogKernelLog {
+    oneof operation {
+        AccessLogKernelConnectOperation connect = 1;
+        AccessLogKernelAcceptOperation accept = 2;
+        AccessLogKernelCloseOperation close = 3;
+        AccessLogKernelReadOperation read = 4;
+        AccessLogKernelWriteOperation write = 5;
+    }
+}
+
+message AccessLogProtocolLogs {
+    oneof protocol {
+        AccessLogHTTPProtocol http = 1;
+    }
+}
+
+message AccessLogHTTPProtocol {
+    // first bytes receive/write timestamp
+    EBPFTimestamp startTime = 1;
+    // last bytes receive/write timestamp
+    EBPFTimestamp endTime = 2;
+    AccessLogHTTPProtocolVersion version = 3;
+    AccessLogHTTPProtocolRequest request = 4;
+    AccessLogHTTPProtocolResponse response = 5;
+}
+
+enum AccessLogHTTPProtocolVersion {
+    HTTP1 = 0;
+    HTTP2 = 1;
+}
+
+message AccessLogHTTPProtocolRequest {
+    AccessLogHTTPProtocolRequestMethod method = 1;
+    // The path portion from the incoming request URI.
+    string path = 2;
+    // Request header and body size.
+    uint64 sizeOfHeadersBytes = 3;
+    uint64 sizeOfBodyBytes = 4;
+    // The trace information if detected.
+    AccessLogTraceInfo trace = 5;
+    // The host header of the incoming request.
+    string host = 6;
+}
+
+message AccessLogHTTPProtocolResponse {
+    int32 statusCode = 1;
+    // Response header and body size.
+    uint64 sizeOfHeadersBytes = 3;
+    uint64 sizeOfBodyBytes = 4;
+}
+
+message AccessLogTraceInfo {
+    AccessLogTraceInfoProvider provider = 1;
+    // [Optional] A string id represents the whole trace.
+    string traceId = 2;
+    // A unique id represents this segment. Other segments could use this id to reference as a child segment.
+    // [Optional] when this span reference
+    string traceSegmentId = 3;
+    // If type == SkyWalking
+    // The number id of the span. Should be unique in the whole segment.
+    // Starting at 0
+    //
+    // If type == Zipkin
+    // The type of span ID is string.
+    string spanId = 4;
+}
+
+enum AccessLogTraceInfoProvider {
+    Zipkin = 0;
+    SkyWalking = 1;
+}
+
+enum AccessLogHTTPProtocolRequestMethod {
+    Get = 0;
+    Post = 1;
+    Put = 2;
+    Delete = 3;
+    Head = 4;
+    Patch = 5;
+    Options = 6;
+    Trace = 7;
+    Connect = 8;
+}
+
+message AccessLogKernelConnectOperation {
+    // Starting to connect with peer address timestamp
+    EBPFTimestamp startTime = 1;
+    // Finish connect operation timestamp
+    EBPFTimestamp endTime = 2;
+    // Is the connect operation success or not
+    bool success = 3;
+}
+
+message AccessLogKernelAcceptOperation {
+    // Starting to accept socket timestamp
+    EBPFTimestamp startTime = 1;
+    // Finish accept operation timestamp
+    EBPFTimestamp endTime = 2;
+}
+
+message AccessLogKernelCloseOperation {
+    // Starting to close the connection timestamp
+    EBPFTimestamp startTime = 1;
+    // Finish close operation timestamp
+    EBPFTimestamp endTime = 2;
+    // Is the close operation success or not
+    bool success = 3;
+}
+
+message AccessLogKernelWriteOperation {
+    // Starting to write data timestamp
+    EBPFTimestamp startTime = 1;
+    // Finish write operation timestamp
+    EBPFTimestamp endTime = 2;
+    // Which kind of syscall of current write operation
+    AccessLogKernelWriteSyscall syscall = 3;
+
+    // Layer 2-4 related metrics
+    AccessLogKernelWriteL4Metrics l4Metrics = 4;
+    AccessLogKernelWriteL3Metrics l3Metrics = 5;
+    AccessLogKernelWriteL2Metrics l2Metrics = 6;
+}
+
+message AccessLogKernelWriteL4Metrics {
+    // total duration(nanosecond) of layer 4
+    uint64 totalDuration = 1;
+    // total send package(contains retransmit count) count(sk_buff in linux)
+    int64 totalTransmitPackageCount = 2;
+    // total retransmit package count(sk_buff in linux)
+    int64 totalRetransmitPackageCount = 3;
+    // total losted package count metrics
+    repeated AccessLogLossPackageMetrics lossPackageMetrics = 4;
+    // total package size(bytes)
+    int64 totalPackageSize = 5;
+}
+
+message AccessLogLossPackageMetrics {
+    string location = 1;
+    int32 count = 2;
+}
+
+message AccessLogKernelWriteL3Metrics {
+    // total duration(nanosecond) of layer 3
+    uint64 totalDuration = 1;
+    // total local out use duration(nanoseconds) -> kernel: ip_local_out
+    uint64 totalLocalDuration = 2;
+    // total output use duration(nanoseconds) -> kernel: ip_finish_output2 - ip_output
+    uint64 totalOutputDuration = 3;
+    // total resolve remote MAC address(ARP Request) count and duration(nanosecond) -> kernel: neigh_resolve_output
+    uint64 totalResolveMACCount = 5;
+    uint64 totalResolveMACDuration = 6;
+    // total netfiltering count and duration(nanosecond) -> kernel: nf_hook
+    uint64 totalNetFilterCount = 7;
+    uint64 totalNetFilterDuration = 8;
+}
+
+message AccessLogKernelWriteL2Metrics {
+    // total duration(nanosecond) of layer 2
+    uint64 totalDuration = 1;
+    // target network hardware interface index, get the net hardware name through EBPFAccessLogNodeNetInterface#index
+    uint32 ifindex = 2;
+    // total enter the net device buffer count
+    uint64 totalEnterQueueBufferCount = 3;
+    // total buffer data ready to send duration(nanosecond), ready_to_send - enter_queue
+    uint64 totalReadySendDuration = 4;
+    // total send buffer to the net device duration(nanosecond)
+    uint64 totalNetDeviceSendDuration = 5;
+}
+
+message AccessLogKernelReadOperation {
+    // Starting to read data timestamp
+    EBPFTimestamp startTime = 1;
+    // Finish read operation timestamp
+    EBPFTimestamp endTime = 2;
+    // Which kind of syscall of current read operation
+    AccessLogKernelReadSyscall syscall = 3;
+
+    // Layer 2-4 related metrics
+    AccessLogKernelReadL2Metrics l2Metrics = 4;
+    AccessLogKernelReadL3Metrics l3Metrics = 5;
+    AccessLogKernelReadL4Metrics l4Metrics = 6;
+}
+
+message AccessLogKernelReadL2Metrics {
+    // from network hardware interface index, get the net hardware name through EBPFAccessLogNodeNetInterface#index
+    uint32 ifindex = 1;
+    // total package count
+    uint32 totalPackageCount = 2;
+    // total package size
+    uint64 totalPackageSize = 3;
+    // total duration(nanosecond) of all data packets queued (waiting to be read).
+    uint64 totalPackageToQueueDuration = 4;
+    // total duration(nanosecond) of all data packets read from the queue.
+    uint64 totalRcvPackageFromQueueDuration = 5;
+}
+
+message AccessLogKernelReadL3Metrics {
+    uint64 totalDuration = 1;
+    // total local receive use duration(nanoseconds) -> kernel: ip_rcv_finish - ip_rcv
+    uint64 totalRecvDuration = 2;
+    // total local use duration(nanoseconds) -> kernel: ip_local_deliver_finish - ip_local_deliver
+    uint64 totalLocalDuration = 3;
+    // total netfiltering count and duration(nanosecond) -> kernel: nf_hook
+    uint64 totalNetFilterCount = 4;
+    uint64 totalNetFilterDuration = 5;
+}
+
+message AccessLogKernelReadL4Metrics {
+    uint64 totalDuration = 1;
+}
+
+enum AccessLogKernelWriteSyscall {
+    Write = 0;
+    Writev = 1;
+    Send = 2;
+    SendTo = 3;
+    SendMsg = 4;
+    SendMmsg = 5;
+    SendFile = 6;
+    SendFile64 = 7;
+}
+
+enum AccessLogKernelReadSyscall {
+    Read = 0;
+    Readv = 1;
+    Recv = 2;
+    RecvFrom = 3;
+    RecvMsg = 4;
+    RecvMmsg = 5;
+}
+
+enum AccessLogProtocolType {
+    TCP = 0;
+    HTTP_1 = 1;
+    HTTP_2 = 2;
+}
+
+message EBPFTimestamp {
+    oneof timestamp {
+        EBPFOffsetTimestamp offset = 1;
+    }
+}
+
+// Get nanosecond through offset with node start instant
+message EBPFOffsetTimestamp {
+    uint64 offset = 1;
+}
+
+message EBPFAccessLogDownstream {
+}

@@ -1,0 +1,5 @@
+ENV_ESCAPE=with\
+new line
+ENV_NO_ESCAPE=with no new line\\
+ENV_ESCAPE_WITH_BACKSLASH=new line\\\
+here

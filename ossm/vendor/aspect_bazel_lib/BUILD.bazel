@@ -1,0 +1,184 @@
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
+load("@aspect_bazel_lib_host//:defs.bzl", "host")
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+load("@gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary")
+load("//lib:diff_test.bzl", "diff_test")
+load("//lib:tar.bzl", "mtree_spec")
+load("//lib:testing.bzl", "assert_contains")
+load("//lib:write_source_files.bzl", "write_source_files")
+load("//lib:yq.bzl", "yq")
+
+exports_files([".shellcheckrc"])
+
+# gazelle:prefix github.com/bazel-contrib/bazel-lib
+
+gazelle_binary(
+    name = "gazelle_bin",
+    languages = select({
+        # TODO: under bzlmod we get go linking errors when adding
+        # the skylib gazelle plugin.
+        # https://github.com/bazelbuild/rules_go/issues/1877
+        "@aspect_bazel_lib//lib:bzlmod": DEFAULT_LANGUAGES,
+        "//conditions:default": DEFAULT_LANGUAGES + [
+            "@bazel_skylib_gazelle_plugin//bzl",
+        ],
+    }),
+)
+
+gazelle(
+    name = "gazelle",
+    gazelle = "gazelle_bin",
+    mode = "fix",
+)
+
+gazelle(
+    name = "gazelle.check",
+    gazelle = "gazelle_bin",
+    mode = "diff",
+)
+
+gazelle(
+    name = "gazelle_update_repos",
+    args = [
+        "-build_file_proto_mode=disable_global",
+        "-from_file=go.mod",
+        "-to_macro=deps.bzl%go_dependencies",
+        "-prune",
+    ],
+    command = "update-repos",
+)
+
+buildifier(
+    name = "buildifier",
+    exclude_patterns = ["./.git/*"],
+    lint_mode = "fix",
+    mode = "fix",
+    tags = ["manual"],  # tag as manual so windows ci does not build it by default
+)
+
+buildifier(
+    name = "buildifier.check",
+    exclude_patterns = ["./.git/*"],
+    lint_mode = "warn",
+    mode = "diff",
+    tags = ["manual"],  # tag as manual so windows ci does not build it by default
+)
+
+alias(
+    name = "format",
+    actual = "//tools/format",
+    tags = ["manual"],  # tag as manual so windows ci does not build it by default
+)
+
+# write_source_files() to a git ignored subdirectory of the root
+genrule(
+    name = "write_source_file_root",
+    outs = ["write_source_file-root_directory/test.txt"],
+    cmd = "mkdir -p $$(dirname $@) && echo 'test' > $@",
+    visibility = ["//visibility:private"],
+)
+
+write_source_files(
+    name = "write_source_file_root-test",
+    diff_test = False,
+    files = {
+        "test-out/dist/write_source_file_root-test/test.txt": ":write_source_file_root",
+        "test-out/dist/write_source_file_root-test_b/test.txt": ":write_source_file_root",
+    },
+)
+
+# Test that yq works in the root package
+yq(
+    name = "yq_root-test",
+    srcs = ["//lib/tests/yq:a.yaml"],
+    expression = ".",
+)
+
+# Test case: diff_test with a file in a directory prefixed with "external"
+# stamped in the root package
+write_file(
+    name = "file_in_external_prefixed_dir",
+    out = "external-dir/foo.txt",
+    content = ["foo"],
+)
+
+copy_file(
+    name = "copy_of_file_in_external_prefixed_dir",
+    src = "external-dir/foo.txt",
+    out = "foo_copy.txt",
+)
+
+diff_test(
+    name = "case_file_has_external_prefix",
+    file1 = "external-dir/foo.txt",
+    file2 = "foo_copy.txt",
+)
+
+assert_contains(
+    name = "bazel_version_test",
+    actual = ".bazelversion",
+    expected = str(host.bazel_version),
+    target_compatible_with = [] if host.bazel_version.startswith("7") else ["@platforms//:incompatible"],
+)
+
+bzl_library(
+    name = "deps",
+    srcs = ["deps.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["@gazelle//:deps"],
+)
+
+# Test case for mtree_spec: Ensure that multiple entries at the root directory are handled correctly (bug #851)
+# See lib/tests/tar/BUILD.bazel for why this is here.
+write_file(
+    name = "tar_test13_main",
+    out = "13project/__main__.py",
+    content = ["__main__.py"],
+)
+
+write_file(
+    name = "tar_test13_bin",
+    out = "13project_bin",
+    content = ["project_bin"],
+)
+
+mtree_spec(
+    name = "tar_test13_mtree_unsorted",
+    srcs = [
+        ":tar_test13_bin",
+        ":tar_test13_main",
+    ],
+)
+
+# NOTE: On some systems, the mtree_spec output can have a different order.
+#       To make the test less brittle, we sort the mtree output and replace the BINDIR with a constant placeholder
+genrule(
+    name = "tar_test13_mtree",
+    srcs = [":tar_test13_mtree_unsorted"],
+    outs = ["actual13.mtree"],
+    cmd = "sort $< | sed 's#$(BINDIR)#{BINDIR}#' >$@",
+)
+
+diff_test(
+    name = "tar_test13",
+    file1 = "tar_test13_mtree",
+    file2 = "//lib/tests/tar:expected13.mtree",
+)
+
+# Place the .vale.ini file in bazel-bin so the relative path it contains
+# StylesPath = tools/lint/vale
+# will work when it's run as an action.
+copy_to_bin(
+    name = ".vale_ini",
+    srcs = [".vale.ini"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "markdown_files",
+    srcs = glob(["*.md"]),
+    tags = ["markdown"],
+)

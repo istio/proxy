@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+package rules_python;
+
+message PriceTag {
+  string name = 2;
+  double cost = 1;
+  google.protobuf.Any metadata = 3;
+}

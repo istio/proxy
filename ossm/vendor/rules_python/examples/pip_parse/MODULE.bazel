@@ -1,0 +1,41 @@
+module(name = "rules_python_pip_parse_example")
+
+bazel_dep(name = "rules_python", version = "0.0.0")
+local_path_override(
+    module_name = "rules_python",
+    path = "../..",
+)
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    # We can specify the exact version.
+    python_version = "3.9.13",
+)
+
+# You can use this repo mapping to ensure that your BUILD.bazel files don't need
+# to be updated when the python version changes to a different `3.9` version.
+use_repo(
+    python,
+    python_3_9 = "python_3_9_13",
+)
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    download_only = True,
+    experimental_requirement_cycles = {
+        "sphinx": [
+            "sphinx",
+            "sphinxcontrib-serializinghtml",
+            "sphinxcontrib-qthelp",
+            "sphinxcontrib-htmlhelp",
+            "sphinxcontrib-devhelp",
+            "sphinxcontrib-applehelp",
+        ],
+    },
+    hub_name = "pypi",
+    # We need to use the same version here as in the `python.toolchain` call.
+    python_version = "3.9.13",
+    requirements_lock = "//:requirements_lock.txt",
+    requirements_windows = "//:requirements_windows.txt",
+)
+use_repo(pip, "pypi")

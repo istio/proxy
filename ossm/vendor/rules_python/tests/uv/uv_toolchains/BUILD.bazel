@@ -1,0 +1,25 @@
+load("//python/uv/private:toolchains_hub.bzl", "toolchains_hub")  # buildifier: disable=bzl-visibility
+
+toolchains_hub(
+    name = "uv_unit_test",
+    implementations = {
+        "bar": "//tests/uv/uv:fake_bar",
+        "foo": "//tests/uv/uv:fake_foof",
+    },
+    target_compatible_with = {
+        "bar": [
+            "@platforms//os:linux",
+            "@platforms//cpu:aarch64",
+        ],
+        "foo": [
+            "@platforms//os:linux",
+            "@platforms//cpu:aarch64",
+        ],
+    },
+    target_settings = {},
+    # We expect foo to take precedence over bar
+    toolchains = [
+        "foo",
+        "bar",
+    ],
+)

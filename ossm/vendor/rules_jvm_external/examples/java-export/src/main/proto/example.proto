@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option java_package = "rules.jvm.external.example.proto";
+
+import "google/protobuf/duration.proto";
+
+message ExampleMessage {
+    string message = 1;
+    google.protobuf.Duration when = 2;
+}

@@ -1,0 +1,8 @@
+load("//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "collect_coverage",
+    srcs = ["collect_coverage.rs"],
+    edition = "2018",
+    visibility = ["//visibility:public"],
+)

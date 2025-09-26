@@ -1,0 +1,21 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_ignore_files baz.py
+
+py_library(
+    name = "baz",
+    srcs = [
+        "baz.py",
+    ],
+    imports = ["../.."],
+    visibility = ["//:__subpackages__"],
+)
+
+py_library(
+    name = "bar",
+    srcs = [
+        "__init__.py",
+    ],
+    imports = ["../.."],
+    visibility = ["//:__subpackages__"],
+)

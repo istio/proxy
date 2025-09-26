@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "atomic",
+    srcs = ["atomic.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/atomic",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/inspect",
+        "//go/analysis/passes/internal/analysisutil",
+        "//go/ast/inspector",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":atomic",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "atomic_test",
+    srcs = ["atomic_test.go"],
+    deps = [
+        ":atomic",
+        "//go/analysis/analysistest",
+        "//internal/typeparams",
+    ],
+)

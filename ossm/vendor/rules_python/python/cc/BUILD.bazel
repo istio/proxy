@@ -1,0 +1,56 @@
+# Package for C/C++ specific functionality of the Python rules.
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//python/private:bzlmod_enabled.bzl", "BZLMOD_ENABLED")
+load("//python/private:current_py_cc_headers.bzl", "current_py_cc_headers")
+load("//python/private:current_py_cc_libs.bzl", "current_py_cc_libs")
+
+package(
+    default_visibility = ["//:__subpackages__"],
+)
+
+# This target provides the C headers for whatever the current toolchain is
+# for the consuming rule. It basically acts like a cc_library by forwarding
+# on the providers for the underlying cc_library that the toolchain is using.
+current_py_cc_headers(
+    name = "current_py_cc_headers",
+    # Building this directly will fail unless a py cc toolchain is registered,
+    # and it's only under bzlmod that one is registered by default.
+    tags = [] if BZLMOD_ENABLED else ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+# This target provides the C libraries for whatever the current toolchain is for
+# the consuming rule. It basically acts like a cc_library by forwarding on the
+# providers for the underlying cc_library that the toolchain is using.
+current_py_cc_libs(
+    name = "current_py_cc_libs",
+    # Building this directly will fail unless a py cc toolchain is registered,
+    # and it's only under bzlmod that one is registered by default.
+    tags = [] if BZLMOD_ENABLED else ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+toolchain_type(
+    name = "toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "py_cc_toolchain_bzl",
+    srcs = ["py_cc_toolchain.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["//python/private:py_cc_toolchain_macro_bzl"],
+)
+
+bzl_library(
+    name = "py_cc_toolchain_info_bzl",
+    srcs = ["py_cc_toolchain_info.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["//python/private:py_cc_toolchain_info_bzl"],
+)
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+)

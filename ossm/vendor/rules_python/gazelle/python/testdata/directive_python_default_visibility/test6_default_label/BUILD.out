@@ -1,0 +1,9 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_default_visibility //foo:bar
+
+py_library(
+    name = "test6_default_label",
+    srcs = ["test6.py"],
+    visibility = ["//foo:bar"],
+)

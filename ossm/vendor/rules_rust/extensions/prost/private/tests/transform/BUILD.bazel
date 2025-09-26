@@ -1,0 +1,43 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load("//:defs.bzl", "rust_prost_library", "rust_prost_transform")
+
+package(default_visibility = ["//private/tests:__subpackages__"])
+
+rust_prost_transform(
+    name = "transform",
+    srcs = ["a_src.rs"],
+)
+
+proto_library(
+    name = "a_proto",
+    srcs = [
+        "a.proto",
+    ],
+    data = [
+        ":transform",
+    ],
+    strip_import_prefix = "/private/tests/transform",
+    deps = [
+        "//private/tests/transform/b:b_proto",
+        "//private/tests/types:types_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+rust_prost_library(
+    name = "a_rs_proto",
+    proto = ":a_proto",
+)
+
+rust_test(
+    name = "a_test",
+    srcs = ["a_test.rs"],
+    edition = "2021",
+    deps = [
+        ":a_rs_proto",
+        # Add b_proto as a dependency directly to ensure compatibility with `a.proto`'s imports.
+        "//private/tests/transform/b:b_rs_proto",
+    ],
+)

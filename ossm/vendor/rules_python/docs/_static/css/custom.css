@@ -1,0 +1,43 @@
+.wy-nav-content {
+  max-width: 70%;
+}
+
+.starlark-object {
+  border: thin solid grey;
+  margin-bottom: 1em;
+}
+
+.starlark-object h2 {
+  background-color: #e7f2fa;
+  border-bottom: thin solid grey;
+  padding-left: 0.5ex;
+}
+.starlark-object h3 {
+  background-color: #e7f2fa;
+  padding-left: 0.5ex;
+}
+
+.starlark-module-extension-tag-class h3 {
+  background-color: #add8e6;
+  padding-left: 0.5ex;
+}
+
+.starlark-object>p, .starlark-object>dl, .starlark-object>section>* {
+  /* Prevent the words from touching the border line */
+  padding-left: 0.5ex;
+}
+
+.starlark-signature {
+  font-family: monospace;
+}
+
+/* Fixup the headerlinks in param names */
+.starlark-object dt a {
+  /* Offset the link icon to be outside the colon */
+  position: relative;
+  right: -1ex;
+  /* Remove the empty space between the param name and colon */
+  width: 0;
+  /* Override the .headerlink margin */
+  margin-left: 0 !important;
+}

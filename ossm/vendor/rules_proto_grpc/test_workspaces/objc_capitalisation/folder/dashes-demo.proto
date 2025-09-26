@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message dashes_demo {
+    bool field = 1;
+}

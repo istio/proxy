@@ -1,0 +1,27 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "process_wrapper",
+    srcs = ["process_wrapper.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = ["@rules_rust//tools/action_args"],
+)
+
+rust_binary(
+    name = "server",
+    srcs = ["server.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@rules_rust//tools/action_args",
+        "@rules_rust//tools/runfiles",
+    ],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["*.bzl"]),
+    visibility = ["//:__pkg__"],
+)

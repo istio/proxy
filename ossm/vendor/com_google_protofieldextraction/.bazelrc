@@ -1,0 +1,125 @@
+# Placeholder file for Prow
+
+# Required by envoy and its tests
+build --define=grpc_no_ares=true
+build --cxxopt=-std=c++17 --host_cxxopt=-std=c++17
+
+# We already have absl in the build, define absl=1 to tell googletest to use absl for backtrace.
+build --define absl=1
+
+# Compile a Position Independent Executable
+# Ref: github.com/envoyproxy/envoy#8792
+build --copt=-fPIC
+
+# Other flags for the C++ compiler
+build --show_timestamps
+
+# Compilation modes
+build:release -c opt
+build:debug -c dbg
+
+build --experimental_local_memory_estimate
+build --incompatible_strict_action_env=true
+build --host_force_python=PY3
+build --action_env=BAZEL_LINKLIBS=-l%:libstdc++.a
+build --action_env=BAZEL_LINKOPTS=-lm
+
+# We already have absl in the build, define absl=1 to tell googletest to use absl for backtrace.
+build --define absl=1
+
+# Pass PATH variable from the environment. CC and CXX are always clang (no gcc).
+build --action_env=CC=clang-14
+build --action_env=CXX=clang++-14
+build --action_env=PATH
+
+# Disable ICU linking for googleurl.
+
+# Common flags for sanitizers
+build:sanitizer --define tcmalloc=disabled
+build:sanitizer --linkopt -ldl
+build:sanitizer --build_tag_filters=-no_san
+build:sanitizer --test_tag_filters=-no_san
+
+# Common flags for Clang
+build:clang --action_env=BAZEL_COMPILER=clang
+
+# Compile with the Scudo allocator
+# https://llvm.org/docs/ScudoHardenedAllocator.html
+build:clang --copt -fsanitize=scudo
+
+# Compile with automatic variable initialization
+# https://reviews.llvm.org/rL349442
+build:clang --copt -ftrivial-auto-var-init=pattern
+
+# Compilation modes
+build:clang-release --config=clang
+build:clang-release --config=release
+
+# Basic ASAN/UBSAN that works for gcc
+build:asan --config=sanitizer
+build:asan --config=debug
+# ASAN install its signal handler, disable ours so the stacktrace will be printed by ASAN
+build:asan --define signal_trace=disabled
+build:asan --define ENVOY_CONFIG_ASAN=1
+
+build:asan --copt -fsanitize=address,undefined
+build:asan --linkopt -fsanitize=address,undefined
+
+
+build:asan --copt -DADDRESS_SANITIZER=1
+build:asan --copt -D__SANITIZE_ADDRESS__
+build:asan --test_env=ASAN_OPTIONS=handle_abort=1:allow_addr2line=true:check_initialization_order=true:strict_init_order=true:detect_odr_violation=1
+build:asan --test_env=UBSAN_OPTIONS=halt_on_error=true:print_stacktrace=1
+build:asan --test_env=ASAN_SYMBOLIZER_PATH
+
+build:clang-asan --config=asan
+build:clang-asan --action_env=ENVOY_UBSAN_VPTR=1
+build:clang-asan --copt -fno-sanitize=vptr,function
+build:clang-asan --linkopt -fno-sanitize=vptr,function
+build:clang-asan --copt -fno-optimize-sibling-calls
+build:clang-asan --copt -fno-omit-frame-pointer
+
+
+build:asan --config=debug
+build:clang-tsan --config=sanitizer
+build:clang-tsan --define ENVOY_CONFIG_TSAN=1
+build:clang-tsan --copt -fsanitize=thread
+build:clang-tsan --linkopt -fsanitize=thread
+build:clang-tsan --copt -DEVENT__DISABLE_DEBUG_MODE
+
+# Fuzz builds
+build:asan-fuzzer --config=clang-asan
+build:asan-fuzzer -c opt
+build:asan-fuzzer --action_env=CC=clang-14
+build:asan-fuzzer --action_env=CXX=clang++-14
+build:asan-fuzzer --nocache_test_results
+build:asan-fuzzer --define=FUZZING_ENGINE=libfuzzer
+build:asan-fuzzer --copt=-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+build:asan-fuzzer --copt=-fsanitize=fuzzer-no-link
+# Remove UBSAN halt_on_error to avoid crashing on protobuf errors.
+build:asan-fuzzer --test_env=UBSAN_OPTIONS=print_stacktrace=1
+
+# Coverage
+coverage --config=coverage
+build:coverage --action_env=BAZEL_USE_LLVM_NATIVE_COVERAGE=1
+build:coverage --action_env=GCOV=llvm-profdata
+build:coverage --action_env=CC=clang-14
+build:coverage --action_env=CXX=clang++-14
+build:coverage --copt=-DNDEBUG
+build:coverage --test_timeout=900
+build:coverage --define=ENVOY_CONFIG_COVERAGE=1
+build:coverage --cxxopt="-DENVOY_CONFIG_COVERAGE=1"
+build:coverage --coverage_support=@envoy//bazel/coverage:coverage_support
+build:coverage --test_env=CC_CODE_COVERAGE_SCRIPT=external/envoy/bazel/coverage/collect_cc_coverage.sh
+build:coverage --test_env=HEAPCHECK=
+build:coverage --combined_report=lcov
+build:coverage --strategy=TestRunner=sandboxed,local
+build:coverage --strategy=CoverageReport=sandboxed,local
+build:coverage --experimental_use_llvm_covmap
+build:coverage --collect_code_coverage
+build:coverage --test_tag_filters=-nocoverage
+build:coverage --instrumentation_filter="//src[/:]"
+coverage:test-coverage --test_arg="--log-path /dev/null"
+coverage:test-coverage --test_arg="-l trace"
+coverage:fuzz-coverage --config=asan-fuzzer
+coverage:fuzz-coverage --run_under=@envoy//bazel/coverage:fuzz_coverage_wrapper.sh

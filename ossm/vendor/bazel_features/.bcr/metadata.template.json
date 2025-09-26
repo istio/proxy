@@ -1,0 +1,22 @@
+{
+  "homepage": "https://github.com/bazel-contrib/bazel_features",
+  "maintainers": [
+    {
+      "email": "wyverald@gmail.com",
+      "github": "Wyverald",
+      "name": "Xudong Yang"
+    },
+    {
+      "github": "meteorcloudy",
+      "name": "Yun Peng"
+    },
+    {
+      "email": "fabian@meumertzhe.im",
+      "github": "fmeum",
+      "name": "Fabian Meumertzheim"
+    }
+  ],
+  "repository": ["github:bazel-contrib/bazel_features"],
+  "versions": [],
+  "yanked_versions": {}
+}

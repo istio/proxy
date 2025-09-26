@@ -1,0 +1,63 @@
+# Copyright 2024 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+package(
+    default_visibility = ["//:__subpackages__"],
+)
+
+bzl_library(
+    name = "api_bzl",
+    srcs = ["api.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["//python/private/api:api_bzl"],
+)
+
+bzl_library(
+    name = "attr_builders_bzl",
+    srcs = ["attr_builders.bzl"],
+    deps = ["//python/private:attr_builders_bzl"],
+)
+
+bzl_library(
+    name = "executables_bzl",
+    srcs = ["executables.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//python/private:py_binary_rule_bzl",
+        "//python/private:py_executable_bzl",
+        "//python/private:py_test_rule_bzl",
+    ],
+)
+
+bzl_library(
+    name = "libraries_bzl",
+    srcs = ["libraries.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//python/private:py_library_bzl",
+    ],
+)
+
+bzl_library(
+    name = "rule_builders_bzl",
+    srcs = ["rule_builders.bzl"],
+    deps = ["//python/private:rule_builders_bzl"],
+)
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+)

@@ -1,0 +1,17 @@
+e2e/
+examples/js_binary/node_modules/
+examples/linked_empty_node_modules/node_modules
+examples/macro/node_modules/
+examples/npm_deps/node_modules/
+examples/npm_package/libs/lib_a/node_modules/
+examples/npm_package/packages/pkg_a/node_modules/
+examples/npm_package/packages/pkg_b/node_modules/
+examples/webpack_cli/node_modules/
+js/private/coverage/bundle/node_modules
+js/private/image/node_modules
+js/private/test/image/node_modules
+js/private/test/js_run_devserver/node_modules
+js/private/worker/src/node_modules
+node_modules/
+npm/private/test/node_modules/
+npm/private/test/npm_package/node_modules/

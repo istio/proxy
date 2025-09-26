@@ -1,0 +1,121 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_sdk")
+load("@io_bazel_rules_go//go/private:common.bzl", "RULES_GO_STDLIB_PREFIX")
+load("@io_bazel_rules_go//go/private:go_toolchain.bzl", "declare_go_toolchains")
+load("@io_bazel_rules_go//go/private/rules:binary.bzl", "go_tool_binary")
+load("@io_bazel_rules_go//go/private/rules:sdk.bzl", "package_list")
+load("@io_bazel_rules_go//go/private/rules:transition.bzl", "non_go_reset_target")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "libs",
+    srcs = glob(
+        ["pkg/{goos}_{goarch}/**/*.a"],
+        allow_empty = True,
+        exclude = ["pkg/{goos}_{goarch}/**/cmd/**"],
+    ),
+)
+
+filegroup(
+    name = "headers",
+    srcs = glob(["pkg/include/*.h"]),
+)
+
+filegroup(
+    name = "srcs",
+    srcs = glob(
+        ["src/**/*"],
+        exclude = [
+            "src/**/*_test.go",
+            "src/**/testdata/**",
+            "src/cmd/**",
+            "src/log/slog/internal/benchmarks/**",
+            "src/log/slog/internal/slogtest/**",
+            "src/internal/obscuretestdata/**",
+            "src/internal/testpty/**",
+            "src/net/internal/socktest/**",
+            "src/reflect/internal/example*/**",
+            "src/runtime/internal/startlinetest/**",
+        ],
+    ),
+)
+
+filegroup(
+    name = "tools",
+    srcs = glob([
+        "pkg/tool/**",
+        "bin/gofmt*",
+    ]) + [
+        ":config",
+    ],
+)
+
+filegroup(
+    name = "config",
+    srcs = glob(
+        ["go.env*"],
+        allow_empty = True,
+    ),
+)
+
+go_sdk(
+    name = "go_sdk",
+    srcs = [":srcs"],
+    experiments = {experiments},
+    go = "bin/go{exe}",
+    goarch = "{goarch}",
+    goos = "{goos}",
+    headers = [":headers"],
+    libs = [":libs"],
+    package_list = ":package_list",
+    root_file = "ROOT",
+    tools = [":tools"],
+    version = "{version}",
+)
+
+go_tool_binary(
+    name = "builder",
+    srcs = ["@io_bazel_rules_go//go/tools/builders:builder_srcs"],
+    exec_compatible_with = {exec_compatible_with},
+    ldflags = "-X main.rulesGoStdlibPrefix={}".format(RULES_GO_STDLIB_PREFIX),
+    sdk = ":go_sdk",
+)
+
+non_go_reset_target(
+    name = "builder_reset",
+    dep = ":builder",
+)
+
+# TODO(jayconrod): Gazelle depends on this file directly. This dependency
+# should be broken, and this rule should be folded into go_sdk.
+package_list(
+    name = "package_list",
+    srcs = [":srcs"],
+    out = "packages.txt",
+    root_file = "ROOT",
+)
+
+declare_go_toolchains(
+    builder = ":builder_reset",
+    host_goos = "{goos}",
+    sdk = ":go_sdk",
+)
+
+filegroup(
+    name = "files",
+    srcs = glob([
+        "bin/go*",
+        "src/**",
+        "pkg/**",
+    ]) + [
+        ":config",
+    ],
+)
+
+exports_files(
+    glob([
+        "lib/time/zoneinfo.zip",
+        "misc/wasm/**",
+    ]),
+    visibility = ["//visibility:public"],
+)

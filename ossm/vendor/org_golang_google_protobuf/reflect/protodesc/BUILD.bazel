@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "protodesc",
+    srcs = [
+        "desc.go",
+        "desc_init.go",
+        "desc_resolve.go",
+        "desc_validate.go",
+        "proto.go",
+    ],
+    importpath = "google.golang.org/protobuf/reflect/protodesc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding/protowire",
+        "//internal/encoding/defval",
+        "//internal/errors",
+        "//internal/filedesc",
+        "//internal/flags",
+        "//internal/genid",
+        "//internal/pragma",
+        "//internal/strs",
+        "//proto",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+        "//types/descriptorpb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protodesc",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "protodesc_test",
+    srcs = ["file_test.go"],
+    embed = [":protodesc"],
+    deps = [
+        "//encoding/prototext",
+        "//internal/flags",
+        "//proto",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+        "//types/descriptorpb",
+    ],
+)

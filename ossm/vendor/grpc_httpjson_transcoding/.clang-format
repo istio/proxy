@@ -1,0 +1,10 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+---
+Language: Proto
+BasedOnStyle: Google
+---
+Language: TextProto
+BasedOnStyle: Google
+...

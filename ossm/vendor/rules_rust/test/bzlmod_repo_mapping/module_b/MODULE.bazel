@@ -1,0 +1,10 @@
+module(name = "module_b")
+
+bazel_dep(name = "module_c", version = "0.0.0", repo_name = "aliased_c")
+bazel_dep(name = "rules_rust", version = "0.0.0")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2021")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")

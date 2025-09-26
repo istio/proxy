@@ -1,0 +1,48 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("//rust:defs.bzl", "rust_proc_macro")
+
+# buildifier: disable=bzl-visibility
+load("//rust/private:transitions.bzl", "alias_with_import_macro_bootstrapping_mode")
+
+alias_with_import_macro_bootstrapping_mode(
+    name = "import_macro",
+    actual = ":import_macro_impl",
+)
+
+rust_proc_macro(
+    name = "import_macro_impl",
+    srcs = [
+        "import.rs",
+    ],
+    crate_name = "import",
+    edition = "2021",
+)
+
+alias(
+    name = "import",
+    actual = select({
+        ":use_fake_import_macro": ":fake_import_macro_impl",
+        "//conditions:default": ":import_macro_label",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+# This is there to cut the loading-time dependency on the import macro dependencies
+# (so users who don't use the macro don't need to add those deps to their WORKSPACE
+# file). Bazel in the loading phase doesn't "see" through `label_flag`.
+label_flag(
+    name = "import_macro_label",
+    build_setting_default = "import_macro",
+)
+
+config_setting(
+    name = "use_fake_import_macro",
+    flag_values = {
+        "@rules_rust//rust/settings:use_real_import_macro": "False",
+    },
+)
+
+cc_binary(
+    name = "fake_import_macro_impl",
+    srcs = ["fake_import_macro_impl.cc"],
+)

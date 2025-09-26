@@ -1,0 +1,66 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library", "go_test")
+
+go_library(
+    name = "fetch_repo_lib",
+    srcs = [
+        "clean.go",
+        "copy_tree.go",
+        "errorscompat.go",
+        "go_mod_download.go",
+        "main.go",
+        "module.go",
+        "path.go",
+        "vcs.go",
+    ],
+    importpath = "github.com/bazelbuild/bazel-gazelle/cmd/fetch_repo",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@org_golang_x_mod//sumdb/dirhash",
+        "@org_golang_x_tools_go_vcs//:vcs",
+    ],
+)
+
+go_binary(
+    name = "fetch_repo",
+    embed = [":fetch_repo_lib"],
+    visibility = ["//visibility:public"],
+)
+
+# Verify that fetch_repo builds with Go 1.22.
+go_cross_binary(
+    name = "fetch_repo_go1.22",
+    sdk_version = "1.22",
+    target = ":fetch_repo",
+)
+
+go_test(
+    name = "main_test",
+    srcs = ["main_test.go"],
+    embed = [":fetch_repo_lib"],
+    deps = ["@org_golang_x_tools_go_vcs//:vcs"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "clean.go",
+        "copy_tree.go",
+        "errorscompat.go",
+        "go_mod_download.go",
+        "main.go",
+        "main_test.go",
+        "module.go",
+        "path.go",
+        "vcs.go",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "fetch_repo_test",
+    srcs = ["main_test.go"],
+    embed = [":fetch_repo_lib"],
+    deps = ["@org_golang_x_tools_go_vcs//:vcs"],
+)

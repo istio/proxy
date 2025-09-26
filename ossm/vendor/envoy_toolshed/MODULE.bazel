@@ -1,0 +1,27 @@
+module(name = "envoy_toolshed", version = "")
+
+bazel_dep(name = "aspect_bazel_lib", version = "2.4.2")
+bazel_dep(name = "bazel_skylib", version = "1.5.0")
+bazel_dep(name = "rules_pkg", version = "0.7.0")
+bazel_dep(name = "rules_python", version = "0.31.0")
+# -- bazel_dep definitions -- #
+
+bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
+bazel_lib_toolchains.jq()
+use_repo(bazel_lib_toolchains, "jq_toolchains")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(python_version = "3.11")
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "pip3",
+    python_version = "3.11",
+    requirements_lock = "//:requirements.txt",
+)
+pip.parse(
+    hub_name = "website_pip3",
+    python_version = "3.11",
+    requirements_lock = "//website:requirements.txt",
+)
+use_repo(pip, "pip3", "website_pip3")

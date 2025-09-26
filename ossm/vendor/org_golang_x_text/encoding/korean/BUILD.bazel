@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "korean",
+    srcs = [
+        "euckr.go",
+        "tables.go",
+    ],
+    importpath = "golang.org/x/text/encoding/korean",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding",
+        "//encoding/internal",
+        "//encoding/internal/identifier",
+        "//transform",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":korean",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "korean_test",
+    srcs = ["all_test.go"],
+    embed = [":korean"],
+    deps = [
+        "//encoding",
+        "//encoding/internal",
+        "//encoding/internal/enctest",
+        "//transform",
+    ],
+)

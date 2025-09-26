@@ -1,0 +1,12 @@
+load("@rules_proto_grpc//buf:defs.bzl", "buf_proto_breaking_test")
+
+buf_proto_breaking_test(
+    name = "buf_proto_lint",
+    against_input = "@rules_proto_grpc//buf/example:image.json",
+    protos = [
+        "@rules_proto_grpc//example/proto:person_proto",
+        "@rules_proto_grpc//example/proto:place_proto",
+        "@rules_proto_grpc//example/proto:routeguide_proto",
+        "@rules_proto_grpc//example/proto:thing_proto",
+    ],
+)

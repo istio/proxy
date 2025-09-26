@@ -1,0 +1,28 @@
+#[[##]]# ${ruleName}
+
+**USAGE**
+
+<pre>
+${util.ruleSummary($ruleName, $ruleInfo)}
+</pre>
+
+$ruleInfo.docString
+
+**ATTRIBUTES**
+
+#if (!$ruleInfo.getAttributeList().isEmpty())
+#foreach ($attribute in $ruleInfo.getAttributeList())
+
+<h4 id="${ruleName}-${attribute.name}">${attribute.name}</h4>
+
+(*${util.attributeTypeString($attribute)}#if( $attribute.mandatory ), mandatory#end*)#if (!$attribute.docString.isEmpty()): ${attribute.docString.trim()}#end
+#if (!$attribute.getProviderNameGroupList().isEmpty())
+  The dependencies of this attribute must provide: ${util.attributeProviders($attribute)}
+#end
+
+#if( !$attribute.defaultValue.isEmpty() )
+
+Defaults to `$attribute.defaultValue`#end
+
+#end
+#end

@@ -1,0 +1,6 @@
+load("//:defs.bzl", "rust_prost_library")
+
+rust_prost_library(
+    name = "annotations_rs_proto",
+    proto = "@com_google_googleapis//google/api:annotations_proto",
+)

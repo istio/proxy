@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "fieldalignment",
+    srcs = ["fieldalignment.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/fieldalignment",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/inspect",
+        "//go/ast/inspector",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fieldalignment",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "fieldalignment_test",
+    srcs = ["fieldalignment_test.go"],
+    deps = [
+        ":fieldalignment",
+        "//go/analysis/analysistest",
+    ],
+)

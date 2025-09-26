@@ -1,0 +1,14 @@
+# These test the packaging of the product itself.
+# They only have to run on linux  with a recent bazel
+
+common: &common
+  working_directory: ..
+  build_targets:
+  - "//doc_build:all"
+  - "//distro/..."
+
+tasks:
+  integration:
+    name: rolling_distro
+    platform: ubuntu2204
+    <<: *common

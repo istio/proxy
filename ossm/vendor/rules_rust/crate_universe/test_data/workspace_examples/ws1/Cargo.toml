@@ -1,0 +1,7 @@
+[workspace]
+members = ["ws1c1", "ws1c2"]
+
+[package]
+name = "ws1"
+version = "0.1.0"
+edition = "2021"

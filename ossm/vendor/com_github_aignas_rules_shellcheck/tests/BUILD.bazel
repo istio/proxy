@@ -1,0 +1,16 @@
+load("//internal:rules.bzl", "shellcheck_test")
+
+shellcheck_test(
+    name = "fail_test",
+    data = [
+        "testdata/bad.sh",
+    ],
+    expect_fail = True,
+)
+
+shellcheck_test(
+    name = "success_test",
+    data = [
+        "testdata/good.sh",
+    ],
+)

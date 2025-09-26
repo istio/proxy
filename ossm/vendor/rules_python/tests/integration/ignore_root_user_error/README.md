@@ -1,0 +1,2 @@
+# ignore_root_user_errors
+There are cases when we have to run Python targets with root, e.g., in Docker containers, requiring setting `ignore_root_user_error = True` when registering Python toolchain. This test makes sure that rules_python works in this case.

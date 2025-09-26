@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "protoc-gen-go_lib",
+    srcs = ["main.go"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/protoc-gen-go/internal_gengo",
+        "//compiler/protogen",
+        "//internal/version",
+    ],
+)
+
+go_binary(
+    name = "protoc-gen-go",
+    embed = [":protoc-gen-go_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "protoc-gen-go_test",
+    srcs = [
+        "annotation_test.go",
+        "retention_test.go",
+    ],
+    embed = [":protoc-gen-go_lib"],
+    deps = [
+        "//cmd/protoc-gen-go/testdata/retention",
+        "//encoding/prototext",
+        "//internal/genid",
+        "//proto",
+        "//reflect/protoreflect",
+        "//types/descriptorpb",
+    ],
+)

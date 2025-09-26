@@ -1,0 +1,22 @@
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+load("@com_google_protobuf//bazel:py_proto_library.bzl", "py_proto_library")
+load("@rules_python//python:py_binary.bzl", "py_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+proto_library(
+    name = "proto_lib",
+    srcs = ["nested/foo/my_proto.proto"],
+    strip_import_prefix = "/nested/foo",
+)
+
+py_proto_library(
+    name = "a_proto",
+    deps = [":proto_lib"],
+)
+
+py_binary(
+    name = "py_binary_with_proto",
+    srcs = ["py_binary_with_proto.py"],
+    deps = [":a_proto"],
+)

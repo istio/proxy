@@ -1,0 +1,6 @@
+load(":multi_version_tests.bzl", "multi_version_test_suite")
+load(":py_args_tests.bzl", "py_args_test_suite")
+
+py_args_test_suite(name = "py_args_tests")
+
+multi_version_test_suite(name = "multi_version_tests")

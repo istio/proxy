@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+filegroup(
+    name = "go_default_library_protos",
+    srcs = ["test.proto"],
+    visibility = ["//:__subpackages__"],
+)
+
+go_library(
+    name = "proto3_proto",
+    srcs = ["test.pb.go"],
+    importpath = "github.com/golang/protobuf/internal/testprotos/proto3_proto",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/proto2_proto",
+        "//proto",
+        "@org_golang_google_protobuf//types/known/anypb:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":proto3_proto",
+    visibility = ["//:__subpackages__"],
+)

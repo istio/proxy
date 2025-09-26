@@ -1,0 +1,15 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_buf//buf:defs.bzl", "buf_lint_test")
+
+proto_library(
+    name = "zap_proto",
+    srcs = ["zap.proto"],
+    strip_import_prefix = "/v1",
+    visibility = ["//visibility:public"],
+)
+
+buf_lint_test(
+    name = "zap_proto_lint",
+    config = "//v1:buf.yaml",
+    targets = [":zap_proto"],
+)

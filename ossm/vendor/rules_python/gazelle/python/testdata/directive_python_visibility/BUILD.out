@@ -1,0 +1,16 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# Directives can be added in any order. They will be ordered alphabetically
+# when added.
+# gazelle:python_visibility //tests:__pkg__
+# gazelle:python_visibility //bar:baz
+
+py_library(
+    name = "directive_python_visibility",
+    srcs = ["foo.py"],
+    visibility = [
+        "//:__subpackages__",
+        "//bar:baz",
+        "//tests:__pkg__",
+    ],
+)

@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "durationpb",
+    srcs = ["duration.pb.go"],
+    importpath = "google.golang.org/protobuf/types/known/durationpb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":durationpb",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "durationpb_test",
+    srcs = ["duration_test.go"],
+    deps = [
+        ":durationpb",
+        "//internal/detrand",
+        "//testing/protocmp",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp/cmpopts:go_default_library",
+    ],
+)

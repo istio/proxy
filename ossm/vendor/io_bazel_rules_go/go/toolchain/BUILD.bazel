@@ -1,0 +1,42 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load(
+    ":toolchains.bzl",
+    "declare_constraints",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+declare_constraints()
+
+string_flag(
+    name = "sdk_version",
+    build_setting_default = "",
+)
+
+string_flag(
+    name = "sdk_name",
+    build_setting_default = "",
+)
+
+filegroup(
+    name = "all_rules",
+    srcs = glob(["*.bzl"]),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "toolchains",
+    srcs = ["toolchains.bzl"],
+    deps = [
+        "//go/private:platforms",
+        "//go/private:sdk",
+    ],
+)

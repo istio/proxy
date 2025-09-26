@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "difftest",
+    srcs = ["difftest.go"],
+    importpath = "golang.org/x/tools/internal/diff/difftest",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/diff"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":difftest",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "difftest_test",
+    srcs = ["difftest_test.go"],
+    deps = [
+        ":difftest",
+        "//internal/testenv",
+    ],
+)

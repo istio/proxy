@@ -1,0 +1,10 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_generation_mode package
+
+py_library(
+    name = "_boundary",
+    srcs = ["__init__.py"],
+    imports = [".."],
+    visibility = ["//coarse_grained:__subpackages__"],
+)

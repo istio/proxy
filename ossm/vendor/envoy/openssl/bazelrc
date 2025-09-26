@@ -1,0 +1,25 @@
+# This file is sourced from %workspace%/.bazelrc, and includes additional
+# configuration specific to building envoy on openssl/bssl-compat
+
+#build:clang --linkopt=-latomic
+
+test --test_env=ENVOY_IP_TEST_VERSIONS=v4only
+
+# As of today we do not support QUIC/HTTP3, hence we exclude it from the build, always.
+# Unfortunately, just setting //bazel:http3=False, is not enough to achieve this.
+# Instead, we also have to use boringssl=fips define and filter on the nofips tag.
+# This is based on the fact that the FIPS version of BoringSSL doesn't provide enough
+# of the functions required to build the QUIC implementation provided by Quiche i.e. if
+# we say that we are using the FIPS version of BoringSSL, then all the QUIC support is
+# excluded from the build.
+common --//bazel:http3=False
+common --define=boringssl=fips
+build --build_tag_filters=-nofips
+test --test_tag_filters=-nofips
+
+# Arch-specific build flags, triggered with --config=$ARCH in bazel build command
+build:s390x --//source/extensions/filters/common/lua:luajit2=1 --copt=-DTOOLCHAIN_MISS_ASM_HWCAP_H --host_copt=-DTOOLCHAIN_MISS_ASM_HWCAP_H --action_env=BAZEL_LINKLIBS=-lstdc++
+build:ppc --//source/extensions/filters/common/lua:luajit2=1 --copt=-DTOOLCHAIN_MISS_ASM_HWCAP_H --host_copt=-DTOOLCHAIN_MISS_ASM_HWCAP_H --action_env=BAZEL_LINKLIBS=-lstdc++
+
+common --action_env=Clang_DIR=/opt/llvm
+common --action_env=LLVM_DIR=/opt/llvm

@@ -1,0 +1,2 @@
+# this is set up to make bazel test //... pass
+bazel_dep(name = "bazel_skylib", version = "1.7.1", dev_dependency = True)

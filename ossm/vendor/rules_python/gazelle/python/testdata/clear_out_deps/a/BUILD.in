@@ -1,0 +1,9 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "a",
+    srcs = ["__init__.py"],
+    pyi_deps = ["//:nonexistent_pyi_dep"],
+    visibility = ["//:__subpackages__"],
+    deps = ["//nonexistent_dep"],
+)

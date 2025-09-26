@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "multichecker",
+    srcs = ["multichecker.go"],
+    importpath = "golang.org/x/tools/go/analysis/multichecker",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/internal/analysisflags",
+        "//go/analysis/internal/checker",
+        "//go/analysis/unitchecker",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":multichecker",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "multichecker_test",
+    srcs = ["multichecker_test.go"],
+    deps = [
+        ":multichecker",
+        "//go/analysis",
+        "//go/analysis/passes/findcall",
+        "//internal/testenv",
+    ],
+)

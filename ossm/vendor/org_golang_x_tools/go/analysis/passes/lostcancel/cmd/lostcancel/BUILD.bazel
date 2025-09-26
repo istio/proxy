@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "lostcancel_lib",
+    srcs = ["main.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/lostcancel/cmd/lostcancel",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//go/analysis/passes/lostcancel",
+        "//go/analysis/singlechecker",
+    ],
+)
+
+go_binary(
+    name = "lostcancel",
+    embed = [":lostcancel_lib"],
+    visibility = ["//visibility:public"],
+)

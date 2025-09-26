@@ -1,0 +1,109 @@
+exports_files([
+    ".clippy.toml",
+    ".rustfmt.toml",
+    "LICENSE",
+    "MODULE.bazel",
+    "version.bzl",
+])
+
+# This setting may be changed from the command line to generate machine readable errors.
+alias(
+    name = "error_format",
+    actual = "//rust/settings:error_format",
+    visibility = ["//visibility:public"],
+)
+
+# This setting may be changed from the command line to generate rustc diagnostics.
+alias(
+    name = "rustc_output_diagnostics",
+    actual = "//rust/settings:rustc_output_diagnostics",
+    visibility = ["//visibility:public"],
+)
+
+# This setting may be used to pass extra options to clippy from the command line.
+# It applies across all targets.
+alias(
+    name = "clippy_flags",
+    actual = "//rust/settings:clippy_flags",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "clippy_flag",
+    actual = "//rust/settings:clippy_flag",
+    visibility = ["//visibility:public"],
+)
+
+# This setting may be used to pass extra options to rustc from the command line
+# in non-exec configuration.
+# It applies across all targets whereas the rustc_flags option on targets applies only
+# to that target. This can be useful for passing build-wide options such as LTO.
+alias(
+    name = "extra_rustc_flags",
+    actual = "//rust/settings:extra_rustc_flags",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "extra_rustc_flag",
+    actual = "//rust/settings:extra_rustc_flag",
+    visibility = ["//visibility:public"],
+)
+
+# This setting may be used to pass extra options to rustc from the command line
+# in exec configuration.
+# It applies across all targets whereas the rustc_flags option on targets applies only
+# to that target. This can be useful for passing build-wide options such as LTO.
+alias(
+    name = "extra_exec_rustc_flags",
+    actual = "//rust/settings:extra_exec_rustc_flags",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "extra_exec_rustc_flag",
+    actual = "//rust/settings:extra_exec_rustc_flag",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "experimental_per_crate_rustc_flag",
+    actual = "//rust/settings:experimental_per_crate_rustc_flag",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "clippy.toml",
+    actual = "//rust/settings:clippy.toml",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "rustfmt.toml",
+    actual = "//rust/settings:rustfmt.toml",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "rustfmt",
+    actual = "//tools/rustfmt:target_aware_rustfmt",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "capture_clippy_output",
+    actual = "//rust/settings:capture_clippy_output",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "no_std",
+    actual = "//rust/settings:no_std",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "is_no_std",
+    actual = "//rust/settings:is_no_std",
+    visibility = ["//visibility:public"],
+)

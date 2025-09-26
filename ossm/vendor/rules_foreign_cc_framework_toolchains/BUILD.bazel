@@ -1,0 +1,28 @@
+toolchain(
+    name = "rules_foreign_cc_framework_toolchain_linux",
+    toolchain_type = "@rules_foreign_cc//foreign_cc/private/framework:shell_toolchain",
+    toolchain = "@rules_foreign_cc_framework_toolchain_linux//:commands",
+    exec_compatible_with = ["@platforms//os:linux"],
+)
+
+toolchain(
+    name = "rules_foreign_cc_framework_toolchain_freebsd",
+    toolchain_type = "@rules_foreign_cc//foreign_cc/private/framework:shell_toolchain",
+    toolchain = "@rules_foreign_cc_framework_toolchain_freebsd//:commands",
+    exec_compatible_with = ["@platforms//os:freebsd"],
+)
+
+toolchain(
+    name = "rules_foreign_cc_framework_toolchain_windows",
+    toolchain_type = "@rules_foreign_cc//foreign_cc/private/framework:shell_toolchain",
+    toolchain = "@rules_foreign_cc_framework_toolchain_windows//:commands",
+    exec_compatible_with = ["@platforms//os:windows"],
+)
+
+toolchain(
+    name = "rules_foreign_cc_framework_toolchain_macos",
+    toolchain_type = "@rules_foreign_cc//foreign_cc/private/framework:shell_toolchain",
+    toolchain = "@rules_foreign_cc_framework_toolchain_macos//:commands",
+    exec_compatible_with = ["@platforms//os:macos"],
+)
+

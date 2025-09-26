@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ptypes",
+    srcs = [
+        "any.go",
+        "doc.go",
+        "duration.go",
+        "timestamp.go",
+    ],
+    importpath = "github.com/golang/protobuf/ptypes",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//proto",
+        "//ptypes/any",
+        "//ptypes/duration",
+        "//ptypes/timestamp",
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//reflect/protoregistry:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library_gen",
+    actual = ":go_default_library",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ptypes",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "ptypes_test",
+    srcs = [
+        "any_test.go",
+        "duration_test.go",
+        "timestamp_test.go",
+    ],
+    embed = [":ptypes"],
+    deps = [
+        "//proto",
+        "//protoc-gen-go/descriptor",
+        "//ptypes/any",
+        "//ptypes/duration",
+        "//ptypes/timestamp",
+    ],
+)

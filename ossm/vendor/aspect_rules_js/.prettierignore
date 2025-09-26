@@ -1,0 +1,12 @@
+**/pnpm-lock.yaml
+docs/*_*.md
+e2e/**/*-docs.md
+examples/**/*-docs.md
+js/private/coverage/coverage.js
+js/private/node-patches/fs.js
+js/private/node-patches_legacy/fs.js
+min/
+npm/private/test/vendored/
+js/private/worker/worker.js
+js/private/worker/src/worker_protocol.ts
+js/private/js_image_layer.mjs

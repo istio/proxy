@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "wrapperspb",
+    srcs = ["wrappers.pb.go"],
+    importpath = "google.golang.org/protobuf/types/known/wrapperspb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":wrapperspb",
+    visibility = ["//visibility:public"],
+)

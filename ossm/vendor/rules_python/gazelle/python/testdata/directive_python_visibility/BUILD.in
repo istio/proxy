@@ -1,0 +1,4 @@
+# Directives can be added in any order. They will be ordered alphabetically
+# when added.
+# gazelle:python_visibility //tests:__pkg__
+# gazelle:python_visibility //bar:baz

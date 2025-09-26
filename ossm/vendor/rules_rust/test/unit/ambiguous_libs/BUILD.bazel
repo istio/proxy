@@ -1,0 +1,4 @@
+load(":ambiguous_libs_test.bzl", "ambiguous_libs_test_suite")
+
+############################ UNIT TESTS #############################
+ambiguous_libs_test_suite(name = "ambiguous_libs_test_suite")

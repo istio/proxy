@@ -1,0 +1,15 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+package(default_visibility = ["//visibility:private"])
+
+# Test that the README example http_archive call works. The WORKSPACE for this
+# test workspace is auto-generated.
+
+py_test(
+    name = "test",
+    srcs = ["main.py"],
+    data = [
+        "@rules_proto_grpc//third_party:BUILD.bazel.zlib",  # Use some file from repo to ensure it is loaded
+    ],
+    main = "main.py",
+)

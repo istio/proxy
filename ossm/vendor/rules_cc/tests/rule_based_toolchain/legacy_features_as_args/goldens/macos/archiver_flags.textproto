@@ -1,0 +1,40 @@
+enabled: false
+flag_sets {
+  actions: "c++-link-static-library"
+  flag_groups {
+    flags: "-static"
+  }
+}
+flag_sets {
+  actions: "c++-link-static-library"
+  flag_groups {
+    expand_if_available: "output_execpath"
+    flags: "-o"
+    flags: "%{output_execpath}"
+  }
+}
+flag_sets {
+  actions: "c++-link-static-library"
+  flag_groups {
+    expand_if_available: "libraries_to_link"
+    flag_groups {
+      flag_groups {
+        expand_if_equal {
+          name: "libraries_to_link.type"
+          value: "object_file"
+        }
+        flags: "%{libraries_to_link.name}"
+      }
+      flag_groups {
+        expand_if_equal {
+          name: "libraries_to_link.type"
+          value: "object_file_group"
+        }
+        flags: "%{libraries_to_link.object_files}"
+        iterate_over: "libraries_to_link.object_files"
+      }
+      iterate_over: "libraries_to_link"
+    }
+  }
+}
+name: "archiver_flags_test"

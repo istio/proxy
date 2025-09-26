@@ -1,0 +1,21 @@
+name: Verify/Wasm
+
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+
+
+jobs:
+  wasm:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+    - run: |
+        docker pull envoyproxy/envoy:dev
+        DEV_CONTAINER_ID=$(docker inspect --format='{{.Id}}' envoyproxy/envoy:dev)
+        echo "DEV_CONTAINER_ID=${DEV_CONTAINER_ID}" >> $GITHUB_ENV
+    - run: |
+        ./verify.sh
+      working-directory: wasm-cc

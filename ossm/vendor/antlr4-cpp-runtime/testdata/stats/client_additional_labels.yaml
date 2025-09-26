@@ -1,0 +1,4 @@
+metrics:
+  - name: requests_total
+    dimensions:
+      role: filter_state.upstream_peer.labels['role']

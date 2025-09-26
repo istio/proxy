@@ -1,0 +1,10 @@
+syntax = "proto3";
+package samples;
+
+import "PayloadMessage.proto";
+
+message Maps {
+    map<string,string> map_of_strings          = 1;
+    map<string,int32> map_of_ints              = 2;
+    map<string,PayloadMessage> map_of_messages = 3;
+}

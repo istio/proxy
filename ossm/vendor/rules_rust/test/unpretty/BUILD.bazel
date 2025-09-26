@@ -1,0 +1,49 @@
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("//rust:defs.bzl", "rust_proc_macro", "rust_test", "rust_unpretty")
+
+rust_proc_macro(
+    name = "proc_macro",
+    srcs = ["proc_macro.rs"],
+    edition = "2021",
+    visibility = ["//test:__subpackages__"],
+)
+
+rust_unpretty(
+    name = "proc_macro_unpretty",
+    testonly = True,
+    mode = "expanded",
+    deps = [":proc_macro"],
+)
+
+diff_test(
+    name = "proc_macro_unpretty_diff_test",
+    file1 = "proc_macro.unpretty.expanded.rs",
+    file2 = ":proc_macro_unpretty",
+)
+
+rust_test(
+    name = "proc_macro_test",
+    srcs = ["proc_macro_test.rs"],
+    edition = "2021",
+    proc_macro_deps = [":proc_macro"],
+)
+
+rust_unpretty(
+    name = "proc_macro_test_unpretty",
+    testonly = True,
+    mode = "expanded",
+    deps = [":proc_macro_test"],
+)
+
+rust_unpretty(
+    name = "proc_macro_test_unpretty_extra",
+    testonly = True,
+    mode = "normal",
+    deps = [":proc_macro_test"],
+)
+
+diff_test(
+    name = "proc_macro_test_unpretty_diff_test",
+    file1 = "proc_macro.unpretty.expanded.rs",
+    file2 = ":proc_macro_unpretty",
+)

@@ -1,0 +1,4 @@
+common --noenable_bzlmod
+
+# This isn't currently the defaut in Bazel, but we enable it to test we'll be ready if/when it flips.
+build --incompatible_disallow_empty_glob

@@ -1,0 +1,38 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+py_library(
+    name = "a",
+    srcs = ["a.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_library(
+    name = "b",
+    srcs = ["b.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_library(
+    name = "typing",
+    srcs = ["typing.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_test(
+    name = "test_util",
+    srcs = ["test_util.py"],
+    deps = [
+        ":b",
+        ":typing",
+    ],
+)
+
+py_test(
+    name = "unit_test",
+    srcs = ["unit_test.py"],
+    deps = [
+        "//:a",
+        "//:b",
+        "//:test_util",
+    ],
+)

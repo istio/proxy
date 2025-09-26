@@ -1,0 +1,8 @@
+Language: JavaScript
+BasedOnStyle: Google
+ColumnLimit: 100
+---
+Language: Proto
+ColumnLimit: 100
+SpacesInContainerLiterals: false
+AllowShortFunctionsOnASingleLine: false

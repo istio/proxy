@@ -1,0 +1,27 @@
+# 1. Treat .h files as C++ headers.
+# 2. Hardcode clang-tidy-12.
+
+diff --git a/clang_tidy/clang_tidy.bzl b/clang_tidy/clang_tidy.bzl
+index 3a5ed07..5db5c6c 100644
+--- a/clang_tidy/clang_tidy.bzl
++++ b/clang_tidy/clang_tidy.bzl
+@@ -16,6 +16,9 @@ def _run_tidy(ctx, exe, flags, compilation_context, infile, discriminator):
+     # add source to check
+     args.add(infile.path)
+ 
++    # treat .h files as C++ headers
++    args.add("--extra-arg-before=-xc++")
++
+     # start args passed to the compiler
+     args.add("--")
+ 
+diff --git a/clang_tidy/run_clang_tidy.sh b/clang_tidy/run_clang_tidy.sh
+index 582bab1..b9ebb94 100755
+--- a/clang_tidy/run_clang_tidy.sh
++++ b/clang_tidy/run_clang_tidy.sh
+@@ -11,4 +11,4 @@ shift
+ touch $OUTPUT
+ truncate -s 0 $OUTPUT
+ 
+-clang-tidy "$@"
++clang-tidy-12 "$@"

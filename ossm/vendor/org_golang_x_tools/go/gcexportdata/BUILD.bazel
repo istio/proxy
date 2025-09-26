@@ -1,0 +1,65 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gcexportdata",
+    srcs = [
+        "gcexportdata.go",
+        "importer.go",
+    ],
+    importpath = "golang.org/x/tools/go/gcexportdata",
+    visibility = ["//visibility:public"],
+    deps = ["//internal/gcimporter"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gcexportdata",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "gcexportdata_test",
+    srcs = ["example_test.go"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            ":gcexportdata",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            ":gcexportdata",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            ":gcexportdata",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            ":gcexportdata",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            ":gcexportdata",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            ":gcexportdata",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            ":gcexportdata",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            ":gcexportdata",
+        ],
+        "@io_bazel_rules_go//go/platform:osx": [
+            ":gcexportdata",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            ":gcexportdata",
+        ],
+        "@io_bazel_rules_go//go/platform:qnx": [
+            ":gcexportdata",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            ":gcexportdata",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            ":gcexportdata",
+        ],
+        "//conditions:default": [],
+    }),
+)

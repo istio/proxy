@@ -1,0 +1,53 @@
+{
+    {%- for id, path in context.workspace_members %}
+    {%- set workspace_member = context.crates | get(key=id) %}
+    "{{ path }}": {
+    {%- if deps_type in ["normal"] %}
+    {%- set_global deps_set = workspace_member.common_attrs | get(key="deps", default=default_select_list) %}
+    {%- elif deps_type in ["normal-dev"] %}
+    {%- set_global deps_set = workspace_member.common_attrs | get(key="deps_dev", default=default_select_list) %}
+    {%- elif deps_type in ["proc-macro"] %}
+    {%- set_global deps_set = workspace_member.common_attrs | get(key="proc_macro_deps", default=default_select_list) %}
+    {%- elif deps_type in ["proc-macro-dev"] %}
+    {%- set_global deps_set = workspace_member.common_attrs | get(key="proc_macro_deps_dev", default=default_select_list) %}
+    {%- elif deps_type in ["build"] %}
+        {%- if workspace_member | get(key="build_script_attrs", default=Null) %}
+        {%- set_global deps_set = workspace_member.build_script_attrs | get(key="deps", default=default_select_list) %}
+        {%- else %}
+        {%- set_global deps_set = default_select_list %}
+        {%- endif %}
+    {%- elif deps_type in ["build-proc-macro"] %}
+        {%- if workspace_member | get(key="build_script_attrs", default=Null) %}
+        {%- set_global deps_set = workspace_member.build_script_attrs | get(key="proc_macro_deps", default=default_select_list) %}
+        {%- else %}
+        {%- set_global deps_set = default_select_list %}
+        {%- endif %}
+    {%- else %}
+    {%- endif %}
+        {%- if deps_set.common | length %}
+        _COMMON_CONDITION: {
+            {%- for dep in deps_set.common %}
+            {%- if dep.id in context.workspace_members %}{% continue %}}{% endif %}{# Workspace member repositories are not defined, skip adding their labels here #}
+            {%- set crate = context.crates | get(key=dep.id) %}
+            {%- if dep | get(key="alias", default=Null) %}
+            "{{ crate_label(name = crate.name, version = crate.version, target = crate.name) }}": "{{ dep.alias }}",
+            {%- endif %}
+            {%- endfor %}
+        },
+        {%- endif %}
+        {%- if deps_set.selects | length %}
+        {%- for condition, deps in deps_set.selects %}
+        "{{ condition | addslashes }}": {
+            {%- for dep in deps %}
+            {%- if dep.id in context.workspace_members %}{% continue %}}{% endif %}{# Workspace member repositories are not defined, skip adding their labels here #}
+            {%- if dep | get(key="alias", default=Null) %}
+            {%- set crate = context.crates | get(key=dep.id) %}
+            "{{ crate_label(name = crate.name, version = crate.version, target = crate.name) }}": "{{ dep.alias }}",
+            {%- endif %}
+            {%- endfor %}
+        },
+        {%- endfor %}
+        {%- endif %}
+    },
+    {%- endfor %}
+}

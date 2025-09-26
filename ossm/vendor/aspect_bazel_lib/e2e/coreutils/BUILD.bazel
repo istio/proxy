@@ -1,0 +1,38 @@
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+load("@aspect_bazel_lib//tools/release:hashes.bzl", "hashes")
+
+genrule(
+    name = "ls",
+    outs = ["ls.txt"],
+    cmd = "$(COREUTILS_BIN) ls > $@",
+    toolchains = ["@coreutils_toolchains//:resolved_toolchain"],
+)
+
+hashes(
+    name = "hash",
+    src = "test.bin",
+)
+
+filegroup(
+    name = "md5",
+    srcs = [":hash"],
+    output_group = "md5",
+)
+
+filegroup(
+    name = "sha1",
+    srcs = [":hash"],
+    output_group = "sha1",
+)
+
+# This tests that the "in" file to write_source_files can be a
+# label to an external repository target when bzlmod is enabled.
+write_source_files(
+    name = "write_ls",
+    files = {
+        "ls.txt.expected": ":ls.txt",
+        "sha256.txt": ":hash",
+        "sha1.txt": ":sha1",
+        "md5.txt": ":md5",
+    },
+)

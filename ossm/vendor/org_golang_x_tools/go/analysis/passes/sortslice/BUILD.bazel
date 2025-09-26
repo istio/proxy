@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sortslice",
+    srcs = ["analyzer.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/sortslice",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/inspect",
+        "//go/ast/inspector",
+        "//go/types/typeutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sortslice",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sortslice_test",
+    srcs = ["analyzer_test.go"],
+    deps = [
+        ":sortslice",
+        "//go/analysis/analysistest",
+    ],
+)

@@ -1,0 +1,9 @@
+examples/check_glob/bazel-bin
+examples/check_glob/bazel-out
+examples/check_glob/bazel-testlogs
+examples/check_glob/bazel-optional_attributes
+
+examples/optional_attributes/bazel-bin
+examples/optional_attributes/bazel-out
+examples/optional_attributes/bazel-testlogs
+examples/optional_attributes/bazel-optional_attributes

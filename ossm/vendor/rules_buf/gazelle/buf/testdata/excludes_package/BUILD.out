@@ -1,0 +1,2 @@
+# gazelle:buf_breaking_against //:against_file
+# gazelle:buf_breaking_mode package

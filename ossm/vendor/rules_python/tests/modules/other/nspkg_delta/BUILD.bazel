@@ -1,0 +1,10 @@
+load("@rules_python//python:py_library.bzl", "py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "nspkg_delta",
+    srcs = glob(["site-packages/**/*.py"]),
+    experimental_venvs_site_packages = "@rules_python//python/config_settings:venvs_site_packages",
+    imports = [package_name() + "/site-packages"],
+)

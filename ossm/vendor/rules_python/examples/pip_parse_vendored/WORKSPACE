@@ -1,0 +1,41 @@
+workspace(name = "pip_parse_vendored_example")
+
+local_repository(
+    name = "rules_python",
+    path = "../..",
+)
+
+load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
+
+py_repositories()
+
+python_register_toolchains(
+    name = "python39",
+    python_version = "3.9",
+)
+
+load("@rules_python//python:pip.bzl", "pip_parse")
+
+# This repository isn't referenced, except by our test that asserts the requirements.bzl is updated.
+# It also wouldn't be needed by users of this ruleset.
+# If you're using envsubst with extra_pip_args, as we do below, the value of the environment
+# variables at the time we generate requirements.bzl don't make it into the file, as you may
+# verify by inspection; the environment variables at a later time, when we download the
+# packages, will be the ones that take effect.
+pip_parse(
+    # We choose a unique name here to make sure we can do some cleanup on it.
+    name = "pip_deps_to_be_vendored",
+    envsubst = ["PIP_RETRIES"],
+    extra_pip_args = ["--retries=${PIP_RETRIES:-5}"],
+    python_interpreter_target = "@python39_host//:python",
+    requirements_lock = "//:requirements.txt",
+)
+
+# This example vendors the file produced by `pip_parse` above into the repo.
+# This way our Bazel doesn't eagerly fetch and install the pip_parse'd
+# repository for builds that don't need it.
+# See discussion of the trade-offs in the pip_parse documentation
+# and the "vendor_requirements" target in the BUILD file.
+load("//:requirements.bzl", "install_deps")
+
+install_deps()

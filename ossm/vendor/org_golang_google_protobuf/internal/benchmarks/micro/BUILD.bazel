@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "micro_test",
+    srcs = ["micro_test.go"],
+    deps = [
+        "//internal/impl",
+        "//internal/testprotos/benchmarks/micro",
+        "//internal/testprotos/test",
+        "//proto",
+        "//runtime/protoiface",
+        "//types/known/emptypb",
+    ],
+)

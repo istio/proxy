@@ -1,0 +1,3 @@
+@if not defined DEBUG_HELPER @ECHO OFF
+
+%JS_BINARY__NODE_BINARY% --require %JS_BINARY__NODE_PATCHES% %*

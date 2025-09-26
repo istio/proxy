@@ -1,0 +1,6 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "simple_test",
+    srcs = ["__init__.py"],
+)

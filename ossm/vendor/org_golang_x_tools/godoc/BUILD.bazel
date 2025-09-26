@@ -1,0 +1,66 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "godoc",
+    srcs = [
+        "corpus.go",
+        "dirtrees.go",
+        "format.go",
+        "godoc.go",
+        "index.go",
+        "linkify.go",
+        "markdown.go",
+        "meta.go",
+        "page.go",
+        "parser.go",
+        "pres.go",
+        "search.go",
+        "server.go",
+        "snippet.go",
+        "spec.go",
+        "spot.go",
+        "tab.go",
+        "template.go",
+        "tohtml_go119.go",
+        "tohtml_other.go",
+        "versions.go",
+    ],
+    importpath = "golang.org/x/tools/godoc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//godoc/analysis",
+        "//godoc/util",
+        "//godoc/vfs",
+        "//godoc/vfs/httpfs",
+        "//internal/typeparams",
+        "@com_github_yuin_goldmark//:go_default_library",
+        "@com_github_yuin_goldmark//parser:go_default_library",
+        "@com_github_yuin_goldmark//renderer/html:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":godoc",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "godoc_test",
+    srcs = [
+        "dirtrees_test.go",
+        "godoc17_test.go",
+        "godoc_test.go",
+        "index_test.go",
+        "server_test.go",
+        "spec_test.go",
+        "versions_test.go",
+    ],
+    embed = [":godoc"],
+    deps = [
+        "//godoc/vfs",
+        "//godoc/vfs/gatefs",
+        "//godoc/vfs/mapfs",
+        "//internal/typeparams",
+    ],
+)

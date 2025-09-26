@@ -1,0 +1,8 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "native_dep",
+    srcs = ["first.cc"],
+    hdrs = ["first.h"],
+    visibility = ["//test/unit/ambiguous_libs:__pkg__"],
+)

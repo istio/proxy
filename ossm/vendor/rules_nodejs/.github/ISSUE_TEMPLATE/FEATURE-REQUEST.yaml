@@ -1,0 +1,18 @@
+name: Feature Request
+description: Suggest an idea for the rules_nodejs toolchain
+title: "[FR]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: current
+    attributes:
+      label: What is the current behavior?
+      description: To make sure we agree on this.
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: Describe the feature
+      description: What is the motivation / use case for changing the behavior?
+    validations:
+      required: true

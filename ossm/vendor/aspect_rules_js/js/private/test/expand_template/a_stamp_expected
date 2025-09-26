@@ -1,0 +1,6 @@
+WORKSPACE: aspect_rules_js
+VERSION: v1.2.3
+TMPL_PATH: js/private/test/expand_template/a.tmpl
+WORKSPACE: aspect_rules_js
+VERSION: v1.2.3
+TMPL_PATH: js/private/test/expand_template/a.tmpl

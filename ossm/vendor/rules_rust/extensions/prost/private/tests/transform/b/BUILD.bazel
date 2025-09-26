@@ -1,0 +1,47 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+load("//:defs.bzl", "rust_prost_library", "rust_prost_transform")
+
+package(default_visibility = ["//private/tests:__subpackages__"])
+
+rust_library(
+    name = "greeting",
+    srcs = ["greeting.rs"],
+    edition = "2021",
+)
+
+rust_prost_transform(
+    name = "transform",
+    srcs = ["b_src.rs"],
+    deps = [":greeting"],
+)
+
+proto_library(
+    name = "b_proto",
+    srcs = [
+        "b.proto",
+    ],
+    data = [
+        ":transform",
+    ],
+    strip_import_prefix = "/private/tests/transform",
+    deps = [
+        "//private/tests/transform/b/c:c_proto",
+        "@com_google_protobuf//:empty_proto",
+    ],
+)
+
+rust_prost_library(
+    name = "b_rs_proto",
+    proto = ":b_proto",
+)
+
+rust_test(
+    name = "b_test",
+    srcs = ["b_test.rs"],
+    edition = "2021",
+    deps = [
+        ":b_rs_proto",
+        ":greeting",
+    ],
+)

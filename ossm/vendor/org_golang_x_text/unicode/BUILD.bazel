@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "unicode",
+    srcs = ["doc.go"],
+    importpath = "golang.org/x/text/unicode",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":unicode",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "analysistest",
+    srcs = ["analysistest.go"],
+    importpath = "golang.org/x/tools/go/analysis/analysistest",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/internal/checker",
+        "//go/packages",
+        "//internal/diff",
+        "//internal/testenv",
+        "//txtar",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":analysistest",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "analysistest_test",
+    srcs = ["analysistest_test.go"],
+    deps = [
+        ":analysistest",
+        "//go/analysis/passes/findcall",
+        "//internal/testenv",
+    ],
+)

@@ -1,0 +1,17 @@
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_binary",
+    "rust_test",
+)
+
+rust_binary(
+    name = "main",
+    srcs = ["main.rs"],
+    edition = "2021",
+)
+
+rust_test(
+    name = "global_alloc_test",
+    crate = ":main",
+    edition = "2021",
+)

@@ -1,0 +1,68 @@
+# Dummy test target that imports various targets from the
+# "@nodejs" repository. If a target of the repository is
+# misconfigured, Bazel will complain about missing input files.
+[
+    sh_test(
+        name = "test_%s" % node_toolchain,
+        srcs = ["test.sh"],
+        data = [
+            "@%s//:node" % node_toolchain,
+            "@%s//:node_bin" % node_toolchain,
+            "@%s//:node_files" % node_toolchain,
+            "@%s//:npm" % node_toolchain,
+            "@%s//:npm_bin" % node_toolchain,
+            "@%s//:npm_files" % node_toolchain,
+            "@%s//:npx" % node_toolchain,
+            "@%s//:npx_bin" % node_toolchain,
+        ],
+    )
+    for node_toolchain in [
+        "nodejs",
+        "node16",
+        "node16_nvmrc",
+    ]
+]
+
+[
+    sh_test(
+        name = "test_%s_node_version_%s" % (node_toolchain, tool),
+        srcs = ["version_test.sh"],
+        args = select({
+            "@bazel_tools//src/conditions:linux_x86_64": [
+                "%s_linux_amd64/bin" % node_toolchain,
+                tool,
+            ],
+            "@bazel_tools//src/conditions:darwin": [
+                "%s_darwin_arm64/bin" % node_toolchain,
+                tool,
+            ],
+            "@bazel_tools//src/conditions:windows": [
+                "%s_windows_amd64/bin" % node_toolchain,
+                tool,
+                ".cmd",
+            ],
+        }),
+        data = [
+            "@%s//:%s" % (node_toolchain, tool),
+            "@%s//:node" % node_toolchain,
+            "@bazel_tools//tools/bash/runfiles",
+        ],
+        tags = tags,
+    )
+    for (node_toolchain, tool, tags) in [
+        (
+            "nodejs",
+            "npm",
+            ["skip-on-bazelci-ubuntu"],  # fails on Bazel CI Ubuntu on latest Node.js due to GLIBC version on runner: "GLIBC_2.28 not found" (https://buildkite.com/bazel/rules-nodejs-nodejs/builds/13451#018feffd-4878-46e4-8582-ae94648a2d74)
+        ),
+        (
+            "nodejs",
+            "npx",
+            ["skip-on-bazelci-ubuntu"],  # fails on Bazel CI Ubuntu on latest Node.js due to GLIBC version on runner: "GLIBC_2.28 not found" (https://buildkite.com/bazel/rules-nodejs-nodejs/builds/13451#018feffd-4878-46e4-8582-ae94648a2d74)
+        ),
+        ("node16", "npm", []),
+        ("node16", "npx", []),
+        ("node16_nvmrc", "npm", []),
+        ("node16_nvmrc", "npx", []),
+    ]
+]

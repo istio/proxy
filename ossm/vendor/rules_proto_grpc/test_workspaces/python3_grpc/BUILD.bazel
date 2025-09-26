@@ -1,0 +1,30 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_proto_grpc//python:defs.bzl", "python_grpc_library")
+
+package(default_visibility = ["//visibility:private"])
+
+# Test that python 3 dependencies protobuf and grpc are importable
+
+proto_library(
+    name = "proto_lib",
+    srcs = [
+        "no_service.proto",
+        "service.proto",
+    ],
+)
+
+python_grpc_library(
+    name = "py_lib",
+    protos = ["proto_lib"],
+    python_version = "PY3",
+)
+
+py_test(
+    name = "test",
+    srcs = ["main.py"],
+    legacy_create_init = False,
+    main = "main.py",
+    python_version = "PY3",
+    deps = ["py_lib"],
+)

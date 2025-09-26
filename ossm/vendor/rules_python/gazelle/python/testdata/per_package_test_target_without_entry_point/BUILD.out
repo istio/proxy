@@ -1,0 +1,18 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+# gazelle:python_generation_mode package
+# gazelle:python_generation_mode_per_package_require_test_entry_point false
+
+py_library(
+    name = "per_package_test_target_without_entry_point",
+    srcs = ["__init__.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_test(
+    name = "per_package_test_target_without_entry_point_test",
+    srcs = [
+        "bar_test.py",
+        "foo_test.py",
+    ],
+)

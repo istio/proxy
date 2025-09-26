@@ -1,0 +1,20 @@
+load(":deps_tests.bzl", "deps_test_suite")
+load(":env_tests.bzl", "env_test_suite")
+load(":evaluate_tests.bzl", "evaluate_test_suite")
+load(":requirement_tests.bzl", "requirement_test_suite")
+
+deps_test_suite(
+    name = "deps_tests",
+)
+
+env_test_suite(
+    name = "env_tests",
+)
+
+evaluate_test_suite(
+    name = "evaluate_tests",
+)
+
+requirement_test_suite(
+    name = "requirement_tests",
+)

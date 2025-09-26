@@ -1,0 +1,165 @@
+load("@aspect_bazel_lib//lib:docs.bzl", "update_docs")
+load(":defs.bzl", "stardoc_with_diff_test")
+
+stardoc_with_diff_test(
+    name = "copy_file",
+    bzl_library_target = "@aspect_bazel_lib//lib:copy_file",
+)
+
+stardoc_with_diff_test(
+    name = "copy_directory",
+    bzl_library_target = "@aspect_bazel_lib//lib:copy_directory",
+)
+
+stardoc_with_diff_test(
+    name = "copy_to_directory",
+    bzl_library_target = "@aspect_bazel_lib//lib:copy_to_directory",
+)
+
+stardoc_with_diff_test(
+    name = "copy_to_bin",
+    bzl_library_target = "@aspect_bazel_lib//lib:copy_to_bin",
+)
+
+stardoc_with_diff_test(
+    name = "docs",
+    bzl_library_target = "@aspect_bazel_lib//lib:docs",
+    tags = ["some_random_tag_for_testing_pr746_regression"],
+)
+
+stardoc_with_diff_test(
+    name = "diff_test",
+    bzl_library_target = "@aspect_bazel_lib//lib:diff_test",
+)
+
+stardoc_with_diff_test(
+    name = "expand_make_vars",
+    bzl_library_target = "@aspect_bazel_lib//lib:expand_make_vars",
+)
+
+stardoc_with_diff_test(
+    name = "expand_template",
+    bzl_library_target = "@aspect_bazel_lib//lib:expand_template",
+)
+
+stardoc_with_diff_test(
+    name = "params_file",
+    bzl_library_target = "@aspect_bazel_lib//lib:params_file",
+)
+
+stardoc_with_diff_test(
+    name = "paths",
+    bzl_library_target = "@aspect_bazel_lib//lib:paths",
+)
+
+stardoc_with_diff_test(
+    name = "lists",
+    bzl_library_target = "@aspect_bazel_lib//lib:lists",
+)
+
+stardoc_with_diff_test(
+    name = "tar",
+    bzl_library_target = "@aspect_bazel_lib//lib:tar",
+)
+
+stardoc_with_diff_test(
+    name = "utils",
+    bzl_library_target = "@aspect_bazel_lib//lib:utils",
+)
+
+stardoc_with_diff_test(
+    name = "jq",
+    bzl_library_target = "@aspect_bazel_lib//lib:jq",
+)
+
+stardoc_with_diff_test(
+    name = "write_source_files",
+    bzl_library_target = "@aspect_bazel_lib//lib:write_source_files",
+)
+
+stardoc_with_diff_test(
+    name = "directory_path",
+    bzl_library_target = "@aspect_bazel_lib//lib:directory_path",
+)
+
+stardoc_with_diff_test(
+    name = "output_files",
+    bzl_library_target = "@aspect_bazel_lib//lib:output_files",
+)
+
+stardoc_with_diff_test(
+    name = "run_binary",
+    bzl_library_target = "@aspect_bazel_lib//lib:run_binary",
+)
+
+stardoc_with_diff_test(
+    name = "transitions",
+    bzl_library_target = "@aspect_bazel_lib//lib:transitions",
+)
+
+stardoc_with_diff_test(
+    name = "repo_utils",
+    bzl_library_target = "@aspect_bazel_lib//lib:repo_utils",
+)
+
+stardoc_with_diff_test(
+    name = "yq",
+    bzl_library_target = "@aspect_bazel_lib//lib:yq",
+)
+
+stardoc_with_diff_test(
+    name = "glob_match",
+    bzl_library_target = "@aspect_bazel_lib//lib:glob_match",
+)
+
+stardoc_with_diff_test(
+    name = "host_repo",
+    bzl_library_target = "@aspect_bazel_lib//lib:host_repo",
+)
+
+stardoc_with_diff_test(
+    name = "platform_utils",
+    bzl_library_target = "@aspect_bazel_lib//lib:platform_utils",
+)
+
+stardoc_with_diff_test(
+    name = "stamping",
+    bzl_library_target = "@aspect_bazel_lib//lib:stamping",
+)
+
+stardoc_with_diff_test(
+    name = "testing",
+    bzl_library_target = "@aspect_bazel_lib//lib:testing",
+)
+
+stardoc_with_diff_test(
+    name = "base64",
+    bzl_library_target = "@aspect_bazel_lib//lib:base64",
+)
+
+stardoc_with_diff_test(
+    name = "repositories",
+    bzl_library_target = "@aspect_bazel_lib//lib:repositories",
+)
+
+stardoc_with_diff_test(
+    name = "bazelrc_presets",
+    bzl_library_target = "@aspect_bazel_lib//lib:bazelrc_presets",
+)
+
+stardoc_with_diff_test(
+    name = "strings",
+    bzl_library_target = "@aspect_bazel_lib//lib:strings",
+)
+
+stardoc_with_diff_test(
+    name = "bats",
+    bzl_library_target = "@aspect_bazel_lib//lib:bats",
+)
+
+stardoc_with_diff_test(
+    name = "resource_sets",
+    bzl_library_target = "@aspect_bazel_lib//lib:resource_sets",
+)
+
+update_docs(name = "update")

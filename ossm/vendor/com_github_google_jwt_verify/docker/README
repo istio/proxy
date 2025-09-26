@@ -1,0 +1,24 @@
+## Docker images for jwt_verify_lib
+
+### How to build the image
+```sh
+docker build -f ${DOCKER_FILE_NAME} -t ${IMAGE_TAG} .
+```
+We can also inspect the image by running
+```sh
+docker run -it --entrypoint /bin/sh ${IMAGE_TAG}
+```
+
+### How to push the image
+Please refer to [Docker official
+documentation](https://docs.docker.com/engine/reference/commandline/push/#push-a-new-image-to-a-registry).
+
+#### Dockerfile-prow-env
+This image is used to run OSS Prow CI jobs.
+```sh
+# Build image
+docker build -f Dockerfile-prow-env -t gcr.io/cloudesf-testing/jwt-verify-lib-prow:v{YYYYMMDD} .
+# Push image to GCR
+docker image push gcr.io/cloudesf-testing/jwt-verify-lib-prow:v{YYYYMMDD}
+```
+

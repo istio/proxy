@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package package_2;
+
+message Message2 {
+  string query = 1;
+}

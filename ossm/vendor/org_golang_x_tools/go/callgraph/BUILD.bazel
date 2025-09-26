@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "callgraph",
+    srcs = [
+        "callgraph.go",
+        "util.go",
+    ],
+    importpath = "golang.org/x/tools/go/callgraph",
+    visibility = ["//visibility:public"],
+    deps = ["//go/ssa"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":callgraph",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "callgraph_test",
+    srcs = ["callgraph_test.go"],
+    deps = [
+        ":callgraph",
+        "//go/callgraph/cha",
+        "//go/callgraph/rta",
+        "//go/callgraph/static",
+        "//go/callgraph/vta",
+        "//go/loader",
+        "//go/pointer",
+        "//go/ssa",
+        "//go/ssa/ssautil",
+    ],
+)

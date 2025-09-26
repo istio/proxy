@@ -1,0 +1,5 @@
+load(":config_settings_tests.bzl", "config_settings_test_suite")
+
+config_settings_test_suite(
+    name = "config_settings_tests",
+)

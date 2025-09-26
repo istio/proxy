@@ -1,0 +1,20 @@
+hessian2-codec
+Copyright 2020 Alibaba Group Holding Limited
+
+Licensed under Apache License 2.0.  See LICENSE for terms.
+
+This product includes software from the abseil-cpp project (Apache 2.0)
+ * Copyright 2018 The Abseil Authors.
+ * https://github.com/abseil/abseil-cpp
+
+This product includes software from the googletest project (BSD, 3-Clause)
+ * Copyright 2008, Google Inc.
+ * https://github.com/google/googletest
+
+This product includes software from the fmt project (MIT)
+ * Copyright (c) 2012 - present, Victor Zverovich
+ * https://github.com/fmtlib/fmt
+
+This product includes software from the test_hessian2 project (Apache 2.0)
+ * Copyright 2018-2020 The Apache Software Foundation
+ * https://github.com/apache/dubbo-go-hessian2/tree/master/test_hessian

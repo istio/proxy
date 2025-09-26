@@ -1,0 +1,15 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+# gazelle:python_extension enabled
+# gazelle:python_generation_mode project
+
+py_library(
+    name = "project_generation_mode_with_tests",
+    srcs = ["__init__.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_test(
+    name = "project_generation_mode_with_tests_test",
+    srcs = ["foo/foo_test.py"],
+)

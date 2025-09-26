@@ -1,0 +1,51 @@
+
+language: cpp
+
+install:
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get -qq update
+  - sudo apt-get install -y g++-6 libstdc++-6-dev
+  - sudo apt-get install -y valgrind
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 90
+
+  # Install bison 3.0.4.
+  - wget http://ftp.gnu.org/gnu/bison/bison-3.0.4.tar.gz
+  - tar -xvzf bison-3.0.4.tar.gz
+  - cd bison-3.0.4
+  - ./configure && make && sudo make install
+  - cd ..
+
+  # Install flex 2.6.4
+  - wget https://github.com/westes/flex/releases/download/v2.6.4/flex-2.6.4.tar.gz
+  - tar -xvzf flex-2.6.4.tar.gz
+  - cd flex-2.6.4
+  - ./configure && make && sudo make install
+  - cd ..
+
+  # Show installed versions.
+  - which g++
+  - g++ -v
+  - bison --version
+  - flex --version
+  - valgrind --version
+  - if [ "$CXX" = "clang++" ]; then export CXXFLAGS="-stdlib=libc++"; fi
+
+compiler:
+  - gcc
+  - clang
+
+script:
+  # bi build with flex/bison files checked into repo
+  - make -j4
+  - make test
+  - make test_example
+
+  # build flex/bison files in CI
+  - make cleanall
+  - make -j4
+  - make test
+  - make test_example
+
+  # Test if benchmark can be built.
+  # - make benchmark

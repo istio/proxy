@@ -1,0 +1,1 @@
+workspace(name = "remote_jdk8_linux_s390x_toolchain_config_repo")

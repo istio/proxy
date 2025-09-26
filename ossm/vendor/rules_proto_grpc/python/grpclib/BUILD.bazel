@@ -1,0 +1,17 @@
+load("@rules_proto_grpc_py3_deps//:requirements.bzl", "requirement")
+
+# Create py binary for grpclib plugin
+# Use subpar to bundle plugin for external execution
+py_binary(
+    name = "plugin",
+    srcs = ["plugin.py"],
+    legacy_create_init = False,
+    main = "plugin.py",
+    python_version = "PY3",
+    srcs_version = "PY3",
+    visibility = ["//python:__subpackages__"],
+    deps = [
+        "@com_google_protobuf//:protobuf_python",
+        requirement("grpclib"),
+    ],
+)

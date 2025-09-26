@@ -1,0 +1,5 @@
+load(":per_crate_rustc_flag_test.bzl", "per_crate_rustc_flag_test_suite")
+
+per_crate_rustc_flag_test_suite(
+    name = "per_crate_rustc_flag_test_suite",
+)

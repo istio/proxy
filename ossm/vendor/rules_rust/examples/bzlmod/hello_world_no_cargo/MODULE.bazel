@@ -1,0 +1,34 @@
+"""bazelbuild/rules_rust - bzlmod no-cargo example"""
+
+module(name = "hello_world_no_cargo")
+
+bazel_dep(
+    name = "rules_rust",
+    version = "0.0.0",
+)
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../..",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2021")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.spec(
+    package = "anyhow",
+    version = "1.0.77",
+)
+crate.spec(
+    # NOTE: v4 is not available in no-std and by default, std is enabled in uuid
+    # so if this fails to build, then default_features default value is False
+    # see https://docs.rs/uuid/1.8.0/uuid/#embedded
+    features = ["v4"],
+    package = "uuid",
+    version = "1.8.0",
+)
+crate.from_specs()
+use_repo(crate, "crates")

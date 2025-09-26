@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "pipeline",
+    srcs = [
+        "extract.go",
+        "generate.go",
+        "message.go",
+        "pipeline.go",
+        "rewrite.go",
+    ],
+    importpath = "golang.org/x/text/message/pipeline",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//collate",
+        "//feature/plural",
+        "//internal",
+        "//internal/catmsg",
+        "//internal/format",
+        "//internal/gen",
+        "//language",
+        "//runes",
+        "@org_golang_x_tools//go/callgraph:go_default_library",
+        "@org_golang_x_tools//go/callgraph/cha:go_default_library",
+        "@org_golang_x_tools//go/loader:go_default_library",
+        "@org_golang_x_tools//go/ssa:go_default_library",
+        "@org_golang_x_tools//go/ssa/ssautil:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pipeline",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "pipeline_test",
+    srcs = [
+        "go19_test.go",
+        "pipeline_test.go",
+    ],
+    embed = [":pipeline"],
+    deps = ["//language"],
+)

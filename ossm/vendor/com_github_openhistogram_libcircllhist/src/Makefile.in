@@ -1,0 +1,178 @@
+.SUFFIXES: .lo .re .c
+
+OS=$(shell uname)
+
+Q=
+ifeq ($(V),)
+	Q=@
+endif
+
+LIBCIRCLLHIST_VERSION=0.0.1
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+sbindir=@sbindir@
+libdir=@libdir@
+includedir=@includedir@
+libexecdir=@libexecdir@
+localstatedir=@localstatedir@
+datarootdir=@datarootdir@
+datadir=@datadir@
+mandir=@mandir@
+mansubdir=@mansubdir@
+docdir=${prefix}/@docdir@
+sysconfdir=@sysconfdir@
+srcdir=@srcdir@
+top_srcdir=@top_srcdir@
+
+CC=@CC@
+SHLD=@SHLD@
+CPPFLAGS=@CPPFLAGS@
+CFLAGS=@CFLAGS@ @COPT@
+SHCFLAGS=@SHCFLAGS@ @COPT@
+CLINKFLAGS=@CLINKFLAGS@
+LUACFLAGS=@LUACFLAGS@
+PGCFLAGS=@PGCFLAGS@
+LDFLAGS=@LDFLAGS@ -L$(libdir)
+RLDFLAG=@RLDFLAG@
+ifneq ($(strip $(RLDFLAG)),)
+  LDFLAGS += @RLDFLAG@$(libdir)
+endif
+SHLDFLAGS=@SHLDFLAGS@
+DEPFLAGS=@DEPFLAGS@
+MODULELD=@MODULELD@
+AR=@AR@
+RANLIB=@RANLIB@
+LIBS=@LIBS@
+INSTALL=@INSTALL@
+MAPFLAGS=@MAPFLAGS@
+CTFCONVERT=@CTFCONVERT@
+CTFMERGE=@CTFMERGE@
+
+# Later versions of ctf* tools no longer have -g and by default do not strip,
+# so we get the same behavior as with -g on older versions.
+ifneq ($(wildcard $(CTFCONVERT)),)
+  HAS_G=$(shell $(CTFCONVERT) 2>&1 | grep -- -gis)
+  ifneq ($(HAS_G),)
+    CTFNOSTRIP=-g
+  else
+    CTFNOSTRIP=
+  endif
+endif
+
+WHOLE_ARCHIVE=@WHOLE_ARCHIVE@
+NOWHOLE_ARCHIVE=@NOWHOLE_ARCHIVE@
+LIBCIRCLLHIST_V=libcircllhist@DOTSO@.$(LIBCIRCLLHIST_VERSION)@DOTDYLIB@
+LIBCIRCLLHIST=libcircllhist@DOTSO@@DOTDYLIB@
+LIBCIRCLLHISTA=libcircllhist.a
+
+ifeq ($(OS),Darwin)
+SHLDFLAGS+=-current_version $(LIBCIRCLLHIST_VERSION) -install_name $(libdir)/$(LIBCIRCLLHIST_V)
+endif
+
+LUA_FFI=lua/ffi_libcircllhist.lua
+PYTHON_FFI=python/circllhist/ffi.py
+
+TARGETS=$(LIBCIRCLLHISTA) $(LIBCIRCLLHIST) $(LUA_FFI) $(PYTHON_FFI) test/histogram_test test/histogram_perf
+
+all:	reversion $(TARGETS)
+
+HEADERS=circllhist.h
+
+LIBCIRCLLHIST_OBJS=circllhist.lo
+
+.PHONY:	reversion
+
+reversion:
+	@$(top_srcdir)/buildtools/mkversion.sh circllhist_version.h
+
+circllhist_version.h:
+	@$(top_srcdir)/buildtools/mkversion.sh circllhist_version.h
+
+$(LIBCIRCLLHISTA):	$(LIBCIRCLLHIST_OBJS)
+	@rm -f $(LIBCIRCLLHISTA)
+	$(Q)$(AR) cq $(LIBCIRCLLHISTA) $(LIBCIRCLLHIST_OBJS)
+
+$(LIBCIRCLLHIST):	$(LIBCIRCLLHIST_V)
+	ln -sf $(LIBCIRCLLHIST_V) $(LIBCIRCLLHIST)
+
+$(LIBCIRCLLHIST_V):	$(LIBCIRCLLHIST_OBJS)
+	@echo "- linking $@"
+	$(SHLD) $(SHLDFLAGS) $(CFLAGS) -o $@ $(LIBCIRCLLHIST_OBJS) -lm
+	$(Q)if test -x "$(CTFMERGE)" ; then \
+		echo "- merging CTF ($@)" ; \
+		 $(CTFMERGE) -l @LIBCIRCLLHIST_VERSION@ -o $@ $(LIBCIRCLLHIST_OBJS) ; \
+	fi
+
+test/histogram_test: test/histogram_test.c $(LIBCIRCLLHIST)
+	$(Q)$(CC) -I. $(CPPFLAGS) $(CFLAGS) -L. $(LDFLAGS) -I. -o $@ test/histogram_test.c -lcircllhist
+
+test/histogram_perf: test/histogram_perf.c $(LIBCIRCLLHIST)
+	$(Q)$(CC) -I. $(CPPFLAGS) $(CFLAGS) -L. $(LDFLAGS) -I. -o $@ test/histogram_perf.c -lcircllhist -lm
+
+circllhist.ffi.h: circllhist.h
+	./prepareFFI.sh < $< > $@
+
+$(LUA_FFI): circllhist.ffi.h
+	mkdir -p $$(dirname $@)
+	./generateLuaFiles.sh < $< > $@
+
+$(PYTHON_FFI): circllhist.ffi.h
+	mkdir -p $$(dirname $@)
+	./generatePythonFiles.sh < $< > $@
+
+.c.lo:
+	@echo "- compiling $<"
+	$(Q)$(CC) $(CPPFLAGS) $(SHCFLAGS) -c $< -o $@
+	$(Q)cp $@ $@.noctf
+	$(Q)if test -x "$(CTFCONVERT)" ; then \
+		echo "- making CTF ($@)" ; \
+		$(CTFCONVERT) $(CTFNOSTRIP) -i -l @VERSION@ $@.noctf ; \
+	fi
+	$(Q)mv $@.noctf $@
+
+.c.o:
+	@echo "- compiling $<"
+	$(Q)$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+
+install-headers:	$(HEADERS)
+	$(top_srcdir)/buildtools/mkinstalldirs $(DESTDIR)$(includedir)
+	for file in $(HEADERS) ; do \
+		$(INSTALL) -m 0644 $$file $(DESTDIR)$(includedir)/$$file ; \
+	done
+
+install-libs:    $(LIBCIRCLLHIST) $(LUA_FFI)
+	$(top_srcdir)/buildtools/mkinstalldirs $(DESTDIR)$(libdir)
+	$(top_srcdir)/buildtools/mkinstalldirs $(DESTDIR)$(datadir)/lua/5.1
+	$(INSTALL) -m 0755 $(LIBCIRCLLHIST_V) $(DESTDIR)$(libdir)/$(LIBCIRCLLHIST_V)
+	$(INSTALL) -m 0755 $(LIBCIRCLLHISTA) $(DESTDIR)$(libdir)/$(LIBCIRCLLHISTA)
+	ln -sf $(LIBCIRCLLHIST_V) $(DESTDIR)$(libdir)/$(LIBCIRCLLHIST)
+	$(INSTALL) -m 0755 $(LUA_FFI) $(DESTDIR)$(datadir)/lua/5.1/
+
+install:	install-headers install-libs
+
+install-python:
+	cd python && python setup.py install
+
+tests: test/histogram_test test/histogram_perf $(LUA_FFI) $(PYTHON_FFI)
+	test/runTest.sh
+
+tests-python:
+	python python/test.py
+
+clean:
+	rm -f *.lo *.o $(TARGETS)
+	rm -f $(LIBCIRCLLHIST) $(LIBCIRCLLHIST_V)
+	rm -f histogram_test
+	rm -f histogram_perl
+	rm -f circllhist.ffi.h
+	rm -f $(LUA_FFI)
+	rm -f $(PYTHON_FFI)
+
+Makefile.dep:
+	$(CC) -I. $(CPPFLAGS) $(CFLAGS) $(DEPFLAGS) *.c > Makefile.dep
+
+include Makefile.dep
+
+distclean:	clean

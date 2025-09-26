@@ -1,0 +1,45 @@
+load("//csharp:defs.bzl", "csharp_grpc_library")
+load("@io_bazel_rules_dotnet//dotnet:defs.bzl", "csharp_binary", "csharp_library")
+
+csharp_grpc_library(
+    name = "routeguide.dll",
+    protos = ["//example/proto:routeguide_proto"],
+)
+
+csharp_library(
+    name = "util.dll",
+    srcs = [
+        "RouteGuideUtil.cs",
+    ],
+    deps = [
+        ":routeguide.dll",
+        "@newtonsoft.json//:lib",
+    ],
+)
+
+csharp_binary(
+    name = "client.exe",
+    srcs = [
+        "Client.cs",
+    ],
+    data = ["//example/proto:routeguide_features"],
+    visibility = ["//example/routeguide:__pkg__"],
+    deps = [
+        ":routeguide.dll",
+        ":util.dll",
+    ],
+)
+
+csharp_binary(
+    name = "server.exe",
+    srcs = [
+        "Server.cs",
+    ],
+    data = ["//example/proto:routeguide_features"],
+    visibility = ["//example/routeguide:__pkg__"],
+    deps = [
+        ":routeguide.dll",
+        ":util.dll",
+        "@core_sdk_stdlib//:Microsoft.AspNetCore.App",
+    ],
+)

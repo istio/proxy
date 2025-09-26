@@ -1,0 +1,20 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_generation_mode file
+# gazelle:python_generation_mode_per_file_include_init true
+
+py_library(
+    name = "__init__",
+    srcs = ["__init__.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [":foo"],
+)
+
+py_library(
+    name = "foo",
+    srcs = [
+        "__init__.py",
+        "foo.py",
+    ],
+    visibility = ["//:__subpackages__"],
+)

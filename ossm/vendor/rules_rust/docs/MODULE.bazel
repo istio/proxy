@@ -1,0 +1,64 @@
+"""rules_rust docs"""
+
+module(
+    name = "rules_rust_docs",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.55.6")
+local_path_override(
+    module_name = "rules_rust",
+    path = "..",
+)
+
+bazel_dep(name = "rules_rust_bindgen", version = "0.55.6")
+local_path_override(
+    module_name = "rules_rust_bindgen",
+    path = "../extensions/bindgen",
+)
+
+bazel_dep(name = "rules_rust_mdbook", version = "0.55.6")
+local_path_override(
+    module_name = "rules_rust_mdbook",
+    path = "../extensions/mdbook",
+)
+
+bazel_dep(name = "rules_rust_prost", version = "0.55.6")
+local_path_override(
+    module_name = "rules_rust_prost",
+    path = "../extensions/prost",
+)
+
+bazel_dep(name = "rules_rust_protobuf", version = "0.55.6")
+local_path_override(
+    module_name = "rules_rust_protobuf",
+    path = "../extensions/protobuf",
+)
+
+bazel_dep(name = "rules_rust_wasm_bindgen", version = "0.54.1")
+local_path_override(
+    module_name = "rules_rust_wasm_bindgen",
+    path = "../extensions/wasm_bindgen",
+)
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.7.1",
+)
+bazel_dep(
+    name = "stardoc",
+    version = "0.6.2",
+)
+bazel_dep(
+    name = "protobuf",
+    version = "27.0",
+    repo_name = "com_google_protobuf",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.17",
+)
+bazel_dep(
+    name = "rules_shell",
+    version = "0.3.0",
+)

@@ -1,0 +1,16 @@
+syntax = "proto3";
+package tests.core.go_proto_library.enum;
+option go_package = "github.com/bazelbuild/rules_go/tests/core/go_proto_library/enum";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.EnumValueOptions {
+  optional string db_enum = 5002;
+}
+
+
+enum Enum {
+  INVALID = 0;
+  BYTES = 1  [(tests.core.go_proto_library.enum.db_enum) = "bytes_type"];
+  INT32 = 2;
+}

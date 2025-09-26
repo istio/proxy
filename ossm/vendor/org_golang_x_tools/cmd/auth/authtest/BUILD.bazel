@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "authtest_lib",
+    srcs = ["authtest.go"],
+    importpath = "golang.org/x/tools/cmd/auth/authtest",
+    visibility = ["//visibility:private"],
+    deps = ["@org_golang_x_sys//execabs:go_default_library"],
+)
+
+go_binary(
+    name = "authtest",
+    embed = [":authtest_lib"],
+    visibility = ["//visibility:public"],
+)

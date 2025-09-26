@@ -1,0 +1,18 @@
+load("@rules_proto_grpc//android:defs.bzl", "android_proto_library")
+
+android_proto_library(
+    name = "person_android_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+    deps = ["place_android_proto"],
+)
+
+android_proto_library(
+    name = "place_android_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+    deps = ["thing_android_proto"],
+)
+
+android_proto_library(
+    name = "thing_android_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

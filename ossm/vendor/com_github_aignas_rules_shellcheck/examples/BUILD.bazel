@@ -1,0 +1,14 @@
+filegroup(
+    name = "distribution",
+    srcs = glob(
+        [
+            "check_glob/**",
+            "optional_attributes/**",
+        ],
+        exclude = [
+            "**/.gitignore",
+            "**/MODULE.bazel.lock",
+        ],
+    ),
+    visibility = ["//:__pkg__"],
+)

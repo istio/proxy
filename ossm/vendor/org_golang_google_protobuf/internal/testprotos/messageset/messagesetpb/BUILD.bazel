@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "messagesetpb_proto",
+    srcs = ["message_set.proto"],
+    visibility = ["//:__subpackages__"],
+)
+
+go_proto_library(
+    name = "messagesetpb_go_proto",
+    importpath = "google.golang.org/protobuf/internal/testprotos/messageset/messagesetpb",
+    proto = ":messagesetpb_proto",
+    visibility = ["//:__subpackages__"],
+)
+
+go_library(
+    name = "messagesetpb",
+    embed = [":messagesetpb_go_proto"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/messageset/messagesetpb",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":messagesetpb",
+    visibility = ["//:__subpackages__"],
+)

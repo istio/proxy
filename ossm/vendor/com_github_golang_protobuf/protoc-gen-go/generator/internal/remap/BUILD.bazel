@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "remap",
+    srcs = ["remap.go"],
+    importpath = "github.com/golang/protobuf/protoc-gen-go/generator/internal/remap",
+    visibility = ["//protoc-gen-go/generator:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":remap",
+    visibility = ["//protoc-gen-go/generator:__subpackages__"],
+)
+
+go_test(
+    name = "remap_test",
+    srcs = ["remap_test.go"],
+    embed = [":remap"],
+)
