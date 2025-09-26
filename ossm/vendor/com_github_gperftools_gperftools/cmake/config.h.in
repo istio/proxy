@@ -1,0 +1,173 @@
+#ifndef GPERFTOOLS_CONFIG_H_
+#define GPERFTOOLS_CONFIG_H_
+
+/* Enable aggressive decommit by default */
+#cmakedefine ENABLE_AGGRESSIVE_DECOMMIT_BY_DEFAULT
+
+/* Build runtime detection for sized delete */
+#cmakedefine ENABLE_DYNAMIC_SIZED_DELETE
+
+/* Report large allocation */
+#cmakedefine ENABLE_LARGE_ALLOC_REPORT
+
+/* Build sized deletion operators */
+#cmakedefine ENABLE_SIZED_DELETE
+
+/* Define to 1 if you have the <asm/ptrace.h> header file. */
+#cmakedefine HAVE_ASM_PTRACE_H
+
+/* Define to 1 if you have the <cygwin/signal.h> header file. */
+#cmakedefine HAVE_CYGWIN_SIGNAL_H
+
+/* Define to 1 if you have the declaration of `backtrace', and to 0 if you
+   don't. */
+#cmakedefine01 HAVE_DECL_BACKTRACE
+
+/* Define to 1 if you have the declaration of `memalign', and to 0 if you
+   don't. */
+#cmakedefine01 HAVE_DECL_MEMALIGN
+
+/* Define to 1 if you have the declaration of `nanosleep', and to 0 if you
+   don't. */
+#cmakedefine01 HAVE_DECL_NANOSLEEP
+
+/* Define to 1 if you have the declaration of `posix_memalign', and to 0 if
+   you don't. */
+#cmakedefine01 HAVE_DECL_POSIX_MEMALIGN
+
+/* Define to 1 if you have the declaration of `pvalloc', and to 0 if you
+   don't. */
+#cmakedefine01 HAVE_DECL_PVALLOC
+
+/* Define to 1 if you have the declaration of `sleep', and to 0 if you don't.
+   */
+#cmakedefine01 HAVE_DECL_SLEEP
+
+/* Define to 1 if you have the declaration of `valloc', and to 0 if you don't.
+   */
+#cmakedefine01 HAVE_DECL_VALLOC
+
+/* Define to 1 if you have the <execinfo.h> header file. */
+#cmakedefine HAVE_EXECINFO_H
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#cmakedefine HAVE_FCNTL_H
+
+/* Define to 1 if you have the <features.h> header file. */
+#cmakedefine HAVE_FEATURES_H
+
+/* Define to 1 if you have the `geteuid' function. */
+#cmakedefine HAVE_GETEUID
+
+/* Define to 1 if you have the <glob.h> header file. */
+#cmakedefine HAVE_GLOB_H
+
+/* Define to 1 if you have the <libunwind.h> header file. */
+#cmakedefine01 HAVE_LIBUNWIND_H
+
+#cmakedefine USE_LIBUNWIND
+
+/* Define if this is Linux that has SIGEV_THREAD_ID */
+#cmakedefine01 HAVE_LINUX_SIGEV_THREAD_ID
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#cmakedefine HAVE_MALLOC_H
+
+/* Define to 1 if you have the <malloc/malloc.h> header file. */
+#cmakedefine HAVE_MALLOC_MALLOC_H
+
+/* Define to 1 if you have a working `mmap' system call. */
+#cmakedefine HAVE_MMAP
+
+/* define if libc has program_invocation_name */
+#cmakedefine HAVE_PROGRAM_INVOCATION_NAME
+
+/* Define to 1 if you have the `sbrk' function. */
+#cmakedefine HAVE_SBRK
+
+/* Define to 1 if you have the <sched.h> header file. */
+#cmakedefine HAVE_SCHED_H
+
+/* Define to 1 if the system has the type `struct mallinfo'. */
+#cmakedefine HAVE_STRUCT_MALLINFO
+
+/* Define to 1 if the system has the type `struct mallinfo2'. */
+#cmakedefine HAVE_STRUCT_MALLINFO2
+
+/* Define to 1 if you have the <sys/cdefs.h> header file. */
+#cmakedefine HAVE_SYS_CDEFS_H
+
+/* Define to 1 if you have the <sys/malloc.h> header file. */
+#cmakedefine HAVE_SYS_MALLOC_H
+
+/* Define to 1 if you have the <sys/socket.h> header file. */
+#cmakedefine HAVE_SYS_SOCKET_H
+
+/* Define to 1 if you have the <sys/syscall.h> header file. */
+#cmakedefine01 HAVE_SYS_SYSCALL_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#cmakedefine HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/ucontext.h> header file. */
+#cmakedefine01 HAVE_SYS_UCONTEXT_H
+
+/* Define to 1 if you have the <ucontext.h> header file. */
+#cmakedefine01 HAVE_UCONTEXT_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H
+
+/* Whether <unwind.h> contains _Unwind_Backtrace */
+#cmakedefine HAVE_UNWIND_BACKTRACE
+
+// __cxxabiv1::__cxa_demangle is available
+#cmakedefine01 HAVE_CXA_DEMANGLE
+
+/* define if your compiler has __attribute__ */
+#cmakedefine HAVE___ATTRIBUTE__
+
+/* define if your compiler supports alignment of functions */
+#cmakedefine HAVE___ATTRIBUTE__ALIGNED_FN
+
+/* Define to 1 if compiler supports __environ */
+#cmakedefine HAVE___ENVIRON
+
+/* Always the empty-string on non-windows systems. On windows, should be
+   "__declspec(dllexport)". This way, when we compile the dll, we export our
+   functions/classes. It's safe to define this here because config.h is only
+   used internally, to compile the DLL, and every DLL source file #includes
+   "config.h" before anything else. */
+#if defined(_WIN32)
+#ifndef PERFTOOLS_DLL_DECL
+# define PERFTOOLS_IS_A_DLL  1
+# define PERFTOOLS_DLL_DECL  __declspec(dllexport)
+# define PERFTOOLS_DLL_DECL_FOR_UNITTESTS  __declspec(dllimport)
+#endif
+#else
+#ifndef PERFTOOLS_DLL_DECL
+# define PERFTOOLS_DLL_DECL
+# define PERFTOOLS_DLL_DECL_FOR_UNITTESTS
+#endif
+#endif
+
+/* if libgcc stacktrace method should be default */
+#cmakedefine PREFER_LIBGCC_UNWINDER
+
+/* Define 8 bytes of allocation alignment for tcmalloc */
+#cmakedefine TCMALLOC_ALIGN_8BYTES
+
+/* Define internal page size for tcmalloc as number of left bitshift */
+#cmakedefine TCMALLOC_PAGE_SIZE_SHIFT @TCMALLOC_PAGE_SIZE_SHIFT@
+
+/* C99 says: define this to get the PRI... macros from stdint.h */
+#ifndef __STDC_FORMAT_MACROS
+# define __STDC_FORMAT_MACROS 1
+#endif
+
+#ifdef _WIN32
+// TODO(csilvers): include windows/port.h in every relevant source file instead?
+#include "windows/port.h"
+#endif  /* _WIN32 */
+
+#endif  /* GPERFTOOLS_CONFIG_H_ */

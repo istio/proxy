@@ -1,0 +1,120 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Force the use of Clang for all builds.
+build --repo_env=CC=clang
+
+# Needed for abseil-cpp until https://github.com/bazelbuild/bazel/pull/19794 is released.
+build --cxxopt=-std=c++14
+
+# Strict dependency check for C++ includes.
+build --features=layering_check
+
+# Target Java 11 to squelch warnings about Java 8 being deprecated.
+build --java_language_version=11
+build --java_runtime_version=remotejdk_11
+build --tool_java_language_version=11
+build --tool_java_runtime_version=remotejdk_11
+
+# The ASAN configuration suitable for C++ unit tests.
+build:asan --copt=-fsanitize=address
+build:asan --linkopt=-fsanitize=address
+
+# LibFuzzer + ASAN
+build:asan-libfuzzer --//fuzzing:cc_engine=//fuzzing/engines:libfuzzer
+build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
+build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan
+
+# LibFuzzer + MSAN
+build:msan-libfuzzer --//fuzzing:cc_engine=//fuzzing/engines:libfuzzer
+build:msan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
+build:msan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=msan
+
+# LibFuzzer + MSAN (reproduction mode)
+build:msan-libfuzzer-repro --//fuzzing:cc_engine=//fuzzing/engines:libfuzzer
+build:msan-libfuzzer-repro --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
+build:msan-libfuzzer-repro --@rules_fuzzing//fuzzing:cc_engine_sanitizer=msan-origin-tracking
+
+# LibFuzzer + UBSAN
+build:ubsan-libfuzzer --//fuzzing:cc_engine=//fuzzing/engines:libfuzzer
+build:ubsan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
+build:ubsan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=ubsan
+
+# LibFuzzer + ASAN + UBSAN
+build:asan-ubsan-libfuzzer --//fuzzing:cc_engine=//fuzzing/engines:libfuzzer
+build:asan-ubsan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
+build:asan-ubsan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan-ubsan
+
+# Honggfuzz + ASAN
+build:asan-honggfuzz --//fuzzing:cc_engine=//fuzzing/engines:honggfuzz
+build:asan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine_instrumentation=honggfuzz
+build:asan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan
+
+# Honggfuzz + MSAN
+build:msan-honggfuzz --//fuzzing:cc_engine=//fuzzing/engines:honggfuzz
+build:msan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine_instrumentation=honggfuzz
+build:msan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine_sanitizer=msan
+
+# Honggfuzz + UBSAN
+build:ubsan-honggfuzz --//fuzzing:cc_engine=//fuzzing/engines:honggfuzz
+build:ubsan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine_instrumentation=honggfuzz
+build:ubsan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine_sanitizer=ubsan
+
+# Replay + ASAN
+build:asan-replay --//fuzzing:cc_engine=//fuzzing/engines:replay
+build:asan-replay --@rules_fuzzing//fuzzing:cc_engine_instrumentation=none
+build:asan-replay --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan
+
+# Replay + ASAN + UBSAN
+build:asan-ubsan-replay --//fuzzing:cc_engine=//fuzzing/engines:replay
+build:asan-ubsan-replay --@rules_fuzzing//fuzzing:cc_engine_instrumentation=none
+build:asan-ubsan-replay --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan-ubsan
+
+build:oss-fuzz --//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:oss_fuzz
+build:oss-fuzz --//fuzzing:java_engine=@rules_fuzzing//fuzzing/engines:oss_fuzz_java
+build:oss-fuzz --@rules_fuzzing//fuzzing:cc_engine_instrumentation=oss-fuzz
+build:oss-fuzz --@rules_fuzzing//fuzzing:cc_engine_sanitizer=none
+
+# Jazzer without sanitizer (Java only)
+build:jazzer --//fuzzing:java_engine=//fuzzing/engines:jazzer
+build:jazzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=jazzer
+build:jazzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=none
+# Workaround for https://github.com/bazelbuild/bazel/issues/11128
+build:jazzer --//fuzzing:cc_engine_sanitizer=none
+
+# Jazzer + ASAN
+build:asan-jazzer --//fuzzing:java_engine=//fuzzing/engines:jazzer
+build:asan-jazzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=jazzer
+build:asan-jazzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan
+# Workaround for https://github.com/bazelbuild/bazel/issues/11128
+build:asan-jazzer --//fuzzing:cc_engine_sanitizer=asan
+
+# Jazzer + UBSAN
+build:ubsan-jazzer --//fuzzing:java_engine=//fuzzing/engines:jazzer
+build:ubsan-jazzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=jazzer
+build:ubsan-jazzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=ubsan
+# Workaround for https://github.com/bazelbuild/bazel/issues/11128
+build:ubsan-jazzer --//fuzzing:cc_engine_sanitizer=ubsan
+
+# Coverage with Replay (C/C++ only)
+coverage --//fuzzing:cc_engine=//fuzzing/engines:replay
+coverage --@rules_fuzzing//fuzzing:cc_engine_instrumentation=none
+coverage --@rules_fuzzing//fuzzing:cc_engine_sanitizer=none
+coverage --instrument_test_targets
+coverage --action_env=BAZEL_USE_LLVM_NATIVE_COVERAGE=1
+coverage --action_env=GCOV=llvm-profdata
+coverage --action_env=BAZEL_LLVM_COV=llvm-cov
+coverage --combined_report=lcov
+coverage --experimental_use_llvm_covmap
+coverage --experimental_generate_llvm_lcov

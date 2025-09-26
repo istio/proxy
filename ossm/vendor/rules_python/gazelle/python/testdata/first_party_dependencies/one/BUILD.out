@@ -1,0 +1,15 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+# gazelle:python_root
+
+py_binary(
+    name = "one_bin",
+    srcs = ["__main__.py"],
+    main = "__main__.py",
+    visibility = ["//one:__subpackages__"],
+    deps = [
+        "//one/bar",
+        "//one/bar/baz",
+        "//one/foo",
+    ],
+)

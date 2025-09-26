@@ -1,0 +1,42 @@
+services:
+  wasm_compile_update:
+    build:
+      context: ../shared/build
+    command:
+    - bash
+    - -c
+    - |
+      set -eo pipefail
+      rm -f bazel-bin/*updated*.wasm
+      bazel build --experimental_repository_downloader_retries=2 --disk_cache=/tmp/disk_cache \
+         --repository_cache=/tmp/repository_cache --experimental_repository_cache_hardlinks \
+         //:envoy_filter_http_wasm_updated_example.wasm
+      cp -af bazel-bin/*updated*.wasm /output
+    environment:
+    - BUILD_UID=${UID:-1000}
+    entrypoint: /source/shared/build/build-entrypoint.sh
+    working_dir: /source/wasm-cc
+    volumes:
+    - ${ENVOY_EXAMPLES_CACHE_DIR:-${HOME}/.cache/envoy/examples}:/home/envoybuild/.cache
+    - ..:/source
+    - ./lib:/output
+
+  wasm_compile:
+    build:
+      context: ../shared/build
+    command:
+    - bash
+    - -c
+    - |
+      bazel build --experimental_repository_downloader_retries=2 --disk_cache=/tmp/disk_cache \
+          --repository_cache=/tmp/repository_cache --experimental_repository_cache_hardlinks \
+          //:envoy_filter_http_wasm_example.wasm
+      cp -af bazel-bin/*.wasm /output
+    environment:
+    - BUILD_UID=${UID:-1000}
+    user: envoybuild
+    working_dir: /source
+    volumes:
+    - ${ENVOY_EXAMPLES_CACHE_DIR:-${HOME}/.cache/envoy/examples}:/home/envoybuild/.cache
+    - ../..:/source
+    - ./lib:/output

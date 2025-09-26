@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "mgr",
+    srcs = [
+        "config.go",
+        "mgr.go",
+        "recovery.go",
+        "service.go",
+    ],
+    importpath = "golang.org/x/sys/windows/svc/mgr",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//internal/unsafeheader",
+            "//windows",
+            "//windows/svc",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mgr",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "mgr_test",
+    srcs = ["mgr_test.go"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            ":mgr",
+        ],
+        "//conditions:default": [],
+    }),
+)

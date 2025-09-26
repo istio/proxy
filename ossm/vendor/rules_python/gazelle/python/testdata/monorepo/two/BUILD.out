@@ -1,0 +1,15 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_extension enabled
+# gazelle:python_root
+# gazelle:resolve py foo //one/foo
+
+py_library(
+    name = "two",
+    srcs = ["__init__.py"],
+    visibility = ["//two:__subpackages__"],
+    deps = [
+        "//one/foo",
+        "@two_pip_deps//twoboto3",
+    ],
+)

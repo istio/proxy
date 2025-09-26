@@ -1,0 +1,49 @@
+# Cut a release whenever a new tag is pushed to the repo.
+# You should use an annotated tag, like `git tag -a v1.2.3`
+# and put the release notes into the commit message for the tag.
+name: Release
+on:
+  push:
+    tags:
+      - "v*.*.*"
+permissions:
+  id-token: write
+  attestations: write
+  contents: write
+jobs:
+  build:
+    # Go cross-compilation works from linux -> any platform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Go Binaries
+        env:
+          # NB: this variable is read by tools/release/copy_release_artifacts.sh
+          # and must match the path in release_prep.sh under RELEASED_BINARY_INTEGRITY
+          DEST: binaries
+        run: |
+          rm -rf ${{ env.DEST }}
+          mkdir -p ${{ env.DEST }}
+          bazel --bazelrc=.github/workflows/ci.bazelrc \
+            run --config=release //tools/release:copy_release_artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-binaries
+          path: binaries/
+          retention-days: 1
+  release:
+    needs: build
+    uses: bazel-contrib/.github/.github/workflows/release_ruleset.yaml@v7.2.2
+    with:
+      release_files: |
+        go-binaries/*
+        bazel-lib-*.tar.gz
+      prerelease: false
+      tag_name: ${{ github.ref_name }}
+  publish:
+    needs: release
+    uses: ./.github/workflows/publish.yaml
+    with:
+      tag_name: ${{ github.ref_name }}
+    secrets:
+      publish_token: ${{ secrets.BCR_PUBLISH_TOKEN }}

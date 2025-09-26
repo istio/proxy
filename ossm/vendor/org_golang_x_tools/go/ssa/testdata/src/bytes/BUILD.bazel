@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bytes",
+    srcs = ["bytes.go"],
+    importpath = "golang.org/x/tools/go/ssa/testdata/src/bytes",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":bytes",
+    visibility = ["//visibility:public"],
+)

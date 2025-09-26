@@ -1,0 +1,31 @@
+load("//ruby:defs.bzl", "ruby_grpc_library")
+load("@bazelruby_rules_ruby//ruby:defs.bzl", "ruby_binary")
+
+ruby_grpc_library(
+    name = "routeguide",
+    includes = ["."],
+    protos = ["//example/proto:routeguide_proto"],
+)
+
+ruby_binary(
+    name = "client",
+    srcs = ["client.rb"],
+    args = ["example/proto/routeguide_features.json"],
+    data = ["//example/proto:routeguide_features"],
+    includes = ["."],
+    visibility = ["//example/routeguide:__pkg__"],
+    deps = [
+        ":routeguide",
+    ],
+)
+
+ruby_binary(
+    name = "server",
+    srcs = ["server.rb"],
+    args = ["example/proto/routeguide_features.json"],
+    data = ["//example/proto:routeguide_features"],
+    visibility = ["//example/routeguide:__pkg__"],
+    deps = [
+        ":routeguide",
+    ],
+)

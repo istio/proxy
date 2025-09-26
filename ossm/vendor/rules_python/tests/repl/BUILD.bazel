@@ -1,0 +1,44 @@
+load("//python:py_library.bzl", "py_library")
+load("//tests/support:py_reconfig.bzl", "py_reconfig_test")
+
+# A library that adds a special import path only when this is specified as a
+# dependency. This makes it easy for a dependency to have this import path
+# available without the top-level target being able to import the module.
+py_library(
+    name = "helper/test_module",
+    srcs = [
+        "helper/test_module.py",
+    ],
+    imports = [
+        "helper",
+    ],
+)
+
+py_reconfig_test(
+    name = "repl_without_dep_test",
+    srcs = ["repl_test.py"],
+    data = [
+        "//python/bin:repl",
+    ],
+    env = {
+        # The helper/test_module should _not_ be importable for this test.
+        "EXPECT_TEST_MODULE_IMPORTABLE": "0",
+    },
+    main = "repl_test.py",
+    python_version = "3.12",
+)
+
+py_reconfig_test(
+    name = "repl_with_dep_test",
+    srcs = ["repl_test.py"],
+    data = [
+        "//python/bin:repl",
+    ],
+    env = {
+        # The helper/test_module _should_ be importable for this test.
+        "EXPECT_TEST_MODULE_IMPORTABLE": "1",
+    },
+    main = "repl_test.py",
+    python_version = "3.12",
+    repl_dep = ":helper/test_module",
+)

@@ -1,0 +1,23 @@
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//internal:tsc.bzl", "tsc")
+
+tsc(
+    name = "runfiles_lib",
+    srcs = glob(["*.ts"]),
+    tsconfig = "tsconfig.json",
+)
+
+copy_to_directory(
+    name = "npm_package",
+    srcs = [
+        "README.md",
+        "package.json",
+        ":runfiles_lib",
+    ],
+)
+
+build_test(
+    name = "test",
+    targets = [":npm_package"],
+)

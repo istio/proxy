@@ -1,0 +1,21 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_extension enabled
+# gazelle:python_root
+# gazelle:resolve py bar //one/bar
+# gazelle:resolve py bar.baz //one/bar/baz:modified_name_baz
+# gazelle:resolve py foo //one/foo
+
+py_library(
+    name = "three",
+    srcs = ["__init__.py"],
+    visibility = ["//three:__subpackages__"],
+    deps = [
+        "//coarse_grained",
+        "//one/bar",
+        "//one/bar/baz:modified_name_baz",
+        "//one/foo",
+        "@root_pip_deps//rootboto4",
+        "@three_pip_deps//threeboto3",
+    ],
+)

@@ -1,0 +1,8 @@
+load("//nodejs/private:current_node_cc_headers.bzl", "current_node_cc_headers")
+
+package(default_visibility = ["//visibility:public"])
+
+# This target provides the C headers for whatever the current toolchain is
+# for the consuming rule. It basically acts like a cc_library by forwarding
+# on the providers for the underlying cc_library that the toolchain is using.
+current_node_cc_headers(name = "current_node_cc_headers")

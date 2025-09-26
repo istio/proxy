@@ -1,0 +1,100 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+load("@aspect_bazel_lib_host//:defs.bzl", "host")
+load("//js:defs.bzl", "js_binary", "js_library", "js_test")
+load(":js_library_test.bzl", "js_library_test_suite")
+
+####################################################################################################
+# Write a js_binary launcher to the source tree so it is shell checked on commit
+
+write_file(
+    name = "shellcheck_js",
+    out = "shellcheck.js",
+)
+
+js_binary(
+    name = "shellcheck_launcher",
+    entry_point = "shellcheck.js",
+    fixed_args = ["--my_arg"],
+)
+
+# Make sed replacements for consistency on different platform
+genrule(
+    name = "shell_launcher_sed",
+    srcs = [":shellcheck_launcher"],
+    outs = ["shellcheck_launcher_sed.sh"],
+    cmd = "cat $(execpath :shellcheck_launcher) | sed \"s#$(BINDIR)#bazel-out/k8-fastbuild/bin#\" | sed \"s#JS_BINARY__TARGET_CPU=\\\"$(TARGET_CPU)\\\"#JS_BINARY__TARGET_CPU=\\\"k8\\\"#\" | sed \"s#%s#linux_amd64#\" | sed \"s#\\\"%s\\\"#\\\"k8\\\"#\" > $@" % (
+        host.platform,
+        host.os,
+    ),
+)
+
+write_source_files(
+    name = "write_shellcheck_launcher",
+    files = {
+        "shellcheck_launcher.sh": ":shell_launcher_sed",
+    },
+    target_compatible_with = select({
+        "@aspect_bazel_lib//lib:bzlmod": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+js_library_test_suite(name = "js_library_test")
+
+# js_library(data) wrapper of the data
+js_library(
+    name = "data-js_library-data",
+    data = ["data-parent.json"],
+    visibility = ["//js/private/test:__subpackages__"],
+)
+
+# genrule() generating the data
+genrule(
+    name = "data-genrule",
+    outs = ["data-parent-generated.json"],
+    cmd = "echo '{\"answer\": 42}' > $@",
+    visibility = ["//js/private/test:__subpackages__"],
+)
+
+write_file(
+    name = "binary_version",
+    out = "binary_version.js",
+    content = ["""
+if (parseInt(process.version.slice(1)) !== parseInt(process.argv[2])) {
+    throw new Error(`Expected node version ${parseInt(process.version)}.* but got ${parseInt(process.argv[2])}`)
+}
+"""],
+)
+
+js_test(
+    name = "main_default_toolchain",
+    args = ["16"],
+    entry_point = "binary_version.js",
+)
+
+js_test(
+    name = "main_toolchain_16",
+    args = ["16"],
+    entry_point = "binary_version.js",
+    # using the select statement will download toolchains for all three platforms
+    # you can also just provide an individual toolchain if you don't want to download them all
+    node_toolchain = select({
+        "@bazel_tools//src/conditions:linux_x86_64": "@node16_linux_amd64//:node_toolchain",
+        "@bazel_tools//src/conditions:darwin": "@node16_darwin_amd64//:node_toolchain",
+        "@bazel_tools//src/conditions:windows": "@node16_windows_amd64//:node_toolchain",
+    }),
+)
+
+js_test(
+    name = "main_toolchain_18",
+    args = ["18"],
+    entry_point = "binary_version.js",
+    # using the select statement will download toolchains for all three platforms
+    # you can also just provide an individual toolchain if you don't want to download them all
+    node_toolchain = select({
+        "@bazel_tools//src/conditions:linux_x86_64": "@node18_linux_amd64//:node_toolchain",
+        "@bazel_tools//src/conditions:darwin": "@node18_darwin_amd64//:node_toolchain",
+        "@bazel_tools//src/conditions:windows": "@node18_windows_amd64//:node_toolchain",
+    }),
+)

@@ -1,0 +1,16 @@
+workspace(name = "envoy-example-wasmcc")
+
+load("//bazel:archives.bzl", "load_envoy_example_wasmcc_archives")
+load_envoy_example_wasmcc_archives()
+
+load("//bazel:deps.bzl", "resolve_envoy_example_wasmcc_dependencies")
+resolve_envoy_example_wasmcc_dependencies()
+
+load("//bazel:toolchains.bzl", "load_envoy_example_wasmcc_toolchains")
+load_envoy_example_wasmcc_toolchains()
+
+load("//bazel:packages.bzl", "load_envoy_example_wasmcc_packages")
+load_envoy_example_wasmcc_packages()
+
+load("//bazel:toolchains_extra.bzl", "load_envoy_example_wasmcc_toolchains_extra")
+load_envoy_example_wasmcc_toolchains_extra()

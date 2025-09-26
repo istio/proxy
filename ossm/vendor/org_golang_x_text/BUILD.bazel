@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "text",
+    srcs = ["doc.go"],
+    importpath = "golang.org/x/text",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":text",
+    visibility = ["//visibility:public"],
+)
+
+load("@package_metadata//rules:package_metadata.bzl", "package_metadata")
+load("@rules_license//rules:package_info.bzl", "package_info")
+
+package_metadata(
+    name = "package_metadata",
+    purl = "pkg:golang/golang.org/x/text@v0.8.0",
+    visibility = [
+        "//:__subpackages__",
+    ],
+)
+
+package_info(
+    name = "gazelle_generated_package_info",
+    package_name = "golang.org/x/text",
+    package_url = "https://golang.org/x/text",
+    package_version = "0.8.0",
+    purl = "pkg:golang/golang.org/x/text@v0.8.0",
+    visibility = ["//:__subpackages__"],
+)

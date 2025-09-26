@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "fieldalignment_lib",
+    srcs = ["main.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//go/analysis/passes/fieldalignment",
+        "//go/analysis/singlechecker",
+    ],
+)
+
+go_binary(
+    name = "fieldalignment",
+    embed = [":fieldalignment_lib"],
+    visibility = ["//visibility:public"],
+)

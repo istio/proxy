@@ -1,0 +1,19 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_generation_mode project
+# gazelle:python_generate_pyi_deps true
+
+py_library(
+    name = "type_checking_imports_project",
+    srcs = [
+        "bar.py",
+        "baz.py",
+        "foo.py",
+    ],
+    pyi_deps = [
+        "@gazelle_python_test//boto3_stubs",
+        "@gazelle_python_test//djangorestframework",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["@gazelle_python_test//boto3"],
+)

@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go",
+    srcs = [
+        "camel.go",
+        "context.go",
+        "docs.go",
+        "gofmt.go",
+        "goimports.go",
+        "name.go",
+        "package.go",
+        "parameters.go",
+        "type_name.go",
+    ],
+    importpath = "github.com/lyft/protoc-gen-star/v2/lang/go",
+    importpath_aliases = ["github.com/lyft/protoc-gen-star/lang/go"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:protoc-gen-star",
+        "@org_golang_x_tools//imports:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":go",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_test",
+    srcs = [
+        "context_test.go",
+        "gofmt_test.go",
+        "goimports_test.go",
+        "helpers_test.go",
+        "name_test.go",
+        "package_test.go",
+        "parameters_test.go",
+        "type_name_p2_presence_test.go",
+        "type_name_test.go",
+    ],
+    embed = [":go"],
+    deps = [
+        "//:protoc-gen-star",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+        "@org_golang_google_protobuf//proto:go_default_library",
+        "@org_golang_google_protobuf//types/pluginpb:go_default_library",
+    ],
+)

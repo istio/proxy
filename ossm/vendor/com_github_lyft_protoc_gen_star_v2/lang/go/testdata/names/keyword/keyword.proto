@@ -1,0 +1,6 @@
+syntax="proto3";
+
+package names.keyword;
+option go_package = "example.com/package";
+
+message Package {}

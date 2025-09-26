@@ -1,0 +1,170 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_import", "cc_library", "cc_test")
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_binary",
+    "rust_library",
+    "rust_shared_library",
+    "rust_static_library",
+)
+
+package(default_visibility = ["//test/unit/linker_inputs_propagation:__pkg__"])
+
+rust_library(
+    name = "foo",
+    srcs = ["foo.rs"],
+    edition = "2018",
+)
+
+cc_library(
+    name = "foo_shared",
+    srcs = [
+        "foo_shared.cc",
+    ],
+    hdrs = ["foo_shared.h"],
+)
+
+cc_library(
+    name = "foo_with_linkopts",
+    srcs = [
+        "foo_shared.cc",
+    ],
+    hdrs = ["foo_shared.h"],
+    linkopts = ["-L/doesnotexist"],
+)
+
+cc_binary(
+    name = "foo_shared.dll",
+    srcs = [
+        "foo_shared.cc",
+        "foo_shared.h",
+    ],
+    features = ["windows_export_all_symbols"],
+    linkshared = True,
+    target_compatible_with = [
+        "@platforms//os:windows",
+    ],
+)
+
+filegroup(
+    name = "shared_library_file",
+    srcs = [":foo_shared"],
+    output_group = "dynamic_library",
+)
+
+filegroup(
+    name = "interface_library_file",
+    srcs = [":foo_shared.dll"],
+    output_group = "interface_library",
+)
+
+filegroup(
+    name = "empty",
+    srcs = ["empty.so"],
+)
+
+cc_import(
+    name = "import_foo_shared",
+    hdrs = ["foo_shared.h"],
+    interface_library = select({
+        "@platforms//os:linux": "shared_library_file",
+        "@platforms//os:windows": "interface_library_file",
+        "//conditions:default": ":empty",
+    }),
+    shared_library = select({
+        "@platforms//os:linux": "shared_library_file",
+        "@platforms//os:windows": "foo_shared.dll",
+        "//conditions:default": ":empty",
+    }),
+)
+
+rust_static_library(
+    name = "staticlib_uses_foo",
+    srcs = ["bar_uses_foo.rs"],
+    edition = "2018",
+    deps = [":foo"],
+)
+
+rust_library(
+    name = "rlib_uses_foo_with_redundant_linkopts",
+    srcs = ["bar_uses_shared_foo_for_rust.rs"],
+    edition = "2018",
+    deps = [":foo_with_linkopts"],
+)
+
+rust_shared_library(
+    name = "sharedlib_uses_foo",
+    srcs = ["bar_uses_foo.rs"],
+    edition = "2018",
+    deps = [":foo"],
+)
+
+rust_static_library(
+    name = "staticlib_uses_shared_foo",
+    srcs = ["bar_uses_shared_foo.rs"],
+    edition = "2018",
+    deps = [":import_foo_shared"],
+)
+
+rust_static_library(
+    name = "sharedlib_uses_shared_foo",
+    srcs = ["bar_uses_shared_foo.rs"],
+    edition = "2018",
+    deps = [":import_foo_shared"],
+)
+
+cc_test(
+    name = "depends_on_foo_via_staticlib",
+    srcs = ["baz.cc"],
+    target_compatible_with = select({
+        "@platforms//os:linux": ["@platforms//:incompatible"],
+        "@platforms//os:macos": ["@platforms//:incompatible"],
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = [":staticlib_uses_foo"],
+)
+
+cc_test(
+    name = "depends_on_foo_via_sharedlib",
+    srcs = ["baz.cc"],
+    target_compatible_with = select({
+        "@platforms//os:linux": ["@platforms//:incompatible"],
+        "@platforms//os:macos": ["@platforms//:incompatible"],
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = [":sharedlib_uses_foo"],
+)
+
+cc_test(
+    name = "depends_on_shared_foo_via_sharedlib",
+    srcs = ["baz.cc"],
+    target_compatible_with = select({
+        "@platforms//os:macos": ["@platforms//:incompatible"],
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = [":sharedlib_uses_shared_foo"],
+)
+
+cc_test(
+    name = "depends_on_shared_foo_via_staticlib",
+    srcs = ["baz.cc"],
+    target_compatible_with = select({
+        "@platforms//os:macos": ["@platforms//:incompatible"],
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = [":staticlib_uses_shared_foo"],
+)
+
+rust_binary(
+    name = "depends_on_foo_with_redundant_linkopts",
+    srcs = ["main_uses_foo.rs"],
+    edition = "2021",
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = [":rlib_uses_foo_with_redundant_linkopts"],
+)

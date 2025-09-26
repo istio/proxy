@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "loopclosure",
+    srcs = ["loopclosure.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/loopclosure",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/inspect",
+        "//go/ast/inspector",
+        "//go/types/typeutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":loopclosure",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "loopclosure_test",
+    srcs = ["loopclosure_test.go"],
+    deps = [
+        ":loopclosure",
+        "//go/analysis/analysistest",
+        "//internal/typeparams",
+    ],
+)

@@ -1,0 +1,10 @@
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+
+# This tests that the "in" file to write_source_files can be a
+# label to an external repository target when bzlmod is enabled.
+write_source_files(
+    name = "write_external",
+    files = {
+        "foobar.txt": "@test//:foobar.txt",
+    },
+)

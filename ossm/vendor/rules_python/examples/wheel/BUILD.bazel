@@ -1,0 +1,465 @@
+# Copyright 2018 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//examples/wheel/private:wheel_utils.bzl", "directory_writer", "make_variable_tags")
+load("//python:packaging.bzl", "py_package", "py_wheel")
+load("//python:pip.bzl", "compile_pip_requirements")
+load("//python:py_library.bzl", "py_library")
+load("//python:py_test.bzl", "py_test")
+load("//python:versions.bzl", "gen_python_config_settings")
+load("//python/entry_points:py_console_script_binary.bzl", "py_console_script_binary")
+load("//python/private:bzlmod_enabled.bzl", "BZLMOD_ENABLED")  # buildifier: disable=bzl-visibility
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])  # Apache 2.0
+
+py_library(
+    name = "main",
+    srcs = ["main.py"],
+    deps = [
+        "//examples/wheel/lib:simple_module",
+        "//examples/wheel/lib:module_with_data",
+        "//examples/wheel/lib:module_with_type_annotations",
+        # Example dependency which is not packaged in the wheel
+        # due to "packages" filter on py_package rule.
+        "//tests/load_from_macro:foo",
+    ],
+)
+
+py_library(
+    name = "main_with_gen_data",
+    srcs = ["main.py"],
+    data = [
+        ":gen_dir",
+    ],
+)
+
+directory_writer(
+    name = "gen_dir",
+    out = "someDir",
+    files = {"foo.py": ""},
+)
+
+# Package just a specific py_libraries, without their dependencies
+py_wheel(
+    name = "minimal_with_py_library",
+    testonly = True,  # Set this to verify the generated .dist target doesn't break things
+    # Package data. We're building "example_minimal_library-0.0.1-py3-none-any.whl"
+    distribution = "example_minimal_library",
+    python_tag = "py3",
+    # NOTE: twine_binary = "//tools/publish:twine" does not work on non-bzlmod
+    # setups because the `//tools/publish:twine` produces multiple files and is
+    # unsuitable as the `src` to the underlying native_binary rule.
+    twine = None if BZLMOD_ENABLED else "@rules_python_publish_deps_twine//:pkg",
+    version = "0.0.1",
+    deps = [
+        "//examples/wheel/lib:module_with_data",
+        "//examples/wheel/lib:module_with_type_annotations",
+        "//examples/wheel/lib:simple_module",
+    ],
+)
+
+# Populate a rule with "Make Variable" arguments for
+# abi, python_tag and version. You might want to do this
+# for the following use cases:
+#  - abi, python_tag: introspect a toolchain to map to appropriate cpython tags
+#  - version: populate given this or a dependent module's version
+make_variable_tags(
+    name = "make_variable_tags",
+)
+
+py_wheel(
+    name = "minimal_with_py_library_with_make_variables",
+    testonly = True,
+    abi = "$(ABI)",
+    distribution = "example_minimal_library",
+    python_tag = "$(PYTHON_TAG)",
+    toolchains = ["//examples/wheel:make_variable_tags"],
+    version = "$(VERSION)",
+    deps = [
+        "//examples/wheel/lib:module_with_data",
+        "//examples/wheel/lib:module_with_type_annotations",
+        "//examples/wheel/lib:simple_module",
+    ],
+)
+
+build_test(
+    name = "dist_build_tests",
+    targets = [":minimal_with_py_library.dist"],
+)
+
+# Package just a specific py_libraries, without their dependencies
+py_wheel(
+    name = "minimal_with_py_library_with_stamp",
+    # Package data. We're building "example_minimal_library-0.0.1-py3-none-any.whl"
+    distribution = "example_minimal_library{BUILD_USER}",
+    python_tag = "py3",
+    stamp = 1,
+    version = "0.1.{BUILD_TIMESTAMP}",
+    deps = [
+        "//examples/wheel/lib:module_with_data",
+        "//examples/wheel/lib:module_with_type_annotations",
+        "//examples/wheel/lib:simple_module",
+    ],
+)
+
+# Use py_package to collect all transitive dependencies of a target,
+# selecting just the files within a specific python package.
+py_package(
+    name = "example_pkg",
+    # Only include these Python packages.
+    packages = ["examples.wheel"],
+    deps = [":main"],
+)
+
+py_package(
+    name = "example_pkg_with_data",
+    packages = ["examples.wheel"],
+    deps = [":main_with_gen_data"],
+)
+
+py_wheel(
+    name = "minimal_with_py_package",
+    # Package data. We're building "example_minimal_package-0.0.1-py3-none-any.whl"
+    distribution = "example_minimal_package",
+    python_tag = "py3",
+    version = "0.0.1",
+    deps = [":example_pkg"],
+)
+
+# An example that uses all features provided by py_wheel.
+py_wheel(
+    name = "customized",
+    author = "Example Author with non-ascii characters: żółw",
+    author_email = "example@example.com",
+    classifiers = [
+        "License :: OSI Approved :: Apache Software License",
+        "Intended Audience :: Developers",
+    ],
+    console_scripts = {
+        "customized_wheel": "examples.wheel.main:main",
+    },
+    description_file = "README.md",
+    # Package data. We're building "example_customized-0.0.1-py3-none-any.whl"
+    distribution = "example_customized",
+    entry_points = {
+        "console_scripts": ["another = foo.bar:baz"],
+        "group2": [
+            "second = second.main:s",
+            "first = first.main:f",
+        ],
+    },
+    extra_distinfo_files = {
+        "//examples/wheel:NOTICE": "NOTICE",
+        # Rename the file when packaging to show we can.
+        "//examples/wheel:README.md": "README",
+    },
+    homepage = "www.example.com",
+    license = "Apache 2.0",
+    project_urls = {
+        "Bug Tracker": "www.example.com/issues",
+        "Documentation": "www.example.com/docs",
+    },
+    python_tag = "py3",
+    # Requirements embedded into the wheel metadata.
+    requires = ["pytest"],
+    summary = "A one-line summary of this test package",
+    version = "0.0.1",
+    deps = [":example_pkg"],
+)
+
+# An example of how to change the wheel package root directory using 'strip_path_prefixes'.
+py_wheel(
+    name = "custom_package_root",
+    # Package data. We're building "examples_custom_package_root-0.0.1-py3-none-any.whl"
+    distribution = "examples_custom_package_root",
+    entry_points = {
+        "console_scripts": ["main = foo.bar:baz"],
+    },
+    python_tag = "py3",
+    strip_path_prefixes = [
+        "examples",
+    ],
+    version = "0.0.1",
+    deps = [
+        ":example_pkg",
+    ],
+)
+
+py_wheel(
+    name = "custom_package_root_multi_prefix",
+    # Package data. We're building "custom_custom_package_root_multi_prefix-0.0.1-py3-none-any.whl"
+    distribution = "example_custom_package_root_multi_prefix",
+    python_tag = "py3",
+    strip_path_prefixes = [
+        "examples/wheel/lib",
+        "examples/wheel",
+    ],
+    version = "0.0.1",
+    deps = [
+        ":example_pkg",
+    ],
+)
+
+py_wheel(
+    name = "custom_package_root_multi_prefix_reverse_order",
+    # Package data. We're building "custom_custom_package_root_multi_prefix_reverse_order-0.0.1-py3-none-any.whl"
+    distribution = "example_custom_package_root_multi_prefix_reverse_order",
+    python_tag = "py3",
+    strip_path_prefixes = [
+        "examples/wheel",
+        "examples/wheel/lib",  # this is not effective, because the first prefix takes priority
+    ],
+    version = "0.0.1",
+    deps = [
+        ":example_pkg",
+    ],
+)
+
+py_wheel(
+    name = "python_requires_in_a_package",
+    distribution = "example_python_requires_in_a_package",
+    python_requires = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
+    python_tag = "py3",
+    version = "0.0.1",
+    deps = [
+        ":example_pkg",
+    ],
+)
+
+py_wheel(
+    name = "use_rule_with_dir_in_outs",
+    distribution = "use_rule_with_dir_in_outs",
+    python_tag = "py3",
+    version = "0.0.1",
+    deps = [
+        ":example_pkg_with_data",
+    ],
+)
+
+gen_python_config_settings()
+
+py_wheel(
+    name = "python_abi3_binary_wheel",
+    abi = "abi3",
+    distribution = "example_python_abi3_binary_wheel",
+    # these platform strings must line up with test_python_abi3_binary_wheel() in wheel_test.py
+    platform = select({
+        ":aarch64-apple-darwin": "macosx_11_0_arm64",
+        ":aarch64-unknown-linux-gnu": "manylinux2014_aarch64",
+        ":x86_64-apple-darwin": "macosx_11_0_x86_64",  # this is typically macosx_10_9_x86_64?
+        ":x86_64-pc-windows-msvc": "win_amd64",
+        ":x86_64-unknown-linux-gnu": "manylinux2014_x86_64",
+    }),
+    python_requires = ">=3.8",
+    python_tag = "cp38",
+    version = "0.0.1",
+)
+
+py_wheel(
+    name = "filename_escaping",
+    # Per https://packaging.python.org/en/latest/specifications/binary-distribution-format/#escaping-and-unicode
+    # runs of "-", "_" and "." should be replaced with a single underscore.
+    # Unicode non-ascii letters aren't allowed according to
+    # https://packaging.python.org/en/latest/specifications/name-normalization/.
+    distribution = "File--Name-Escaping",
+    python_tag = "py3",
+    version = "v0.0.1.RC1+ubuntu-r7",
+    deps = [":example_pkg"],
+)
+
+write_file(
+    name = "requires_file",
+    out = "requires.txt",
+    content = """\
+# Requirements file
+--index-url https://pypi.com
+
+tomli>=2.0.0
+starlark  # Example comment
+""".splitlines(),
+)
+
+write_file(
+    name = "empty_requires_file",
+    out = "empty_requires.txt",
+    content = [""],
+)
+
+write_file(
+    name = "extra_requires_file",
+    out = "extra_requires.txt",
+    content = """\
+# Extras Requirements file
+--index-url https://pypi.com
+
+pyyaml>=6.0.0,!=6.0.1
+toml; (python_version == "3.11" or python_version == "3.12") and python_version != "3.8"
+wheel; python_version == "3.11" or python_version == "3.12"  # Example comment
+""".splitlines(),
+)
+
+write_file(
+    name = "requires_dist_depends_on_extras_file",
+    out = "requires_dist_depends_on_extras.txt",
+    content = """\
+# Requirements file
+--index-url https://pypi.com
+
+extra_requires[example]==0.0.1
+""".splitlines(),
+)
+
+# py_wheel can use text files to specify their requirements. This
+# can be convenient for users of `compile_pip_requirements` who have
+# granular `requirements.in` files per package. This target shows
+# how to provide this file.
+py_wheel(
+    name = "requires_files",
+    distribution = "requires_files",
+    extra_requires_files = {":extra_requires.txt": "example"},
+    python_tag = "py3",
+    # py_wheel can use text files to specify their requirements. This
+    # can be convenient for users of `compile_pip_requirements` who have
+    # granular `requirements.in` files per package.
+    requires_file = ":requires.txt",
+    version = "0.0.1",
+    deps = [":example_pkg"],
+)
+
+py_wheel(
+    name = "empty_requires_files",
+    distribution = "empty_requires_files",
+    python_tag = "py3",
+    requires_file = ":empty_requires.txt",
+    version = "0.0.1",
+    deps = [":example_pkg"],
+)
+
+# Package just a specific py_libraries, without their dependencies
+py_wheel(
+    name = "minimal_data_files",
+    testonly = True,  # Set this to verify the generated .dist target doesn't break things
+
+    # Re-using some files already checked into the repo.
+    data_files = {
+        "//examples/wheel:NOTICE": "scripts/NOTICE",
+        "README.md": "data/target/path/README.md",
+    },
+    distribution = "minimal_data_files",
+    version = "0.0.1",
+)
+
+py_wheel(
+    name = "extra_requires",
+    distribution = "extra_requires",
+    extra_requires = {"example": [
+        "pyyaml>=6.0.0,!=6.0.1",
+        'toml; (python_version == "3.11" or python_version == "3.12") and python_version != "3.8"',
+        'wheel; python_version == "3.11" or python_version == "3.12" ',
+    ]},
+    python_tag = "py3",
+    # py_wheel can use text files to specify their requirements. This
+    # can be convenient for users of `compile_pip_requirements` who have
+    # granular `requirements.in` files per package.
+    requires = [
+        "tomli>=2.0.0",
+        "starlark",
+        'pytest; python_version != "3.8"',
+    ],
+    version = "0.0.1",
+    deps = [":example_pkg"],
+)
+
+py_wheel(
+    name = "requires_dist_depends_on_extras",
+    distribution = "requires_dist_depends_on_extras",
+    requires = [
+        "extra_requires[example]==0.0.1",
+    ],
+    version = "0.0.1",
+)
+
+py_wheel(
+    name = "requires_dist_depends_on_extras_using_file",
+    distribution = "requires_dist_depends_on_extras_using_file",
+    requires_file = ":requires_dist_depends_on_extras.txt",
+    version = "0.0.1",
+)
+
+py_test(
+    name = "wheel_test",
+    srcs = ["wheel_test.py"],
+    data = [
+        ":custom_package_root",
+        ":custom_package_root_multi_prefix",
+        ":custom_package_root_multi_prefix_reverse_order",
+        ":customized",
+        ":empty_requires_files",
+        ":extra_requires",
+        ":filename_escaping",
+        ":minimal_data_files",
+        ":minimal_with_py_library",
+        ":minimal_with_py_library_with_stamp",
+        ":minimal_with_py_package",
+        ":python_abi3_binary_wheel",
+        ":python_requires_in_a_package",
+        ":requires_dist_depends_on_extras",
+        ":requires_dist_depends_on_extras_using_file",
+        ":requires_files",
+        ":use_rule_with_dir_in_outs",
+    ],
+    deps = [
+        "//python/runfiles",
+    ],
+)
+
+# Test wheel publishing
+
+compile_pip_requirements(
+    name = "requirements_server",
+    src = "requirements_server.in",
+)
+
+py_test(
+    name = "test_publish",
+    srcs = ["test_publish.py"],
+    data = [
+        ":minimal_with_py_library",
+        ":minimal_with_py_library.publish",
+        ":pypiserver",
+    ],
+    env = {
+        "PUBLISH_PATH": "$(location :minimal_with_py_library.publish)",
+        "SERVER_PATH": "$(location :pypiserver)",
+        "WHEEL_PATH": "$(rootpath :minimal_with_py_library)",
+    },
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    deps = [
+        "@pypiserver//pypiserver",
+    ],
+)
+
+py_console_script_binary(
+    name = "pypiserver",
+    pkg = "@pypiserver//pypiserver",
+    script = "pypi-server",
+)

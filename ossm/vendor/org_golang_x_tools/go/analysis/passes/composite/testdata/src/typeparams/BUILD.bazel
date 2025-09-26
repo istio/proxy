@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "typeparams",
+    srcs = ["typeparams.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/composite/testdata/src/typeparams",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":typeparams",
+    visibility = ["//visibility:public"],
+)

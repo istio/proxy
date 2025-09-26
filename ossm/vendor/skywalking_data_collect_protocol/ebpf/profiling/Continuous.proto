@@ -1,0 +1,123 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+syntax = "proto3";
+
+package skywalking.v3;
+
+option java_multiple_files = true;
+option java_package = "org.apache.skywalking.apm.network.ebpf.profiling.v3";
+option go_package = "skywalking.apache.org/repo/goapi/collect/ebpf/profiling/v3";
+
+import "common/Command.proto";
+
+service ContinuousProfilingService {
+    // Query continuous profiling policy
+    rpc queryPolicies(ContinuousProfilingPolicyQuery) returns (Commands) {
+    }
+
+    // Report the profiling task when the policy threshold is reached
+    // Use the returned task ID to perform the profiling task through EBPFProfilingService#collectProfilingData.
+    rpc reportProfilingTask(ContinuousProfilingReport) returns (Commands) {
+    }
+}
+
+message ContinuousProfilingPolicyQuery {
+    // current agent contains service and policies
+    repeated ContinuousProfilingServicePolicyQuery policies = 1;
+}
+
+message ContinuousProfilingServicePolicyQuery {
+    // service name of the each process
+    string serviceName = 1;
+    // UUID represents the version(hash/shasum) of the current policies for the service.
+    // This is blank in the initialization stage and is set through the `ContinuousProfilingPolicyQuery` command response for the following rounds of queries.
+    string uuid = 2;
+}
+
+message ContinuousProfilingReport {
+    // over threshold process entity
+    string layer = 1;
+    string serviceName = 2;
+    string instanceName = 3;
+    string processName = 4;
+
+    // reached thresholds causes
+    repeated ContinuousProfilingCause causes = 5;
+
+    // The execution duration for this triggered profiling.
+    // This is set at the agent side.
+    int32 duration = 6;
+    // target profiling task
+    oneof targetTask {
+        ContinuousOnCPUProfilingTask onCPU = 7;
+        ContinuousOffCPUProfilingTask offCPU = 8;
+        ContinuousNetworkProfilingTask network = 9;
+    }
+}
+
+message ContinuousProfilingCause {
+    ContinuousProfilingTriggeredMonitorType type = 1;
+    oneof cause {
+        ContinuousProfilingSingleValueCause singleValue = 2;
+        ContinuousProfilingURICause uri = 3;
+    }
+}
+
+enum ContinuousProfilingTriggeredMonitorType {
+    // Current process CPU usage percent(0-100).
+    ProcessCPU = 0;
+    // The number of threads in the process.
+    ProcessThreadCount = 1;
+    // System load value.
+    SystemLoad = 2;
+    // Process response error rate(0-100).
+    // HTTP response codes in [500-600) are considered errors.
+    // Formula: ErrorCount / TotalCount * 100
+    HTTPErrorRate = 3;
+    // Process response average time(ms).
+    // Formula: TotalResponseTime(ms) / TotalCount
+    HTTPAvgResponseTime = 4;
+}
+
+message ContinuousProfilingSingleValueCause {
+    double threshold = 1;
+    double current = 2;
+}
+
+message ContinuousProfilingURICause {
+    oneof uri {
+        string regex = 1;
+        string path = 2;
+    }
+    double threshold = 3;
+    double current = 4;
+}
+
+// eBPF on CPU profiling task
+message ContinuousOnCPUProfilingTask {
+}
+
+// eBPF off CPU profiling task
+message ContinuousOffCPUProfilingTask {
+}
+
+// eBPF Network profiling task
+message ContinuousNetworkProfilingTask {
+    repeated string samplingURIRegexes = 1;
+}

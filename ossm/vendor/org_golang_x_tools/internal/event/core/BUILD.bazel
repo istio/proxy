@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "core",
+    srcs = [
+        "event.go",
+        "export.go",
+        "fast.go",
+    ],
+    importpath = "golang.org/x/tools/internal/event/core",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/event/keys",
+        "//internal/event/label",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":core",
+    visibility = ["//:__subpackages__"],
+)

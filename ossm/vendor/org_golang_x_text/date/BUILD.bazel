@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "date",
+    srcs = ["tables.go"],
+    importpath = "golang.org/x/text/date",
+    visibility = ["//visibility:public"],
+    deps = ["//internal/cldrtree"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":date",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "date_test",
+    srcs = [
+        "data_test.go",
+        "gen_test.go",
+    ],
+    embed = [":date"],
+    deps = [
+        "//internal/cldrtree",
+        "//internal/gen",
+        "//internal/language/compact",
+        "//internal/testtext",
+        "//language",
+        "//unicode/cldr",
+    ],
+)

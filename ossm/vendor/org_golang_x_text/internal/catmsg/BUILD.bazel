@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "catmsg",
+    srcs = [
+        "catmsg.go",
+        "codec.go",
+        "varint.go",
+    ],
+    importpath = "golang.org/x/text/internal/catmsg",
+    visibility = ["//:__subpackages__"],
+    deps = ["//language"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":catmsg",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "catmsg_test",
+    srcs = [
+        "catmsg_test.go",
+        "varint_test.go",
+    ],
+    embed = [":catmsg"],
+    deps = ["//language"],
+)

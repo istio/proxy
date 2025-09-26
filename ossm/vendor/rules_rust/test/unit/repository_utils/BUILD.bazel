@@ -1,0 +1,4 @@
+load(":repository_utils_test.bzl", "repository_utils_test_suite")
+
+############################ UNIT TESTS #############################
+repository_utils_test_suite(name = "repository_utils_test_suite")

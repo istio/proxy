@@ -1,0 +1,59 @@
+load("//rust/private:rustfmt.bzl", "current_rustfmt_toolchain")
+load("//rust/private:toolchain_utils.bzl", "current_rust_toolchain", "toolchain_files", "toolchain_files_for_target")
+
+package(default_visibility = ["//visibility:public"])
+
+toolchain_files(
+    name = "current_cargo_files",
+    tool = "cargo",
+)
+
+toolchain_files(
+    name = "current_clippy_files",
+    tool = "clippy",
+)
+
+toolchain_files(
+    name = "current_cargo_clippy_files",
+    tool = "cargo-clippy",
+)
+
+toolchain_files(
+    name = "current_rustc_files",
+    tool = "rustc",
+)
+
+toolchain_files(
+    name = "current_rustdoc_files",
+    tool = "rustdoc",
+)
+
+toolchain_files(
+    name = "current_rustc_lib_files",
+    tool = "rustc_lib",
+)
+
+toolchain_files(
+    name = "current_rust_stdlib_files",
+    tool = "rust_stdlib",
+)
+
+current_rust_toolchain(
+    name = "current_rust_toolchain",
+)
+
+current_rustfmt_toolchain(
+    name = "current_rustfmt_toolchain",
+)
+
+toolchain_files_for_target(
+    name = "current_rustfmt_toolchain_for_target",
+    toolchain_files = ":current_rustfmt_toolchain",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "current_rustfmt_files",
+    actual = "current_rustfmt_toolchain",
+    deprecation = "Instead use `@rules_rust//rust/toolchain:current_rustfmt_toolchain",
+)

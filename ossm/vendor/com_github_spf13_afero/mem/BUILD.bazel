@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "mem",
+    srcs = [
+        "dir.go",
+        "dirmap.go",
+        "file.go",
+    ],
+    importpath = "github.com/spf13/afero/mem",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mem",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "mem_test",
+    srcs = ["file_test.go"],
+    embed = [":mem"],
+)

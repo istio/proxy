@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "models",
+    srcs = glob(["*.java"]),
+    visibility = [
+        "//private/tools/java/com/github/bazelbuild/rules_jvm_external/resolver/gradle:__subpackages__",
+        "//tests:__subpackages__",
+    ],
+    deps = [
+        "//private/tools/java/com/github/bazelbuild/rules_jvm_external",
+    ],
+)

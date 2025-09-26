@@ -1,0 +1,4 @@
+load(":location_expansion_test.bzl", "location_expansion_test_suite")
+
+############################ UNIT TESTS #############################
+location_expansion_test_suite(name = "location_expansion_test_suite")

@@ -1,0 +1,55 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "filedesc",
+    srcs = [
+        "build.go",
+        "desc.go",
+        "desc_init.go",
+        "desc_lazy.go",
+        "desc_list.go",
+        "desc_list_gen.go",
+        "placeholder.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/filedesc",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//encoding/protowire",
+        "//internal/descfmt",
+        "//internal/descopts",
+        "//internal/encoding/defval",
+        "//internal/encoding/messageset",
+        "//internal/errors",
+        "//internal/genid",
+        "//internal/pragma",
+        "//internal/strs",
+        "//proto",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":filedesc",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "filedesc_test",
+    srcs = [
+        "build_test.go",
+        "desc_test.go",
+    ],
+    deps = [
+        ":filedesc",
+        "//internal/detrand",
+        "//internal/testprotos/test",
+        "//internal/testprotos/test/weak1",
+        "//proto",
+        "//reflect/protodesc",
+        "//reflect/protoreflect",
+        "//types/descriptorpb",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

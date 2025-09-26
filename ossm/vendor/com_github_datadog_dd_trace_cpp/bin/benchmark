@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -x
+set -e
+
+cd "$(dirname "$0")"/..
+
+mkdir -p .build
+
+cd .build
+cmake .. -DDD_TRACE_BUILD_BENCHMARK=1 -DCMAKE_BUILD_TYPE=Release
+make -j
+cd ../
+
+.build/benchmark/dd_trace_cpp-benchmark "$@"

@@ -1,0 +1,38 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//js/private/worker/src:rollup/package_json.bzl", rollup_bin = "bin")
+
+npm_link_all_packages(name = "node_modules")
+
+rollup_bin.rollup(
+    name = "bundle",
+    srcs = [
+        "index.ts",
+        "rollup.config.js",
+        "size.ts",
+        "worker_protocol.ts",
+        ":node_modules/@rollup/plugin-commonjs",
+        ":node_modules/@rollup/plugin-json",
+        ":node_modules/@rollup/plugin-node-resolve",
+        ":node_modules/@rollup/plugin-terser",
+        ":node_modules/@rollup/plugin-typescript",
+        ":node_modules/@types/google-protobuf",
+        ":node_modules/@types/node",
+        ":node_modules/abortcontroller-polyfill",
+        ":node_modules/google-protobuf",
+        ":node_modules/tslib",
+    ],
+    outs = [
+        "bundle.js",
+    ],
+    args = [
+        "index.ts",
+        "--config",
+        "rollup.config.js",
+        "--format",
+        "cjs",
+        "--file",
+        "bundle.js",
+    ],
+    chdir = package_name(),
+    visibility = ["//js/private/worker:__pkg__"],
+)

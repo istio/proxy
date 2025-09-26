@@ -1,0 +1,5 @@
+load(":env_marker_setting_tests.bzl", "env_marker_setting_test_suite")
+
+env_marker_setting_test_suite(
+    name = "env_marker_setting_tests",
+)

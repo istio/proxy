@@ -1,0 +1,3 @@
+# gazelle:python_test_file_pattern *_hello.py,hello_*,unittest_*,*_unittest.py
+
+# Note that "foo_unittest.pyc" and "test_bar" files are ignored.

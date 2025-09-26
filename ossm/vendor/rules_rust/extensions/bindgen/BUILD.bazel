@@ -1,0 +1,50 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//:defs.bzl", "rust_bindgen_toolchain")
+load(
+    "//private:llvm_utils.bzl",
+    "cc_stdcc17_transitioned_binary",
+    "cc_stdcc17_transitioned_library",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "defs.bzl",
+    "MODULE.bazel",
+])
+
+toolchain_type(
+    name = "toolchain_type",
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]),
+    deps = [
+        "//3rdparty:bzl_lib",
+        "//private:bzl_lib",
+    ],
+)
+
+cc_stdcc17_transitioned_binary(
+    name = "clang",
+    target = "@llvm-project//clang:clang",
+)
+
+cc_stdcc17_transitioned_library(
+    name = "libclang",
+    target = "@llvm-project//clang:libclang",
+)
+
+rust_bindgen_toolchain(
+    name = "default_bindgen_toolchain_impl",
+    bindgen = "//3rdparty:bindgen",
+    clang = ":clang",
+    libclang = ":libclang",
+)
+
+toolchain(
+    name = "default_bindgen_toolchain",
+    toolchain = "default_bindgen_toolchain_impl",
+    toolchain_type = "//:toolchain_type",
+)

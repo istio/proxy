@@ -1,0 +1,2 @@
+# gazelle:python_ignore_dependencies foo,bar, baz
+# gazelle:python_ignore_dependencies foo.bar.baz

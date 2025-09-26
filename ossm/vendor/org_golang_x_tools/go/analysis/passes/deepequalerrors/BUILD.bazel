@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "deepequalerrors",
+    srcs = ["deepequalerrors.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/deepequalerrors",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/inspect",
+        "//go/ast/inspector",
+        "//go/types/typeutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":deepequalerrors",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "deepequalerrors_test",
+    srcs = ["deepequalerrors_test.go"],
+    deps = [
+        ":deepequalerrors",
+        "//go/analysis/analysistest",
+        "//internal/typeparams",
+    ],
+)

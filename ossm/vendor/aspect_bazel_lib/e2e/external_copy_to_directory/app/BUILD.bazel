@@ -1,0 +1,6 @@
+sh_test(
+    name = "test",
+    srcs = ["test.sh"],
+    data = ["@external_copy_to_directory//:dir"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)

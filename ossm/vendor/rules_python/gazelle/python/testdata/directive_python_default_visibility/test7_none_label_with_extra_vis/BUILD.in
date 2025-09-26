@@ -1,0 +1,5 @@
+# python_visibility directives that happen either before _or_ after the
+# NONE reset both get applied.
+# gazelle:python_visibility //foo:bar
+# gazelle:python_default_visibility NONE
+# gazelle:python_visibility //bar:baz

@@ -1,0 +1,35 @@
+load("@bazel_skylib//rules:native_binary.bzl", "native_test")
+load("@rules_python//python:py_test.bzl", "py_test")
+
+py_test(
+    name = "pricetag_test",
+    srcs = ["test.py"],
+    main = "test.py",
+    deps = [
+        "//py_proto_library/example.com/proto:pricetag_py_pb2",
+    ],
+)
+
+py_test(
+    name = "message_test",
+    srcs = ["message_test.py"],
+    deps = [
+        "//py_proto_library/example.com/another_proto:message_py_pb2",
+    ],
+)
+
+# Regression test for https://github.com/bazel-contrib/rules_python/issues/2515
+#
+# This test fails before protobuf 30.0 release
+# when ran with --legacy_external_runfiles=False (default in Bazel 8.0.0).
+native_test(
+    name = "external_import_test",
+    src = "@foo_external//:py_binary_with_proto",
+    tags = ["manual"],  # TODO: reenable when com_google_protobuf is upgraded
+    # Incompatible with Windows: native_test wrapping a py_binary doesn't work
+    # on Windows.
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)

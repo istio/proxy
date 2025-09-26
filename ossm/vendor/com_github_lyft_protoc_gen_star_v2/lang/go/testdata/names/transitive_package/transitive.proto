@@ -1,0 +1,8 @@
+syntax="proto3";
+package names.transitive_package;
+
+option go_package="example.com/names/foobar";
+
+message Transitive {
+    bool value = 1;
+}

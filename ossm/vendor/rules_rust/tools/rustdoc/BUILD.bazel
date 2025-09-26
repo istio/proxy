@@ -1,0 +1,12 @@
+load("//rust:defs.bzl", "rust_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "rustdoc_test_writer",
+    srcs = ["rustdoc_test_writer.rs"],
+    edition = "2018",
+    deps = [
+        "//tools/runfiles",
+    ],
+)

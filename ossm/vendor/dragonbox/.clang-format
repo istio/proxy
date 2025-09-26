@@ -1,0 +1,20 @@
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: Latest
+AccessModifierOffset: -4
+AlwaysBreakTemplateDeclarations: true
+BreakBeforeBraces: Custom
+BraceWrapping:
+  BeforeCatch: true
+  BeforeElse: true
+ColumnLimit: 104
+FixNamespaceComments: false
+MaxEmptyLinesToKeep: 3
+NamespaceIndentation: All
+IndentWidth: 4
+IndentCaseLabels: false
+IndentPPDirectives: BeforeHash
+PointerAlignment: Left
+SortIncludes: false
+SortUsingDeclarations: false
+UseTab: Never

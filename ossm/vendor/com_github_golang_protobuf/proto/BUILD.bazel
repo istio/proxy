@@ -1,0 +1,61 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "proto",
+    srcs = [
+        "buffer.go",
+        "defaults.go",
+        "deprecated.go",
+        "discard.go",
+        "extensions.go",
+        "properties.go",
+        "proto.go",
+        "registry.go",
+        "text_decode.go",
+        "text_encode.go",
+        "wire.go",
+        "wrappers.go",
+    ],
+    importpath = "github.com/golang/protobuf/proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@org_golang_google_protobuf//encoding/prototext:go_default_library",
+        "@org_golang_google_protobuf//encoding/protowire:go_default_library",
+        "@org_golang_google_protobuf//proto:go_default_library",
+        "@org_golang_google_protobuf//reflect/protodesc:go_default_library",
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//reflect/protoregistry:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoiface:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":proto",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "proto_test",
+    srcs = [
+        "discard_test.go",
+        "extensions_test.go",
+        "proto_clone_test.go",
+        "proto_equal_test.go",
+        "proto_test.go",
+        "registry_test.go",
+        "text_test.go",
+    ],
+    deps = [
+        ":proto",
+        "//internal/testprotos/proto2_proto",
+        "//internal/testprotos/proto3_proto",
+        "//protoc-gen-go/descriptor",
+        "//ptypes/any",
+        "//ptypes/timestamp",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@org_golang_google_protobuf//reflect/protoreflect:go_default_library",
+        "@org_golang_google_protobuf//testing/protopack:go_default_library",
+    ],
+)

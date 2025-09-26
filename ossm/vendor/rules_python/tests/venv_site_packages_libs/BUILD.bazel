@@ -1,0 +1,34 @@
+load("//python:py_library.bzl", "py_library")
+load("//tests/support:py_reconfig.bzl", "py_reconfig_test")
+load("//tests/support:support.bzl", "SUPPORTS_BOOTSTRAP_SCRIPT")
+
+py_library(
+    name = "user_lib",
+    deps = ["@other//simple_v1"],
+)
+
+py_library(
+    name = "closer_lib",
+    deps = [
+        ":user_lib",
+        "@other//simple_v2",
+    ],
+)
+
+py_reconfig_test(
+    name = "venvs_site_packages_libs_test",
+    srcs = ["bin.py"],
+    bootstrap_impl = "script",
+    main = "bin.py",
+    target_compatible_with = SUPPORTS_BOOTSTRAP_SCRIPT,
+    venvs_site_packages = "yes",
+    deps = [
+        ":closer_lib",
+        "//tests/venv_site_packages_libs/nspkg_alpha",
+        "//tests/venv_site_packages_libs/nspkg_beta",
+        "@other//nspkg_delta",
+        "@other//nspkg_gamma",
+        "@other//nspkg_single",
+        "@other//with_external_data",
+    ],
+)

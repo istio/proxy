@@ -1,0 +1,12 @@
+load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_toolchains")
+load("//:buf_deps.bzl", "buf_deps")
+
+# gazelle:repository_macro buf_deps.bzl%buf_deps
+buf_deps()
+
+rules_buf_dependencies()
+
+rules_buf_toolchains(
+    "buf_toolchains",
+    version = "v1.5.0",
+)

@@ -1,0 +1,46 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@crates//:defs.bzl", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_doc")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "all_crate_deps",
+    srcs = ["src/main.rs"],
+    deps = all_crate_deps(normal = True),
+)
+
+rust_doc(
+    name = "all_crate_deps_doc",
+    crate = ":all_crate_deps",
+)
+
+sh_test(
+    name = "all_crate_deps_test",
+    size = "small",
+    srcs = ["all_crate_deps_test.sh"],
+    args = [
+        "$(rlocationpath :all_crate_deps)",
+    ],
+    data = [
+        ":all_crate_deps",
+    ],
+    deps = [
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)
+
+build_test(
+    name = "gen_rust_project",
+    targets = [
+        "@rules_rust//tools/rust_analyzer:gen_rust_project",
+    ],
+)
+
+build_test(
+    name = "rust_fmt",
+    targets = [
+        "@rules_rust//:rustfmt",
+    ],
+)

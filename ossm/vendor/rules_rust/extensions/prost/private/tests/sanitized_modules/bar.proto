@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+import "foo.proto";
+
+package bAR.bAz.QAZ.QuX;
+
+message Bar {
+    string name = 1;
+
+    Foo.QuuX.CoRgE.GRAULT.gaRply.Foo foo = 2;
+
+    Foo.QuuX.CoRgE.GRAULT.gaRply.Foo.NestedFoo nested_foo = 3;
+
+    message Baz {
+        string name = 4;
+    }
+}

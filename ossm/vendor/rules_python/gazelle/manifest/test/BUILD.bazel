@@ -1,0 +1,9 @@
+# gazelle:ignore
+
+exports_files(["test.go"])
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+    visibility = ["//manifest:__pkg__"],
+)

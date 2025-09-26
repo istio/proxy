@@ -1,0 +1,5 @@
+load(":cc_common_link_test.bzl", "cc_common_link_test_suite")
+
+cc_common_link_test_suite(
+    name = "cc_common_link_test_suite",
+)

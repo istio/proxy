@@ -1,0 +1,134 @@
+# Copyright 2019 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# Ideally, we would import things from Chromium Git.  However, checking out
+# Chromium is *really* slow, so we use a local checkout instead.
+origin = folder.origin()
+
+# Import all URL-related files, plus some parts of //base, primarily those
+# related to string handling.
+import_list = glob(
+    include = [
+        "AUTHORS",
+        "LICENSE",
+        "base/compiler_specific.h",
+        "base/containers/checked_iterators.h",
+        "base/containers/contains.h",
+        "base/containers/contiguous_iterator.h",
+        "base/containers/span.h",
+        "base/containers/util.h",
+        "base/cxx17_backports.h",
+        "base/cxx20_to_address.h",
+	"base/cxx20_is_constant_evaluated.h",
+        "base/debug/crash_logging.cc",
+        "base/debug/crash_logging.h",
+        "base/debug/leak_annotations.h",
+        "base/functional/*.h",
+        "base/i18n/uchar.h",
+        "base/memory/raw_ptr.h",
+        "base/memory/raw_ptr_exclusion.h",
+        "base/numerics/*.h",
+        "base/no_destructor.h",
+        "base/ranges/*.h",
+        "base/stl_util.h",
+        "base/strings/*.cc",
+        "base/strings/*.h",
+        "base/template_util.h",
+        "base/third_party/icu/**",
+        "base/win/win_handle_types.h",
+        "base/win/win_handle_types_list.inc",
+        "build/build_config.h",
+        "build/buildflag.h",
+        "url/*.cc",
+        "url/*.h",
+        "url/url_idna_icu_alternatives_ios.mm",
+        "url/third_party/mozilla/**",
+    ],
+    exclude = [
+        "url/url_idna_icu_alternatives_android.cc",
+    ],
+)
+
+target_files = glob(
+    include = [
+        "base/**",
+        "build/**",
+        "url/**",
+        "AUTHORS",
+        "LICENSE",
+    ],
+    exclude = [
+        "**/BUILD",
+    ],
+)
+
+# Those headers are pulled from //polyfill instead of copied from Chromium.
+# Should be in sync with //polyfill/BUILD.
+polyfilled_headers = [
+    "base/allocator/buildflags.h",
+    "base/base_export.h",
+    "base/check.h",
+    "base/check_op.h",
+    "base/component_export.h",
+    "base/cpu_reduction_experiment.h",
+    "base/dcheck_is_on.h",
+    "base/debug/alias.h",
+    "base/export_template.h",
+    "base/logging.h",
+    "base/notreached.h",
+    "base/trace_event/memory_usage_estimator.h",
+    "third_party/perfetto/include/perfetto/tracing/traced_value.h",
+]
+
+transformations = [
+    # Prefix the logging-related macros.
+    core.replace(
+        "${log}",
+        "GURL_${log}",
+        regex_groups = {"log": "\\bD?(LOG|CHECK|CHECK_(EQ|LT|GT|LE|GE|NE))\\b"},
+    ),
+    core.replace("DCHECK_IS_ON", "GURL_DCHECK_IS_ON"),
+    core.replace("NOTREACHED()", "GURL_NOTREACHED()"),
+
+    # Rename base:: to gurl_base::
+    core.replace("namespace base ", "namespace gurl_base "),
+    core.replace("base::", "gurl_base::"),
+
+    # Use Abseil at upstream-recommended paths.
+    core.replace("third_party/abseil-cpp/absl", "absl"),
+
+    # iOS version of url_idna is ASCII-only, but it uses .mm extension; rename
+    # it to a .cc file.
+    core.move("url/url_idna_icu_alternatives_ios.mm", "url/url_idna_ascii_only.cc"),
+
+    # Fix some Perfetto includes.
+    core.replace("perfetto/tracing/traced_value_forward.h", "perfetto/tracing/traced_value.h"),
+
+    core.replace("#include \"base/strings/string_number_conversions_win.h\"", ""),
+    core.replace("#include \"base/allocator/partition_allocator/partition_alloc_config.h\"", ""),
+    core.replace("base/trace_event/base_tracing_forward.h", "polyfills/third_party/perfetto/include/perfetto/tracing/traced_value.h"),
+
+    # Use system ICU.
+    core.replace(
+        '"third_party/icu/source/common/unicode/${file}.h"',
+        "<unicode/${file}.h>",
+        regex_groups = {"file": "\\w+"},
+    ),
+]
+
+transformations += [
+    core.replace('#include "%s"' % header, '#include "polyfills/%s"' % header)
+    for header in polyfilled_headers
+]
+
+core.workflow(
+    name = "import",
+    origin = origin,
+    origin_files = import_list,
+    destination = folder.destination(),
+    destination_files = target_files,
+    authoring = authoring.pass_thru("GURL Maintainers <noreply@google.com>"),
+    mode = "SQUASH",
+    transformations = transformations,
+)

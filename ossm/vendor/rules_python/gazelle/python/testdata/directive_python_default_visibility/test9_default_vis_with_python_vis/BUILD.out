@@ -1,0 +1,9 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_default_visibility //tests:__pkg__
+
+py_library(
+    name = "test9_default_vis_with_python_vis",
+    srcs = ["test9.py"],
+    visibility = ["//tests:__pkg__"],
+)

@@ -1,0 +1,20 @@
+"Dependencies for building docs with stardoc"
+
+bazel_dep(name = "aspect_bazel_lib", version = "0.0.0")
+bazel_dep(name = "rules_java", version = "8.11.0")
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "stardoc", version = "0.7.1")
+
+local_path_override(
+    module_name = "aspect_bazel_lib",
+    path = "..",
+)
+
+http_jar = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_jar")
+
+http_jar(
+    name = "stardoc-prebuilt",
+    integrity = "sha256-jDi5ITmziwwiHCsfd8v0UOoraWXIAfICIll+wbpg/vE=",
+    # NB: version matches the stardoc load above
+    urls = ["https://github.com/alexeagle/stardoc-prebuilt/releases/download/v0.7.1/renderer_deploy.jar"],
+)

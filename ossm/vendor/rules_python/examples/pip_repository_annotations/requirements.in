@@ -1,0 +1,7 @@
+# This flag allows for regression testing requirements arguments in 
+# `pip_repository` rules.
+--extra-index-url https://pypi.org/simple/
+
+certifi>=2023.7.22  # https://security.snyk.io/vuln/SNYK-PYTHON-CERTIFI-5805047
+wheel
+requests[security]>=2.8.1

@@ -1,0 +1,4 @@
+metrics:
+  - name: requests_total
+    dimensions:
+      response_code: filter_state['wasm.istio_responseClass']

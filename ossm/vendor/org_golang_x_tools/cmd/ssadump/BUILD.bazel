@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "ssadump_lib",
+    srcs = ["main.go"],
+    importpath = "golang.org/x/tools/cmd/ssadump",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//go/buildutil",
+        "//go/packages",
+        "//go/ssa",
+        "//go/ssa/interp",
+        "//go/ssa/ssautil",
+    ],
+)
+
+go_binary(
+    name = "ssadump",
+    embed = [":ssadump_lib"],
+    visibility = ["//visibility:public"],
+)

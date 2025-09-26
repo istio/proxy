@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "generate-corpus_lib",
+    srcs = ["main.go"],
+    importpath = "google.golang.org/protobuf/internal/cmd/generate-corpus",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//encoding/protojson",
+        "//encoding/prototext",
+        "//internal/testprotos/fuzz",
+        "//internal/testprotos/test",
+        "//proto",
+    ],
+)
+
+go_binary(
+    name = "generate-corpus",
+    embed = [":generate-corpus_lib"],
+    visibility = ["//:__subpackages__"],
+)

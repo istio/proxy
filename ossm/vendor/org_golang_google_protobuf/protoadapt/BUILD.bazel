@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "protoadapt",
+    srcs = ["convert.go"],
+    importpath = "google.golang.org/protobuf/protoadapt",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//proto",
+        "//runtime/protoiface",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protoadapt",
+    visibility = ["//visibility:public"],
+)

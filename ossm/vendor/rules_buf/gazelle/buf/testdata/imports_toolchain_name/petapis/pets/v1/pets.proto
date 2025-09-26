@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package pets.v1;
+
+import "foo/v1/foo.proto";
+import "validate/validate.proto";
+
+message Pet {
+  foo.v1.Foo foo = 1;
+}

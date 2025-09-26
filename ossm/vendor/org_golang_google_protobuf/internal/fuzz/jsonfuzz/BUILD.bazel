@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "jsonfuzz",
+    srcs = ["fuzz.go"],
+    importpath = "google.golang.org/protobuf/internal/fuzz/jsonfuzz",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//encoding/protojson",
+        "//internal/testprotos/fuzz",
+        "//proto",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":jsonfuzz",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "jsonfuzz_test",
+    srcs = ["fuzz_test.go"],
+    embed = [":jsonfuzz"],
+    deps = ["//internal/fuzztest"],
+)

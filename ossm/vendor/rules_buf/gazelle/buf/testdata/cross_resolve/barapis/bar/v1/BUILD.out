@@ -1,0 +1,23 @@
+load("@rules_buf//buf:defs.bzl", "buf_breaking_test", "buf_lint_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "bar_proto",
+    srcs = ["bar.proto"],
+    strip_import_prefix = "/barapis",
+    visibility = ["//visibility:public"],
+)
+
+buf_lint_test(
+    name = "bar_proto_lint",
+    config = "//barapis:buf.yaml",
+    targets = [":bar_proto"],
+)
+
+buf_breaking_test(
+    name = "bar_proto_breaking",
+    against = "//:against_file",
+    config = "//barapis:buf.yaml",
+    limit_to_input_files = True,
+    targets = [":bar_proto"],
+)

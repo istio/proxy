@@ -1,0 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_extension enabled
+# gazelle:python_root
+# gazelle:python_generation_mode project
+
+# gazelle:exclude bar/baz/*_excluded.py
+
+py_library(
+    name = "coarse_grained",
+    visibility = ["//:__subpackages__"],
+)

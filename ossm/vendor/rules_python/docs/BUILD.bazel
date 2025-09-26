@@ -1,0 +1,193 @@
+# Copyright 2023 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@dev_pip//:requirements.bzl", "requirement")
+load("//python/private:bzlmod_enabled.bzl", "BZLMOD_ENABLED")  # buildifier: disable=bzl-visibility
+load("//python/private:util.bzl", "IS_BAZEL_7_OR_HIGHER")  # buildifier: disable=bzl-visibility
+load("//python/uv:lock.bzl", "lock")  # buildifier: disable=bzl-visibility
+load("//sphinxdocs:readthedocs.bzl", "readthedocs_install")
+load("//sphinxdocs:sphinx.bzl", "sphinx_build_binary", "sphinx_docs")
+load("//sphinxdocs:sphinx_docs_library.bzl", "sphinx_docs_library")
+load("//sphinxdocs:sphinx_stardoc.bzl", "sphinx_stardoc", "sphinx_stardocs")
+
+package(default_visibility = ["//:__subpackages__"])
+
+licenses(["notice"])  # Apache 2.0
+
+# We only build for Linux and Mac because:
+# 1. The actual doc process only runs on Linux
+# 2. Mac is a common development platform, and is close enough to Linux
+#    it's feasible to make work.
+# Making CI happy under Windows is too much of a headache, though, so we don't
+# bother with that.
+_TARGET_COMPATIBLE_WITH = select({
+    "@platforms//os:linux": [],
+    "@platforms//os:macos": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+}) if BZLMOD_ENABLED else ["@platforms//:incompatible"]
+
+# See README.md for instructions. Short version:
+# * `bazel run //docs:docs.serve` in a separate terminal
+# * `ibazel build //docs:docs` to automatically rebuild docs
+sphinx_docs(
+    name = "docs",
+    srcs = glob(
+        include = [
+            "*.md",
+            "**/*.md",
+            "_static/**",
+            "_includes/**",
+        ],
+        exclude = [
+            "README.md",
+            "_*",
+            "*.inv*",
+        ],
+    ) + ["//gazelle/docs"],
+    config = "conf.py",
+    formats = [
+        "html",
+    ],
+    renamed_srcs = {
+        "//:CHANGELOG.md": "changelog.md",
+        "//:CONTRIBUTING.md": "contributing.md",
+        "//sphinxdocs/inventories:bazel_inventory": "bazel_inventory.inv",
+    },
+    sphinx = ":sphinx-build",
+    strip_prefix = package_name() + "/",
+    tags = ["docs"],
+    target_compatible_with = _TARGET_COMPATIBLE_WITH,
+    deps = [
+        ":bzl_api_docs",
+        ":py_api_srcs",
+        ":py_runtime_pair",
+        "//sphinxdocs/docs:docs_lib",
+    ],
+)
+
+build_test(
+    name = "docs_build_test",
+    targets = [":docs"],
+)
+
+sphinx_stardocs(
+    name = "bzl_api_docs",
+    srcs = [
+        "//python:defs_bzl",
+        "//python:features_bzl",
+        "//python:packaging_bzl",
+        "//python:pip_bzl",
+        "//python:py_binary_bzl",
+        "//python:py_cc_link_params_info_bzl",
+        "//python:py_exec_tools_info_bzl",
+        "//python:py_exec_tools_toolchain_bzl",
+        "//python:py_executable_info_bzl",
+        "//python:py_library_bzl",
+        "//python:py_runtime_bzl",
+        "//python:py_runtime_info_bzl",
+        "//python:py_test_bzl",
+        "//python:repositories_bzl",
+        "//python/api:api_bzl",
+        "//python/api:attr_builders_bzl",
+        "//python/api:executables_bzl",
+        "//python/api:libraries_bzl",
+        "//python/api:rule_builders_bzl",
+        "//python/cc:py_cc_toolchain_bzl",
+        "//python/cc:py_cc_toolchain_info_bzl",
+        "//python/entry_points:py_console_script_binary_bzl",
+        "//python/local_toolchains:repos_bzl",
+        "//python/private:attr_builders_bzl",
+        "//python/private:builders_util_bzl",
+        "//python/private:py_binary_rule_bzl",
+        "//python/private:py_cc_toolchain_rule_bzl",
+        "//python/private:py_info_bzl",
+        "//python/private:py_library_rule_bzl",
+        "//python/private:py_runtime_rule_bzl",
+        "//python/private:py_test_rule_bzl",
+        "//python/private:rule_builders_bzl",
+        "//python/private/api:py_common_api_bzl",
+        "//python/private/pypi:config_settings_bzl",
+        "//python/private/pypi:env_marker_info_bzl",
+        "//python/private/pypi:pkg_aliases_bzl",
+        "//python/private/pypi:whl_config_setting_bzl",
+        "//python/private/pypi:whl_library_bzl",
+        "//python/uv:lock_bzl",
+        "//python/uv:uv_bzl",
+        "//python/uv:uv_toolchain_bzl",
+        "//python/uv:uv_toolchain_info_bzl",
+    ] + ([
+        # Bazel 6 + Stardoc isn't able to parse something about the python bzlmod extension
+        "//python/extensions:python_bzl",
+    ] if IS_BAZEL_7_OR_HIGHER else []) + ([
+        # This depends on @pythons_hub, which is only created under bzlmod,
+        "//python/extensions:pip_bzl",
+    ] if IS_BAZEL_7_OR_HIGHER and BZLMOD_ENABLED else []),
+    prefix = "api/rules_python/",
+    tags = ["docs"],
+    target_compatible_with = _TARGET_COMPATIBLE_WITH,
+)
+
+sphinx_stardoc(
+    name = "py_runtime_pair",
+    src = "//python/private:py_runtime_pair_rule_bzl",
+    prefix = "api/rules_python/",
+    tags = ["docs"],
+    target_compatible_with = _TARGET_COMPATIBLE_WITH,
+)
+
+sphinx_docs_library(
+    name = "py_api_srcs",
+    srcs = [
+        "//python/runfiles",
+    ],
+    strip_prefix = "python/",
+)
+
+readthedocs_install(
+    name = "readthedocs_install",
+    docs = [":docs"],
+    target_compatible_with = _TARGET_COMPATIBLE_WITH,
+)
+
+sphinx_build_binary(
+    name = "sphinx-build",
+    target_compatible_with = _TARGET_COMPATIBLE_WITH,
+    deps = [
+        requirement("sphinx"),
+        requirement("sphinx_rtd_theme"),
+        requirement("myst_parser"),
+        requirement("readthedocs_sphinx_ext"),
+        requirement("typing_extensions"),
+        requirement("sphinx_autodoc2"),
+        requirement("sphinx_reredirects"),
+        "//sphinxdocs/src/sphinx_bzl",
+    ],
+)
+
+# Run bazel run //docs:requirements.update
+lock(
+    name = "requirements",
+    srcs = ["pyproject.toml"],
+    out = "requirements.txt",
+    args = [
+        "--emit-index-url",
+        "--universal",
+        "--upgrade",
+    ],
+    # NOTE @aignas 2025-08-17: here we select the lowest actively supported version so that the
+    # requirements file is generated to be compatible with Python version 3.9 or greater.
+    python_version = "3.9",
+    visibility = ["//:__subpackages__"],
+)

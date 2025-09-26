@@ -1,0 +1,123 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "protoc-gen-star",
+    srcs = [
+        "artifact.go",
+        "ast.go",
+        "build_context.go",
+        "comment.go",
+        "debug.go",
+        "docs.go",
+        "entity.go",
+        "enum.go",
+        "enum_value.go",
+        "extension.go",
+        "field.go",
+        "field_type.go",
+        "field_type_elem.go",
+        "file.go",
+        "generator.go",
+        "init_option.go",
+        "message.go",
+        "method.go",
+        "module.go",
+        "name.go",
+        "node.go",
+        "oneof.go",
+        "package.go",
+        "parameters.go",
+        "persister.go",
+        "post_process.go",
+        "proto.go",
+        "service.go",
+        "source_code_info.go",
+        "wkt.go",
+        "workflow.go",
+    ],
+    importpath = "github.com/lyft/protoc-gen-star/v2",
+    importpath_aliases = ["github.com/lyft/protoc-gen-star"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_spf13_afero//:go_default_library",
+        "@org_golang_google_protobuf//proto:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+        "@org_golang_google_protobuf//types/descriptorpb:go_default_library",
+        "@org_golang_google_protobuf//types/pluginpb:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protoc-gen-star",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "protoc-gen-star_test",
+    srcs = [
+        "artifact_test.go",
+        "ast_test.go",
+        "build_context_test.go",
+        "comment_test.go",
+        "debug_test.go",
+        "enum_test.go",
+        "enum_value_test.go",
+        "extension_test.go",
+        "field_test.go",
+        "field_type_elem_test.go",
+        "field_type_test.go",
+        "file_test.go",
+        "generator_test.go",
+        "init_option_test.go",
+        "message_test.go",
+        "method_test.go",
+        "module_test.go",
+        "name_test.go",
+        "node_nilvisitor_test.go",
+        "node_passvisitor_test.go",
+        "node_test.go",
+        "oneof_test.go",
+        "package_test.go",
+        "parameters_test.go",
+        "persister_test.go",
+        "post_process_test.go",
+        "proto_test.go",
+        "service_test.go",
+        "source_code_info_test.go",
+        "wkt_test.go",
+        "workflow_test.go",
+    ],
+    embed = [":protoc-gen-star"],
+    deps = [
+        "@com_github_spf13_afero//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+        "@org_golang_google_protobuf//proto:go_default_library",
+        "@org_golang_google_protobuf//reflect/protodesc:go_default_library",
+        "@org_golang_google_protobuf//runtime/protoimpl:go_default_library",
+        "@org_golang_google_protobuf//types/descriptorpb:go_default_library",
+        "@org_golang_google_protobuf//types/known/anypb:go_default_library",
+        "@org_golang_google_protobuf//types/pluginpb:go_default_library",
+    ],
+)
+
+load("@package_metadata//rules:package_metadata.bzl", "package_metadata")
+load("@rules_license//rules:package_info.bzl", "package_info")
+
+package_metadata(
+    name = "package_metadata",
+    purl = "pkg:golang/github.com/lyft/protoc-gen-star/v2@v2.0.1",
+    visibility = [
+        "//:__subpackages__",
+    ],
+)
+
+package_info(
+    name = "gazelle_generated_package_info",
+    package_name = "github.com/lyft/protoc-gen-star/v2",
+    package_url = "https://github.com/lyft/protoc-gen-star/v2",
+    package_version = "2.0.1",
+    purl = "pkg:golang/github.com/lyft/protoc-gen-star/v2@v2.0.1",
+    visibility = ["//:__subpackages__"],
+)

@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gocommand",
+    srcs = [
+        "invoke.go",
+        "vendor.go",
+        "version.go",
+    ],
+    importpath = "golang.org/x/tools/internal/gocommand",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/event",
+        "@org_golang_x_mod//semver:go_default_library",
+        "@org_golang_x_sys//execabs:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gocommand",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "gocommand_test",
+    srcs = [
+        "invoke_test.go",
+        "version_test.go",
+    ],
+    embed = [":gocommand"],
+)

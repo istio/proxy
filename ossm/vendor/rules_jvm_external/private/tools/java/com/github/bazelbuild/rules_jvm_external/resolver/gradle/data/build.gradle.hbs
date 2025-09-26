@@ -1,0 +1,46 @@
+apply plugin: 'java'
+
+repositories {
+{{#if isUsingM2Local}}
+    mavenLocal()
+{{/if}}
+{{~#each repositories}}
+    maven {
+        url "{{url}}"
+        allowInsecureProtocol = {{allowInsecureProtocol}}
+        {{#if requiresAuth}}
+        credentials {
+            def u = findProperty("{{usernameProperty}}")
+            if (u == null) throw new GradleException("Missing {{usernameProperty}}")
+            username = u
+
+            def p = findProperty("{{passwordProperty}}")
+            if (p == null) throw new GradleException("Missing {{passwordProperty}}")
+            password = p
+        }
+        {{/if}}
+    }
+{{/each~}}
+}
+
+dependencies {
+{{~#each boms}}
+        implementation platform("{{group}}:{{artifact}}:{{version}}")
+{{/each~}}
+
+{{~#each dependencies}}
+    implementation("{{group}}:{{artifact}}{{version}}{{#if classifier}}{{classifier}}{{/if}}{{#if extension}}{{extension}}{{/if}}"){{#if exclusions}} {
+        {{~#each exclusions}}
+        exclude group: "{{group}}", module: "{{module}}"
+        {{/each~}}
+    }{{/if}}
+{{/each~}}
+}
+
+{{#if globalExclusions}}
+configurations.all {
+    {{~#each globalExclusions}}
+    exclude group: "{{group}}", module: "{{module}}"
+    {{/each~}}
+}
+{{/if}}

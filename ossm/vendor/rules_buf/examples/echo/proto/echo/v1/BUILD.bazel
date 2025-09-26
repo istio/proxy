@@ -1,0 +1,22 @@
+load("@rules_buf//buf:defs.bzl", "buf_lint_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+buf_lint_test(
+    name = "eliza_v1_proto_lint",
+    module = "proto",
+    targets = [":eliza_v1_proto"],
+)
+
+proto_library(
+    name = "echo_v1_proto",
+    srcs = ["echo.proto"],
+    strip_import_prefix = "/proto",
+    visibility = ["//visibility:public"],
+)
+
+buf_lint_test(
+    name = "echo_v1_proto_lint",
+    config = "//:buf.yaml",
+    module = "proto",
+    targets = [":echo_v1_proto"],
+)

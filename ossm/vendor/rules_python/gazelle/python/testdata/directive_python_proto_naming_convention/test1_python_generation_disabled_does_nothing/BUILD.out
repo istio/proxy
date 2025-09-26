@@ -1,0 +1,17 @@
+load("@com_google_protobuf//bazel:py_proto_library.bzl", "py_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+# gazelle:python_generate_proto false
+# gazelle:python_proto_naming_convention some_$proto_name$_value
+
+proto_library(
+    name = "foo_proto",
+    srcs = ["foo.proto"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_proto_library(
+    name = "foo_proto_custom_name",
+    visibility = ["//:__subpackages__"],
+    deps = [":foo_proto"],
+)

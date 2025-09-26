@@ -1,0 +1,159 @@
+# These tests check the run-time behavior under various combinations
+#
+# - Tests: behavior only. release tools are in the integration tests
+# - Platforms: ubuntu, centos, macos, windows
+# - bzlmod enabled or not
+# - bazel: LTS-1, LTS, rolling
+#
+#
+
+
+common: &common
+  working_directory: ..
+
+bzlmod: &bzlmod
+  build_flags:
+    - "--enable_bzlmod"
+
+nobzlmod: &nobzlmod
+  build_flags:
+    - "--noenable_bzlmod"
+
+#
+# Groups of tests, by platform
+#
+
+# rpmbuild(8) is not available or installed on most platforms
+default_tests: &default_tests
+  test_targets:
+    - "//pkg/..."
+    - "//tests/..."
+    - "//toolchains/..."
+    - "-//tests/rpm/..."
+    - "-//pkg/legacy/tests/rpm/..."
+
+default_tests_with_rpm: &default_tests_with_rpm
+  test_targets:
+    - "//pkg/..."
+    - "//tests/..."
+    - "//toolchains/..."
+
+win_tests: &win_tests
+  test_flags:
+    - "--test_tag_filters=-nowindows"
+  build_flags:
+    - "--build_tag_filters=-nowindows"
+  test_targets:
+    - "//pkg/..."
+    - "//tests/..."
+    - "//toolchains/..."
+    - "-//tests:package_naming_aggregate_test"
+    - "-//tests:path_test"
+    # Bazel might be broken w.r.t. Unicode processing for windows. Multiple issues:
+    # https://github.com/bazelbuild/bazel/issues?q=is%3Aissue+is%3Aopen+%2Bunicode+%2Bwindows+
+    - "-//tests/mappings:utf8_manifest_test"
+    - "-//tests/mappings/filter_directory/..."
+    - "-//tests/zip:unicode_test"
+    # See #387
+    - "-//tests/install/..."
+    # rpmbuild(8) is not supported on Windows
+    - "-//tests/rpm/..."
+    - "-//pkg/legacy/tests/rpm/..."
+
+#
+# Common features and tests by platform
+#
+ubuntu2204: &ubuntu
+  platform: ubuntu2204
+  <<: *common
+  <<: *default_tests
+
+centos7: &centos
+  platform: centos7_java11_devtoolset10
+  <<: *common
+  <<: *default_tests_with_rpm
+
+macos: &macos
+  platform: macos
+  <<: *common
+  <<: *default_tests
+
+windows: &windows
+  platform: windows
+  <<: *common
+  <<: *win_tests
+
+#
+# Finally, the cross product of bazel releases X platforms
+#
+tasks:
+  ub_head_bzlmod:
+    name: ub_head_bzlmod
+    bazel: rolling
+    <<: *ubuntu
+    <<: *bzlmod
+
+  ub_head_nobzlmod:
+    name: ub_head_nobzlmod
+    bazel: rolling
+    <<: *ubuntu
+    <<: *nobzlmod
+
+  ub_lts_bzlmod:
+    name: ub_lts_bzlmod
+    bazel: latest
+    <<: *ubuntu
+    <<: *bzlmod
+
+  ub_lts_nobzlmod:
+    name: ub_lts_nobzlmod
+    bazel: latest
+    <<: *ubuntu
+    <<: *nobzlmod
+
+  ub_lts1_nobzlmod:
+    name: ub_lts1_nobzlmod
+    bazel: latest-1
+    <<: *ubuntu
+    <<: *nobzlmod
+
+  cent_lts:
+    name: cent_lts
+    bazel: latest
+    <<: *centos
+
+  mac_head_bzlmod:
+    name: mac_head_bzlmod
+    bazel: rolling
+    <<: *macos
+    <<: *bzlmod
+
+  mac_lts_bzlmod:
+    name: mac_lts_bzlmod
+    bazel: latest
+    <<: *macos
+    <<: *bzlmod
+
+  mac_lts_nobzlmod:
+    name: mac_lts_nobzlmod
+    bazel: latest
+    <<: *macos
+    <<: *nobzlmod
+
+  win_head_bzlmod:
+    name: win_head_bzlmod
+    bazel: rolling
+    <<: *windows
+    <<: *bzlmod
+
+  win_lts_bzlmod:
+    name: win_lts_bzlmod
+    bazel: latest
+    <<: *windows
+    <<: *bzlmod
+
+  win_lts_nobzlmod:
+    name: win_lts_nobzlmod
+    bazel: latest
+    <<: *windows
+    <<: *nobzlmod

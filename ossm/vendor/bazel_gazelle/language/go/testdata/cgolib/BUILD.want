@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cgolib",
+    srcs = [
+        "asm.S",
+        "foo.c",
+        "foo.go",
+        "foo.h",
+        "pure.go",
+    ],
+    _gazelle_imports = [
+        "example.com/repo/lib",
+        "example.com/repo/lib/deep",
+        "fmt",
+    ],
+    cgo = True,
+    clinkopts = ["-lweird,-rpath,$$ORIGIN"],
+    copts = [
+        "-I cgolib/sub -iquote cgolib/sub",
+        "-Icgolib/sub -Icgolib/othersub",
+    ],
+    cppopts = ["-I/weird/include/path"],
+    cxxopts = ["-std=c++14"],
+    importpath = "example.com/repo/cgolib",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "cgolib_test",
+    srcs = ["foo_test.go"],
+    _gazelle_imports = ["testing"],
+    embed = [":cgolib"],
+)

@@ -1,0 +1,47 @@
+{"Action":"run","Test":"TestPass"}
+{"Action":"output","Test":"TestPass","Output":"=== RUN   TestPass\n"}
+{"Action":"output","Test":"TestPass","Output":"=== PAUSE TestPass\n"}
+{"Action":"pause","Test":"TestPass"}
+{"Action":"run","Test":"TestPassLog"}
+{"Action":"output","Test":"TestPassLog","Output":"=== RUN   TestPassLog\n"}
+{"Action":"output","Test":"TestPassLog","Output":"=== PAUSE TestPassLog\n"}
+{"Action":"pause","Test":"TestPassLog"}
+{"Action":"run","Test":"TestFail"}
+{"Action":"output","Test":"TestFail","Output":"=== RUN   TestFail\n"}
+{"Action":"output","Test":"TestFail","Output":"--- FAIL: TestFail (0.00s)\n"}
+{"Action":"output","Test":"TestFail","Output":"    test_test.go:23: Not working\n"}
+{"Action":"fail","Test":"TestFail","Elapsed":0}
+{"Action":"run","Test":"TestSubtests"}
+{"Action":"output","Test":"TestSubtests","Output":"=== RUN   TestSubtests\n"}
+{"Action":"run","Test":"TestSubtests/subtest_a"}
+{"Action":"output","Test":"TestSubtests/subtest_a","Output":"=== RUN   TestSubtests/subtest_a\n"}
+{"Action":"run","Test":"TestSubtests/testB"}
+{"Action":"output","Test":"TestSubtests/testB","Output":"=== RUN   TestSubtests/testB\n"}
+{"Action":"run","Test":"TestSubtests/another_subtest"}
+{"Action":"output","Test":"TestSubtests/another_subtest","Output":"=== RUN   TestSubtests/another_subtest\n"}
+{"Action":"output","Test":"TestSubtests","Output":"--- FAIL: TestSubtests (0.02s)\n"}
+{"Action":"output","Test":"TestSubtests/subtest_a","Output":"    --- SKIP: TestSubtests/subtest_a (0.00s)\n"}
+{"Action":"output","Test":"TestSubtests/subtest_a","Output":"        test_test.go:29: from subtest subtest a\n"}
+{"Action":"output","Test":"TestSubtests/subtest_a","Output":"        test_test.go:31: from subtest subtest a\n"}
+{"Action":"output","Test":"TestSubtests/subtest_a","Output":"        test_test.go:33: skipping this test\n"}
+{"Action":"skip","Test":"TestSubtests/subtest_a","Elapsed":0}
+{"Action":"output","Test":"TestSubtests/testB","Output":"    --- PASS: TestSubtests/testB (0.01s)\n"}
+{"Action":"output","Test":"TestSubtests/testB","Output":"        test_test.go:29: from subtest testB\n"}
+{"Action":"output","Test":"TestSubtests/testB","Output":"        test_test.go:31: from subtest testB\n"}
+{"Action":"pass","Test":"TestSubtests/testB","Elapsed":0.01}
+{"Action":"output","Test":"TestSubtests/another_subtest","Output":"    --- FAIL: TestSubtests/another_subtest (0.01s)\n"}
+{"Action":"output","Test":"TestSubtests/another_subtest","Output":"        test_test.go:29: from subtest another subtest\n"}
+{"Action":"output","Test":"TestSubtests/another_subtest","Output":"        test_test.go:31: from subtest another subtest\n"}
+{"Action":"fail","Test":"TestSubtests/another_subtest","Elapsed":0.01}
+{"Action":"fail","Test":"TestSubtests","Elapsed":0.02}
+{"Action":"cont","Test":"TestPass"}
+{"Action":"output","Test":"TestPass","Output":"=== CONT  TestPass\n"}
+{"Action":"cont","Test":"TestPassLog"}
+{"Action":"output","Test":"TestPassLog","Output":"=== CONT  TestPassLog\n"}
+{"Action":"output","Test":"TestPass","Output":"--- PASS: TestPass (0.00s)\n"}
+{"Action":"pass","Test":"TestPass","Elapsed":0}
+{"Action":"output","Test":"TestPassLog","Output":"--- PASS: TestPassLog (0.00s)\n"}
+{"Action":"output","Test":"TestPassLog","Output":"    test_test.go:19: pass\n"}
+{"Action":"pass","Test":"TestPassLog","Elapsed":0}
+{"Action":"output","Output":"FAIL\n"}
+{"Action":"fail","Elapsed":0.03}

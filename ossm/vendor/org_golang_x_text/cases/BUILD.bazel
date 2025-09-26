@@ -1,0 +1,56 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cases",
+    srcs = [
+        "cases.go",
+        "context.go",
+        "fold.go",
+        "info.go",
+        "map.go",
+        "tables10.0.0.go",
+        "tables11.0.0.go",
+        "tables12.0.0.go",
+        "tables13.0.0.go",
+        "tables9.0.0.go",
+        "trieval.go",
+    ],
+    cgo = True,
+    importpath = "golang.org/x/text/cases",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal",
+        "//language",
+        "//transform",
+        "//unicode/norm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cases",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "cases_test",
+    srcs = [
+        "context_test.go",
+        "example_test.go",
+        "fold_test.go",
+        "map_test.go",
+        "tables10.0.0_test.go",
+        "tables11.0.0_test.go",
+        "tables12.0.0_test.go",
+        "tables13.0.0_test.go",
+        "tables9.0.0_test.go",
+    ],
+    embed = [":cases"],
+    deps = [
+        "//internal/testtext",
+        "//language",
+        "//transform",
+        "//unicode/norm",
+        "//unicode/rangetable",
+    ],
+)

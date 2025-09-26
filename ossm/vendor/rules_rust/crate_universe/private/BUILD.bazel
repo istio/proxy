@@ -1,0 +1,16 @@
+load(":bootstrap_utils.bzl", "srcs_module")
+
+package(default_visibility = ["//:__subpackages__"])
+
+exports_files(glob(["**"]))
+
+srcs_module(
+    name = "srcs_module",
+    srcs = "//crate_universe:rust_srcs",
+    dest = ":srcs.bzl",
+)
+
+filegroup(
+    name = "bzl_srcs",
+    srcs = glob(["*.bzl"]),
+)

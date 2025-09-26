@@ -1,0 +1,49 @@
+version: "3.7"
+services:
+  collector:
+    build:
+      context: ../../..
+      dockerfile: ./test/e2e/docker/Dockerfile.tool
+    ports:
+      - 19876:19876
+      - 12800:12800
+
+  consumer:
+    build:
+      context: ../../..
+      dockerfile: ./test/e2e/docker/Dockerfile.consumer
+    ports:
+      - 8080:8080
+    command: sh -c "GRPC_VERBOSITY=debug /tmp/bazel-bin/test/e2e/e2e_consumer"
+    depends_on:
+      - collector
+      - bridge
+      - provider
+
+  bridge:
+    build:
+      context: ../../..
+      dockerfile: ./test/e2e/docker/Dockerfile.bridge
+    ports:
+      - 8082:8082
+    environment:
+      SW_AGENT_NAME: bridge
+      SW_AGENT_COLLECTOR_BACKEND_SERVICES: "collector:19876"
+      SW_AGENT_LOGGING_LEVEL: DEBUG
+      SW_FLASK_COLLECT_HTTP_PARAMS: "True"
+      SW_AGENT_LOG_REPORTER_ACTIVE: "False"
+      SW_AGENT_PROFILE_ACTIVE: "False"
+    command: sh -c "sleep 10 && python3 test/e2e/bridge.py"
+    depends_on:
+      - collector
+      - provider
+
+  provider:
+    build:
+      context: ../../..
+      dockerfile: ./test/e2e/docker/Dockerfile.provider
+    ports:
+      - 8081:8081
+    command: sh -c "GRPC_VERBOSITY=debug /tmp/bazel-bin/test/e2e/e2e_provider"
+    depends_on:
+      - collector

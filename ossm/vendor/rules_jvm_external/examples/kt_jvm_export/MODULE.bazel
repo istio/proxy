@@ -1,0 +1,8 @@
+module(name = "rules_jvm_external_examples_kt_jvm_export")
+
+bazel_dep(name = "rules_kotlin", version = "2.1.0")
+bazel_dep(name = "rules_jvm_external", version = "ignored")
+local_path_override(
+    module_name = "rules_jvm_external",
+    path = "../../",
+)

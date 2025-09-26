@@ -1,0 +1,352 @@
+name: CI
+
+# Controls when the action will run
+on:
+    # Triggers the workflow on push or pull request events but only for the main branch
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
+
+concurrency:
+    # Cancel previous actions from the same PR or branch except 'main' branch.
+    # See https://docs.github.com/en/actions/using-jobs/using-concurrency and https://docs.github.com/en/actions/learn-github-actions/contexts for more info.
+    group: concurrency-group::${{ github.workflow }}::${{ github.event.pull_request.number > 0 && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}${{ github.ref_name == 'main' && format('::{0}', github.run_id) || ''}}
+    cancel-in-progress: ${{ github.ref_name != 'main' }}
+
+jobs:
+    # Prepares dynamic test matrix values
+    matrix-prep:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - id: bazel-version
+              name: Prepare 'bazel-version' matrix axis
+              run: |
+                  v=$(head -n 1 .bazelversion)
+                  m=${v::1}
+                  a=(
+                    "major:$m, version:\"$v\""
+                    "major:6, version:\"6.5.0\""
+                  )
+                  printf -v j '{%s},' "${a[@]}"
+                  echo "res=[${j%,}]" | tee -a $GITHUB_OUTPUT
+            - id: config
+              name: Prepare 'config' matrix axis
+              # Only run on main branch (or PR branches that contain 'rbe') to reduce the matrix size for PRs.
+              # Don't run RBE if there is no API key which is the case on forks.
+              run: |
+                  a=( local )
+                  if [[ "${{ github.ref_name }}" == "main" ]] || [[ "${{ github.head_ref }}" == *"rbe"* ]]; then
+                    if [[ "${{ env.BUILDBUDDY_API_KEY }}" ]]; then
+                      a+=( rbe )
+                    fi
+                  fi
+                  printf -v j '"%s",' "${a[@]}"
+                  echo "res=[${j%,}]" | tee -a $GITHUB_OUTPUT
+              env:
+                  BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+            - id: folder
+              name: Prepare 'folder' matrix axis
+              run: |
+                  a=(
+                    .
+                    e2e/bzlmod
+                    e2e/gyp_no_install_script
+                    e2e/js_image_docker
+                    e2e/js_image_oci
+                    e2e/js_run_devserver
+                    e2e/npm_link_package
+                    e2e/npm_link_package-esm
+                    e2e/npm_translate_lock
+                    e2e/npm_translate_lock_empty
+                    e2e/npm_translate_lock_multi
+                    e2e/npm_translate_lock_partial_clone
+                    e2e/npm_translate_lock_subdir_patch
+                    e2e/npm_translate_package_lock
+                    e2e/npm_translate_yarn_lock
+                    e2e/package_json_module
+                    e2e/patch_from_repo
+                    e2e/pnpm_lockfiles
+                    e2e/pnpm_repo_install
+                    e2e/pnpm_workspace
+                    e2e/pnpm_workspace_deps
+                    e2e/pnpm_workspace_rerooted
+                    e2e/rules_foo
+                    e2e/stamped_package_json
+                    e2e/update_pnpm_lock
+                    e2e/update_pnpm_lock_with_import
+                    e2e/vendored_node
+                    e2e/vendored_tarfile
+                    e2e/verify_patches
+                    e2e/webpack_devserver
+                    e2e/webpack_devserver_esm
+                    e2e/worker
+                    e2e/workspace
+                  )
+                  if [[ "${{ env.ASPECT_GHTESTER_SSH_KEY }}" ]]; then
+                    a+=(
+                      e2e/git_dep_metadata
+                      e2e/npm_translate_lock_git+ssh
+                    )
+                  fi
+                  if [[ "${{ env.ASPECT_NPM_AUTH_TOKEN }}" ]]; then
+                    a+=( e2e/npm_translate_lock_auth )
+                  fi
+                  printf -v j '"%s",' "${a[@]}"
+                  echo "res=[${j%,}]" | tee -a $GITHUB_OUTPUT
+              env:
+                  ASPECT_GHTESTER_SSH_KEY: ${{ secrets.ASPECT_GHTESTER_SSH_KEY }}
+                  ASPECT_NPM_AUTH_TOKEN: ${{ secrets.ASPECT_NPM_AUTH_TOKEN }}
+            - id: os
+              name: Prepare 'os' matrix axis
+              # Only run MacOS and Windows on main branch (not PRs) to minimize minutes (billed at 10X and 2X respectively)
+              # https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions#included-storage-and-minutes
+              run: |
+                  a=( ubuntu )
+                  if [[ "${{ github.ref_name }}" == "main" ]] || [[ "${{ github.head_ref }}" == *"macos"* ]]; then
+                    a+=( macos )
+                  fi
+                  if [[ "${{ github.ref_name }}" == "main" ]] || [[ "${{ github.head_ref }}" == *"windows"* ]]; then
+                    a+=( windows )
+                  fi
+                  printf -v j '"%s",' "${a[@]}"
+                  echo "res=[${j%,}]" | tee -a $GITHUB_OUTPUT
+        outputs:
+            bazel-version: ${{ steps.bazel-version.outputs.res }}
+            config: ${{ steps.config.outputs.res }}
+            folder: ${{ steps.folder.outputs.res }}
+            os: ${{ steps.os.outputs.res }}
+
+    test:
+        runs-on: ${{ matrix.os }}-latest
+        needs:
+            - matrix-prep
+        strategy:
+            fail-fast: false
+            matrix:
+                bazel-version: ${{ fromJSON(needs.matrix-prep.outputs.bazel-version) }}
+                bzlmod: [1, 0]
+                os: ${{ fromJSON(needs.matrix-prep.outputs.os) }}
+                config: ${{ fromJSON(needs.matrix-prep.outputs.config) }}
+                folder: ${{ fromJSON(needs.matrix-prep.outputs.folder) }}
+                exclude:
+                    # Exclude Windows default, will opt-in to includes
+                    - os: windows
+                    # Exclude MacOS by default, will opt-in to includes
+                    - os: macos
+                    - bzlmod: 0
+                      folder: e2e/bzlmod
+                    # Don't run RBE tests with Bazel 6 to reduce the size of the test matrix
+                    - bazel-version:
+                          major: 6
+                      config: rbe
+                    # Don't run bzlmod tests with Bazel 6 to reduce the size of the test matrix
+                    - bazel-version:
+                          major: 6
+                      bzlmod: 1
+                    # Don't run workspace smoke test under bzlmod
+                    - bzlmod: 1
+                      folder: e2e/workspace
+                    # Don't run update_pnpm_lock under bzlmod
+                    - bzlmod: 1
+                      folder: e2e/update_pnpm_lock
+                    # Don't run update_pnpm_lock under bzlmod
+                    - bzlmod: 1
+                      folder: e2e/npm_translate_lock_auth
+                    # rules_docker is not compatible with Bazel 7
+                    - bazel-version:
+                          major: 7
+                      folder: e2e/js_image_docker
+                    # TODO: un-exclude the following bzlmod tests once they work
+                    - bzlmod: 1
+                      folder: e2e/js_image_docker
+                    - bzlmod: 1
+                      folder: e2e/js_image_oci
+                    - bzlmod: 1
+                      folder: e2e/npm_link_package-esm
+                    - bzlmod: 1
+                      folder: e2e/npm_link_package
+                    - bzlmod: 1
+                      folder: e2e/rules_foo
+                    - bazel-version:
+                          major: 7
+                      bzlmod: 1
+                      folder: e2e/update_pnpm_lock_with_import
+                    # gyp_no_install_script is broken in an usual way on 6.5.0
+                    # that is not worth investigating as we're dropping Bazel 6 support soon
+                    - bazel-version:
+                          major: 6
+                      bzlmod: 0
+                      folder: e2e/gyp_no_install_script
+                include:
+                    - bazel-version:
+                          major: 7
+                          version: 7.1.1
+                      bzlmod: 1
+                      os: windows
+                      config: local
+                      folder: e2e/bzlmod
+                    - bazel-version:
+                          major: 7
+                          version: 7.1.1
+                      bzlmod: 1
+                      os: macos
+                      config: local
+                      folder: e2e/bzlmod
+                    - bazel-version:
+                          major: 6
+                          version: 6.5.0
+                      bzlmod: 1
+                      os: windows
+                      config: local
+                      folder: e2e/bzlmod
+                    - bazel-version:
+                          major: 6
+                          version: 6.5.0
+                      bzlmod: 1
+                      os: macos
+                      config: local
+                      folder: e2e/bzlmod
+
+        # Steps represent a sequence of tasks that will be executed as part of the job
+        steps:
+            # Checks-out your repository under github.workspace, so your job can access it
+            - uses: actions/checkout@v4
+
+            # Setup an ssh keypair and github.com in known_hosts for e2e/git_dep_metadata,
+            # which exercises fetching a git repository via ssh.
+            - uses: webfactory/ssh-agent@v0.8.0
+              env:
+                  ASPECT_GHTESTER_SSH_KEY: ${{ secrets.ASPECT_GHTESTER_SSH_KEY }}
+              if: env.ASPECT_GHTESTER_SSH_KEY != ''
+              with:
+                  ssh-private-key: ${{ secrets.ASPECT_GHTESTER_SSH_KEY }}
+
+            - name: Mount bazel caches
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.cache/bazel-disk-cache
+                      ~/.cache/bazel-repository-cache
+                      ~/.cache/xdg-cache
+                  key: >-
+                      bazel-cache-${{ matrix.bazel-version.version }}-${{ matrix.bzlmod }}-${{ matrix.os }}-${{ matrix.config }}-${{ matrix.folder }}-
+                      ${{ hashFiles('.bazelrc', '.bazelversion', '.bazeliskrc', '**/BUILD', '**/BUILD.bazel', '**/*.bzl', 'WORKSPACE', 'WORKSPACE.bazel', 'WORKSPACE.bzlmod', 'MODULE.bazel', 'MODULE.bazel.lock', '**/*.js', '!e2e') }}-
+                      ${{ hashFiles(format('{0}/.bazelrc', matrix.folder), format('{0}/.bazelversion', matrix.folder), format('{0}/.bazeliskrc', matrix.folder), format('{0}/**/BUILD', matrix.folder), format('{0}/**/BUILD.bazel', matrix.folder), format('{0}/**/*.bzl', matrix.folder), format('{0}/WORKSPACE', matrix.folder), format('{0}/WORKSPACE.bazel', matrix.folder), format('{0}/WORKSPACE.bzlmod', matrix.folder), format('{0}/MODULE.bazel', matrix.folder), format('{0}/MODULE.bazel.lock', matrix.folder), format('{0}/**/*.js', matrix.folder)) }}
+                  restore-keys: |
+                      bazel-cache-${{ matrix.bazel-version.version }}-${{ matrix.bzlmod }}-${{ matrix.os }}-${{ matrix.config }}-${{ matrix.folder }}-
+
+            - name: Configure Bazel version
+              working-directory: ${{ matrix.folder }}
+              shell: bash
+              run: |
+                  # Overwrite the .bazelversion instead of using USE_BAZEL_VERSION so that Bazelisk
+                  # still bootstraps Aspect CLI from configuration in .bazeliskrc. Aspect CLI will
+                  # then use .bazelversion to determine which Bazel version to use.
+                  echo "${{ matrix.bazel-version.version }}" > .bazelversion
+                  # Delete all the version specific bazelrc files that are used for local development
+                  # since the version we're testing against is dynamic. These are just symlinks and the
+                  # root .bazelrc brings these in with try-imports. In this CI workflows, we explicitly
+                  # bring in the version specific bazelrc file with --bazelrc when we invoke bazel.
+                  rm ${GITHUB_WORKSPACE//\\/\/}/.aspect/bazelrc/bazel*.bazelrc
+
+            - name: Write RBE credentials
+              # Writes RBE credential files
+              if: matrix.config == 'rbe'
+              working-directory: ${{ matrix.folder }}
+              shell: bash
+              run: |
+                  touch $HOME/.bazelrc
+                  chmod 0600 $HOME/.bazelrc
+                  echo "build --remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY" > $HOME/.bazelrc
+              env:
+                  BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+
+            # TODO: remove this block once we have Aspect CLI Windows releases
+            - name: Don't use Aspect CLI on Windows
+              if: matrix.os == 'windows'
+              working-directory: ${{ matrix.folder }}
+              shell: bash
+              run: rm -f .bazeliskrc
+
+            - name: bazel test //...
+              working-directory: ${{ matrix.folder }}
+              shell: bash
+              run: |
+                  bazel \
+                    --bazelrc=${GITHUB_WORKSPACE//\\/\/}/.github/workflows/bazel${{ matrix.bazel-version.major }}.bazelrc \
+                    --bazelrc=${GITHUB_WORKSPACE//\\/\/}/.aspect/bazelrc/ci.bazelrc \
+                    --bazelrc=${GITHUB_WORKSPACE//\\/\/}/.github/workflows/ci.bazelrc \
+                    test \
+                    --config=${{ matrix.config }} \
+                    --test_tag_filters=-skip-on-${{ matrix.config }},-skip-on-bazel${{ matrix.bazel-version.major }} \
+                    --build_tag_filters=-skip-on-${{ matrix.config }},-skip-on-bazel${{ matrix.bazel-version.major }} \
+                    --enable_bzlmod=${{ matrix.bzlmod }} \
+                    //...
+              env:
+                  ASPECT_GH_PACKAGES_AUTH_TOKEN: ${{ secrets.ASPECT_GH_PACKAGES_AUTH_TOKEN }}
+                  ASPECT_NPM_AUTH_TOKEN: ${{ secrets.ASPECT_NPM_AUTH_TOKEN }}
+                  ASPECT_RULES_JS_FROZEN_PNPM_LOCK: 1
+                  XDG_CACHE_HOME: ~/.cache/xdg-cache # bazelisk will download bazel to here
+
+            - name: Check that unused npm packages were not fetched
+              if: matrix.os != 'windows'
+              working-directory: ${{ matrix.folder }}
+              shell: bash
+              run: ls $(bazel info output_base)/external | grep -v __links | grep -vz unused
+
+            # Uncomment for debugging, see https://github.com/aspect-build/rules_js/pull/771
+            # - name: upload bazel-bin
+            #   if: failure() && matrix.folder == '.'
+            #   uses: actions/upload-artifact@v3
+            #   with:
+            #       name: bazel-bin-${{ matrix.bazel-version.version }}
+            #       path: |
+            #           ${{ matrix.folder }}/bazel-bin/js/private/test/image
+            #           !**/node_modules
+            #           !**/*.runfiles
+            #           !**/*.sh
+            #       retention-days: 5
+
+            - name: bazel coverage //...
+              # Don't run on RBE. Coverage does not work properly with RBE. See: bazelbuild/bazel#4685.
+              # Don't run coverage on e2e/bzlmod. It fails evaluating js/private/coverage/BUILD.bazel because write_source_files is not yet bzlmod compatible.
+              # Don't run coverage on Windows. It is currently broken.
+              if: matrix.config == 'local' && matrix.os != 'windows'
+              working-directory: ${{ matrix.folder }}
+              shell: bash
+              run: |
+                  bazel \
+                    --bazelrc=${GITHUB_WORKSPACE//\\/\/}/.github/workflows/bazel${{ matrix.bazel-version.major }}.bazelrc \
+                    --bazelrc=${GITHUB_WORKSPACE//\\/\/}/.aspect/bazelrc/ci.bazelrc \
+                    --bazelrc=${GITHUB_WORKSPACE//\\/\/}/.github/workflows/ci.bazelrc \
+                    coverage \
+                    --config=${{ matrix.config }} \
+                    --test_tag_filters=-skip-on-${{ matrix.config }},-skip-on-bazel${{ matrix.bazel-version.major }} \
+                    --build_tag_filters=-skip-on-${{ matrix.config }},-skip-on-bazel${{ matrix.bazel-version.major }} \
+                    --enable_bzlmod=${{ matrix.bzlmod }} \
+                    --instrument_test_targets \
+                    //...
+              env:
+                  ASPECT_GH_PACKAGES_AUTH_TOKEN: ${{ secrets.ASPECT_GH_PACKAGES_AUTH_TOKEN }}
+                  ASPECT_NPM_AUTH_TOKEN: ${{ secrets.ASPECT_NPM_AUTH_TOKEN }}
+                  ASPECT_RULES_JS_FROZEN_PNPM_LOCK: 1
+                  XDG_CACHE_HOME: ~/.cache/xdg-cache # bazelisk will download bazel to here
+
+            - name: ./test.sh
+              # Run if there is a test.sh file in the folder.
+              if: matrix.os != 'windows' && hashFiles(format('{0}//test.sh', matrix.folder)) != ''
+              working-directory: ${{ matrix.folder }}
+              shell: bash
+              # Run the script potentially setting BZLMOD_FLAG=--enable_bzlmod={1,0}. All test.sh
+              # scripts that run bazel directly should make use of this variable.
+              run: BZLMOD_FLAG=--enable_bzlmod=${{ matrix.bzlmod }} ./test.sh
+              env:
+                  ASPECT_GH_PACKAGES_AUTH_TOKEN: ${{ secrets.ASPECT_GH_PACKAGES_AUTH_TOKEN }}
+                  ASPECT_NPM_AUTH_TOKEN: ${{ secrets.ASPECT_NPM_AUTH_TOKEN }}
+                  ASPECT_RULES_JS_FROZEN_PNPM_LOCK: 1
+                  XDG_CACHE_HOME: ~/.cache/xdg-cache # bazelisk will download bazel to here

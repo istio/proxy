@@ -1,0 +1,11 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_ignore_dependencies foo,bar, baz
+# gazelle:python_ignore_dependencies foo.bar.baz
+
+py_library(
+    name = "python_ignore_dependencies_directive",
+    srcs = ["__init__.py"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@gazelle_python_test//boto3"],
+)

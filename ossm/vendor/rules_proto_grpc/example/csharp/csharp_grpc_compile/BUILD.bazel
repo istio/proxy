@@ -1,0 +1,11 @@
+load("@rules_proto_grpc//csharp:defs.bzl", "csharp_grpc_compile")
+
+csharp_grpc_compile(
+    name = "thing_csharp_grpc",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)
+
+csharp_grpc_compile(
+    name = "greeter_csharp_grpc",
+    protos = ["@rules_proto_grpc//example/proto:greeter_grpc"],
+)

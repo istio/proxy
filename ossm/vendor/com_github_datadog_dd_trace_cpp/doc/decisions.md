@@ -1,0 +1,41 @@
+Here are some topics that were discussed during the design of this library.
+
+- Which version of C++ do we require?
+- Which C core libraries do we produce binaries for?
+    - glibc
+    - musl
+- Which build systems do we support?
+    - CMake
+    - Bazel
+- Which unit testing framework?
+    - Catch2
+    - Google Test
+- Integration tests?
+- Error handling options:
+    - `std::variant<T, Error>`
+    - homebrew a `std::expected<T>`
+    - `throw Error(...)`
+    - `RCode do_thing(T& output)`
+    - `struct Result { Error error; T value; }`
+- Is a `Span` RAII with respect to start/finish?
+- When we begin calculating trace metrics within the tracer, we'll need to hit
+  a `/stats` HTTP endpoint.
+    - Does it live on the same thread as the `Collector`?
+    - Do we invent a library-specific `HTTPClient` interface?
+- Do we keep using cURL for the default `Collector`?
+    - In-tree C++ library instead?
+- Naming conventions:
+    - `class TypeName;`
+    - `.member_function();`
+    - `free_function();`
+    - `f(int func_arg);`
+    - `int local_var;`
+    - `int private_member_;`
+    - `int public_member;`
+    - `enum Color { red, green, blue };`
+    - `which_one<TraceId, TraceID>`
+- Can tracing be reconfigured at runtime?
+- Can multiple tracers share a collector?
+- Are rate limits per-tracer, per-process, or other?
+- Which clang-format version and configuration do we use?
+- Do we separate "public" and "private" APIs, or do we export all headers?

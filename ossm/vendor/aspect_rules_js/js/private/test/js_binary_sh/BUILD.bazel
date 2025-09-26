@@ -1,0 +1,172 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@aspect_bazel_lib//lib:testing.bzl", "assert_contains")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//js:defs.bzl", "js_binary", "js_run_binary")
+
+write_file(
+    name = "write_one",
+    out = "one.js",
+    content = ["1"],
+)
+
+js_binary(
+    name = "one",
+    entry_point = "one.js",
+)
+
+js_run_binary(
+    name = "capture_stderr",
+    log_level = "debug",
+    silent_on_success = False,
+    stderr = "stderr",
+    tool = ":one",
+)
+
+assert_contains(
+    name = "BAZEL_BINDIR_change_directory_test",
+    actual = ":stderr",
+    expected = "DEBUG: aspect_rules_js[js_binary]: changing directory to BAZEL_BINDIR",
+)
+
+assert_contains(
+    name = "BAZEL_BINDIR_test",
+    actual = ":stderr",
+    expected = "DEBUG: aspect_rules_js[js_binary]: BAZEL_BINDIR bazel-out/",
+)
+
+assert_contains(
+    name = "BAZEL_BUILD_FILE_PATH_test",
+    actual = ":stderr",
+    expected = "DEBUG: aspect_rules_js[js_binary]: BAZEL_BUILD_FILE_PATH js/private/test/js_binary_sh/BUILD.bazel",
+)
+
+assert_contains(
+    name = "BAZEL_PACKAGE_test",
+    actual = ":stderr",
+    expected = "DEBUG: aspect_rules_js[js_binary]: BAZEL_PACKAGE js/private/test/js_binary_sh",
+)
+
+assert_contains(
+    name = "BAZEL_TARGET_test",
+    actual = ":stderr",
+    expected = "INFO: aspect_rules_js[js_binary]: BAZEL_TARGET //js/private/test/js_binary_sh:capture_stderr",
+)
+
+assert_contains(
+    name = "BAZEL_TARGET_NAME_test",
+    actual = ":stderr",
+    expected = "DEBUG: aspect_rules_js[js_binary]: BAZEL_TARGET_NAME capture_stderr",
+)
+
+assert_contains(
+    name = "BAZEL_WORKSPACE_wksp_test",
+    actual = ":stderr",
+    expected = "DEBUG: aspect_rules_js[js_binary]: BAZEL_WORKSPACE aspect_rules_js",
+    target_compatible_with = select({
+        "@aspect_bazel_lib//lib:bzlmod": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+assert_contains(
+    name = "BAZEL_WORKSPACE_bzlmod_test",
+    actual = ":stderr",
+    expected = "DEBUG: aspect_rules_js[js_binary]: BAZEL_WORKSPACE _main",
+    target_compatible_with = select({
+        "@aspect_bazel_lib//lib:bzlmod": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+assert_contains(
+    name = "JS_BINARY__BINDIR_test",
+    actual = ":stderr",
+    expected = "DEBUG: aspect_rules_js[js_binary]: JS_BINARY__BINDIR bazel-out/",
+)
+
+assert_contains(
+    name = "JS_BINARY__BUILD_FILE_PATH_test",
+    actual = ":stderr",
+    expected = "DEBUG: aspect_rules_js[js_binary]: JS_BINARY__BUILD_FILE_PATH js/private/test/js_binary_sh/BUILD.bazel",
+)
+
+assert_contains(
+    name = "JS_BINARY__PACKAGE_test",
+    actual = ":stderr",
+    expected = "DEBUG: aspect_rules_js[js_binary]: JS_BINARY__PACKAGE js/private/test/js_binary_sh",
+)
+
+assert_contains(
+    name = "JS_BINARY__TARGET_test",
+    actual = ":stderr",
+    expected = "INFO: aspect_rules_js[js_binary]: JS_BINARY__TARGET //js/private/test/js_binary_sh:one",
+)
+
+assert_contains(
+    name = "JS_BINARY__TARGET_NAME_test",
+    actual = ":stderr",
+    expected = "DEBUG: aspect_rules_js[js_binary]: JS_BINARY__TARGET_NAME one",
+)
+
+assert_contains(
+    name = "JS_BINARY__WORKSPACE_wksp_test",
+    actual = ":stderr",
+    expected = "DEBUG: aspect_rules_js[js_binary]: JS_BINARY__WORKSPACE aspect_rules_js",
+    target_compatible_with = select({
+        "@aspect_bazel_lib//lib:bzlmod": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+assert_contains(
+    name = "JS_BINARY__WORKSPACE_bzlmod_test",
+    actual = ":stderr",
+    expected = "DEBUG: aspect_rules_js[js_binary]: JS_BINARY__WORKSPACE _main",
+    target_compatible_with = select({
+        "@aspect_bazel_lib//lib:bzlmod": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+# js_binary with interesting args: https://github.com/aspect-build/rules_js/issues/1045
+write_file(
+    name = "write_regexy",
+    out = "regexy.js",
+    content = ["""
+        console.log(`${process.argv[2]} + ${process.argv[3]}`);
+    """],
+)
+
+js_binary(
+    name = "regexy",
+    entry_point = "regexy.js",
+)
+
+js_run_binary(
+    name = "_regexy-args",
+    args = [
+        "--arg1='/{{[{]?(.*?)[}]?}}/'",
+        "--arg2='/{%(.*?)%}/'",
+    ],
+    log_level = "debug",
+    silent_on_success = False,
+    stdout = "regexy-stdout",
+    tool = ":regexy",
+)
+
+build_test(
+    name = "regexy-args",
+    targets = [":_regexy-args"],
+)
+
+assert_contains(
+    name = "regexy-args-1",
+    actual = ":regexy-stdout",
+    expected = "--arg1='/{{[{]?(.*?)[}]?}}/'",
+)
+
+assert_contains(
+    name = "regexy-args-2",
+    actual = ":regexy-stdout",
+    expected = "--arg2='/{%(.*?)%}/'",
+)

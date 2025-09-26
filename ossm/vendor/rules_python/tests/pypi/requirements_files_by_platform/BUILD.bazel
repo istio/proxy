@@ -1,0 +1,3 @@
+load(":requirements_files_by_platform_tests.bzl", "requirements_files_by_platform_test_suite")
+
+requirements_files_by_platform_test_suite(name = "requirements_files_by_platform_tests")

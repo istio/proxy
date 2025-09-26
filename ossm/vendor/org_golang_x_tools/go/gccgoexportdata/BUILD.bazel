@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gccgoexportdata",
+    srcs = ["gccgoexportdata.go"],
+    importpath = "golang.org/x/tools/go/gccgoexportdata",
+    visibility = ["//visibility:public"],
+    deps = ["//go/internal/gccgoimporter"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gccgoexportdata",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "gccgoexportdata_test",
+    srcs = ["gccgoexportdata_test.go"],
+    data = glob(["testdata/**"]),
+    deps = [":gccgoexportdata"],
+)

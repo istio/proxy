@@ -1,0 +1,7 @@
+{
+  "extends": ["config:js-app", "helpers:pinGitHubActionDigests"],
+  "ignoreDeps": ["bazel_skylib", "io_bazel_skydoc", "io_bazel_rules_k8s"],
+  "ignorePaths": ["e2e", "tools"],
+  "enabledManagers": ["bazel"],
+  "semanticPrefix": "chore"
+}

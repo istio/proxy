@@ -1,0 +1,11 @@
+load("//:defs.bzl", "proto_plugin")
+
+proto_plugin(
+    name = "d_plugin",
+    exclusions = [
+        "google/protobuf",
+    ],
+    output_directory = True,  # Plugin outputs cannot be predicted when proto packages are used
+    tool = "@com_github_dcarp_protobuf_d//:protoc-gen-d",
+    visibility = ["//visibility:public"],
+)

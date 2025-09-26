@@ -1,0 +1,12 @@
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+
+exports_files([
+    "worker.js",
+])
+
+write_source_files(
+    name = "worker_checked",
+    files = {
+        "worker.js": "//js/private/worker/src:bundle.js",
+    },
+)

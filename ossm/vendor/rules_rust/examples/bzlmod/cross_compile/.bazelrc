@@ -1,0 +1,21 @@
+# Required on windows
+startup --windows_enable_symlinks
+build:windows --enable_runfiles
+
+# This isn't currently the defaut in Bazel, but we enable it to test we'll be ready if/when it flips.
+build --incompatible_disallow_empty_glob
+
+# Required for cargo_build_script support before Bazel 7
+build --incompatible_merge_fixed_and_default_shell_env
+
+## Cross compilation configuration
+# Debug toolchain resolution
+# build --toolchain_resolution_debug='@bazel_tools//tools/cpp:toolchain_type
+
+# Required to support cross compilation from different host systems i.e Mac and Linux
+# https://bazel.build/reference/command-line-reference#flag--enable_platform_specific_config
+common --enable_platform_specific_config
+
+# Required to resolve C/C++ toolchain.
+# https://github.com/bazel-contrib/musl-toolchain?tab=readme-ov-file#setup
+build --incompatible_enable_cc_toolchain_resolution

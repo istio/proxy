@@ -1,0 +1,16 @@
+load("//rust:defs.bzl", "rust_library")
+
+package(default_visibility = ["//test:__subpackages__"])
+
+rust_library(
+    name = "proc_macro_dep",
+    srcs = ["proc_macro_dep.rs"],
+    edition = "2018",
+)
+
+rust_library(
+    name = "proc_macro_dep_with_native_dep",
+    srcs = ["proc_macro_dep_with_native_dep.rs"],
+    edition = "2018",
+    deps = ["//test/unit/proc_macro/leaks_deps/native"],
+)

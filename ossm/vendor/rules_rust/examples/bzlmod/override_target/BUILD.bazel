@@ -1,0 +1,23 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "override_targets_example",
+    srcs = glob(["src/*.rs"]),
+    edition = "2018",
+    deps = [
+        "@override_test//:foo",
+    ],
+)
+
+rust_library(
+    name = "foo",
+    srcs = ["foo.rs"],
+    edition = "2018",
+    visibility = ["//visibility:public"],
+)
+
+rust_test(
+    name = "unit_test",
+    crate = ":override_targets_example",
+    edition = "2018",
+)

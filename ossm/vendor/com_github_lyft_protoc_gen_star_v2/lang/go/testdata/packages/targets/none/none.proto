@@ -1,0 +1,5 @@
+syntax="proto3";
+package packages.targets.none;
+option go_package="targets/none";
+
+message None{}

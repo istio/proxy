@@ -1,0 +1,176 @@
+name: CI
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [main, 1.x]
+  pull_request:
+    branches: [main, 1.x]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+concurrency:
+  # Cancel previous actions from the same PR or branch except 'main' branch.
+  # See https://docs.github.com/en/actions/using-jobs/using-concurrency and https://docs.github.com/en/actions/learn-github-actions/contexts for more info.
+  group: concurrency-group::${{ github.workflow }}::${{ github.event.pull_request.number > 0 && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}${{ github.ref_name == 'main' && format('::{0}', github.run_id) || ''}}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+env:
+  HEAD_REF: ${{ github.head_ref }}
+jobs:
+  # Prepares dynamic test matrix values
+  matrix-prep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: bazel-version
+        name: Prepare 'bazel-version' matrix axis
+        run: |
+          v=$(head -n 1 .bazelversion)
+          m=${v::1}
+          a=(
+            "major:$m, version:\"$v\""
+            "major:7, version:\"7.4.1\""
+            "major:6, version:\"6.5.0\""
+          )
+          printf -v j '{%s},' "${a[@]}"
+          echo "res=[${j%,}]" | tee -a $GITHUB_OUTPUT
+      - id: os
+        name: Prepare 'os' matrix axis
+        # Only run MacOS and Windows on main branch (not PRs) to minimize minutes (billed at 10X and 2X respectively)
+        # https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions#included-storage-and-minutes
+        run: |
+          a=( ubuntu )
+          if [[ "${{ github.ref_name }}" == "main" ]] || [[ "$HEAD_REF" == *"macos"* ]]; then
+            a+=( macos )
+          fi
+          if [[ "${{ github.ref_name }}" == "main" ]] || [[ "$HEAD_REF" == *"windows"* ]]; then
+            a+=( windows )
+          fi
+          printf -v j '"%s",' "${a[@]}"
+          echo "res=[${j%,}]" | tee -a $GITHUB_OUTPUT
+    outputs:
+      bazel-version: ${{ steps.bazel-version.outputs.res }}
+      os: ${{ steps.os.outputs.res }}
+  test:
+    runs-on: ${{ matrix.os }}-latest
+    needs:
+      - matrix-prep
+    strategy:
+      fail-fast: false
+      matrix:
+        bazel-version: ${{ fromJSON(needs.matrix-prep.outputs.bazel-version) }}
+        bzlmod: [1, 0]
+        os: ${{ fromJSON(needs.matrix-prep.outputs.os) }}
+        folder:
+          - "."
+          - "e2e/copy_action"
+          - "e2e/copy_to_directory"
+          - "e2e/coreutils"
+          - "e2e/external_copy_to_directory"
+          - "e2e/smoke"
+          - "e2e/write_source_files"
+        exclude:
+          # Root workspace is bzlmod-only
+          - folder: .
+            bzlmod: 0
+          # Don't test MacOS and Windows against secondary bazel version to minimize minutes (billed at 10X and 2X respectively)
+          # https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions#included-storage-and-minutes
+          - os: macos
+            bazel-version:
+              major: 6
+          - os: windows
+            bazel-version:
+              major: 6
+          # Reduce size of the test matrix:
+          # Don't run workspace tests with Bazel 8
+          # Don't run bzlmod tests with Bazel 6
+          - bazel-version:
+              major: 8
+            bzlmod: 0
+          - bazel-version:
+              major: 6
+            bzlmod: 1
+          # TODO: green up root Workspace on MacOS & Windows
+          - folder: .
+            os: macos
+          - folder: .
+            os: windows
+        include:
+          - folder: docs
+            bzlmod: 1
+            os: ubuntu
+            bazel-version:
+              major: 8
+              version: 8.1.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Mount bazel caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/bazel-disk-cache
+            ~/.cache/bazel-repository-cache
+          key: bazel-cache-${{ matrix.bazel-version.version }}-${{ matrix.bzlmod }}-${{ matrix.os }}-${{ matrix.folder }}-${{ hashFiles('.bazelrc', '.bazelversion', '.bazeliskrc', '**/BUILD', '**/BUILD.bazel', '**/*.bzl', 'WORKSPACE', 'WORKSPACE.bazel', 'WORKSPACE.bzlmod', 'MODULE.bazel') }}
+          restore-keys: bazel-cache-${{ matrix.bazel-version.version }}-${{ matrix.bzlmod }}-${{ matrix.os }}-${{ matrix.folder }}-
+      - name: Configure Bazel version
+        working-directory: ${{ matrix.folder }}
+        shell: bash
+        run: |
+          # Overwrite the .bazelversion instead of using USE_BAZEL_VERSION so that Bazelisk
+          # still bootstraps Aspect CLI from configuration in .bazeliskrc. Aspect CLI will
+          # then use .bazelversion to determine which Bazel version to use.
+          echo "${{ matrix.bazel-version.version }}" > .bazelversion
+          # Delete all the version specific bazelrc files that are used for local development
+          # since the version we're testing against is dynamic. These are just symlinks and the
+          # root .bazelrc brings these in with try-imports. In this CI workflows, we explicitly
+          # bring in the version specific bazelrc file with --bazelrc when we invoke bazel.
+          rm ${GITHUB_WORKSPACE//\\/\/}/.aspect/bazelrc/local/*.bazelrc
+      # TODO: remove this block once we have Aspect CLI Windows releases
+      - name: Don't use Aspect CLI on Windows
+        if: matrix.os == 'windows'
+        working-directory: ${{ matrix.folder }}
+        shell: bash
+        run: rm -f .bazeliskrc
+      - name: bazel test //...
+        working-directory: ${{ matrix.folder }}
+        shell: bash
+        run: |
+          bazel \
+            --bazelrc=${GITHUB_WORKSPACE//\\/\/}/.aspect/bazelrc/bazel${{ matrix.bazel-version.major }}.bazelrc \
+            --bazelrc=${GITHUB_WORKSPACE//\\/\/}/.aspect/bazelrc/ci.bazelrc \
+            --bazelrc=${GITHUB_WORKSPACE//\\/\/}/.github/workflows/ci.bazelrc \
+            test \
+            --test_tag_filters=-skip-on-bazel${{ matrix.bazel-version.major }} \
+            --build_tag_filters=-skip-on-bazel${{ matrix.bazel-version.major }} \
+            --enable_bzlmod=${{ matrix.bzlmod }} \
+            //...
+      - name: Integration tests
+        # Don't run integration tests on Windows since they are bash scripts and Windows runs Powershell
+        if: matrix.folder == '.' && matrix.os != 'windows' && matrix.bazel-version.major != '6'
+        # Find all shell scripts within e2e, echo the filename, execute, fail on error
+        run: find e2e/*.sh -maxdepth 1 -type f -exec sh -c 'echo "\n\n------------------------------- $0 -------------------------------" && BZLMOD_FLAG=${{ steps.set_bzlmod_flag.outputs.bzlmod_flag }} "$0" || kill $PPID' \{\} \;
+      - name: Verify bcr patches
+        if: matrix.folder == '.' && matrix.bzlmod == '1' && matrix.os == 'ubuntu' && matrix.bazel-version.major != '6'
+        run: patch --dry-run -p1 < .bcr/patches/*.patch
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pre-commit/action@v3.0.1
+  # For branch protection settings, this job provides a "stable" name that can be used to gate PR merges
+  # on "all matrix jobs were successful".
+  conclusion:
+    needs: [test, pre-commit]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: technote-space/workflow-conclusion-action@45ce8e0eb155657ab8ccf346ade734257fd196a5 # v3.0.3
+      # Note: possible conclusion values:
+      # https://github.com/technote-space/workflow-conclusion-action/blob/main/src/constant.ts
+      - name: report success
+        if: ${{ env.WORKFLOW_CONCLUSION == 'success' }}
+        working-directory: /tmp
+        run: echo ${{ env.WORKFLOW_CONCLUSION }} && exit 0
+      - name: report failure
+        if: ${{ env.WORKFLOW_CONCLUSION == 'failure' }}
+        working-directory: /tmp
+        run: echo ${{ env.WORKFLOW_CONCLUSION }} && exit 1

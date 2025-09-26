@@ -1,0 +1,73 @@
+# This is a basic workflow to help you get started with Actions
+
+name: cpp2sky test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  format:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup clang-format
+        run: |
+          git clone https://github.com/Sarcasm/run-clang-format.git
+      - name: Run clang-format
+        run: find ./ -iname "*.h" -o -iname "*.cc" | xargs ./run-clang-format/run-clang-format.py
+
+  unit-test:
+    runs-on: ubuntu-20.04
+    steps:
+      - run: |
+          echo "/opt/llvm/bin" >> $GITHUB_PATH
+      - uses: actions/checkout@v3
+      - name: Run bazel test with GCC c++11
+        run: |
+          bazel test --test_output=all --cxxopt=-std=c++0x //...
+      - name: Run bazel test with GCC c++17
+        run: |
+          bazel test --test_output=all --cxxopt=-std=c++17 //...
+      - name: Run bazel test with CLANG c++11
+        run: |
+          bazel test --test_output=all -c dbg --config=clang --cxxopt=-std=c++0x //...
+      - name: Run bazel test with CLANG c++17
+        run: |
+          bazel test --test_output=all -c opt --config=clang --cxxopt=-std=c++17 //...
+      - name: Install cmake dependencies and run cmake compile
+        run: |
+          sudo apt update
+          sudo apt -y install cmake
+          sudo git clone -b v9.1.0 https://github.com/apache/skywalking-data-collect-protocol.git ./3rdparty/skywalking-data-collect-protocol
+          sudo git clone -b v1.46.6 https://github.com/grpc/grpc.git --recursive
+          sudo cmake -S ./grpc -B ./grpc/build
+          sudo cmake --build ./grpc/build --parallel 8 --target install
+          sudo cmake -S . -B ./build
+          sudo cmake --build ./build
+      - name: Install lcov and genhtml and link llvm
+        run: |
+          sudo apt update
+          sudo apt -y install lcov
+          sudo ln -s /usr/bin/llvm-profdata-11 /usr/bin/llvm-profdata
+          sudo ln -s /usr/bin/llvm-cov-11 /usr/bin/llvm-cov
+      - name: Run coverage test
+        run: |
+          ./coverage.sh
+
+  e2e-test:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Prepare service container
+        run: |
+          docker compose -f test/e2e/docker/docker-compose.yml up -d
+      - name: Run e2e
+        run: |
+          sleep 10
+          pip3 install --upgrade pip
+          pip3 install setuptools
+          pip3 install -r test/e2e/requirements.txt
+          python3 test/e2e/main.py --expected_file=test/e2e/data/all_expected.yaml --max_retry_times=3

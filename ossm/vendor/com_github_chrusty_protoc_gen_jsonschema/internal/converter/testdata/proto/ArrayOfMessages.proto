@@ -1,0 +1,9 @@
+syntax = "proto3";
+package samples;
+
+import "PayloadMessage.proto";
+
+message ArrayOfMessages {
+    string description              = 1;
+    repeated PayloadMessage payload = 2;
+}

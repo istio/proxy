@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "packagesinternal",
+    srcs = ["packages.go"],
+    importpath = "golang.org/x/tools/internal/packagesinternal",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/gocommand"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":packagesinternal",
+    visibility = ["//:__subpackages__"],
+)

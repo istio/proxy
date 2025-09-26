@@ -1,0 +1,48 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "person_proto",
+    srcs = ["person.proto"],
+    visibility = ["//visibility:public"],
+    deps = [":place_proto"],
+)
+
+proto_library(
+    name = "place_proto",
+    srcs = ["place.proto"],
+    visibility = ["//visibility:public"],
+    deps = [":thing_proto"],
+)
+
+proto_library(
+    name = "thing_proto",
+    srcs = ["thing.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_protobuf//:any_proto",
+    ],
+)
+
+proto_library(
+    name = "routeguide_proto",
+    srcs = ["routeguide.proto"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "routeguide_features",
+    srcs = ["routeguide_features.json"],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "greeter_grpc",
+    srcs = [
+        "greeter.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":thing_proto",  # Non well-known
+        "@com_google_protobuf//:any_proto",  # Well-known
+    ],
+)

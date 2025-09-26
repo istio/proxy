@@ -1,0 +1,4 @@
+load_str(filename) | split("
+") | .[] | select(length!=0)
+    | [capture("(?P<key>[^\s]+)\s+(?P<value>.*)")]
+    | from_entries

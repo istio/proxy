@@ -1,0 +1,189 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load(":input_from_different_cfg.bzl", "input_from_different_cfg")
+
+write_file(
+    name = "gen_src",
+    out = "src.rs",
+    content = """
+#[cfg(not(generated_file_as_root))]
+pub fn forty_two() -> i32 { 42 }
+
+#[cfg(generated_file_as_root)]
+mod lib_for_src;
+
+#[cfg(generated_file_as_root)]
+pub fn get_forty_two_as_string() -> String {
+    format!("{}", lib_for_src::forty_two())
+}
+""".splitlines(),
+    newline = "unix",
+)
+
+write_file(
+    name = "gen_src_generated",
+    out = "src/generated.rs",
+    content = """
+mod submodule;
+
+#[cfg(test)]
+#[test]
+fn test_foo() {
+    assert_eq!(submodule::foo(), "foo");
+}
+""".splitlines(),
+    newline = "unix",
+)
+
+rust_library(
+    name = "libgensrc",
+    srcs = [
+        "lib.rs",
+        "submodule/mod.rs",
+        ":src.rs",
+    ],
+    edition = "2018",
+    tags = ["norustfmt"],
+)
+
+rust_library(
+    name = "libgensrc_with_crate_root",
+    srcs = [
+        "lib.rs",
+        "submodule/mod.rs",
+        ":src.rs",
+    ],
+    crate_root = "lib.rs",
+    edition = "2018",
+    tags = ["norustfmt"],
+    visibility = ["//visibility:public"],
+)
+
+rust_library(
+    name = "libgensrc_as_crate_root",
+    srcs = [
+        "lib.rs",
+        "lib_for_src.rs",
+        ":src.rs",
+    ],
+    crate_root = ":src.rs",
+    edition = "2018",
+    rustc_flags = ["--cfg=generated_file_as_root"],
+    tags = ["norustfmt"],
+)
+
+rust_library(
+    name = "lib_with_crate_root_in_subdir",
+    srcs = [
+        "src/generated.rs",
+        "src/generated/submodule.rs",
+        "src/lib.rs",
+    ],
+    crate_root = "src/lib.rs",
+    edition = "2018",
+    tags = ["norustfmt"],
+)
+
+rust_test(
+    name = "lib_with_srcs_in_subdir_test",
+    srcs = [
+        "src/generated.rs",
+        "src/generated/submodule.rs",
+        "src/lib.rs",
+    ],
+    edition = "2018",
+    tags = ["norustfmt"],
+)
+
+rust_test(
+    name = "lib_with_crate_root_in_subdir_test",
+    crate = "lib_with_crate_root_in_subdir",
+    edition = "2018",
+    tags = ["norustfmt"],
+)
+
+# When no lib.rs, main.rs file exists, we try to use the file that carries
+# the target's name as a crate_root.
+rust_library(
+    name = "src",
+    srcs = [
+        "lib_for_src.rs",
+        ":src.rs",
+    ],
+    edition = "2018",
+    rustc_flags = ["--cfg=generated_file_as_root"],
+    tags = ["norustfmt"],
+)
+
+rust_test(
+    name = "gensrc_test",
+    crate = ":libgensrc_with_crate_root",
+    edition = "2018",
+    tags = ["norustfmt"],
+)
+
+rust_binary(
+    name = "print_42",
+    srcs = [
+        "main.rs",
+        ":src.rs",
+    ],
+    edition = "2018",
+    tags = ["norustfmt"],
+)
+
+input_from_different_cfg(
+    name = "generated_in_different_cfg",
+)
+
+filegroup(
+    name = "input_from_different_cfg",
+    srcs = [":generated_in_different_cfg"],
+    output_group = "generated_file",
+)
+
+rust_library(
+    name = "gen_src_in_different_cfg_as_root",
+    srcs = [":input_from_different_cfg"],
+    edition = "2018",
+    tags = ["norustfmt"],
+)
+
+rust_test(
+    name = "gen_src_in_different_cfg_as_root_test",
+    crate = "gen_src_in_different_cfg_as_root",
+    edition = "2018",
+    tags = ["norustfmt"],
+)
+
+rust_library(
+    name = "gen_src_in_different_cfg",
+    srcs = [
+        "root.rs",
+        ":input_from_different_cfg",
+    ],
+    crate_root = "root.rs",
+    edition = "2018",
+    tags = ["norustfmt"],
+)
+
+rust_test(
+    name = "gen_src_in_different_cfg_test",
+    crate = "gen_src_in_different_cfg",
+    edition = "2018",
+    tags = ["norustfmt"],
+)
+
+bool_flag(
+    name = "change_cfg",
+    build_setting_default = False,
+)
+
+rust_test(
+    name = "gen_inputs_external_repo_test",
+    # This is regression testing a specific failure case for generated files _not_ in the root
+    # of an external repository.
+    crate = "@generated_inputs_in_external_repo//lib:generated_inputs_external_repo",
+    edition = "2021",
+)

@@ -1,0 +1,23 @@
+os:
+  - linux
+
+compiler:
+  - gcc
+
+language:
+  - python
+
+python:
+  - "2.7"
+  - "3.6"
+
+before_script:
+  - sudo apt-get update -qq
+  - sudo apt-get install luajit -y
+
+script:
+  - buildtools/install-dependencies.sh
+  - autoconf
+  - ./configure
+  - make
+  - make tests

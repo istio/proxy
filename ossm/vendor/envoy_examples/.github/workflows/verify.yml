@@ -1,0 +1,21 @@
+name: Verify
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches:
+    - main
+
+concurrency:
+  group: >-
+    ${{ github.event.inputs.head_ref || github.run_id }}
+
+
+jobs:
+  examples:
+    uses: ./.github/workflows/_verify_examples.yml
+  wasm:
+    uses: ./.github/workflows/_verify_wasm.yml

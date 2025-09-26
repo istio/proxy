@@ -1,0 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "subpackage1",
+    srcs = [
+        "__init__.py",
+        "module1.py",
+    ],
+    imports = ["../.."],
+    # Manual fix to visibility after initial generation.
+    visibility = ["//:__subpackages__"],
+)

@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "fuzz-generator",
+    srcs = [
+        "arrayparm.go",
+        "generator.go",
+        "mapparm.go",
+        "numparm.go",
+        "parm.go",
+        "pointerparm.go",
+        "stringparm.go",
+        "structparm.go",
+        "typedefparm.go",
+        "wraprand.go",
+    ],
+    importpath = "golang.org/x/tools/cmd/signature-fuzzer/internal/fuzz-generator",
+    visibility = ["//cmd/signature-fuzzer:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fuzz-generator",
+    visibility = ["//cmd/signature-fuzzer:__subpackages__"],
+)
+
+go_test(
+    name = "fuzz-generator_test",
+    srcs = ["gen_test.go"],
+    embed = [":fuzz-generator"],
+    deps = ["//internal/testenv"],
+)

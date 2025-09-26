@@ -1,0 +1,7 @@
+cssmin
+jinja2>=3.1.4
+libsass
+packaging
+pelican[Markdown]
+pelican-webassets>=2.1.0
+pyyaml

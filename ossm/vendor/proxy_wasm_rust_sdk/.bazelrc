@@ -1,0 +1,5 @@
+# Disable Bzlmod
+common --noenable_bzlmod
+
+# Force Bazel to use --target=wasm32-wasi
+build --platforms=@rules_rust//rust/platform:wasi

@@ -1,0 +1,22 @@
+load("@cui//:defs.bzl", "aliases", "all_crate_deps")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+exports_files(
+    ["Cargo.toml"],
+    visibility = ["//visibility:public"],
+)
+
+rust_binary(
+    name = "urls_generator",
+    srcs = glob(["src/**/*.rs"]),
+    aliases = aliases(),
+    compile_data = [
+        "//crate_universe/private:urls.bzl",
+    ],
+    edition = "2021",
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    rustc_env = {
+        "MODULE_ROOT_PATH": "$(rootpath //crate_universe/private:urls.bzl)",
+    },
+    deps = all_crate_deps(normal = True),
+)

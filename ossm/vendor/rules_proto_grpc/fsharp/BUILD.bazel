@@ -1,0 +1,30 @@
+load("//:defs.bzl", "proto_plugin")
+
+proto_plugin(
+    name = "fsharp_plugin",
+    options = [
+        "no_server",
+        "no_client",
+    ],
+    outputs = ["{basename|pascal}.fs"],
+    separate_options_flag = True,
+    tool = ":wrapper",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "grpc_fsharp_plugin",
+    outputs = ["{basename|pascal}.fs"],
+    separate_options_flag = True,
+    tool = ":wrapper",
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "wrapper",
+    srcs = ["wrapper.sh"],
+    data = [
+        "@bazel_tools//tools/bash/runfiles",
+        "@grpc-fsharp//:bin",
+    ],
+)

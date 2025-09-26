@@ -1,0 +1,101 @@
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load(":transitive_closure_tests.bzl", "transitive_closure_tests")
+load(":translate_lock_helpers_tests.bzl", "translate_lock_helpers_tests")
+load(":parse_pnpm_lock_tests.bzl", "parse_pnpm_lock_tests")
+load(":yaml_tests.bzl", "yaml_tests")
+load(":utils_tests.bzl", "utils_tests")
+load(":npmrc_test.bzl", "npmrc_tests")
+load(":pkg_glob_tests.bzl", "pkg_glob_tests")
+load(":generated_pkg_json_test.bzl", "generated_pkg_json_test")
+load(":npm_auth_test.bzl", "npm_auth_test_suite")
+
+# gazelle:exclude **/snapshots/**/*
+
+npm_link_all_packages(name = "node_modules")
+
+# Unit tests
+utils_tests(name = "test_utils")
+
+npmrc_tests(name = "test_npmrc")
+
+pkg_glob_tests(name = "test_pkg_glob")
+
+transitive_closure_tests(name = "test_transitive_closure")
+
+translate_lock_helpers_tests(name = "test_translate_lock")
+
+yaml_tests(name = "test_yaml")
+
+parse_pnpm_lock_tests(name = "test_parse_pnpm_lock")
+
+generated_pkg_json_test(name = "test_generated_pkg_json")
+
+npm_auth_test_suite()
+
+write_source_files(
+    name = "write_npm_translate_lock_wksp",
+    files = {
+        "snapshots/wksp/npm_defs.bzl": "@npm//:defs.bzl",
+        "snapshots/wksp/repositories.bzl": "@npm//:repositories.bzl",
+        "snapshots/wksp/chalk_links_defs.bzl": "@npm__chalk__5.0.1__links//:defs.bzl",
+        "snapshots/wksp/unused_links_defs.bzl": "@npm__unused__0.2.2__links//:defs.bzl",
+        "snapshots/wksp/fsevents_links_defs.bzl": "@npm__fsevents__2.3.2__links//:defs.bzl",
+        "snapshots/wksp/rollup_links_defs.bzl": "@npm__rollup__2.70.2__links//:defs.bzl",
+        "snapshots/wksp/package_json.bzl": "@npm__rollup__2.70.2//examples/npm_deps:package_json.bzl",
+        "snapshots/wksp/package_json_with_dashes.bzl": "@npm__webpack-bundle-analyzer__4.5.0__bufferutil_4.0.7//npm/private/test:package_json.bzl",
+    },
+    target_compatible_with = select({
+        "@aspect_bazel_lib//lib:bzlmod": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+write_source_files(
+    name = "write_npm_translate_lock_bzlmod",
+    files = {
+        "snapshots/bzlmod/npm_defs.bzl": "@npm//:defs.bzl",
+        "snapshots/bzlmod/repositories.bzl": "@npm//:repositories.bzl",
+        "snapshots/bzlmod/chalk_links_defs.bzl": "@npm__chalk__5.0.1__links//:defs.bzl",
+        "snapshots/bzlmod/unused_links_defs.bzl": "@npm__unused__0.2.2__links//:defs.bzl",
+        "snapshots/bzlmod/fsevents_links_defs.bzl": "@npm__fsevents__2.3.2__links//:defs.bzl",
+        "snapshots/bzlmod/rollup_links_defs.bzl": "@npm__rollup__2.70.2__links//:defs.bzl",
+        "snapshots/bzlmod/package_json.bzl": "@npm__rollup__2.70.2//examples/npm_deps:package_json.bzl",
+        "snapshots/bzlmod/package_json_with_dashes.bzl": "@npm__webpack-bundle-analyzer__4.5.0__bufferutil_4.0.7//npm/private/test:package_json.bzl",
+    },
+    target_compatible_with = select({
+        "@aspect_bazel_lib//lib:bzlmod": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+build_test(
+    name = "node_modules_test",
+    targets = [
+        # @kubernetes/client-node: has a "prepare" lifecycle hook that runs tsc
+        # lodash: brought in as a vendored .tgz file: vendored/lodash-4.17.21.tgz
+        # puppeteer: has a bin entry in the transitive closure with two segments: @puppeteer/browsers in https://unpkg.com/@puppeteer/browsers@0.5.0/package.json
+        # segfault-handler: has a node-gyp install step
+        ":node_modules",
+    ],
+)
+
+sh_test(
+    name = "bin_test",
+    srcs = ["bin_test.sh"],
+    args = ["$(NODE_PATH)"],
+    data = [
+        # Test that node_modules/.bin binaries work in both the root package
+        # and in subpackages. The relative paths in the two are different since the
+        # actual node entry is in the virtual store which is in the root package.
+        "//:node_modules/typescript",
+        ":node_modules/typescript",
+        # This eager toolchain fetching could be cleaed up in the future
+        "@nodejs_darwin_amd64//:node_files",
+        "@nodejs_darwin_arm64//:node_files",
+        "@nodejs_linux_amd64//:node_files",
+        "@nodejs_linux_arm64//:node_files",
+    ],
+    toolchains = ["@nodejs_toolchains//:resolved_toolchain"],
+)

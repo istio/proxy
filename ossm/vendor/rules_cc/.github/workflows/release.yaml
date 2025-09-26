@@ -1,0 +1,38 @@
+# Automatically perform a release whenever a new "release-like" tag is pushed to the repo.
+name: Release
+
+on:
+  # Can be triggered from the tag.yaml workflow
+  workflow_call:
+    inputs:
+      tag_name:
+        required: true
+        type: string
+    secrets:
+      publish_token:
+        required: true
+  # Or, developers can manually push a tag from their clone
+  push:
+    tags:
+      # Detect tags that look like a release.
+      # Note that we don't use a "v" prefix to help anchor this pattern.
+      # This is purely a matter of preference.
+      - "*.*.*"
+permissions:
+  id-token: write
+  attestations: write
+  contents: write
+jobs:
+  release:
+    uses: bazel-contrib/.github/.github/workflows/release_ruleset.yaml@v7.2.3
+    with:
+      prerelease: false
+      release_files: rules_cc-*.tar.gz
+      tag_name: ${{ inputs.tag_name || github.ref_name }}
+  publish:
+    needs: release
+    uses: ./.github/workflows/publish.yaml
+    with:
+      tag_name: ${{ inputs.tag_name || github.ref_name }}
+    secrets:
+      publish_token: ${{ secrets.publish_token || secrets.BCR_PUBLISH_TOKEN }}

@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "digraph_lib",
+    srcs = ["digraph.go"],
+    importpath = "golang.org/x/tools/cmd/digraph",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "digraph",
+    embed = [":digraph_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "digraph_test",
+    srcs = ["digraph_test.go"],
+    embed = [":digraph_lib"],
+)

@@ -1,0 +1,52 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "protocmp",
+    srcs = [
+        "reflect.go",
+        "util.go",
+        "xform.go",
+    ],
+    importpath = "google.golang.org/protobuf/testing/protocmp",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding/protowire",
+        "//internal/genid",
+        "//internal/msgfmt",
+        "//proto",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+        "//runtime/protoiface",
+        "//runtime/protoimpl",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp/cmpopts:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protocmp",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "protocmp_test",
+    srcs = [
+        "reflect_test.go",
+        "util_test.go",
+        "xform_test.go",
+    ],
+    embed = [":protocmp"],
+    deps = [
+        "//internal/detrand",
+        "//internal/testprotos/test",
+        "//internal/testprotos/textpb2",
+        "//proto",
+        "//reflect/protoreflect",
+        "//testing/protopack",
+        "//types/dynamicpb",
+        "//types/known/anypb",
+        "//types/known/wrapperspb",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

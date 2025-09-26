@@ -1,0 +1,14 @@
+# Tests to verify the root module can interact with the "other_module"
+# submodule.
+#
+# Note that other_module is seen as "our_other_module" due to repo-remapping
+# in the root module.
+
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+build_test(
+    name = "other_module_bin_build_test",
+    targets = [
+        "@our_other_module//other_module/pkg:bin",
+    ],
+)

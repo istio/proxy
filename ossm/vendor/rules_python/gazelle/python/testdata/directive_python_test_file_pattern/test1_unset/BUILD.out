@@ -1,0 +1,18 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+# gazelle:python_generation_mode file
+
+py_test(
+    name = "hello_test",
+    srcs = ["hello_test.py"],
+)
+
+py_test(
+    name = "test_goodbye",
+    srcs = ["test_goodbye.py"],
+)
+
+py_test(
+    name = "test_hello",
+    srcs = ["test_hello.py"],
+)

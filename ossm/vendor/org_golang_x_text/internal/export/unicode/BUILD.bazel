@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "unicode",
+    srcs = ["doc.go"],
+    importpath = "golang.org/x/text/internal/export/unicode",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":unicode",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "unicode_test",
+    srcs = ["unicode_test.go"],
+    embed = [":unicode"],
+    deps = [
+        "//internal/gen",
+        "//internal/testtext",
+        "//internal/ucd",
+    ],
+)

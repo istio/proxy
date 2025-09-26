@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "typeparams_lib",
+    srcs = [
+        "conv2.go",
+        "prime2.go",
+    ],
+    importpath = "golang.org/x/tools/cmd/stringer/testdata/typeparams",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "typeparams",
+    embed = [":typeparams_lib"],
+    visibility = ["//visibility:public"],
+)

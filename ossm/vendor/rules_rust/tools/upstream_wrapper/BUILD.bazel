@@ -1,0 +1,33 @@
+load("//rust:defs.bzl", "rust_binary")
+
+tools = {
+    "cargo": "//rust/toolchain:current_cargo_files",
+    "cargo_clippy": "//rust/toolchain:current_cargo_clippy_files",
+    "rustc": "//rust/toolchain:current_rustc_files",
+    "rustfmt": "//rust/toolchain:current_rustfmt_toolchain_for_target",
+}
+
+all_tools = [target for target in tools.values()]
+
+[
+    rust_binary(
+        name = tool_name,
+        srcs = [
+            "src/main.rs",
+        ],
+        # Cargo calls out to the other tools.
+        # Make sure that they are included in the runfiles.
+        data = all_tools if tool_name == "cargo" else [target],
+        edition = "2018",
+        rustc_env = {
+            "WRAPPED_TOOL_NAME": tool_name,
+            "WRAPPED_TOOL_TARGET": "$(rlocationpath {})".format(target),
+        },
+        toolchains = ["@rules_rust//rust/toolchain:current_rust_toolchain"],
+        visibility = ["//visibility:public"],
+        deps = [
+            "//tools/runfiles",
+        ],
+    )
+    for (tool_name, target) in tools.items()
+]

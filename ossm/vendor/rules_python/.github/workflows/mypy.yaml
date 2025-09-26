@@ -1,0 +1,31 @@
+name: mypy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the code
+      - uses: actions/checkout@v5
+      - uses: jpetrucciani/mypy-check@master
+        with:
+          requirements: 1.6.0
+          python_version: 3.9
+          path: 'python/runfiles'
+      - uses: jpetrucciani/mypy-check@master
+        with:
+          requirements: 1.6.0
+          python_version: 3.9
+          path: 'tests/runfiles'

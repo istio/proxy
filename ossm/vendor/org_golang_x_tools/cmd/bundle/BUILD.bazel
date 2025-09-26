@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "bundle_lib",
+    srcs = ["main.go"],
+    importpath = "golang.org/x/tools/cmd/bundle",
+    visibility = ["//visibility:private"],
+    deps = ["//go/packages"],
+)
+
+go_binary(
+    name = "bundle",
+    embed = [":bundle_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "bundle_test",
+    srcs = ["main_test.go"],
+    embed = [":bundle_lib"],
+    deps = ["//go/packages/packagestest"],
+)

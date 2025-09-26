@@ -1,0 +1,5 @@
+load(":rustdoc_unit_test.bzl", "rustdoc_test_suite")
+
+rustdoc_test_suite(
+    name = "rustdoc_test_suite",
+)

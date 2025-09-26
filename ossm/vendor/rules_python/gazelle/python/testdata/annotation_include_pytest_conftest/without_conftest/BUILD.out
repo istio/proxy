@@ -1,0 +1,16 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+py_test(
+    name = "false_test",
+    srcs = ["false_test.py"],
+)
+
+py_test(
+    name = "true_test",
+    srcs = ["true_test.py"],
+)
+
+py_test(
+    name = "unset_test",
+    srcs = ["unset_test.py"],
+)

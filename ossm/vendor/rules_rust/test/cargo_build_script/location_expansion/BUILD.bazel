@@ -1,0 +1,38 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_test")
+
+write_file(
+    name = "target_data",
+    out = "target_data.txt",
+    content = ["la-li-lu-le-lo"],
+)
+
+write_file(
+    name = "exec_data",
+    out = "exec_data.txt",
+    content = ["la-li-lu-le-lo"],
+)
+
+cargo_build_script(
+    name = "build_rs",
+    srcs = ["build.rs"],
+    build_script_env = {
+        "DATA_EXECPATH": "$(execpath target_data.txt)",
+        "DATA_RLOCATIONPATH": "$(rlocationpath target_data.txt)",
+        "DATA_ROOTPATH": "$(rootpath target_data.txt)",
+        "TOOL_EXECPATH": "$(execpath exec_data.txt)",
+        "TOOL_RLOCATIONPATH": "$(rlocationpath exec_data.txt)",
+        "TOOL_ROOTPATH": "$(rootpath exec_data.txt)",
+    },
+    data = ["target_data.txt"],
+    edition = "2018",
+    tools = ["exec_data.txt"],
+)
+
+rust_test(
+    name = "test",
+    srcs = ["test.rs"],
+    edition = "2018",
+    deps = [":build_rs"],
+)

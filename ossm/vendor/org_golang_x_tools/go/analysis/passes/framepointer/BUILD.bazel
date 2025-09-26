@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "framepointer",
+    srcs = ["framepointer.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/framepointer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/internal/analysisutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":framepointer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "framepointer_test",
+    srcs = ["framepointer_test.go"],
+    deps = [
+        ":framepointer",
+        "//go/analysis/analysistest",
+    ],
+)

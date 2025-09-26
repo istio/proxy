@@ -1,0 +1,16 @@
+load("@rules_proto_grpc//python:defs.bzl", "python_proto_compile")
+
+python_proto_compile(
+    name = "person_python_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+)
+
+python_proto_compile(
+    name = "place_python_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+)
+
+python_proto_compile(
+    name = "thing_python_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

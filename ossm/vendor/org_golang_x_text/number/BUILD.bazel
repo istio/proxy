@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "number",
+    srcs = [
+        "doc.go",
+        "format.go",
+        "number.go",
+        "option.go",
+    ],
+    importpath = "golang.org/x/text/number",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//feature/plural",
+        "//internal/format",
+        "//internal/number",
+        "//language",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":number",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "number_test",
+    srcs = [
+        "examples_test.go",
+        "format_test.go",
+        "number_test.go",
+    ],
+    embed = [":number"],
+    deps = [
+        "//feature/plural",
+        "//language",
+        "//message",
+    ],
+)

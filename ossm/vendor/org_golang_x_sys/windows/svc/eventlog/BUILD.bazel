@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "eventlog",
+    srcs = [
+        "install.go",
+        "log.go",
+    ],
+    importpath = "golang.org/x/sys/windows/svc/eventlog",
+    visibility = ["//visibility:public"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//windows",
+            "//windows/registry",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":eventlog",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "eventlog_test",
+    srcs = ["log_test.go"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            ":eventlog",
+        ],
+        "//conditions:default": [],
+    }),
+)

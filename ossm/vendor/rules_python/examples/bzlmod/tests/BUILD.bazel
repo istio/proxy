@@ -1,0 +1,194 @@
+load("@pythons_hub//:versions.bzl", "MINOR_MAPPING")
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@rules_python//python:py_test.bzl", "py_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+py_binary(
+    name = "version_default",
+    srcs = ["version.py"],
+    main = "version.py",
+)
+
+py_binary(
+    name = "version_3_9",
+    srcs = ["version.py"],
+    main = "version.py",
+    python_version = "3.9",
+)
+
+py_binary(
+    name = "version_3_10",
+    srcs = ["version.py"],
+    main = "version.py",
+    python_version = "3.10",
+)
+
+py_binary(
+    name = "version_3_11",
+    srcs = ["version.py"],
+    main = "version.py",
+    python_version = "3.11",
+)
+
+py_binary(
+    name = "version_3_10_versioned",
+    srcs = ["version.py"],
+    main = "version.py",
+    python_version = "3.10",
+)
+
+# This is a work in progress and the commented
+# tests will not work  until we can support
+# multiple pips with bzlmod.
+
+py_test(
+    name = "my_lib_default_test",
+    srcs = ["my_lib_test.py"],
+    main = "my_lib_test.py",
+    deps = ["//libs/my_lib"],
+)
+
+py_test(
+    name = "my_lib_3_9_test",
+    srcs = ["my_lib_test.py"],
+    main = "my_lib_test.py",
+    python_version = "3.9",
+    deps = ["//libs/my_lib"],
+)
+
+py_test(
+    name = "my_lib_3_10_test",
+    srcs = ["my_lib_test.py"],
+    main = "my_lib_test.py",
+    python_version = "3.10",
+    deps = ["//libs/my_lib"],
+)
+
+py_test(
+    name = "my_lib_versioned_test",
+    srcs = ["my_lib_test.py"],
+    main = "my_lib_test.py",
+    python_version = "3.10",
+    deps = select(
+        {
+            "@rules_python//python/config_settings:is_python_" + MINOR_MAPPING["3.10"]: ["//libs/my_lib"],
+        },
+        no_match_error = """\
+This test is failing to find dependencies and it seems that the is_python_{version}
+does not match the transitioned configuration of python-version 3.10. Please
+look at the
+
+    @rules_python//python/config_settings:config_settings.bzl
+
+to fix any bugs.""".format(
+            version = MINOR_MAPPING["3.10"],
+        ),
+    ),
+)
+
+py_test(
+    name = "version_default_test",
+    srcs = ["version_test.py"],
+    env = {"VERSION_CHECK": "3.9"},  # The default defined in the WORKSPACE.
+    main = "version_test.py",
+)
+
+py_test(
+    name = "version_3_9_test",
+    srcs = ["version_test.py"],
+    env = {"VERSION_CHECK": "3.9"},
+    main = "version_test.py",
+    python_version = "3.9",
+)
+
+py_test(
+    name = "version_3_10_test",
+    srcs = ["version_test.py"],
+    env = {"VERSION_CHECK": "3.10"},
+    main = "version_test.py",
+    python_version = "3.10",
+)
+
+py_test(
+    name = "version_versioned_test",
+    srcs = ["version_test.py"],
+    env = {"VERSION_CHECK": "3.10"},
+    main = "version_test.py",
+    python_version = "3.10",
+)
+
+py_test(
+    name = "version_3_11_test",
+    srcs = ["version_test.py"],
+    env = {"VERSION_CHECK": "3.11"},
+    main = "version_test.py",
+    python_version = "3.11",
+)
+
+py_test(
+    name = "version_default_takes_3_10_subprocess_test",
+    srcs = ["cross_version_test.py"],
+    data = [":version_3_10"],
+    env = {
+        "SUBPROCESS_VERSION_CHECK": "3.10",
+        "SUBPROCESS_VERSION_PY_BINARY": "$(rootpath :version_3_10)",
+        "VERSION_CHECK": "3.9",
+    },
+    main = "cross_version_test.py",
+)
+
+py_test(
+    name = "version_3_10_takes_3_9_subprocess_test",
+    srcs = ["cross_version_test.py"],
+    data = [":version_3_9"],
+    env = {
+        "SUBPROCESS_VERSION_CHECK": "3.9",
+        "SUBPROCESS_VERSION_PY_BINARY": "$(rootpath :version_3_9)",
+        "VERSION_CHECK": "3.10",
+    },
+    main = "cross_version_test.py",
+    python_version = "3.10",
+)
+
+py_test(
+    name = "version_3_10_takes_3_9_subprocess_test_2",
+    srcs = ["cross_version_test.py"],
+    data = [":version_3_9"],
+    env = {
+        "SUBPROCESS_VERSION_CHECK": "3.9",
+        "SUBPROCESS_VERSION_PY_BINARY": "$(rootpath :version_3_9)",
+        "VERSION_CHECK": "3.10",
+    },
+    main = "cross_version_test.py",
+    python_version = "3.10",
+)
+
+sh_test(
+    name = "version_test_binary_default",
+    srcs = ["version_test.sh"],
+    data = [":version_default"],
+    env = {
+        "VERSION_CHECK": "3.9",  # The default defined in the WORKSPACE.
+        "VERSION_PY_BINARY": "$(rootpaths :version_default)",
+    },
+)
+
+sh_test(
+    name = "version_test_binary_3_9",
+    srcs = ["version_test.sh"],
+    data = [":version_3_9"],
+    env = {
+        "VERSION_CHECK": "3.9",
+        "VERSION_PY_BINARY": "$(rootpaths :version_3_9)",
+    },
+)
+
+sh_test(
+    name = "version_test_binary_3_10",
+    srcs = ["version_test.sh"],
+    data = [":version_3_10"],
+    env = {
+        "VERSION_CHECK": "3.10",
+        "VERSION_PY_BINARY": "$(rootpaths :version_3_10)",
+    },
+)

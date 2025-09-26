@@ -1,0 +1,71 @@
+load("//:defs.bzl", "proto_plugin")
+
+# Proto
+proto_plugin(
+    name = "js_plugin",
+    exclusions = [
+        "google/protobuf",
+    ],
+    options = [
+        "import_style=commonjs",
+        "binary",
+    ],
+    outputs = ["{protopath}_pb.js"],
+    tool = "@com_google_protobuf_javascript//generator:protoc-gen-js",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "ts_plugin",
+    outputs = ["{protopath}_pb.d.ts"],
+    tool = "@npm//ts-protoc-gen/bin:protoc-gen-ts",
+    visibility = ["//visibility:public"],
+)
+
+# grpc-node
+proto_plugin(
+    name = "grpc_node_plugin",
+    empty_template = "empty.template",
+    exclusions = [
+        "google/protobuf",
+    ],
+    options = [
+        "grpc_js",
+    ],
+    outputs = ["{protopath}_grpc_pb.js"],
+    tool = "@npm//grpc-tools/bin:grpc_tools_node_protoc_plugin",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "grpc_node_ts_plugin",
+    empty_template = "empty.template",
+    options = [
+        "service=grpc-node",
+        "mode=grpc-js",
+    ],
+    outputs = ["{protopath}_grpc_pb.d.ts"],
+    tool = "@npm//ts-protoc-gen/bin:protoc-gen-ts",
+    visibility = ["//visibility:public"],
+)
+
+# grpc-web
+proto_plugin(
+    name = "grpc_web_js_plugin",
+    empty_template = "empty.template",
+    options = [
+        "import_style=commonjs+dts",
+        "mode=grpcweb",
+    ],
+    outputs = [
+        "{protopath}_grpc_web_pb.js",
+        "{protopath}_grpc_web_pb.d.ts",
+    ],
+    tool = select({
+        "@bazel_tools//src/conditions:darwin_arm64": "@grpc_web_plugin_darwin_arm64//file",
+        "@bazel_tools//src/conditions:darwin_x86_64": "@grpc_web_plugin_darwin_x86_64//file",
+        "@bazel_tools//src/conditions:linux_x86_64": "@grpc_web_plugin_linux//file",
+        "@bazel_tools//src/conditions:windows": "@grpc_web_plugin_windows//file",
+    }),
+    visibility = ["//visibility:public"],
+)

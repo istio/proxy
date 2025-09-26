@@ -1,0 +1,8 @@
+toolchain(
+    name = "toolchain",
+    exec_compatible_with = ["@platforms//cpu:x86_64","@platforms//os:windows"],
+    target_compatible_with = ["@platforms//cpu:wasm32","@platforms//os:none"],
+    toolchain = "@rw-1794486058_tools//:rust_toolchain",
+    toolchain_type = "@rules_rust//rust:toolchain",
+    target_settings = ["@rules_rust//rust/toolchain/channel:nightly"],
+)

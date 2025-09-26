@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gatefs",
+    srcs = ["gatefs.go"],
+    importpath = "golang.org/x/tools/godoc/vfs/gatefs",
+    visibility = ["//visibility:public"],
+    deps = ["//godoc/vfs"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gatefs",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "gatefs_test",
+    srcs = ["gatefs_test.go"],
+    deps = [
+        ":gatefs",
+        "//godoc/vfs",
+    ],
+)

@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "unsafeptr",
+    srcs = ["unsafeptr.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/unsafeptr",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/inspect",
+        "//go/analysis/passes/internal/analysisutil",
+        "//go/ast/inspector",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":unsafeptr",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "unsafeptr_test",
+    srcs = ["unsafeptr_test.go"],
+    deps = [
+        ":unsafeptr",
+        "//go/analysis/analysistest",
+        "//internal/typeparams",
+    ],
+)

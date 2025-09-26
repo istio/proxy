@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package another;
+
+import "camel_case.proto";
+
+message Another {
+    camel_case.NameWithCAPS inner = 1;
+}

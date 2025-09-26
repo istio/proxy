@@ -1,0 +1,33 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load("//:defs.bzl", "rust_prost_library")
+
+proto_library(
+    name = "foo_proto",
+    srcs = [
+        "foo.proto",
+    ],
+    strip_import_prefix = "/private/tests/sanitized_modules",
+)
+
+proto_library(
+    name = "bar_proto",
+    srcs = [
+        "bar.proto",
+    ],
+    deps = [
+        "foo_proto",
+    ],
+)
+
+rust_prost_library(
+    name = "bar_proto_rs",
+    proto = ":bar_proto",
+)
+
+rust_test(
+    name = "sanitized_modules_test",
+    srcs = ["sanitized_modules_test.rs"],
+    edition = "2021",
+    deps = [":bar_proto_rs"],
+)

@@ -1,0 +1,46 @@
+load("//scala:defs.bzl", "scala_grpc_library")
+load("//scala:scala_grpc_library.bzl", "GRPC_DEPS")
+load("@io_bazel_rules_scala//scala:scala.bzl", "scala_binary", "scala_library")
+
+scala_grpc_library(
+    name = "routeguide_scala_grpc",
+    protos = ["//example/proto:routeguide_proto"],
+)
+
+scala_library(
+    name = "persistence",
+    srcs = [
+        "example/RouteGuidePersistence.scala",
+    ],
+    deps = [
+        ":routeguide_scala_grpc",
+    ] + GRPC_DEPS,
+)
+
+scala_library(
+    name = "server",
+    srcs = [
+        "example/AtomicRef.scala",
+        "example/RouteGuideService.scala",
+    ],
+    deps = [
+        ":routeguide_scala_grpc",
+    ],
+)
+
+scala_binary(
+    name = "client",
+    srcs = [
+        "example/RouteGuideClient.scala",
+    ],
+    main_class = "example.RouteGuideClient",
+    resources = ["route_guide_db.json"],
+    visibility = ["//example/routeguide:__pkg__"],
+    deps = [
+        ":persistence",
+        ":routeguide_scala_grpc",
+        ":server",
+    ],
+)
+
+# TODO: routeguide server implementation

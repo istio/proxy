@@ -1,0 +1,13 @@
+load("//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "action_args",
+    srcs = ["action_args.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+)
+
+rust_test(
+    name = "action_args_test",
+    crate = ":action_args",
+)

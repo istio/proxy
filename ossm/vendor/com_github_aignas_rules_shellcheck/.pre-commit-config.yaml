@@ -1,0 +1,10 @@
+---
+repos:
+  - repo: https://github.com/keith/pre-commit-buildifier
+    rev: 6.3.3.1
+    hooks:
+      - id: buildifier
+        args: &args
+          - --warnings=all
+      - id: buildifier-lint
+        args: *args

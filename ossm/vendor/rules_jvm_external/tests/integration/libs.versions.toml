@@ -1,0 +1,11 @@
+[versions]
+# Maybe we should use a BOM for this?
+junitJupiter = "5.12.2"
+
+[libraries]
+guava = { module = "com.google.guava:guava" }
+guavaBom = { module = "com.google.guava:guava-bom", version = "33.4.8-jre" }
+junitApi = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junitJupiter" }
+
+[plugins]
+protobuf = { id = "com.google.protobuf", version = "0.9.5" }

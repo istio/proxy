@@ -1,0 +1,17 @@
+# Directories caches by GitHub actions
+common:local --disk_cache=~/.cache/bazel-disk-cache
+common --repository_cache=~/.cache/bazel-repository-cache
+
+# Bazel-in-bazel support
+test --test_env=XDG_CACHE_HOME
+
+# Remote execution
+build:rbe --bes_backend=grpcs://remote.buildbuddy.io
+build:rbe --bes_results_url=https://app.buildbuddy.io/invocation/
+build:rbe --extra_execution_platforms=@aspect_rules_js//platforms:x86_64_linux_remote
+# local fallback allows genrule to be executed locally if requested explicitly
+build:rbe --genrule_strategy=remote,local
+build:rbe --host_platform=@aspect_rules_js//platforms:x86_64_linux_remote
+build:rbe --jobs=32
+build:rbe --remote_executor=grpcs://remote.buildbuddy.io
+build:rbe --remote_timeout=3600

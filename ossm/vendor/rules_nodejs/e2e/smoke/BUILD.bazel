@@ -1,0 +1,295 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load(":defs.bzl", "my_nodejs")
+
+not_windows = select({
+    # There isn't a published rosetta binary for windows as of Feb 2024
+    "@platforms//os:windows": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
+
+# Trivial test fixture: a nodejs program that writes to a file
+write_file(
+    name = "js",
+    out = "some.js",
+    content = ["require('fs').writeFileSync(process.argv[2], 'stuff')"],
+)
+
+write_file(
+    name = "write_expected",
+    out = "expected",
+    content = ["stuff"],
+)
+
+# This technique can be used to directly grab a node binary as a label, however it has the
+# downside that analysis phase on this select() statement will cause an eager fetch of all
+# the platforms and therefore download a bunch of node binaries.
+# This is what toolchains solves, so we don't recommend doing this.
+# alias(
+#     name = "node_bin",
+#     actual = select({
+#         "@bazel_tools//src/conditions:darwin_arm64": "@nodejs_darwin_arm64//:node_bin",
+#         "@bazel_tools//src/conditions:darwin_x86_64": "@nodejs_darwin_amd64//:node_bin",
+#         "@bazel_tools//src/conditions:linux_aarch64": "@nodejs_linux_arm64//:node_bin",
+#         "@bazel_tools//src/conditions:linux_s390x": "@nodejs_linux_s390x//:node_bin",
+#         "@bazel_tools//src/conditions:linux_x86_64": "@nodejs_linux_amd64//:node_bin",
+#         "@bazel_tools//src/conditions:linux_ppc64le": "@nodejs_linux_ppc64le//:node_bin",
+#         "@bazel_tools//src/conditions:windows": "@nodejs_windows_amd64//:node_bin",
+#         "//conditions:default": "@nodejs_linux_amd64//:node_bin",
+#     }),
+# )
+# genrule(
+#     name = "use_node_bin",
+#     srcs = ["some.js"],
+#     outs = ["thing1"],
+#     cmd = "$(execpath :node_bin) $(execpath some.js) $@",
+#     tools = [":node_bin"],
+# )
+
+# Ensure genrule()s at least build due to diff_test()s being disabled on windows.
+build_test(
+    name = "test_build",
+    targets = [
+        ":call_acorn",
+        ":require_acorn",
+        ":use_nodejs_toolchain",
+    ],
+)
+
+# You can use the node toolchain together with a genrule().
+# This gives you complete control over starting the interpreter, but you also have to
+# manually handle module resolution.
+genrule(
+    name = "use_nodejs_toolchain",
+    srcs = ["some.js"],
+    outs = ["actual1"],
+    cmd = "$(NODE_PATH) $(execpath some.js) $@",
+    toolchains = ["@nodejs_toolchains//:resolved_toolchain"],
+    tools = ["@nodejs_toolchains//:resolved_toolchain"],
+)
+
+diff_test(
+    name = "test_genrule",
+    file1 = "expected",
+    file2 = "actual1",
+    # diff_test has line endings issues on Windows
+    target_compatible_with = not_windows,
+)
+
+# Here, my_nodejs is a fake for something like nodejs_binary or
+# some other custom rule that runs node.
+my_nodejs(
+    name = "run",
+    out = "thing",
+    entry_point = "some.js",
+)
+
+# Assert that the node program wrote the file we expect
+diff_test(
+    name = "test_custom_rule",
+    file1 = "expected",
+    file2 = "thing",
+)
+
+##########################################################
+# Call a program from npm to transform inputs to bazel-out
+
+# For using acorn as our test fixture, this is
+# the serialized AST for the JS program just containing a literal "1"
+write_file(
+    name = "write_expected_ast",
+    out = "expected_ast.json",
+    content = [
+        """{"type":"Program","start":0,"end":1,"body":[{"type":"ExpressionStatement","start":0,"end":1,"expression":{"type":"Literal","start":0,"end":1,"value":1,"raw":"1"}}],"sourceType":"script"}""",
+        "",
+    ],
+)
+
+write_file(
+    name = "write_one",
+    out = "one.js",
+    content = ["1"],
+)
+
+genrule(
+    name = "call_acorn",
+    srcs = ["one.js"],
+    outs = ["actual2"],
+    cmd = """
+        $(NODE_PATH) \\
+        ./$(execpath @npm_acorn-8.5.0)/bin/acorn \\
+        --compact \\
+        $(execpath one.js) \\
+        > $@""",
+    toolchains = ["@nodejs_toolchains//:resolved_toolchain"],
+    tools = [
+        "@nodejs_toolchains//:resolved_toolchain",
+        "@npm_acorn-8.5.0",
+    ],
+)
+
+diff_test(
+    name = "test_acorn",
+    file1 = "actual2",
+    file2 = "expected_ast.json",
+    # diff_test has line endings issues on Windows
+    target_compatible_with = not_windows,
+)
+
+################################################
+# Run a program that requires a package from npm
+
+write_file(
+    name = "write_program",
+    out = "require_acorn.js",
+    content = [
+        "const fs = require('fs')",
+        "const acorn = require('acorn')",
+        "const parsed = JSON.stringify(acorn.parse('1', {ecmaVersion: 2020}))",
+        "fs.writeFileSync(process.argv[2], parsed + '\\n')",
+    ],
+)
+
+genrule(
+    name = "require_acorn",
+    srcs = ["require_acorn.js"],
+    outs = ["actual3"],
+    # Note: confusingly, node uses an environment variable NODE_PATH as a "global"
+    # location for module resolutions, but we used the same name for the Make
+    # variable exposed by the nodejs tooling.
+    # One is interpreted by the bash shell, while the other is interpreted by
+    # bazel, so it doesn't cause any problems.
+    # Note, the trailing "/.." on the NODE_PATH variable is because our target
+    # points to the output directory we wrote, named "acorn", but node needs
+    # to start its module search in a directory *containing" one called "acorn"
+    cmd = """
+        NODE_PATH=./$(execpath @npm_acorn-8.5.0)/.. \\
+        $(NODE_PATH) \\
+        ./$(execpath require_acorn.js) \\
+        $@""",
+    toolchains = ["@nodejs_toolchains//:resolved_toolchain"],
+    tools = [
+        "@nodejs_toolchains//:resolved_toolchain",
+        "@npm_acorn-8.5.0",
+    ],
+)
+
+diff_test(
+    name = "test_require_acorn",
+    file1 = "actual3",
+    file2 = "expected_ast.json",
+    # diff_test has line endings issues on Windows
+    target_compatible_with = not_windows,
+)
+
+################################################
+# Tests and setup for the toolchain changes
+
+# Create file for use in test cases later to get the version of node that is run
+write_file(
+    name = "version",
+    out = "version.js",
+    content = ["require('fs').writeFileSync(process.argv[2], process.version)"],
+)
+
+# Used in nodejs_bianry later to help see which version of node is run
+write_file(
+    name = "binary_version",
+    out = "binary_version.js",
+    content = ["console.log(process.version)"],
+)
+
+# Files used in test cases later that contain the correct nodejs version
+# that is imported into the workspace.
+write_file(
+    name = "write_node_version_15",
+    out = "expected_node_15",
+    content = ["v15.14.0"],
+)
+
+write_file(
+    name = "write_node_version_17",
+    out = "expected_node_17",
+    content = ["v17.9.1"],
+)
+
+write_file(
+    name = "write_node_version_16",
+    out = "expected_node_16",
+    content = ["v16.5.0"],
+)
+
+# To see what nodejs version is used by default
+my_nodejs(
+    name = "run_no_toolchain",
+    out = "thing_no_toolchain",
+    entry_point = "version.js",
+)
+
+# this tests to make sure that the first version imported in the workspace is used as default
+diff_test(
+    name = "node_version_default_toolchain_test",
+    file1 = "write_node_version_16",
+    file2 = "thing_no_toolchain",
+)
+
+# Output contains the version number of node that is used.
+# This is used in tests later to verify the toolchain specified is resolved correctly
+my_nodejs(
+    name = "run_17",
+    out = "thing_toolchain_17",
+    entry_point = "version.js",
+    # using the select statement will download toolchains for all three platforms
+    # you can also just provide an individual toolchain if you don't want to download them all
+    toolchain = select({
+        "@bazel_tools//src/conditions:linux_x86_64": "@node17_linux_amd64//:toolchain",
+        "@bazel_tools//src/conditions:darwin": "@node17_darwin_amd64//:toolchain",
+        "@bazel_tools//src/conditions:windows": "@node17_windows_amd64//:toolchain",
+    }),
+)
+
+# Section of test the verify the toolchain work as expected matching node version used with expected
+diff_test(
+    name = "test_node_version_17",
+    file1 = "write_node_version_17",
+    file2 = "thing_toolchain_17",
+)
+
+my_nodejs(
+    name = "run_16",
+    out = "thing_toolchain_16",
+    entry_point = "version.js",
+    # using the select statement will download toolchains for all three platforms
+    # you can also just provide an individual toolchain if you don't want to download them all
+    toolchain = select({
+        "@bazel_tools//src/conditions:linux_x86_64": "@nodejs_linux_amd64//:toolchain",
+        "@bazel_tools//src/conditions:darwin": "@nodejs_darwin_amd64//:toolchain",
+        "@bazel_tools//src/conditions:windows": "@nodejs_windows_amd64//:toolchain",
+    }),
+)
+
+diff_test(
+    name = "test_node_version_16",
+    file1 = "write_node_version_16",
+    file2 = "thing_toolchain_16",
+)
+
+my_nodejs(
+    name = "run_15",
+    out = "thing_toolchain_15",
+    entry_point = "version.js",
+    # using the select statement will download toolchains for all three platforms
+    # you can also just provide an individual toolchain if you don't want to download them all
+    toolchain = select({
+        "@bazel_tools//src/conditions:linux_x86_64": "@node15_linux_amd64//:toolchain",
+        "@bazel_tools//src/conditions:darwin": "@node15_darwin_amd64//:toolchain",
+        "@bazel_tools//src/conditions:windows": "@node15_windows_amd64//:toolchain",
+    }),
+)
+
+diff_test(
+    name = "test_node_version_15",
+    file1 = "write_node_version_15",
+    file2 = "thing_toolchain_15",
+)

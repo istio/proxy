@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "set",
+    srcs = ["ints.go"],
+    importpath = "google.golang.org/protobuf/internal/set",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":set",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "set_test",
+    srcs = ["ints_test.go"],
+    embed = [":set"],
+)

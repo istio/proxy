@@ -1,0 +1,71 @@
+load("@my_rules_go//extras:gomock.bzl", "gomock")
+load(
+    "@my_rules_go//go:def.bzl",
+    "TOOLS_NOGO",
+    "go_binary",
+    "go_library",
+    "go_test",
+    "nogo",
+)
+
+nogo(
+    name = "my_nogo",
+    visibility = ["//visibility:public"],
+    deps = TOOLS_NOGO,
+)
+
+go_library(
+    name = "lib",
+    srcs = ["lib.go"],
+    importpath = "example.com/lib",
+)
+
+go_binary(
+    name = "main",
+    srcs = ["main.go"],
+    deps = [":lib"],
+)
+
+go_test(
+    name = "test",
+    srcs = ["test.go"],
+    embed = [":lib"],
+)
+
+go_test(
+    name = "sdk_patch_test",
+    srcs = ["sdk_patch_test.go"],
+)
+
+go_library(
+    name = "mockable",
+    srcs = ["mockable.go"],
+    importpath = "example.com/mockable",
+)
+
+gomock(
+    name = "mocks",
+    out = "mockable_mock.go",
+    library = ":mockable",
+    package = "mockable",
+    source = "mockable.go",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "mockable_test",
+    srcs = [
+        "mockable_mock.go",
+        "mockable_test.go",
+    ],
+    embed = [":mockable"],
+    deps = ["@my_rules_go//extras/gomock"],
+)
+
+sh_test(
+    name = "go_tool_test",
+    srcs = ["go_tool_test.sh"],
+    data = ["@my_rules_go//go"],
+    env = {"GO_TOOL_RLOCATION": "$(rlocationpath @my_rules_go//go)"},
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)

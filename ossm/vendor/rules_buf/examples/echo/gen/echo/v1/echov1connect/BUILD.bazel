@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "echov1connect",
+    srcs = ["echo.connect.go"],
+    importpath = "echo/gen/echo/v1/echov1connect",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//gen/echo/v1:echo",
+        "@com_connectrpc_connect//:connect",
+    ],
+)

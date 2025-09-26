@@ -1,0 +1,12 @@
+diff --git a/bazel/defs.bzl b/bazel/defs.bzl
+index 0539ea176ac..8ad158e04f9 100644
+--- a/bazel/defs.bzl
++++ b/bazel/defs.bzl
+@@ -438,6 +438,7 @@ def _v8_target_cpu_transition_impl(settings,
+         "s390x": "s390x",
+         "riscv64": "riscv64",
+         "ppc64": "ppc64le",
++        "ppc": "ppc64le",
+     }
+     v8_target_cpu = mapping[settings["//command_line_option:cpu"]]
+     return {"@v8//bazel/config:v8_target_cpu": v8_target_cpu}

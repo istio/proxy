@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package kitchen;
+option go_package = "github.com/lyft/protoc-gen-star/testdata/generated/kitchen";
+
+service EmptyService {
+}

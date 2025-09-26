@@ -1,0 +1,19 @@
+load(":toolchains.bzl", "protoc_toolchain")
+
+# Define toolchain type for protoc compiler
+toolchain_type(
+    name = "toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+# Create the default protoc toolchain
+protoc_toolchain(
+    name = "protoc",
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "protoc_toolchain",
+    toolchain = ":protoc",
+    toolchain_type = ":toolchain_type",
+)

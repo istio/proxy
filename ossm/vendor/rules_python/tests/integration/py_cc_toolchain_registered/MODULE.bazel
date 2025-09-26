@@ -1,0 +1,7 @@
+module(name = "py_cc_toolchain_registered")
+
+bazel_dep(name = "rules_python", version = "0.0.0")
+local_path_override(
+    module_name = "rules_python",
+    path = "../../..",
+)

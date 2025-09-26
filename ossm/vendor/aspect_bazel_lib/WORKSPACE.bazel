@@ -1,0 +1,2 @@
+# Placeholder indicating the root of a Bazel Workspace, needed only so this repo can be tested against
+# Bazel 6 without --enable_bzlmod.

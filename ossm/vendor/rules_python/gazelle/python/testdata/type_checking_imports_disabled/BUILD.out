@@ -1,0 +1,35 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_generation_mode file
+# gazelle:python_generate_pyi_deps false
+
+py_library(
+    name = "bar",
+    srcs = ["bar.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":baz",
+        ":foo",
+    ],
+)
+
+py_library(
+    name = "baz",
+    srcs = ["baz.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@gazelle_python_test//boto3",
+        "@gazelle_python_test//boto3_stubs",
+    ],
+)
+
+py_library(
+    name = "foo",
+    srcs = ["foo.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@gazelle_python_test//boto3",
+        "@gazelle_python_test//boto3_stubs",
+        "@gazelle_python_test//djangorestframework",
+    ],
+)

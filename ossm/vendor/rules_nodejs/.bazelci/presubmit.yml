@@ -1,0 +1,105 @@
+---
+bazel: 7.1.1
+# Note, this will tell the user to do the wrong thing (manually run buildifer)
+# See https://github.com/bazelbuild/continuous-integration/issues/1161
+buildifier:
+  version: 6.4.0
+  # Keep this in sync with the list in .pre-commit-config.yaml
+  # https://github.com/bazelbuild/buildtools/issues/479 should fix this by giving us a config file
+tasks:
+  ubuntu1804:
+    name: ubuntu1804
+    platform: ubuntu1804
+    build_targets:
+      - "//..."
+    test_flags:
+      - "--test_tag_filters=-skip-on-bazelci-ubuntu"
+    test_targets:
+      - "//..."
+  ubuntu1804-headers:
+    name: ubuntu1804-headers
+    platform: ubuntu1804
+    working_directory: "e2e/headers"
+    build_targets:
+      - "//..."
+    test_flags:
+      - "--test_tag_filters=-skip-on-bazelci-ubuntu"
+    test_targets:
+      - "//..."
+  ubuntu1804-smoke:
+    name: ubuntu1804-smoke
+    platform: ubuntu1804
+    working_directory: "e2e/smoke"
+    build_targets:
+      - "//..."
+    test_flags:
+      - "--test_tag_filters=-skip-on-bazelci-ubuntu"
+    test_targets:
+      - "//..."
+  ubuntu1804-nodejs_host:
+    name: ubuntu1804-nodejs_host
+    platform: ubuntu1804
+    working_directory: "e2e/nodejs_host"
+    build_targets:
+      - "//..."
+    test_flags:
+      - "--test_tag_filters=-skip-on-bazelci-ubuntu"
+    test_targets:
+      - "//..."
+  macos:
+    name: macos
+    platform: macos
+    build_targets:
+      - "//..."
+    test_flags:
+      - "--test_tag_filters=-skip-on-bazelci-macos"
+    test_targets:
+      - "//..."
+  macos-headers:
+    name: macos-headers
+    platform: macos
+    working_directory: "e2e/headers"
+    build_targets:
+      - "//..."
+    test_flags:
+      - "--test_tag_filters=-skip-on-bazelci-macos"
+    test_targets:
+      - "//..."
+  macos-smoke:
+    name: macos-smoke
+    platform: macos
+    working_directory: "e2e/smoke"
+    build_targets:
+      - "//..."
+    test_flags:
+      - "--test_tag_filters=-skip-on-bazelci-macos"
+    test_targets:
+      - "//..."
+  windows-smoke:
+    name: windows-smoke
+    platform: windows
+    working_directory: "e2e/smoke"
+    build_targets:
+      - "//..."
+    test_flags:
+      - "--test_tag_filters=-skip-on-bazelci-windows"
+    test_targets:
+      - "//..."
+  windows-nodejs_host:
+    name: windows-nodejs_host
+    platform: windows
+    working_directory: "e2e/nodejs_host"
+    build_targets:
+      - "//..."
+    test_flags:
+      - "--test_tag_filters=-skip-on-bazelci-windows"
+    test_targets:
+      - "//..."
+  rbe_ubuntu1604-smoke:
+    name: rbe_ubuntu1604-smoke
+    platform: rbe_ubuntu1604
+    working_directory: "e2e/smoke"
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."

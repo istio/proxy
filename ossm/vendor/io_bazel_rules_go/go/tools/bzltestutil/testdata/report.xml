@@ -1,0 +1,19 @@
+<testsuites>
+	<testsuite errors="0" failures="3" skipped="1" tests="7" time="0.030" name="pkg/testing">
+		<testcase classname="testing" name="TestFail" time="0.000">
+			<failure message="Failed" type="">=== RUN   TestFail&#xA;--- FAIL: TestFail (0.00s)&#xA;    test_test.go:23: Not working&#xA;</failure>
+		</testcase>
+		<testcase classname="testing" name="TestPass" time="0.000"></testcase>
+		<testcase classname="testing" name="TestPassLog" time="0.000"></testcase>
+		<testcase classname="testing" name="TestSubtests" time="0.020">
+			<failure message="Failed" type="">=== RUN   TestSubtests&#xA;--- FAIL: TestSubtests (0.02s)&#xA;</failure>
+		</testcase>
+		<testcase classname="testing" name="TestSubtests/another_subtest" time="0.010">
+			<failure message="Failed" type="">=== RUN   TestSubtests/another_subtest&#xA;    --- FAIL: TestSubtests/another_subtest (0.01s)&#xA;        test_test.go:29: from subtest another subtest&#xA;        test_test.go:31: from subtest another subtest&#xA;</failure>
+		</testcase>
+		<testcase classname="testing" name="TestSubtests/subtest_a" time="0.000">
+			<skipped message="Skipped" type="">=== RUN   TestSubtests/subtest_a&#xA;    --- SKIP: TestSubtests/subtest_a (0.00s)&#xA;        test_test.go:29: from subtest subtest a&#xA;        test_test.go:31: from subtest subtest a&#xA;        test_test.go:33: skipping this test&#xA;</skipped>
+		</testcase>
+		<testcase classname="testing" name="TestSubtests/testB" time="0.010"></testcase>
+	</testsuite>
+</testsuites>

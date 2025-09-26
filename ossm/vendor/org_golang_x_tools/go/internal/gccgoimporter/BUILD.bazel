@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gccgoimporter",
+    srcs = [
+        "ar.go",
+        "backdoor.go",
+        "gccgoinstallation.go",
+        "importer.go",
+        "newInterface10.go",
+        "newInterface11.go",
+        "parser.go",
+    ],
+    importpath = "golang.org/x/tools/go/internal/gccgoimporter",
+    visibility = ["//go:__subpackages__"],
+    deps = ["@org_golang_x_sys//execabs:go_default_library"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gccgoimporter",
+    visibility = ["//go:__subpackages__"],
+)
+
+go_test(
+    name = "gccgoimporter_test",
+    srcs = [
+        "gccgoinstallation_test.go",
+        "importer_test.go",
+        "parser_test.go",
+        "testenv_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":gccgoimporter"],
+)

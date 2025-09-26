@@ -1,0 +1,19 @@
+load(":merger.bzl", "coverage_merger")
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+
+exports_files([
+    "coverage.sh.tpl",
+    "coverage.js",
+])
+
+write_source_files(
+    name = "coverage_checked",
+    files = {
+        "coverage.js": "//js/private/coverage/bundle:bundle.js",
+    },
+)
+
+coverage_merger(
+    name = "merger",
+    visibility = ["//visibility:public"],
+)

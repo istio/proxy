@@ -1,0 +1,20 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//python:py_binary.bzl", "py_binary")
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+    visibility = ["//python/private:__pkg__"],
+)
+
+bzl_library(
+    name = "whl_filegroup_bzl",
+    srcs = ["whl_filegroup.bzl"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_binary(
+    name = "extract_wheel_files",
+    srcs = ["extract_wheel_files.py"],
+    visibility = ["//visibility:public"],
+)

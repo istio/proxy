@@ -1,0 +1,13 @@
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "//cmd/autogazelle:all_files",
+        "//cmd/fetch_repo:all_files",
+        "//cmd/gazelle:all_files",
+        "//cmd/generate_repo_config:all_files",
+        "//cmd/move_labels:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)

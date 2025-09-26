@@ -1,0 +1,29 @@
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "versioned_dylib",
+    srcs = [
+        "src/main.rs",
+    ],
+    edition = "2018",
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    deps = [
+        "//test/versioned_dylib/c:libreturn_zero",
+        "@libc",
+    ],
+)
+
+rust_test(
+    name = "versioned_dylib_test",
+    crate = "versioned_dylib",
+    edition = "2018",
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)

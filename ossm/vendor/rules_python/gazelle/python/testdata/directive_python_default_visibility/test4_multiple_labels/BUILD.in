@@ -1,0 +1,1 @@
+# gazelle:python_default_visibility //foo/bar:__pkg__,//tests:__subpackages__,//a:b

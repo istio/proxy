@@ -1,0 +1,17 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+# gazelle:python_test_file_pattern *_test.py
+
+py_library(
+    name = "test2_star_test_py",
+    srcs = [
+        "test_goodbye.py",
+        "test_hello.py",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+py_test(
+    name = "hello_test",
+    srcs = ["hello_test.py"],
+)

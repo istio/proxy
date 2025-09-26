@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "c",
+    srcs = ["c.go"],
+    importpath = "golang.org/x/tools/internal/gcimporter/testdata/issue58296/c",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":c",
+    visibility = ["//:__subpackages__"],
+)

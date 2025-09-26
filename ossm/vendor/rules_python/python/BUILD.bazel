@@ -1,0 +1,371 @@
+# Copyright 2017 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""This package contains two sets of rules:
+
+    1) the "core" Python rules, which were historically bundled with Bazel and
+       are now either re-exported or copied into this repository; and
+
+    2) the packaging rules, which were historically simply known as
+       rules_python.
+
+In an ideal renaming, we'd move the packaging rules to a different package so
+that @rules_python//python is only concerned with the core rules.
+"""
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load(":current_py_toolchain.bzl", "current_py_toolchain")
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]) + [
+        "//python/api:distribution",
+        "//python/bin:distribution",
+        "//python/cc:distribution",
+        "//python/config_settings:distribution",
+        "//python/constraints:distribution",
+        "//python/entry_points:distribution",
+        "//python/extensions:distribution",
+        "//python/local_toolchains:distribution",
+        "//python/pip_install:distribution",
+        "//python/private:distribution",
+        "//python/runfiles:distribution",
+        "//python/runtime_env_toolchains:distribution",
+        "//python/uv:distribution",
+    ],
+    visibility = ["//:__pkg__"],
+)
+
+# ========= bzl_library targets end =========
+
+bzl_library(
+    name = "current_py_toolchain_bzl",
+    srcs = ["current_py_toolchain.bzl"],
+)
+
+bzl_library(
+    name = "defs_bzl",
+    srcs = [
+        "defs.bzl",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":current_py_toolchain_bzl",
+        ":py_binary_bzl",
+        ":py_import_bzl",
+        ":py_info_bzl",
+        ":py_library_bzl",
+        ":py_runtime_bzl",
+        ":py_runtime_info_bzl",
+        ":py_runtime_pair_bzl",
+        ":py_test_bzl",
+    ],
+)
+
+bzl_library(
+    name = "features_bzl",
+    srcs = ["features.bzl"],
+    deps = [
+        "@rules_python_internal//:rules_python_config_bzl",
+    ],
+)
+
+bzl_library(
+    name = "packaging_bzl",
+    srcs = ["packaging.bzl"],
+    deps = [
+        ":py_binary_bzl",
+        "//python/private:bzlmod_enabled_bzl",
+        "//python/private:py_package.bzl",
+        "//python/private:py_wheel_bzl",
+        "//python/private:stamp_bzl",
+        "//python/private:util_bzl",
+        "//python/private:version.bzl",
+        "@bazel_skylib//rules:native_binary",
+    ],
+)
+
+bzl_library(
+    name = "pip_bzl",
+    srcs = ["pip.bzl"],
+    deps = [
+        "//python/private:normalize_name_bzl",
+        "//python/private/pypi:multi_pip_parse_bzl",
+        "//python/private/pypi:package_annotation_bzl",
+        "//python/private/pypi:pip_compile_bzl",
+        "//python/private/pypi:pip_repository_bzl",
+        "//python/private/pypi:whl_library_alias_bzl",
+        "//python/private/whl_filegroup:whl_filegroup_bzl",
+    ],
+)
+
+bzl_library(
+    name = "proto_bzl",
+    srcs = [
+        "proto.bzl",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_protobuf//bazel:py_proto_library_bzl",
+    ],
+)
+
+bzl_library(
+    name = "py_binary_bzl",
+    srcs = ["py_binary.bzl"],
+    deps = [
+        "//python/private:py_binary_macro_bzl",
+        "//python/private:register_extension_info_bzl",
+        "//python/private:util_bzl",
+        "@rules_python_internal//:rules_python_config_bzl",
+    ],
+)
+
+bzl_library(
+    name = "py_cc_link_params_info_bzl",
+    srcs = ["py_cc_link_params_info.bzl"],
+    deps = [
+        "//python/private:py_cc_link_params_info_bzl",
+        "@rules_python_internal//:rules_python_config_bzl",
+    ],
+)
+
+bzl_library(
+    name = "py_exec_tools_info_bzl",
+    srcs = ["py_exec_tools_info.bzl"],
+    deps = ["//python/private:py_exec_tools_info_bzl"],
+)
+
+bzl_library(
+    name = "py_exec_tools_toolchain_bzl",
+    srcs = ["py_exec_tools_toolchain.bzl"],
+    deps = ["//python/private:py_exec_tools_toolchain_bzl"],
+)
+
+bzl_library(
+    name = "py_executable_info_bzl",
+    srcs = ["py_executable_info.bzl"],
+    deps = ["//python/private:py_executable_info_bzl"],
+)
+
+bzl_library(
+    name = "py_import_bzl",
+    srcs = ["py_import.bzl"],
+    deps = [":py_info_bzl"],
+)
+
+bzl_library(
+    name = "py_info_bzl",
+    srcs = ["py_info.bzl"],
+    deps = [
+        "//python/private:py_info_bzl",
+        "//python/private:reexports_bzl",
+        "@rules_python_internal//:rules_python_config_bzl",
+    ],
+)
+
+bzl_library(
+    name = "py_library_bzl",
+    srcs = ["py_library.bzl"],
+    deps = [
+        "//python/private:py_library_macro_bzl",
+        "//python/private:register_extension_info_bzl",
+        "//python/private:util_bzl",
+        "@rules_python_internal//:rules_python_config_bzl",
+    ],
+)
+
+bzl_library(
+    name = "py_runtime_bzl",
+    srcs = ["py_runtime.bzl"],
+    deps = [
+        "//python/private:py_runtime_macro_bzl",
+        "//python/private:util_bzl",
+    ],
+)
+
+bzl_library(
+    name = "py_runtime_pair_bzl",
+    srcs = ["py_runtime_pair.bzl"],
+    deps = [
+        "//python/private:bazel_tools_bzl",
+        "//python/private:py_runtime_pair_macro_bzl",
+        "//python/private:util_bzl",
+    ],
+)
+
+bzl_library(
+    name = "py_runtime_info_bzl",
+    srcs = ["py_runtime_info.bzl"],
+    deps = [
+        "//python/private:py_runtime_info_bzl",
+        "//python/private:reexports_bzl",
+        "//python/private:util_bzl",
+        "@rules_python_internal//:rules_python_config_bzl",
+    ],
+)
+
+bzl_library(
+    name = "py_test_bzl",
+    srcs = ["py_test.bzl"],
+    deps = [
+        "//python/private:py_test_macro_bzl",
+        "//python/private:register_extension_info_bzl",
+        "//python/private:util_bzl",
+        "@rules_python_internal//:rules_python_config_bzl",
+    ],
+)
+
+bzl_library(
+    name = "repositories_bzl",
+    srcs = ["repositories.bzl"],
+    deps = [
+        "//python/private:is_standalone_interpreter_bzl",
+        "//python/private:py_repositories_bzl",
+        "//python/private:python_register_multi_toolchains_bzl",
+        "//python/private:python_register_toolchains_bzl",
+        "//python/private:python_repository_bzl",
+    ],
+)
+
+bzl_library(
+    name = "versions_bzl",
+    srcs = ["versions.bzl"],
+    visibility = ["//:__subpackages__"],
+    deps = ["//python/private:platform_info_bzl"],
+)
+
+# NOTE: Remember to add bzl_library targets to //tests:bzl_libraries
+# ========= bzl_library targets end =========
+
+# Filegroup of bzl files that can be used by downstream rules for documentation generation
+filegroup(
+    name = "bzl",
+    srcs = [
+        "defs.bzl",
+        "packaging.bzl",
+        "pip.bzl",
+        "repositories.bzl",
+        "versions.bzl",
+        "//python/pip_install:bzl",
+        "//python/private:bzl",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# ========= Core rules =========
+
+exports_files([
+    "defs.bzl",
+    "python.bzl",  # Deprecated, please use defs.bzl
+])
+
+# This target can be used to inspect the current Python major version. To use,
+# put it in the `flag_values` attribute of a `config_setting` and test it
+# against the values "PY2" or "PY3". It will always match one or the other.
+#
+# If you do not need to test any other flags in combination with the Python
+# version, then as a convenience you may use the predefined `config_setting`s
+# `@rules_python//python:PY2` and `@rules_python//python:PY3`.
+#
+# Example usage:
+#
+#     config_setting(
+#         name = "py3_on_arm",
+#         values = {"cpu": "arm"},
+#         flag_values = {"@rules_python//python:python_version": "PY3"},
+#     )
+#
+#     my_target(
+#         ...
+#         some_attr = select({
+#             ":py3_on_arm": ...,
+#             ...
+#         }),
+#         ...
+#     )
+#
+# Caution: Do not `select()` on the built-in command-line flags `--force_python`
+# or `--python_version`, as they do not always reflect the true Python version
+# of the current target. `select()`-ing on them can lead to action conflicts and
+# will be disallowed.
+alias(
+    name = "python_version",
+    actual = "@bazel_tools//tools/python:python_version",
+)
+
+alias(
+    name = "PY2",
+    actual = "@bazel_tools//tools/python:PY2",
+)
+
+alias(
+    name = "PY3",
+    actual = "@bazel_tools//tools/python:PY3",
+)
+
+# The toolchain type for Python rules. Provides a Python 2 and/or Python 3
+# runtime.
+alias(
+    name = "toolchain_type",
+    actual = "@bazel_tools//tools/python:toolchain_type",
+)
+
+toolchain_type(
+    name = "exec_tools_toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+# Special target to indicate `None` for label attributes a default value.
+alias(
+    name = "none",
+    actual = "//python/private:sentinel",
+)
+
+# Definitions for a Python toolchain that, at execution time, attempts to detect
+# a platform runtime having the appropriate major Python version. Consider this
+# a toolchain of last resort.
+#
+# The non-strict version allows using a Python 2 interpreter for PY3 targets,
+# and vice versa. The only reason to use this is if you're working around
+# spurious failures due to PY2 vs PY3 validation. Even then, using this is only
+# safe if you know for a fact that your build is completely compatible with the
+# version of the `python` command installed on the target platform.
+
+alias(
+    name = "autodetecting_toolchain",
+    actual = "//python/runtime_env_toolchains:runtime_env_toolchain",
+    deprecation = "Use //python/runtime_env_toolchains:all instead",
+)
+
+alias(
+    name = "autodetecting_toolchain_nonstrict",
+    actual = "//python/runtime_env_toolchains:runtime_env_toolchain",
+    deprecation = "Use //python/runtime_env_toolchains:all instead",
+)
+
+# ========= Packaging rules =========
+
+exports_files([
+    "packaging.bzl",
+    "pip.bzl",
+])
+
+current_py_toolchain(
+    name = "current_py_toolchain",
+)

@@ -1,0 +1,4 @@
+# gazelle:python_library_naming_convention my_$package_name$_library
+# gazelle:python_binary_naming_convention my_$package_name$_binary
+# gazelle:python_test_naming_convention my_$package_name$_test
+# gazelle:python_resolve_sibling_imports true

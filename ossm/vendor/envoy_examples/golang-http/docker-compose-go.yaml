@@ -1,0 +1,18 @@
+services:
+  go_plugin_compile:
+    user: ${UID:-1000}:${GID:-1000}
+    build:
+      context: simple
+      dockerfile: ../../shared/golang/Dockerfile
+      target: golang-base
+    command: >
+      bash -c "
+      mkdir -p lib
+      && cd simple
+      && go build -o ../lib/simple.so -buildmode=c-shared ."
+    working_dir: /source
+    environment:
+    - GOFLAGS=-buildvcs=false
+    - HOME=/tmp
+    volumes:
+    - .:/source

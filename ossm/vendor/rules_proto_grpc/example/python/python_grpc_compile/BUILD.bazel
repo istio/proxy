@@ -1,0 +1,11 @@
+load("@rules_proto_grpc//python:defs.bzl", "python_grpc_compile")
+
+python_grpc_compile(
+    name = "thing_python_grpc",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)
+
+python_grpc_compile(
+    name = "greeter_python_grpc",
+    protos = ["@rules_proto_grpc//example/proto:greeter_grpc"],
+)

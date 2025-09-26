@@ -1,0 +1,36 @@
+
+config_setting(
+    name = "prefix_version_setting",
+    values = {"java_runtime_version": "remotejdk_8"},
+    visibility = ["//visibility:private"],
+)
+config_setting(
+    name = "version_setting",
+    values = {"java_runtime_version": "8"},
+    visibility = ["//visibility:private"],
+)
+alias(
+    name = "version_or_prefix_version_setting",
+    actual = select({
+        ":version_setting": ":version_setting",
+        "//conditions:default": ":prefix_version_setting",
+    }),
+    visibility = ["//visibility:private"],
+)
+toolchain(
+    name = "toolchain",
+    target_compatible_with = ["@platforms//os:linux", "@platforms//cpu:s390x"],
+    target_settings = [":version_or_prefix_version_setting"],
+    toolchain_type = "@bazel_tools//tools/jdk:runtime_toolchain_type",
+    toolchain = "@remote_jdk8_linux_s390x//:jdk",
+)
+toolchain(
+    name = "bootstrap_runtime_toolchain",
+    # These constraints are not required for correctness, but prevent fetches of remote JDK for
+    # different architectures. As every Java compilation toolchain depends on a bootstrap runtime in
+    # the same configuration, this constraint will not result in toolchain resolution failures.
+    exec_compatible_with = ["@platforms//os:linux", "@platforms//cpu:s390x"],
+    target_settings = [":version_or_prefix_version_setting"],
+    toolchain_type = "@bazel_tools//tools/jdk:bootstrap_runtime_toolchain_type",
+    toolchain = "@remote_jdk8_linux_s390x//:jdk",
+)

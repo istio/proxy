@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sumdb",
+    srcs = [
+        "cache.go",
+        "client.go",
+        "server.go",
+        "test.go",
+    ],
+    importpath = "golang.org/x/mod/sumdb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/lazyregexp",
+        "//module",
+        "//sumdb/note",
+        "//sumdb/tlog",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sumdb",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sumdb_test",
+    srcs = ["client_test.go"],
+    embed = [":sumdb"],
+    deps = [
+        "//sumdb/note",
+        "//sumdb/tlog",
+    ],
+)

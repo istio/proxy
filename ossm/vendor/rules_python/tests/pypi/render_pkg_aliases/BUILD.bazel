@@ -1,0 +1,3 @@
+load(":render_pkg_aliases_test.bzl", "render_pkg_aliases_test_suite")
+
+render_pkg_aliases_test_suite(name = "render_pkg_aliases_tests")

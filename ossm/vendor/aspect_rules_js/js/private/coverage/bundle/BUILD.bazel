@@ -1,0 +1,31 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//js/private/coverage/bundle:rollup/package_json.bzl", rollup_bin = "bin")
+
+npm_link_all_packages(name = "node_modules")
+
+rollup_bin.rollup(
+    name = "bundle",
+    srcs = [
+        "c8.js",
+        "package.json",
+        "rollup.config.js",
+        ":node_modules/@rollup/plugin-commonjs",
+        ":node_modules/@rollup/plugin-json",
+        ":node_modules/@rollup/plugin-node-resolve",
+        ":node_modules/c8",
+    ],
+    outs = [
+        "bundle.js",
+    ],
+    args = [
+        "c8.js",
+        "--config",
+        "rollup.config.js",
+        "--format",
+        "cjs",
+        "--file",
+        "bundle.js",
+    ],
+    chdir = package_name(),
+    visibility = ["//js/private/coverage:__pkg__"],
+)

@@ -1,0 +1,9 @@
+<nav class="nav">
+  <ul class="container-fluid">
+    {% for link in NAV %}
+    <li>
+      <a href="{{ link.url }}">{{ link.text }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+</nav>

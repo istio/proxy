@@ -1,0 +1,304 @@
+---
+workspaces:
+    .:
+        icon: js
+        label: rules_js
+        tasks:
+            - test:
+    e2e/bzlmod:
+        icon: bazel
+        tasks:
+            - test:
+                  queue: aspect-default
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/gyp_no_install_script:
+        icon: npm
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    # rules_docker not compatible with Bazel 7.
+    # See https://github.com/bazelbuild/bazel/issues/20494#issuecomment-1852401451.
+    # e2e/js_image_docker:
+    e2e/js_image_oci:
+        icon: linux
+        tasks:
+            - test:
+                  queue: aspect-default
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    # No test targets. Requires running test.sh.
+    # e2e/js_run_devserver:
+    e2e/npm_link_package:
+        icon: npm
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/npm_link_package-esm:
+        icon: npm
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/npm_translate_lock:
+        icon: npm
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/npm_translate_lock_empty:
+        icon: npm
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/npm_translate_lock_multi:
+        icon: npm
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/npm_translate_lock_partial_clone:
+        icon: npm
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/npm_translate_lock_subdir_patch:
+        icon: npm
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    # Requires an auth token
+    # e2e/npm_translate_lock_auth:
+    # Requires an SSH token
+    # e2e/npm_translate_lock_git+ssh:
+    e2e/npm_translate_package_lock:
+        icon: npm
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/npm_translate_yarn_lock:
+        icon: yarn
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/package_json_module:
+        icon: npm
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/pnpm_lockfiles:
+        icon: pnpm
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/pnpm_workspace:
+        icon: pnpm
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/pnpm_workspace_rerooted:
+        icon: pnpm
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/repo_mapping:
+        icon: js
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/rules_foo:
+        icon: js
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    e2e/vendored_node:
+        icon: js
+        tasks:
+            - test:
+                  queue: aspect-medium
+            - format:
+                  without: true
+            - buildifier:
+                  without: true
+            - configure:
+                  without: true
+            - delivery:
+                  without: true
+    # No test targets. Requires running test.sh.
+    # e2e/webpack_devserver:
+    # e2e/webpack_devserver_esm:
+tasks:
+    - checkout:
+          update_strategy: rebase
+    - test:
+          hooks:
+              - type: before_task
+                command: vmstat -a -S M -t 1 2>&1 > vmstat.out &
+              - type: after_task
+                command: cat vmstat.out
+          artifact_paths:
+              - vmstat.out
+              - build_event_log.bin
+    - format:
+          queue: aspect-medium
+    - buildifier:
+          queue: aspect-medium
+    - configure:
+          queue: aspect-medium
+    - delivery:
+          auto_deliver: true
+          stamp_flags:
+              - --stamp
+              - --workspace_status_command="${PWD}/workspace_status.sh"
+          rules:
+              - deliverable: 'attr("tags", "\bdeliverable\b", //...)'
+                condition:
+                    branches:
+                        - main
+              - deliverable:
+                    - //docs:docs_delivery
+                condition:
+                    only_on_change: false
+                    branches:
+                        - main
+    - finalization:
+          queue: aspect-small
+notifications:
+    github: {}

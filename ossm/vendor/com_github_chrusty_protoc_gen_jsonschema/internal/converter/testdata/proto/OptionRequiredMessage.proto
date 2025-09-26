@@ -1,0 +1,12 @@
+syntax = "proto3";
+package samples;
+import "options.proto";
+
+message OptionRequiredMessage {
+    option (protoc.gen.jsonschema.message_options).all_fields_required = true;
+    string name2       = 1;
+    string timestamp2  = 2;
+    int32 id2          = 3;
+    float rating2      = 4;
+    bool complete2     = 5;
+}

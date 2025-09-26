@@ -1,0 +1,59 @@
+load("@aspect_bazel_lib//lib:testing.bzl", "assert_contains")
+load("@aspect_rules_js//js:defs.bzl", "js_test")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//:less/package_json.bzl", less_bin = "bin")
+load("@npm//:jasmine/package_json.bzl", jasmine_bin = "bin")
+load("@npm_meaning-of-life__links//:defs.bzl", npm_link_meaning_of_life = "npm_link_imported_package")
+
+not_windows = select({
+    "@platforms//os:windows": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
+
+npm_link_all_packages(
+    name = "node_modules",
+    imported_links = [
+        npm_link_meaning_of_life,
+    ],
+)
+
+js_test(
+    name = "test",
+    data = [
+        ":node_modules/chalk",
+        ":node_modules/meaning-of-life",
+    ],
+    entry_point = "main.mjs",
+)
+
+less_bin.lessc(
+    name = "styles",
+    srcs = ["my.less"],
+    outs = ["my.css"],
+    args = [
+        "my.less",
+        "my.css",
+    ],
+)
+
+assert_contains(
+    name = "check_styles",
+    actual = "my.css",
+    expected = ".box,\n.bar {\n  width: 100px;",
+    # assert_contains currently requires runfiles; needs fixing upstream
+    target_compatible_with = not_windows,
+)
+
+jasmine_bin.jasmine_test(
+    name = "jasmine_test",
+    args = ["*.spec.js"],
+    data = ["test.spec.js"],
+    # jasmine doesn't know to run without runfiles
+    target_compatible_with = not_windows,
+)
+
+build_test(
+    name = "node_modules_test",
+    targets = ["//:node_modules"],
+)

@@ -1,0 +1,24 @@
+common: &common
+  working_directory: ../examples/naming_package_files
+  build_targets:
+  - "..."
+
+tasks:
+  centos7:
+    platform: centos7_java11_devtoolset10
+    <<: *common
+  ubuntu2204:
+    platform: ubuntu2204
+    <<: *common
+  macos:
+    platform: macos
+    <<: *common
+  windows:
+    platform: windows
+    <<: *common
+  bzlmod:
+    name: bzlmod
+    platform: ubuntu2204
+    build_flags:
+      - "--enable_bzlmod"
+    <<: *common

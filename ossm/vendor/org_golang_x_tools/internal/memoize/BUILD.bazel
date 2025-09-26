@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "memoize",
+    srcs = ["memoize.go"],
+    importpath = "golang.org/x/tools/internal/memoize",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/xcontext"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":memoize",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "memoize_test",
+    srcs = ["memoize_test.go"],
+    deps = [":memoize"],
+)

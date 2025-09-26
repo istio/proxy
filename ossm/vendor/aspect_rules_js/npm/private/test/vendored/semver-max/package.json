@@ -1,0 +1,38 @@
+{
+    "name": "semver-max",
+    "version": "1.0.0",
+    "description": "Find maximum (or minimum) version according to semver",
+    "author": "Eugene Sharygin <eush77@gmail.com>",
+    "license": "MIT",
+    "scripts": {
+        "test": "tape test/*.js"
+    },
+    "files": [
+        "index.js"
+    ],
+    "homepage": "https://github.com/eush77/semver-max",
+    "repository": "eush77/semver-max",
+    "bugs": {
+        "url": "https://github.com/eush77/semver-max/issues"
+    },
+    "keywords": [
+        "semver",
+        "version",
+        "maximum",
+        "minimum",
+        "max",
+        "min",
+        "gt",
+        "gte",
+        "lt",
+        "lte",
+        "reduce"
+    ],
+    "dependencies": {
+        "semver": "^5.0.1",
+        "is-odd": "3.0.1"
+    },
+    "devDependencies": {
+        "tape": "^4.0.1"
+    }
+}

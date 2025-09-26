@@ -1,0 +1,50 @@
+# Copyright 2021-2025 Buf Technologies, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_gazelle//:def.bzl", "gazelle")
+load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
+
+# gazelle:prefix github.com/bufbuild/rules_buf
+# gazelle:exclude examples/
+gazelle(
+    name = "gazelle",
+)
+
+gazelle(
+    name = "gazelle_update_repos",
+    args = [
+        "-from_file=go.mod",
+        "-prune",
+        "-to_macro=repositories.bzl%go_repositories",
+    ],
+    command = "update-repos",
+)
+
+stardoc(
+    name = "buf_rule_docs",
+    out = "buf-rules.md",
+    input = "//buf:defs.bzl",
+    symbol_names = [
+        "buf_lint_test",
+        "buf_breaking_test",
+    ],
+    deps = [
+        "//buf:defs",
+    ],
+)
+
+buildifier(
+    name = "buildifier",
+)

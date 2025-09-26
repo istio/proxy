@@ -1,0 +1,26 @@
+# Darwin targets build on the host
+# https://github.com/rust-embedded/cross/issues/223
+# [target.aarch64-apple-darwin]
+# image = "rustembedded/cross:aarch64-apple-darwin"
+
+[target.aarch64-unknown-linux-gnu]
+image = "rustembedded/cross:aarch64-unknown-linux-gnu@sha256:f0695f83156b2bfd3f946637852779207ff247ef60912aa74c2d27006fdf3e60"
+
+# Darwin targets build on the host
+# https://github.com/rust-embedded/cross/issues/223
+# [target.x86_64-apple-darwin]
+# image = "rustembedded/cross:x86_64-apple-darwin"
+
+[target.x86_64-pc-windows-gnu]
+image = "rustembedded/cross:x86_64-pc-windows-gnu@sha256:14d1808255d9e45fb99ef175d75820c3f2194c683df7487a1687d569876d585c"
+
+# Windows MSVC targets build on the host
+# https://github.com/rust-embedded/cross/issues/487
+# [target.x86_64-pc-windows-msvc]
+# image = "rustembedded/cross:x86_64-pc-windows-msvc"
+
+[target.x86_64-unknown-linux-gnu]
+image = "rustembedded/cross:x86_64-unknown-linux-gnu@sha256:f279cf1a8aa8b85717cd53d48bcb2f82e01bde6a47c8c469ebf9ad10415bb2be"
+
+[target.x86_64-unknown-linux-musl]
+image = "rustembedded/cross:x86_64-unknown-linux-musl@sha256:156c441c6b4da1d68599b9d88b4737cf05b7f1bd450a0f6b0a514892e008e373"

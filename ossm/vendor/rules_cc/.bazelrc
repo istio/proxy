@@ -1,0 +1,2 @@
+# Required by googletest 1.17.
+common --cxxopt=-std=c++17

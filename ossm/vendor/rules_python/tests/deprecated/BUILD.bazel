@@ -1,0 +1,96 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load(
+    "@python//3.11:defs.bzl",
+    hub_compile_pip_requirements = "compile_pip_requirements",
+    hub_py_binary = "py_binary",
+    hub_py_console_script_binary = "py_console_script_binary",
+    hub_py_test = "py_test",
+)
+load(
+    "@python_3_11//:defs.bzl",
+    versioned_compile_pip_requirements = "compile_pip_requirements",
+    versioned_py_binary = "py_binary",
+    versioned_py_console_script_binary = "py_console_script_binary",
+    versioned_py_test = "py_test",
+)
+load("//python/config_settings:transition.bzl", transition_py_binary = "py_binary", transition_py_test = "py_test")
+
+# TODO @aignas 2025-01-22: remove the referenced symbols when releasing v2
+
+transition_py_binary(
+    name = "transition_py_binary",
+    srcs = ["dummy.py"],
+    main = "dummy.py",
+    python_version = "3.11",
+)
+
+transition_py_test(
+    name = "transition_py_test",
+    srcs = ["dummy.py"],
+    main = "dummy.py",
+    python_version = "3.11",
+)
+
+versioned_py_binary(
+    name = "versioned_py_binary",
+    srcs = ["dummy.py"],
+    main = "dummy.py",
+)
+
+versioned_py_test(
+    name = "versioned_py_test",
+    srcs = ["dummy.py"],
+    main = "dummy.py",
+)
+
+versioned_py_console_script_binary(
+    name = "versioned_py_console_script_binary",
+    pkg = "@rules_python_publish_deps//twine",
+    script = "twine",
+)
+
+versioned_compile_pip_requirements(
+    name = "versioned_compile_pip_requirements",
+    src = "requirements.in",
+    requirements_txt = "requirements.txt",
+)
+
+hub_py_binary(
+    name = "hub_py_binary",
+    srcs = ["dummy.py"],
+    main = "dummy.py",
+)
+
+hub_py_test(
+    name = "hub_py_test",
+    srcs = ["dummy.py"],
+    main = "dummy.py",
+)
+
+hub_py_console_script_binary(
+    name = "hub_py_console_script_binary",
+    pkg = "@rules_python_publish_deps//twine",
+    script = "twine",
+)
+
+hub_compile_pip_requirements(
+    name = "hub_compile_pip_requirements",
+    src = "requirements.in",
+    requirements_txt = "requirements_hub.txt",
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        "transition_py_binary",
+        "transition_py_test",
+        "versioned_py_binary",
+        "versioned_py_test",
+        "versioned_py_console_script_binary",
+        "versioned_compile_pip_requirements",
+        "hub_py_binary",
+        "hub_py_test",
+        "hub_py_console_script_binary",
+        "hub_compile_pip_requirements",
+    ],
+)

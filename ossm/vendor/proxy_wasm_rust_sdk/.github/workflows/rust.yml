@@ -1,0 +1,370 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Rust
+
+on:
+
+  pull_request:
+    branches:
+    - main
+
+  push:
+    branches:
+    - main
+
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+
+  licenses:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '^1.16'
+
+    - name: Check licenses
+      run: |
+        go install github.com/google/addlicense@latest
+        export PATH=$PATH:$(go env GOPATH)/bin
+        addlicense -check -ignore "bazel/cargo/remote/**" .
+
+  bazel:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '^1.16'
+
+    - name: Install dependencies
+      if: ${{ env.ACT }}
+      run: |
+        go install github.com/bazelbuild/bazelisk@v1.19.0
+
+    - name: Cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cache/bazel
+          ~/.cache/bazelisk
+          ~/.cargo/.crates.toml
+          ~/.cargo/.crates2.json
+          ~/.cargo/bin
+          ~/.cargo/registry
+        key: ${{ hashFiles('WORKSPACE', '.bazelrc', '.bazelversion', 'bazel/cargo/Cargo.Bazel.lock', 'bazel/dependencies.bzl', 'bazel/repositories.bzl') }}
+
+    - name: Build (wasm32-unknown-unknown)
+      run: bazelisk --noworkspace_rc build --noenable_bzlmod --platforms=@rules_rust//rust/platform:wasm //...
+
+    - name: Build (wasm32-wasi)
+      run: bazelisk --noworkspace_rc build --noenable_bzlmod --platforms=@rules_rust//rust/platform:wasi //...
+
+    - name: Format (buildifier)
+      run: |
+        go install github.com/bazelbuild/buildtools/buildifier@latest
+        export PATH=$PATH:$(go env GOPATH)/bin
+        buildifier -mode=check WORKSPACE
+        buildifier -mode=check BUILD
+
+    - name: Format (rules_rust)
+      run: |
+        bazelisk --noworkspace_rc run --noenable_bzlmod //bazel/cargo:crates_vendor
+        git diff --exit-code
+
+  stable:
+    runs-on: ubuntu-latest
+
+    env:
+      RUSTFLAGS: -D warnings
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      if: ${{ env.ACT }}
+      run: |
+        curl -OL https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init
+        chmod +x ./rustup-init
+        ./rustup-init -y
+        rm rustup-init
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Update Rust
+      run: |
+        rustup toolchain install stable --component clippy --component rustfmt
+        rustup target add wasm32-unknown-unknown
+        rustup target add wasm32-wasi
+
+    - name: Build (wasm32-unknown-unknown)
+      run: cargo build --release --all-targets --target=wasm32-unknown-unknown
+
+    - name: Clippy (wasm32-unknown-unknown)
+      run: cargo clippy --release --all-targets --target=wasm32-unknown-unknown
+
+    - name: Build (wasm32-wasi)
+      run: cargo build --release --all-targets --target=wasm32-wasi
+
+    - name: Clippy (wasm32-wasi)
+      run: cargo clippy --release --all-targets --target=wasm32-wasi
+
+    - name: Format (rustfmt)
+      run: cargo fmt -- --check
+
+    - name: Format (manifest)
+      run: cargo verify-project
+
+    - name: Package (docs)
+      run: cargo doc --no-deps --target=wasm32-unknown-unknown
+
+    - name: Package (publish)
+      run: cargo publish --dry-run --target=wasm32-unknown-unknown
+
+  nightly:
+    runs-on: ubuntu-latest
+
+    env:
+      RUSTFLAGS: -D warnings
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      if: ${{ env.ACT }}
+      run: |
+        curl -OL https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init
+        chmod +x ./rustup-init
+        ./rustup-init -y
+        rm rustup-init
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Update Rust
+      run: |
+        rustup toolchain install nightly --component clippy --component rustfmt
+        rustup +nightly target add wasm32-unknown-unknown
+        rustup +nightly target add wasm32-wasi
+        rustup default nightly
+
+    - name: Build (wasm32-unknown-unknown)
+      run: cargo build --release --all-targets --target=wasm32-unknown-unknown
+
+    - name: Clippy (wasm32-unknown-unknown)
+      run: cargo clippy --release --all-targets --target=wasm32-unknown-unknown
+
+    - name: Build (wasm32-wasi)
+      run: cargo build --release --all-targets --target=wasm32-wasi
+
+    - name: Clippy (wasm32-wasi)
+      run: cargo clippy --release --all-targets --target=wasm32-wasi
+
+    - name: Format (rustfmt)
+      run: cargo fmt -- --check
+
+    - name: Format (manifest)
+      run: cargo verify-project
+
+    - name: Package (docs)
+      run: cargo doc --no-deps --target=wasm32-unknown-unknown
+
+    - name: Package (publish)
+      run: cargo publish --dry-run --target=wasm32-unknown-unknown
+
+  outdated:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      if: ${{ env.ACT }}
+      run: |
+        curl -OL https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init
+        chmod +x ./rustup-init
+        ./rustup-init -y
+        rm rustup-init
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        export PATH=$PATH:$HOME/.cargo/bin
+        cargo install cargo-outdated
+
+    - name: Run cargo outdated
+      run: cargo outdated --root-deps-only --exit-code 1
+
+  audit:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      if: ${{ env.ACT }}
+      run: |
+        curl -OL https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init
+        chmod +x ./rustup-init
+        ./rustup-init -y
+        rm rustup-init
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        export PATH=$PATH:$HOME/.cargo/bin
+        cargo install cargo-audit
+
+    - name: Run cargo audit
+      run: |
+        cp -p bazel/cargo/Cargo.Bazel.lock Cargo.lock
+        cargo audit
+
+  example:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        example:
+        - 'hello_world'
+        - 'http_auth_random'
+        - 'http_body'
+        - 'http_config'
+        - 'http_headers'
+        - 'grpc_auth_random'
+
+    defaults:
+      run:
+        working-directory: ./examples/${{ matrix.example }}
+
+    env:
+      RUSTFLAGS: -D warnings
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      if: ${{ env.ACT }}
+      run: |
+        curl -OL https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init
+        chmod +x ./rustup-init
+        ./rustup-init -y
+        rm rustup-init
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Update Rust
+      run: |
+        rustup toolchain install stable --component clippy --component rustfmt
+        rustup target add wasm32-wasi
+
+    - name: Build (wasm32-wasi)
+      run: cargo build --release --target=wasm32-wasi
+
+    - name: Clippy (wasm32-wasi)
+      run: cargo clippy --release --target=wasm32-wasi
+
+    - name: Format (rustfmt)
+      run: cargo fmt -- --check
+
+    - name: Format (manifest)
+      run: cargo verify-project
+
+    - name: Run cargo audit
+      run: cargo audit
+
+    - name: Run cargo outdated
+      run: cargo outdated --root-deps-only --exit-code 1
+
+    - name: Validate Envoy config
+      run: |
+        docker run --rm \
+          -v $(pwd)/envoy.yaml:/envoy.yaml \
+          -v $(pwd)/target/wasm32-wasi/release:/etc/envoy/proxy-wasm-plugins \
+          envoyproxy/envoy:v1.31-latest \
+          --mode validate \
+          -c envoy.yaml
+
+  reactor:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        example:
+        - 'hello_world'
+        - 'http_auth_random'
+        - 'http_body'
+        - 'http_config'
+        - 'http_headers'
+        - 'grpc_auth_random'
+
+    defaults:
+      run:
+        working-directory: ./examples/${{ matrix.example }}
+
+    env:
+      RUSTFLAGS: -D warnings -Z wasi-exec-model=reactor
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      if: ${{ env.ACT }}
+      run: |
+        curl -OL https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init
+        chmod +x ./rustup-init
+        ./rustup-init -y
+        rm rustup-init
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Update Rust
+      run: |
+        rustup toolchain install nightly --component clippy --component rustfmt
+        rustup +nightly target add wasm32-wasi
+        rustup default nightly
+
+    - name: Change crate type from library to binary
+      run: |
+        grep -v '^\[lib\]' Cargo.toml > Cargo.tmp
+        grep -v '^crate-type' Cargo.tmp > Cargo.toml
+        mv src/lib.rs src/main.rs
+
+    - name: Build (wasm32-wasi)
+      run: cargo build --release --target=wasm32-wasi
+
+    - name: Clippy (wasm32-wasi)
+      run: cargo clippy --release --target=wasm32-wasi
+
+    - name: Format (rustfmt)
+      run: cargo fmt -- --check
+
+    - name: Format (manifest)
+      run: cargo verify-project
+
+    - name: Run cargo audit
+      run: cargo audit
+
+    - name: Run cargo outdated
+      run: cargo outdated --root-deps-only --exit-code 1
+
+    - name: Rename .wasm to match expected filename
+      run: |
+        cd target/wasm32-wasi/release
+        for file in $(ls -1 *.wasm); do \
+          mv $file $(echo $file | sed 's/-/_/g'); \
+        done
+
+    - name: Validate Envoy config
+      run: |
+        docker run --rm \
+          -v $(pwd)/envoy.yaml:/envoy.yaml \
+          -v $(pwd)/target/wasm32-wasi/release:/etc/envoy/proxy-wasm-plugins \
+          envoyproxy/envoy:v1.31-latest \
+          --mode validate \
+          -c envoy.yaml

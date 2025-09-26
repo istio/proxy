@@ -1,0 +1,6 @@
+manifest:
+  modules_mapping:
+    google.cloud.aiplatform: google_cloud_aiplatform
+    google.cloud.storage: google_cloud_storage
+  pip_repository:
+    name: gazelle_python_test

@@ -1,0 +1,26 @@
+#[[##]]# ${funcInfo.functionName}
+
+**USAGE**
+
+<pre>
+${util.funcSummary($funcInfo)}
+</pre>
+
+$funcInfo.docString
+
+**PARAMETERS**
+
+#if (!$funcInfo.getParameterList().isEmpty())
+#foreach ($param in $funcInfo.getParameterList())
+
+<h4 id="${funcInfo.functionName}-${param.name}">${param.name}</h4>
+
+#if (!$param.docString.isEmpty())
+${util.htmlEscape($param.docString.trim())}
+#end
+
+#if( !$param.defaultValue.isEmpty() )
+Defaults to `$param.defaultValue`#end
+
+#end
+#end

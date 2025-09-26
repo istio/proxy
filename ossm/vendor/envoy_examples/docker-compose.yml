@@ -1,0 +1,63 @@
+services:
+  # assumes you have envoy checked out - docs are built in envoy workspace
+  docs:
+    build:
+      context: .
+      dockerfile: _docker/Dockerfile-docs
+    depends_on:
+    - html
+    volumes:
+    - "${PWD}/../envoy:/workspace/envoy"
+    - "${PWD}:/workspace/examples"
+    - "${PWD}/_docker/docs-entrypoint-extra.sh:/entrypoint-extra.sh"
+    - "${HOME}/.cache/envoy/examples:/home/envoybuild/.cache"
+    working_dir: /workspace/envoy
+    command:
+    - bash
+    - -c
+    - |
+      ./ci/do_ci.sh docs
+    environment:
+      DOCS_BUILD_RST: "${DOCS_BUILD_RST:-}"
+      BAZEL_BUILD_EXTRA_OPTIONS: >-
+        ${BAZEL_BUILD_EXTRA_OPTIONS:-
+        --override_repository=envoy_examples=../examples
+        --@rules_python//python/config_settings:bootstrap_impl=script}
+      BUILD_UID: "${UID:-1000}"
+      GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
+
+  examples:
+    build:
+      context: .
+      dockerfile: _docker/Dockerfile-examples
+    privileged: true
+    cgroup: host
+    volumes:
+    - "${PWD}/../envoy:/workspace/envoy"
+    - "${PWD}:/workspace/examples"
+    - "${PWD}/_docker/examples-entrypoint-extra.sh:/entrypoint-extra.sh"
+    - "${PWD}/_docker/examples-cleanup.sh:/cleanup.sh"
+    - "${HOME}/.cache/envoy/examples:/home/envoybuild/.cache"
+    - "${DOCKER_EXAMPLES_LIB:-/var/lib/docker-examples}:/var/lib/docker"
+    - "${DOCKER_EXAMPLES_LOG:-/var/log/docker-examples}:/var/log/docker"
+    working_dir: /workspace/examples
+    environment:
+      BAZEL_BUILD_EXTRA_OPTIONS: "${BAZEL_BUILD_EXTRA_OPTIONS:-}"
+      BUILD_UID: "${UID:-1000}"
+      GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
+      DEV_CONTAINER_ID: "${DEV_CONTAINER_ID:-}"
+      DOCKER_BUILDKIT: "${DOCKER_BUILDKIT:-1}"
+      COMPOSE_BAKE: "${COMPOSE_BAKE:-true}"
+      BUILDKIT_PROGRESS: "${BUILDKIT_PROGRESS:-quiet}"
+    command:
+    - bash
+    - -c
+    - |
+      bazel run ${BAZEL_BUILD_EXTRA_OPTIONS} --config=examples //:verify_examples
+
+  html:
+    image: nginx
+    volumes:
+    - "${PWD}/../envoy/generated/docs:/usr/share/nginx/html"
+    ports:
+    - "9090:80"

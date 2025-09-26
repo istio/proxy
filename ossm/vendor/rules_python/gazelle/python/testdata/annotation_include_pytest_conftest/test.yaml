@@ -1,0 +1,5 @@
+---
+expect:
+  stderr: |
+    gazelle: WARNING: unable to cast "foo" to bool in "# gazelle:include_pytest_conftest foo". Ignoring annotation
+  exit_code: 0

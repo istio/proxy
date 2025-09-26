@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "label",
+    srcs = ["label.go"],
+    importpath = "golang.org/x/tools/internal/event/label",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":label",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "label_test",
+    srcs = ["label_test.go"],
+    deps = [
+        ":label",
+        "//internal/event/keys",
+    ],
+)

@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "imports_lib",
+    srcs = ["main.go"],
+    importpath = "golang.org/x/tools/cmd/guru/testdata/src/imports",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "imports",
+    embed = [":imports_lib"],
+    visibility = ["//visibility:public"],
+)

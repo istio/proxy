@@ -1,0 +1,94 @@
+# Load various rules so that we can have bazel download
+# various rulesets and dependencies.
+# The `load` statement imports the symbol for the rule, in the defined
+# ruleset. When the symbol is loaded you can use the rule.
+
+# The names @pip and @python_39 are values that are repository
+# names. Those names are defined in the MODULES.bazel file.
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@pip//:requirements.bzl", "all_data_requirements", "all_requirements", "all_whl_requirements", "requirement")
+load("@python_3_9//:defs.bzl", py_test_with_transition = "py_test")
+load("@python_versions//3.10:defs.bzl", compile_pip_requirements_3_10 = "compile_pip_requirements")
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@rules_python//python:py_library.bzl", "py_library")
+load("@rules_python//python:py_test.bzl", "py_test")
+
+# This stanza calls a rule that generates targets for managing pip dependencies
+# with pip-compile for a particular python version.
+compile_pip_requirements_3_10(
+    name = "requirements_3_10",
+    timeout = "moderate",
+    src = "requirements.in",
+    requirements_txt = "requirements_lock_3_10.txt",
+    requirements_windows = "requirements_windows_3_10.txt",
+)
+
+# The rules below are language specific rules defined in
+# rules_python. See
+# https://bazel.build/reference/be/python
+
+# see https://bazel.build/reference/be/python#py_library
+py_library(
+    name = "lib",
+    srcs = ["lib.py"],
+    deps = [
+        requirement("sphinx"),
+        requirement("pylint"),
+        requirement("tabulate"),
+        requirement("python-dateutil"),
+    ],
+)
+
+# see https://bazel.build/reference/be/python#py_binary
+py_binary(
+    name = "bzlmod",
+    srcs = ["__main__.py"],
+    main = "__main__.py",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":lib",
+    ],
+)
+
+# see https://bazel.build/reference/be/python#py_test
+py_test(
+    name = "test",
+    srcs = ["test.py"],
+    main = "test.py",
+    deps = [":lib"],
+)
+
+py_test_with_transition(
+    name = "test_with_transition",
+    srcs = ["test.py"],
+    main = "test.py",
+    deps = [":lib"],
+)
+
+# This example is also used for integration tests within
+# rules_python.  We are using
+# https://github.com/bazelbuild/bazel-skylib
+# to run some of the tests.
+# See: https://github.com/bazelbuild/bazel-skylib/blob/main/docs/build_test_doc.md
+build_test(
+    name = "all_wheels_build_test",
+    targets = all_whl_requirements,
+)
+
+build_test(
+    name = "all_data_requirements_build_test",
+    targets = all_data_requirements,
+)
+
+build_test(
+    name = "all_requirements_build_test",
+    targets = all_requirements,
+)
+
+# Check the annotations API
+build_test(
+    name = "extra_annotation_targets_build_test",
+    targets = [
+        "@pip//wheel:generated_file",
+    ],
+)

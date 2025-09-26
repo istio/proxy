@@ -1,0 +1,28 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+
+go_library(name = "resolve_conflict")
+
+go_binary(name = "resolve_conflict_bin")
+
+go_test(name = "resolve_conflict_test")
+
+py_library(
+    name = "my_resolve_conflict_library",
+    srcs = ["__init__.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_binary(
+    name = "my_resolve_conflict_binary",
+    srcs = ["__main__.py"],
+    main = "__main__.py",
+    visibility = ["//:__subpackages__"],
+    deps = [":my_resolve_conflict_library"],
+)
+
+py_test(
+    name = "my_resolve_conflict_test",
+    srcs = ["__test__.py"],
+    main = "__test__.py",
+    deps = [":my_resolve_conflict_library"],
+)

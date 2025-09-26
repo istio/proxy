@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "precis",
+    srcs = [
+        "class.go",
+        "context.go",
+        "doc.go",
+        "nickname.go",
+        "options.go",
+        "profile.go",
+        "profiles.go",
+        "tables10.0.0.go",
+        "tables11.0.0.go",
+        "tables12.0.0.go",
+        "tables13.0.0.go",
+        "tables9.0.0.go",
+        "transformer.go",
+        "trieval.go",
+    ],
+    importpath = "golang.org/x/text/secure/precis",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cases",
+        "//language",
+        "//runes",
+        "//secure/bidirule",
+        "//transform",
+        "//unicode/norm",
+        "//width",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":precis",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "precis_test",
+    srcs = [
+        "benchmark_test.go",
+        "class_test.go",
+        "enforce10.0.0_test.go",
+        "enforce9.0.0_test.go",
+        "enforce_test.go",
+        "profile_test.go",
+        "tables_test.go",
+    ],
+    embed = [":precis"],
+    deps = [
+        "//internal/testtext",
+        "//runes",
+        "//secure/bidirule",
+        "//transform",
+        "//unicode/rangetable",
+    ],
+)

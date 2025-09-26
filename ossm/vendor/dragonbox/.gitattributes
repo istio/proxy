@@ -1,0 +1,13 @@
+* text=auto
+
+CMakeLists.txt eol=lf
+*.h eol=lf
+*.hpp eol=lf
+*.cc eol=lf
+*.cpp eol=lf
+*.cmake eol=lf
+*.m eol=lf
+
+*.png binary
+*.pdf binary
+*.csv binary

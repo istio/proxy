@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "generate-types_lib",
+    srcs = [
+        "impl.go",
+        "main.go",
+        "proto.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/cmd/generate-types",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "generate-types",
+    embed = [":generate-types_lib"],
+    visibility = ["//:__subpackages__"],
+)

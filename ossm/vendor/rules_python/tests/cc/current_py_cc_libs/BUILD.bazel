@@ -1,0 +1,44 @@
+# Copyright 2024 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load(":current_py_cc_libs_tests.bzl", "current_py_cc_libs_test_suite")
+
+current_py_cc_libs_test_suite(name = "current_py_cc_libs_tests")
+
+# buildifier: disable=native-cc
+cc_test(
+    name = "python_libs_linking_test",
+    srcs = ["python_libs_linking_test.cc"],
+    deps = [
+        "@rules_python//python/cc:current_py_cc_headers",
+        "@rules_python//python/cc:current_py_cc_libs",
+    ],
+)
+
+# This is technically a headers test, but since the pyconfig.h header
+# designates the appropriate lib to link on Win+MSVC, this test verifies that
+# the expected Windows libraries are all present in the expected location.
+# Since we define the Py_LIMITED_API macro, we expect the linker to go search
+# for libs/python3.lib.
+# buildifier: disable=native-cc
+cc_test(
+    name = "python_abi3_libs_linking_windows_test",
+    srcs = ["python_libs_linking_test.cc"],
+    defines = ["Py_LIMITED_API=0x030A0000"],
+    target_compatible_with = ["@platforms//os:windows"],
+    deps = [
+        "@rules_python//python/cc:current_py_cc_headers",
+        "@rules_python//python/cc:current_py_cc_libs",
+    ],
+)

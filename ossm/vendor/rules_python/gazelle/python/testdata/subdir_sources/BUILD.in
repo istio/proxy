@@ -1,0 +1,2 @@
+# gazelle:python_generation_mode project
+# gazelle:python_resolve_sibling_imports true

@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "annotations_proto",
+    srcs = ["annotations.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_proto_library(
+    name = "annotations_go_proto",
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/annotations",
+    proto = ":annotations_proto",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "annotations",
+    embed = [":annotations_go_proto"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/annotations",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":annotations",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,17 @@
+# buildifier: disable=bzl-visibility
+load("@rules_rust//rust/private:rust.bzl", "rust_library_without_process_wrapper")
+
+rust_library_without_process_wrapper(
+    name = "tinyjson",
+    srcs = glob(["src/*.rs"]),
+    edition = "2018",
+    # To ensure the process wrapper is produced deterministically
+    # debug info, which is known to sometimes have host specific
+    # paths embedded in this section, is stripped out.
+    rustc_flags = select({
+        "@rules_rust//util/process_wrapper:opt_linux": ["-Cstrip=debuginfo"],
+        "@rules_rust//util/process_wrapper:opt_macos": ["-Cstrip=debuginfo"],
+        "//conditions:default": [],
+    }),
+    visibility = ["@rules_rust//util/process_wrapper:__pkg__"],
+)

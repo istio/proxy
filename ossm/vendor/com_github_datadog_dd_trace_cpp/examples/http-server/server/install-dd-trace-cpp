@@ -1,0 +1,21 @@
+#!/bin/sh
+
+set -x
+set -e
+
+# Adjust for the latest release.
+# See <https://github.com/DataDog/dd-trace-cpp/releases/latest>.
+VERSION_TAG=v0.2.1
+
+cd /tmp
+git clone --branch "$VERSION_TAG" 'https://github.com/datadog/dd-trace-cpp'
+cd dd-trace-cpp
+
+# Install a more recent version of CMake, the build tool.
+bin/install-cmake
+
+mkdir .build
+cd .build
+cmake ..
+make -j
+make install

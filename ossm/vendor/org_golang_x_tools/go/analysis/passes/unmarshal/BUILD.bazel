@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "unmarshal",
+    srcs = ["unmarshal.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/unmarshal",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/inspect",
+        "//go/ast/inspector",
+        "//go/types/typeutil",
+        "//internal/typeparams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":unmarshal",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "unmarshal_test",
+    srcs = ["unmarshal_test.go"],
+    deps = [
+        ":unmarshal",
+        "//go/analysis/analysistest",
+        "//internal/typeparams",
+    ],
+)

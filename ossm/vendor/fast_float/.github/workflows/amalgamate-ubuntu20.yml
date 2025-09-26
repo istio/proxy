@@ -1,0 +1,17 @@
+name: Amalgamate Ubuntu 20.04 CI (GCC 9)
+
+on: [push, pull_request]
+
+jobs:
+  ubuntu-build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile with amalgamation
+        run: |
+          mkdir build &&
+          mkdir build/fast_float &&
+          python3 ./script/amalgamate.py > build/fast_float/fast_float.h &&
+          cp tests/string_test.cpp build/ &&
+          cd build &&
+          g++ string_test.cpp

@@ -1,0 +1,5 @@
+filegroup(
+    name = "data",
+    srcs = ["another_module_data.txt"],
+    visibility = ["//visibility:public"],
+)

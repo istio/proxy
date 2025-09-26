@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "sync",
+    srcs = ["sync.go"],
+    importpath = "golang.org/x/tools/go/ssa/testdata/src/sync",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sync",
+    visibility = ["//visibility:public"],
+)

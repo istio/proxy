@@ -1,0 +1,14 @@
+syntax = "proto3";
+package samples;
+import "options.proto";
+
+enum Scheme {
+  option (protoc.gen.jsonschema.enum_options).enums_trim_prefix = true;
+
+  // for test
+  option (protoc.gen.jsonschema.enum_options).enums_as_strings_only = true;
+
+  SCHEME_UNSPECIFIED = 0;
+  SCHEME_HTTP = 1;
+  SCHEME_HTTPS = 2;
+}

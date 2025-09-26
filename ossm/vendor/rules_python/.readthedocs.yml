@@ -1,0 +1,14 @@
+
+version: 2
+
+build:
+  os: "ubuntu-22.04"
+  tools:
+    nodejs: "19"
+  commands:
+    - env
+    - npm install -g @bazel/bazelisk
+    - bazel version
+    # Put the actual build behind a shell script because its easier to modify than
+    # the yaml config.
+    - docs/readthedocs_build.sh

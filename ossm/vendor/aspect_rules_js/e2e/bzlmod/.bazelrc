@@ -1,0 +1,19 @@
+# Import Aspect bazelrc presets
+try-import %workspace%/../../.aspect/bazelrc/bazel7.bazelrc
+import %workspace%/../../.aspect/bazelrc/convenience.bazelrc
+import %workspace%/../../.aspect/bazelrc/correctness.bazelrc
+import %workspace%/../../.aspect/bazelrc/debug.bazelrc
+import %workspace%/../../.aspect/bazelrc/javascript.bazelrc
+import %workspace%/../../.aspect/bazelrc/performance.bazelrc
+
+### YOUR PROJECT SPECIFIC SETTINGS GO HERE ###
+
+common --enable_bzlmod
+
+# Disable lockfile for now. It is unstable.
+# https://github.com/bazelbuild/bazel/issues/19026
+# https://github.com/bazelbuild/bazel/issues/19621
+# https://github.com/bazelbuild/bazel/issues/19971
+# https://github.com/bazelbuild/bazel/issues/20272
+# https://github.com/bazelbuild/bazel/issues/20369
+common --lockfile_mode=off

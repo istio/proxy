@@ -1,0 +1,8 @@
+package(default_visibility = ["//visibility:public"])
+
+alias(
+    name = "nogo",
+    actual = "@io_bazel_rules_go//:default_nogo",
+)
+
+exports_files(["scope.bzl"])

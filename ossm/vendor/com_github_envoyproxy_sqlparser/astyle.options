@@ -1,0 +1,10 @@
+
+--style=google
+
+# indentation
+--indent=spaces=2
+--indent-namespaces
+
+--align-reference=type
+--align-pointer=type
+--pad-oper

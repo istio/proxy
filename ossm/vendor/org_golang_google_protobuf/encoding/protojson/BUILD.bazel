@@ -1,0 +1,64 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "protojson",
+    srcs = [
+        "decode.go",
+        "doc.go",
+        "encode.go",
+        "well_known_types.go",
+    ],
+    importpath = "google.golang.org/protobuf/encoding/protojson",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/encoding/json",
+        "//internal/encoding/messageset",
+        "//internal/errors",
+        "//internal/filedesc",
+        "//internal/flags",
+        "//internal/genid",
+        "//internal/order",
+        "//internal/pragma",
+        "//internal/set",
+        "//internal/strs",
+        "//proto",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protojson",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "protojson_test",
+    srcs = [
+        "bench_test.go",
+        "decode_test.go",
+        "encode_test.go",
+    ],
+    deps = [
+        ":protojson",
+        "//internal/detrand",
+        "//internal/errors",
+        "//internal/flags",
+        "//internal/testprotos/test",
+        "//internal/testprotos/test/weak1",
+        "//internal/testprotos/textpb2",
+        "//internal/testprotos/textpb3",
+        "//proto",
+        "//reflect/protoregistry",
+        "//testing/protopack",
+        "//types/known/anypb",
+        "//types/known/durationpb",
+        "//types/known/emptypb",
+        "//types/known/fieldmaskpb",
+        "//types/known/structpb",
+        "//types/known/timestamppb",
+        "//types/known/wrapperspb",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

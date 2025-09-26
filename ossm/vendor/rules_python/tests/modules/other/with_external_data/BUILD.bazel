@@ -1,0 +1,23 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@rules_python//python:py_library.bzl", "py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+# The users may include data through other repos via annotations and copy_file
+# just add this edge case.
+#
+# NOTE: if the data is not copied to `site-packages/<some dir>` then it will not
+# appear.
+copy_file(
+    name = "external_data",
+    src = "@another_module//:data",
+    out = "site-packages/external_data/another_module_data.txt",
+)
+
+py_library(
+    name = "with_external_data",
+    srcs = ["site-packages/with_external_data.py"],
+    data = [":external_data"],
+    experimental_venvs_site_packages = "@rules_python//python/config_settings:venvs_site_packages",
+    imports = [package_name() + "/site-packages"],
+)

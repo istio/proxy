@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "satisfy",
+    srcs = ["find.go"],
+    importpath = "golang.org/x/tools/refactor/satisfy",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/ast/astutil",
+        "//go/types/typeutil",
+        "//internal/typeparams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":satisfy",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "satisfy_test",
+    srcs = ["find_test.go"],
+    deps = [
+        ":satisfy",
+        "//internal/typeparams",
+    ],
+)

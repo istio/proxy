@@ -1,0 +1,41 @@
+name: Docs
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches:
+    - main
+
+concurrency:
+  group: >-
+    ${{ github.event.inputs.head_ref || github.run_id }}
+
+
+jobs:
+  docs:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      with:
+        repository: envoyproxy/envoy
+        path: envoy
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      with:
+        path: examples
+    - run: |
+        export UID
+        echo 'load("@envoy_examples//bazel:env.bzl", "envoy_examples_env")' >> ../envoy/WORKSPACE
+        echo 'envoy_examples_env()' >> ../envoy/WORKSPACE
+        docker compose run docs
+      working-directory: examples
+      env:
+        BAZEL_BUILD_EXTRA_OPTIONS: >-
+          --override_repository=envoy_examples=../examples
+          --config=ci
+          --@rules_python//python/config_settings:bootstrap_impl=script
+        BUILDKIT_PROGRESS: quiet
+        COMPOSE_BAKE: true
+        DOCKER_BUILDKIT: 1

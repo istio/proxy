@@ -1,0 +1,40 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "present_lib",
+    srcs = [
+        "dir.go",
+        "doc.go",
+        "main.go",
+        "play.go",
+    ],
+    embedsrcs = [
+        "static/article.css",
+        "static/dir.css",
+        "static/dir.js",
+        "static/favicon.ico",
+        "static/jquery-ui.js",
+        "static/notes.css",
+        "static/notes.js",
+        "static/slides.js",
+        "static/styles.css",
+        "templates/action.tmpl",
+        "templates/article.tmpl",
+        "templates/dir.tmpl",
+        "templates/slides.tmpl",
+    ],
+    importpath = "golang.org/x/tools/cmd/present",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//godoc/static",
+        "//playground",
+        "//playground/socket",
+        "//present",
+    ],
+)
+
+go_binary(
+    name = "present",
+    embed = [":present_lib"],
+    visibility = ["//visibility:public"],
+)

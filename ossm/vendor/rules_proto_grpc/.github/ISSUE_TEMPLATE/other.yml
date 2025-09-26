@@ -1,0 +1,10 @@
+name: Other
+description: File a feature request or any other issue
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the issue, feature request or anything else.
+    validations:
+      required: true

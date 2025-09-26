@@ -1,0 +1,10 @@
+load("@rules_proto_grpc//go:defs.bzl", "go_validate_library")
+
+go_validate_library(
+    name = "greeter_go_validate",
+    importpath = "github.com/rules-proto-grpc/rules_proto_grpc/example/proto",
+    protos = [
+        "@rules_proto_grpc//example/proto:greeter_grpc",
+        "@rules_proto_grpc//example/proto:thing_proto",
+    ],
+)

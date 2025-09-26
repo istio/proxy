@@ -1,0 +1,31 @@
+name: New issue
+on:
+    issues:
+        types:
+            - opened
+            - reopened
+jobs:
+    new_issue:
+        runs-on: ubuntu-latest
+        permissions:
+            issues: write
+        steps:
+            # https://docs.github.com/en/actions/managing-issues-and-pull-requests/adding-labels-to-issues
+            - uses: actions/github-script@v6
+              with:
+                  script: |
+                      github.rest.issues.addLabels({
+                        issue_number: context.issue.number,
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        labels: ["untriaged"]
+                      })
+            # https://docs.github.com/en/issues/planning-and-tracking-with-projects/automating-your-project/using-the-api-to-manage-projects#adding-an-item-to-a-project
+            - run: |
+                  gh api graphql -f query="mutation { addProjectV2ItemById(input: {projectId: \"$PROJECT_ID\" contentId: \"$CONTENT_ID\"}) { item { id } } }"
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_RW_TOKEN }}
+                  OWNER: ${{ github.repository_owner }}
+                  REPO: ${{ github.event.repository.name }}
+                  CONTENT_ID: ${{ github.event.issue.node_id }}
+                  PROJECT_ID: PVT_kwDOA6IKMs4ALj2o # Aspect OSS Bazel Rules

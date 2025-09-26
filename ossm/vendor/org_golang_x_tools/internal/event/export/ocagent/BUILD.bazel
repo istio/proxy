@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ocagent",
+    srcs = [
+        "metrics.go",
+        "ocagent.go",
+    ],
+    importpath = "golang.org/x/tools/internal/event/export/ocagent",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/event",
+        "//internal/event/core",
+        "//internal/event/export",
+        "//internal/event/export/metric",
+        "//internal/event/export/ocagent/wire",
+        "//internal/event/keys",
+        "//internal/event/label",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ocagent",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "ocagent_test",
+    srcs = [
+        "metrics_test.go",
+        "ocagent_test.go",
+        "trace_test.go",
+    ],
+    deps = [
+        ":ocagent",
+        "//internal/event",
+        "//internal/event/core",
+        "//internal/event/export",
+        "//internal/event/export/metric",
+        "//internal/event/keys",
+        "//internal/event/label",
+    ],
+)

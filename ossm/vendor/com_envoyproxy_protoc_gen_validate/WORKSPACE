@@ -1,0 +1,1 @@
+workspace(name = "com_envoyproxy_protoc_gen_validate")

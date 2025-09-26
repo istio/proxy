@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "converter",
+    srcs = [
+        "converter.go",
+        "errors.go",
+        "proto_package.go",
+        "sourcecodeinfo.go",
+        "types.go",
+    ],
+    importpath = "github.com/chrusty/protoc-gen-jsonschema/internal/converter",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//:protoc-gen-jsonschema",
+        "@com_github_alecthomas_jsonschema//:jsonschema",
+        "@com_github_envoyproxy_protoc_gen_validate//validate:go_default_library",
+        "@com_github_fatih_camelcase//:camelcase",
+        "@com_github_iancoleman_orderedmap//:orderedmap",
+        "@com_github_iancoleman_strcase//:strcase",
+        "@com_github_sirupsen_logrus//:logrus",
+        "@com_github_xeipuuv_gojsonschema//:gojsonschema",
+        "@org_golang_google_protobuf//cmd/protoc-gen-go/internal_gengo",
+        "@org_golang_google_protobuf//proto",
+        "@org_golang_google_protobuf//types/descriptorpb",
+        "@org_golang_google_protobuf//types/pluginpb",
+    ],
+)
+
+go_test(
+    name = "converter_test",
+    srcs = [
+        "converter_test.go",
+        "sourcecodeinfo_test.go",
+    ],
+    embed = [":converter"],
+    deps = [
+        "//internal/converter/testdata",
+        "@com_github_sirupsen_logrus//:logrus",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_xeipuuv_gojsonschema//:gojsonschema",
+        "@org_golang_google_protobuf//proto",
+        "@org_golang_google_protobuf//types/descriptorpb",
+        "@org_golang_google_protobuf//types/pluginpb",
+    ],
+)

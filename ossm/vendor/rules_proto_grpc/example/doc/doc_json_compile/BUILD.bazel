@@ -1,0 +1,16 @@
+load("@rules_proto_grpc//doc:defs.bzl", "doc_json_compile")
+
+doc_json_compile(
+    name = "person_doc_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+)
+
+doc_json_compile(
+    name = "place_doc_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+)
+
+doc_json_compile(
+    name = "thing_doc_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

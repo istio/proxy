@@ -1,0 +1,14 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_extension enabled
+# gazelle:python_generation_mode project
+
+py_library(
+    name = "project_generation_mode",
+    srcs = [
+        "__init__.py",
+        "bar/bar.py",
+        "foo/foo.py",
+    ],
+    visibility = ["//:__subpackages__"],
+)

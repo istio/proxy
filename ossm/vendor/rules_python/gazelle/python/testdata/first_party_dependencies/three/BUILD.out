@@ -1,0 +1,14 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_root
+
+py_library(
+    name = "three",
+    srcs = ["__init__.py"],
+    visibility = ["//three:__subpackages__"],
+    deps = [
+        "//one/bar",
+        "//one/bar/baz",
+        "//one/foo",
+    ],
+)

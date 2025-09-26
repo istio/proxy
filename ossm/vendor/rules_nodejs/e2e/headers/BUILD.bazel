@@ -1,0 +1,14 @@
+cc_test(
+    name = "using_headers_test",
+    srcs = ["using_headers.cc"],
+    copts = select({
+        "@platforms//os:windows": ["/std:c++14"],
+        "//conditions:default": ["-std=c++14"],
+    }),
+    target_compatible_with = select({
+        # Windows does not ship headers in the release artifact so this won't work yet.
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = ["@rules_nodejs//nodejs/headers:current_node_cc_headers"],
+)

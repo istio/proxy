@@ -1,0 +1,35 @@
+load("//npm:defs.bzl", "npm_package")
+
+npm_package(
+    name = "pkg_a",
+    srcs = [
+        "index.d.ts",
+        "index.js",
+        "package.json",
+    ],
+)
+
+npm_package(
+    name = "pkg_b",
+    srcs = [
+        "index.d.ts",
+        "index.js",
+    ],
+)
+
+sh_test(
+    name = "test",
+    srcs = ["test.sh"],
+    args = [
+        "$(locations :pkg_a.publish)",
+        "$(locations :pkg_b.publish)",
+    ],
+    data = [
+        ":pkg_a.publish",
+        ":pkg_b.publish",
+    ],
+    tags = [
+        "no-remote-exec",
+        "no-sandbox",
+    ],
+)

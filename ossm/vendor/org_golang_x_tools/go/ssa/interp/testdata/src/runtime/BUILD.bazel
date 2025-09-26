@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "runtime",
+    srcs = ["runtime.go"],
+    importpath = "golang.org/x/tools/go/ssa/interp/testdata/src/runtime",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":runtime",
+    visibility = ["//visibility:public"],
+)

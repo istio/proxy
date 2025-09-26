@@ -1,0 +1,10 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_label_normalization pep503
+
+py_library(
+    name = "test2_type_pep503",
+    srcs = ["bar.py"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@gazelle_python_test//google-cloud-storage"],
+)

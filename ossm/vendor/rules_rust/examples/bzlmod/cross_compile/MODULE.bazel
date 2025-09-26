@@ -1,0 +1,114 @@
+module(
+    name = "hello_cross",
+    version = "0.0.0",
+)
+
+###############################################################################
+# Bazel Dependencies # https://registry.bazel.build/
+###############################################################################
+# Get latest rules_rust release from:
+# https://github.com/bazelbuild/rules_rust/releases
+bazel_dep(name = "rules_rust", version = "0.52.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../..",
+)
+
+# https://github.com/bazelbuild/platforms/releases
+bazel_dep(name = "platforms", version = "0.0.10")
+
+# https://github.com/bazelbuild/rules_shell/releases
+bazel_dep(name = "rules_shell", version = "0.3.0")
+
+# https://github.com/bazel-contrib/toolchains_llvm
+bazel_dep(name = "toolchains_llvm", version = "1.2.0", dev_dependency = True)
+
+# https://github.com/bazelbuild/bazel/blob/master/tools/build_defs/repo/http.bzl
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+###############################################################################
+# LLVM Toolchain #
+###############################################################################
+# INTEL/AMD64 Sysroot. LastModified: 2024-04-26T19:15
+# https://commondatastorage.googleapis.com/chrome-linux-sysroot/
+http_archive(
+    name = "sysroot_linux_x64",
+    build_file = "//build/sysroot:BUILD.bazel",
+    sha256 = "5df5be9357b425cdd70d92d4697d07e7d55d7a923f037c22dc80a78e85842d2c",
+    urls = ["https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/4f611ec025be98214164d4bf9fbe8843f58533f7/debian_bullseye_amd64_sysroot.tar.xz"],
+)
+
+# ARM 64 Sysroot. LastModified: 2024-04-26T18:33
+# https://commondatastorage.googleapis.com/chrome-linux-sysroot/
+http_archive(
+    name = "sysroot_linux_aarch64",
+    build_file = "//build/sysroot:BUILD.bazel",
+    sha256 = "d303cf3faf7804c9dd24c9b6b167d0345d41d7fe4bfb7d34add3ab342f6a236c",
+    urls = ["https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/906cc7c6bf47d4bd969a3221fc0602c6b3153caa/debian_bullseye_arm64_sysroot.tar.xz"],
+)
+
+# LLVM Versions and platforms
+# https://github.com/bazel-contrib/toolchains_llvm/blob/master/toolchain/internal/llvm_distributions.bzl
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency = True)
+llvm.toolchain(
+    name = "llvm_toolchain",
+    llvm_versions = {
+        "": "16.0.0",
+        "darwin-x86_64": "15.0.7",  # For CI runner only; remove if you don't have an Intel Mac.
+    },
+    stdlib = {
+        "linux-aarch64": "stdc++",
+        "linux-x86_64": "stdc++",
+    },
+)
+llvm.sysroot(
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_x64//:sysroot",
+    targets = ["linux-x86_64"],
+)
+llvm.sysroot(
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_aarch64//:sysroot",
+    targets = ["linux-aarch64"],
+)
+use_repo(llvm, "llvm_toolchain")
+
+register_toolchains(
+    "@llvm_toolchain//:all",
+    dev_dependency = True,
+)
+
+###############################################################################
+# Rust Toolchain #
+###############################################################################
+RUST_EDITION = "2021"  # NOTE: 2024 will be released with Rust 1.86.0
+
+RUST_VERSION = "1.81.0"
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = RUST_EDITION,
+    extra_target_triples = [
+        "aarch64-unknown-linux-gnu",
+        "x86_64-unknown-linux-gnu",
+    ],
+    versions = [RUST_VERSION],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")
+
+###############################################################################
+# Rust Dependencies #
+###############################################################################
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.spec(
+    package = "mimalloc",
+    version = "0.1.43",
+)
+crate.spec(
+    package = "lz4-sys",
+    version = "1.11.1",
+)
+crate.from_specs()
+use_repo(crate, "crates")

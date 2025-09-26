@@ -1,0 +1,52 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_proto_grpc//python:defs.bzl", "python_proto_library")
+
+package(default_visibility = ["//visibility:private"])
+
+# Use the same base proto in two different trees. The rules should not tread
+# on each other and try to write the same file.
+
+proto_library(
+    name = "proto_lib_a",
+    srcs = ["demo.proto"],
+)
+
+proto_library(
+    name = "proto_lib_b",
+    srcs = ["demo.proto"],
+)
+
+python_proto_library(
+    name = "py_lib_a",
+    protos = ["proto_lib_a"],
+)
+
+python_proto_library(
+    name = "py_lib_b",
+    protos = ["proto_lib_b"],
+)
+
+py_test(
+    name = "test_a",
+    srcs = ["main.py"],
+    main = "main.py",
+    deps = ["py_lib_a"],
+)
+
+py_test(
+    name = "test_b",
+    srcs = ["main.py"],
+    main = "main.py",
+    deps = ["py_lib_b"],
+)
+
+py_test(
+    name = "test_both",
+    srcs = ["main.py"],
+    main = "main.py",
+    deps = [
+        "py_lib_a",
+        "py_lib_b",
+    ],
+)

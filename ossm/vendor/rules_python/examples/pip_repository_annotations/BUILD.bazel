@@ -1,0 +1,28 @@
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@rules_python//python:py_test.bzl", "py_test")
+
+exports_files(
+    glob(["data/**"]),
+    visibility = ["//visibility:public"],
+)
+
+# This rule adds a convenient way to update the requirements file.
+compile_pip_requirements(
+    name = "requirements",
+    src = "requirements.in",
+)
+
+py_test(
+    name = "pip_parse_annotations_test",
+    srcs = ["pip_repository_annotations_test.py"],
+    env = {
+        "REQUESTS_PKG_DIR": "pip_requests",
+        "WHEEL_PKG_DIR": "pip_wheel",
+    },
+    main = "pip_repository_annotations_test.py",
+    deps = [
+        "@pip_requests//:pkg",
+        "@pip_wheel//:pkg",
+        "@rules_python//python/runfiles",
+    ],
+)

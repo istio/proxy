@@ -1,0 +1,15 @@
+load("//rust:defs.bzl", "rust_library", "rust_test")
+
+package(default_visibility = ["//test:__subpackages__"])
+
+rust_library(
+    name = "lib_c",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+    deps = ["//test/unit/exports/lib_b"],
+)
+
+rust_test(
+    name = "lib_c_test",
+    crate = ":lib_c",
+)

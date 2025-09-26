@@ -1,0 +1,5 @@
+manifest:
+  modules_mapping:
+    arrow: arrow
+  pip_deps_repository_name: test_repository_name
+integrity: 96be4e5a31aa39b52e2591c00ffd9265c5a96ece99a7687c21ff7732a38da6dc

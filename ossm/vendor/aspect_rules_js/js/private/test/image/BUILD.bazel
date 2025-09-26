@@ -1,0 +1,101 @@
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_file")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//js:defs.bzl", "js_binary")
+load(":asserts.bzl", "assert_tar_listing", "make_js_image_layer")
+
+npm_link_all_packages(name = "node_modules")
+
+js_binary(
+    name = "bin",
+    data = [
+        ":node_modules/acorn",
+    ],
+    entry_point = "main.js",
+)
+
+platform(
+    name = "linux_amd64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+# Case 0: reproducibility guarantees
+make_js_image_layer(
+    name = "cksum",
+    binary = ":bin",
+    # gzip compression embeds os information into the archive which is not okay from reproducibility standpoint.
+    # set it to none since uncompressed archive is always stable.
+    # more: https://stackoverflow.com/questions/26516369/zlib-gzip-produces-different-results-for-same-input-on-different-oses
+    compression = "none",
+    platform = ":linux_amd64",
+    root = "/app",
+)
+
+genrule(
+    name = "checksum_gen",
+    testonly = True,
+    srcs = [":cksum"],
+    outs = ["checksum_generated"],
+    cmd = """
+COREUTILS_BIN=$$(realpath $(COREUTILS_BIN)) &&
+cd $(BINDIR) && $$COREUTILS_BIN sha256sum $(rootpaths :cksum) > $(rootpaths checksum_generated)
+""",
+    output_to_bindir = True,
+    toolchains = ["@coreutils_toolchains//:resolved_toolchain"],
+)
+
+write_source_file(
+    name = "checksum_test",
+    testonly = True,
+    in_file = ":checksum_gen",
+    out_file = "checksum.expected",
+    # Under bzlmod workspace name is a fixed string `_main` which differs from WORKSPACE.
+    # disable this under bzlmod.
+    target_compatible_with = select({
+        "@aspect_bazel_lib//lib:bzlmod": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+# Case 1: Defaults
+make_js_image_layer(
+    name = "default",
+    binary = ":bin",
+    platform = ":linux_amd64",
+    root = "/app",
+)
+
+assert_tar_listing(
+    name = "assert_default_app_layer",
+    actual = "default_app_layer",
+    expected = "default_app.listing",
+)
+
+assert_tar_listing(
+    name = "assert_default_node_modules_layer",
+    actual = "default_node_modules_layer",
+    expected = "default_node_modules.listing",
+)
+
+# Case 2: Change owner
+make_js_image_layer(
+    name = "custom_owner",
+    binary = ":bin",
+    owner = "100:0",
+    platform = ":linux_amd64",
+    root = "/app",
+)
+
+assert_tar_listing(
+    name = "assert_custom_owner_app_layer",
+    actual = "custom_owner_app_layer",
+    expected = "custom_owner_app.listing",
+)
+
+assert_tar_listing(
+    name = "assert_custom_owner_node_modules_layer",
+    actual = "custom_owner_node_modules_layer",
+    expected = "custom_owner_node_modules.listing",
+)

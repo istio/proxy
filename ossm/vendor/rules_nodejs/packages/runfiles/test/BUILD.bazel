@@ -1,0 +1,8 @@
+# Path of file must start similar to `test_fixture.md` in order to regression-test a
+# scenario where the runfile resolution would accidentally resolve the path to
+# `test_fixture.md` through a runfile manifest entry that starts similarly.
+genrule(
+    name = "_test_fixture.md.generated_file_suffix",
+    outs = ["test_fixture.md.generated_file_suffix"],
+    cmd = """echo "Generated" > $@""",
+)

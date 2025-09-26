@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "order",
+    srcs = [
+        "order.go",
+        "range.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/order",
+    visibility = ["//:__subpackages__"],
+    deps = ["//reflect/protoreflect"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":order",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "order_test",
+    srcs = ["order_test.go"],
+    embed = [":order"],
+    deps = [
+        "//reflect/protoreflect",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

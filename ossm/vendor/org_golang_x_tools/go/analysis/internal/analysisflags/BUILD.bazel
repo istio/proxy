@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "analysisflags",
+    srcs = [
+        "flags.go",
+        "help.go",
+    ],
+    importpath = "golang.org/x/tools/go/analysis/internal/analysisflags",
+    visibility = ["//go/analysis:__subpackages__"],
+    deps = ["//go/analysis"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":analysisflags",
+    visibility = ["//go/analysis:__subpackages__"],
+)
+
+go_test(
+    name = "analysisflags_test",
+    srcs = ["flags_test.go"],
+    deps = [
+        ":analysisflags",
+        "//go/analysis",
+    ],
+)

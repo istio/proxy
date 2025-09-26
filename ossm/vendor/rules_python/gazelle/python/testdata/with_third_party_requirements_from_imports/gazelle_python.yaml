@@ -1,0 +1,160 @@
+# Copyright 2023 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+manifest:
+  modules_mapping:
+    cachetools: cachetools
+    certifi: certifi
+    charset_normalizer: charset_normalizer
+    dateutil: python_dateutil
+    docs.conf: google_cloud_resource_manager
+    google.api: googleapis_common_protos
+    google.api_core: google_api_core
+    google.auth: google_auth
+    google.cloud.aiplatform: google_cloud_aiplatform
+    google.cloud.aiplatform_v1: google_cloud_aiplatform
+    google.cloud.aiplatform_v1beta1: google_cloud_aiplatform
+    google.cloud.bigquery: google_cloud_bigquery
+    google.cloud.bigquery_v2: google_cloud_bigquery
+    google.cloud.client: google_cloud_core
+    google.cloud.environment_vars: google_cloud_core
+    google.cloud.exceptions: google_cloud_core
+    google.cloud.extended_operations_pb2: googleapis_common_protos
+    google.cloud.location.locations_pb2: googleapis_common_protos
+    google.cloud.obsolete: google_cloud_core
+    google.cloud.operation: google_cloud_core
+    google.cloud.resourcemanager: google_cloud_resource_manager
+    google.cloud.resourcemanager_v3: google_cloud_resource_manager
+    google.cloud.storage: google_cloud_storage
+    google.cloud.version: google_cloud_core
+    google.gapic.metadata: googleapis_common_protos
+    google.iam.v1: grpc_google_iam_v1
+    google.logging.type: googleapis_common_protos
+    google.longrunning: googleapis_common_protos
+    google.oauth2: google_auth
+    google.protobuf: protobuf
+    google.resumable_media: google_resumable_media
+    google.rpc: googleapis_common_protos
+    google.type: googleapis_common_protos
+    google_crc32c: google_crc32c
+    grpc: grpcio
+    grpc_status: grpcio_status
+    idna: idna
+    packaging: packaging
+    proto: proto_plus
+    pyasn1: pyasn1
+    pyasn1_modules: pyasn1_modules
+    pyparsing: pyparsing
+    requests: requests
+    rsa: rsa
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_create_folder_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_create_folder_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_delete_folder_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_delete_folder_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_get_folder_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_get_folder_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_get_iam_policy_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_get_iam_policy_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_list_folders_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_list_folders_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_move_folder_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_move_folder_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_search_folders_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_search_folders_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_set_iam_policy_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_set_iam_policy_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_test_iam_permissions_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_test_iam_permissions_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_undelete_folder_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_undelete_folder_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_update_folder_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_folders_update_folder_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_organizations_get_iam_policy_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_organizations_get_iam_policy_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_organizations_get_organization_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_organizations_get_organization_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_organizations_search_organizations_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_organizations_search_organizations_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_organizations_set_iam_policy_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_organizations_set_iam_policy_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_organizations_test_iam_permissions_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_organizations_test_iam_permissions_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_create_project_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_create_project_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_delete_project_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_delete_project_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_get_iam_policy_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_get_iam_policy_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_get_project_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_get_project_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_list_projects_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_list_projects_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_move_project_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_move_project_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_search_projects_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_search_projects_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_set_iam_policy_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_set_iam_policy_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_test_iam_permissions_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_test_iam_permissions_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_undelete_project_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_undelete_project_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_update_project_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_projects_update_project_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_bindings_create_tag_binding_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_bindings_create_tag_binding_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_bindings_delete_tag_binding_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_bindings_delete_tag_binding_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_bindings_list_tag_bindings_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_bindings_list_tag_bindings_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_create_tag_key_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_create_tag_key_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_delete_tag_key_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_delete_tag_key_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_get_iam_policy_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_get_iam_policy_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_get_tag_key_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_get_tag_key_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_list_tag_keys_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_list_tag_keys_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_set_iam_policy_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_set_iam_policy_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_test_iam_permissions_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_test_iam_permissions_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_update_tag_key_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_keys_update_tag_key_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_create_tag_value_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_create_tag_value_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_delete_tag_value_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_delete_tag_value_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_get_iam_policy_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_get_iam_policy_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_get_tag_value_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_get_tag_value_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_list_tag_values_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_list_tag_values_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_set_iam_policy_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_set_iam_policy_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_test_iam_permissions_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_test_iam_permissions_sync: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_update_tag_value_async: google_cloud_resource_manager
+    samples.generated_samples.cloudresourcemanager_v3_generated_tag_values_update_tag_value_sync: google_cloud_resource_manager
+    scripts.fixup_resourcemanager_v3_keywords: google_cloud_resource_manager
+    scripts.readme-gen.readme_gen: google_cloud_resource_manager
+    six: six
+    tests: google_cloud_resource_manager
+    urllib3: urllib3
+  pip_repository:
+    name: gazelle_python_test
+integrity: 366852b36882c766f23173b8673e934a1f84685f529dc06aabab837f697ba9f8

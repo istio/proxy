@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "loader",
+    srcs = [
+        "doc.go",
+        "loader.go",
+        "util.go",
+    ],
+    importpath = "golang.org/x/tools/go/loader",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/ast/astutil",
+        "//go/buildutil",
+        "//go/internal/cgo",
+        "//internal/typeparams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":loader",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "loader_test",
+    srcs = [
+        "loader_test.go",
+        "stdlib_test.go",
+    ],
+    deps = [
+        ":loader",
+        "//go/buildutil",
+        "//internal/testenv",
+    ],
+)

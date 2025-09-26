@@ -1,0 +1,5 @@
+load(":lto_test_suite.bzl", "lto_test_suite")
+
+lto_test_suite(
+    name = "lto_test_suite",
+)

@@ -1,0 +1,3 @@
+load(":select_whl_tests.bzl", "select_whl_test_suite")
+
+select_whl_test_suite(name = "select_whl_tests")

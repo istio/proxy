@@ -1,0 +1,14 @@
+load("//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "dep",
+    srcs = ["dep.rs"],
+    edition = "2018",
+)
+
+rust_test(
+    name = "remap_path_prefix",
+    srcs = ["test.rs"],
+    edition = "2018",
+    deps = [":dep"],
+)

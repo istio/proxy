@@ -1,0 +1,33 @@
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+
+rust_binary(
+    name = "hello-world",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+)
+
+filegroup(
+    name = "hello_world_main",
+    srcs = ["src/main.rs"],
+)
+
+rust_test(
+    name = "test_run",
+    srcs = ["tests/run.rs"],
+    data = [
+        ":hello-world",
+        ":hello_world_main",
+    ],
+    edition = "2018",
+    env = {
+        "FERRIS_SAYS": "Hello fellow Rustaceans!",
+        "HELLO_WORLD_BIN_ROOTPATH": "$(rootpath :hello-world)",
+    },
+)
+
+rust_test(
+    name = "test_manifest_dir",
+    srcs = ["tests/manifest_dir.rs"],
+    data = ["src/manifest_dir_file.txt"],
+    edition = "2018",
+)

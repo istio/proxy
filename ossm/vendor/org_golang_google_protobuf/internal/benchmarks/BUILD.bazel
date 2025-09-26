@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "benchmarks_test",
+    srcs = ["bench_test.go"],
+    deps = [
+        "//encoding/protojson",
+        "//encoding/prototext",
+        "//internal/testprotos/benchmarks",
+        "//internal/testprotos/benchmarks/datasets/google_message1/proto2",
+        "//internal/testprotos/benchmarks/datasets/google_message1/proto3",
+        "//internal/testprotos/benchmarks/datasets/google_message2",
+        "//internal/testprotos/benchmarks/datasets/google_message3",
+        "//internal/testprotos/benchmarks/datasets/google_message4",
+        "//proto",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+    ],
+)

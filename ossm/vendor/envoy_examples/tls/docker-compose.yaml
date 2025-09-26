@@ -1,0 +1,63 @@
+services:
+
+  proxy-https-to-http:
+    depends_on:
+    - service-http
+    build:
+      context: .
+      dockerfile: ../shared/envoy/Dockerfile
+      args:
+        ENVOY_CONFIG: ./envoy-https-http.yaml
+    ports:
+    - "${PORT_PROXY0:-10000}:10000"
+
+  proxy-https-to-https:
+    depends_on:
+    - service-https
+    build:
+      context: .
+      dockerfile: ../shared/envoy/Dockerfile
+      args:
+        ENVOY_CONFIG: ./envoy-https-https.yaml
+    ports:
+    - "${PORT_PROXY1:-10001}:10000"
+
+  proxy-http-to-https:
+    depends_on:
+    - service-https
+    build:
+      context: .
+      dockerfile: ../shared/envoy/Dockerfile
+      args:
+        ENVOY_CONFIG: ./envoy-http-https.yaml
+    ports:
+    - "${PORT_PROXY2:-10002}:10000"
+
+  proxy-https-passthrough:
+    depends_on:
+    - service-https
+    build:
+      context: .
+      dockerfile: ../shared/envoy/Dockerfile
+      args:
+        ENVOY_CONFIG: ./envoy-https-passthrough.yaml
+    ports:
+    - "${PORT_PROXY3:-10003}:10000"
+
+  service-http:
+    build:
+      context: ../shared/echo
+    environment:
+      ECHO_HOSTNAME: service-http
+      ECHO_HTTP_HOST: 0.0.0.0
+      ECHO_HTTP_PORT: 80
+
+  service-https:
+    build:
+      context: ../shared/echo
+    environment:
+      ECHO_HOSTNAME: service-https
+      ECHO_HTTPS_HOST: 0.0.0.0
+      ECHO_HTTPS_PORT: 443
+      ECHO_TLS_CERT: /tmp/snakeoil/tls.cert
+      ECHO_TLS_KEY: /tmp/snakeoil/tls.key

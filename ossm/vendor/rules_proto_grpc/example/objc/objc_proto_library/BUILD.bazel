@@ -1,0 +1,18 @@
+load("@rules_proto_grpc//objc:defs.bzl", "objc_proto_library")
+
+objc_proto_library(
+    name = "person_objc_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+    deps = ["place_objc_proto"],
+)
+
+objc_proto_library(
+    name = "place_objc_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+    deps = ["thing_objc_proto"],
+)
+
+objc_proto_library(
+    name = "thing_objc_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

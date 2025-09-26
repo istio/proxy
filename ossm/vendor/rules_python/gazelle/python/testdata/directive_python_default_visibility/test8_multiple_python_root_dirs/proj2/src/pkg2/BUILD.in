@@ -1,0 +1,3 @@
+# proj1 depends on proj2
+# So we have to make sure that proj2 is visible by proj1
+# gazelle:python_default_visibility //$python_root$:__subpackages__,//test8_multiple_python_root_dirs/proj1/src:__subpackages__

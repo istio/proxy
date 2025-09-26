@@ -1,0 +1,28 @@
+# Include dependencies which are only needed for development here.
+
+local_repository(
+    name = "mappings_test_external_repo",
+    path = "tests/mappings/external_repo",
+)
+
+# TODO(aiuto): bzlmod chokes on @rules_pkg// in the toolchain labels.
+# Find rpmbuild if it exists.
+# load("//toolchains/rpm:rpmbuild_configure.bzl", "find_system_rpmbuild")
+#
+#find_system_rpmbuild(
+#    name = "rules_pkg_rpmbuild",
+#    verbose = False,
+#)
+
+# Needed for making our release notes
+load("//toolchains/git:git_configure.bzl", "experimental_find_system_git_bzlmod")
+
+experimental_find_system_git_bzlmod(
+    name = "rules_pkg_git",
+    verbose = False,
+)
+
+register_toolchains(
+    "@rules_pkg_git//:git_auto_toolchain",
+    "//toolchains/git:git_missing_toolchain",
+)

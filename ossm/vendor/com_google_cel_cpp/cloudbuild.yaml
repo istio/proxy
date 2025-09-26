@@ -1,0 +1,41 @@
+steps:
+- name: 'gcr.io/cel-analysis/gcc9@sha256:4d5ff2e55224398807235a44b57e9c5793e922ac46e9ff428536bb8f8e5790ce'
+  args:
+  - '--output_base=/bazel' # This is mandatory to avoid steps accidently sharing data.
+  - 'test'
+  - '...'
+  - '--enable_bzlmod'
+  - '--copt=-Wno-deprecated-declarations'
+  - '--compilation_mode=fastbuild'
+  - '--test_output=errors'
+  - '--show_timestamps'
+  - '--test_tag_filters=-benchmark,-notap'
+  - '--jobs=HOST_CPUS*.5'
+  - '--local_ram_resources=HOST_RAM*.4'
+  - '--remote_cache=https://storage.googleapis.com/cel-cpp-remote-cache'
+  - '--google_default_credentials'
+  id: gcc-9
+  waitFor: ['-']
+- name: 'gcr.io/cel-analysis/gcc9@sha256:4d5ff2e55224398807235a44b57e9c5793e922ac46e9ff428536bb8f8e5790ce'
+  env:
+  - 'CC=clang-11'
+  - 'CXX=clang++-11'
+  args:
+  - '--output_base=/bazel' # This is mandatory to avoid steps accidently sharing data.
+  - 'test'
+  - '...'
+  - '--enable_bzlmod'
+  - '--copt=-Wno-deprecated-declarations'
+  - '--compilation_mode=fastbuild'
+  - '--test_output=errors'
+  - '--show_timestamps'
+  - '--test_tag_filters=-benchmark,-notap'
+  - '--jobs=HOST_CPUS*.5'
+  - '--local_ram_resources=HOST_RAM*.4'
+  - '--remote_cache=https://storage.googleapis.com/cel-cpp-remote-cache'
+  - '--google_default_credentials'
+  id: clang-11
+  waitFor: ['-']
+timeout: 1h
+options:
+  machineType: 'E2_HIGHCPU_32'

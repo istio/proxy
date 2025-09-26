@@ -1,0 +1,18 @@
+load("@rules_proto_grpc//csharp:defs.bzl", "csharp_proto_library")
+
+csharp_proto_library(
+    name = "person_csharp_proto.dll",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+    deps = ["place_csharp_proto.dll"],
+)
+
+csharp_proto_library(
+    name = "place_csharp_proto.dll",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+    deps = ["thing_csharp_proto.dll"],
+)
+
+csharp_proto_library(
+    name = "thing_csharp_proto.dll",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

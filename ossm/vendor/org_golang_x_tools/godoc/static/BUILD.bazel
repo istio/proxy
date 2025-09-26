@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "static",
+    srcs = [
+        "doc.go",
+        "gen.go",
+        "static.go",
+    ],
+    importpath = "golang.org/x/tools/godoc/static",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":static",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "static_test",
+    srcs = ["gen_test.go"],
+    embed = [":static"],
+)

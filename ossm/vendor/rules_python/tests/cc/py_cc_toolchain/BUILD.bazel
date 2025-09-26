@@ -1,0 +1,3 @@
+load(":py_cc_toolchain_tests.bzl", "py_cc_toolchain_test_suite")
+
+py_cc_toolchain_test_suite(name = "py_cc_toolchain_tests")

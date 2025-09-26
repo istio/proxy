@@ -1,0 +1,66 @@
+# Copyright 2024 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_python//python:py_test.bzl", "py_test")
+load(":py_extension.bzl", "py_extension")
+
+py_test(
+    name = "test",
+    srcs = ["test.py"],
+    # Make this test better respect pyenv
+    env_inherit = ["PYENV_VERSION"],
+)
+
+config_setting(
+    name = "is_py_local",
+    flag_values = {
+        ":py": "local",
+    },
+)
+
+# Set `--//:py=local` to use the local toolchain
+# (This is set in this example's .bazelrc)
+string_flag(
+    name = "py",
+    build_setting_default = "",
+)
+
+# Build rules to generate a python extension.
+cc_library(
+    name = "echo_ext_cc",
+    testonly = True,
+    srcs = ["echo_ext.cc"],
+    deps = [
+        "@rules_python//python/cc:current_py_cc_headers",
+    ],
+    alwayslink = True,
+)
+
+py_extension(
+    name = "echo_ext",
+    testonly = True,
+    copts = select({
+        "@rules_cc//cc/compiler:msvc-cl": [],
+        "//conditions:default": ["-fvisibility=hidden"],
+    }),
+    deps = [":echo_ext_cc"],
+)
+
+py_test(
+    name = "echo_test",
+    srcs = ["echo_test.py"],
+    deps = [":echo_ext"],
+)

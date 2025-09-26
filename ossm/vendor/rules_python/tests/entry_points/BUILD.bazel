@@ -1,0 +1,46 @@
+# Copyright 2023 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//python:py_test.bzl", "py_test")
+load(":simple_macro.bzl", "py_console_script_binary_in_a_macro")
+
+py_test(
+    name = "py_console_script_gen_test",
+    srcs = ["py_console_script_gen_test.py"],
+    main = "py_console_script_gen_test.py",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//python/private:py_console_script_gen_lib",
+    ],
+)
+
+py_console_script_binary_in_a_macro(
+    name = "twine",
+    pkg = "@rules_python_publish_deps//twine",
+)
+
+py_console_script_binary_in_a_macro(
+    name = "twine_pkg",
+    pkg = "@rules_python_publish_deps//twine:pkg",
+    script = "twine",
+)
+
+build_test(
+    name = "build_entry_point",
+    targets = [
+        ":twine",
+        ":twine_pkg",
+    ],
+)

@@ -1,0 +1,8 @@
+.circleci/config.yml
+docs/*.md
+e2e/*/docs.md
+lib/tests/jq/*.json
+lib/tests/yq/empty.yaml
+lib/lib/tests/write_source_files/*.js
+lib/lib/tests/write_source_files/subdir/*.js
+lib/lib/tests/write_source_files/subdir/subsubdir/*.js

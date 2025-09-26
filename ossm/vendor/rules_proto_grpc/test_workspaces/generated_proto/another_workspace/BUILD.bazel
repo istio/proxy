@@ -1,0 +1,26 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_proto_grpc//python:defs.bzl", "python_proto_library")
+
+package(default_visibility = ["//visibility:private"])
+
+# Generate a proto file in another workspace
+# See https://github.com/rules-proto-grpc/rules_proto_grpc/issues/158
+
+genrule(
+    name = "generate_proto",
+    srcs = ["generated_elsewhere.proto.template"],
+    outs = ["generated_elsewhere.proto"],
+    cmd = "cp '$(location generated_elsewhere.proto.template)' '$@'",
+)
+
+proto_library(
+    name = "proto_lib",
+    srcs = ["generated_elsewhere.proto"],
+    visibility = ["//visibility:public"],
+)
+
+python_proto_library(
+    name = "py_lib",
+    protos = ["proto_lib"],
+    visibility = ["//visibility:public"],
+)

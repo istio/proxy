@@ -1,0 +1,55 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//:version.bzl", "BAZEL_VERSION")
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
+build_test(
+    name = "bzl_libraries_build_test",
+    targets = [
+        # keep sorted
+        "//python:current_py_toolchain_bzl",
+        "//python:defs_bzl",
+        "//python:proto_bzl",
+        "//python:py_binary_bzl",
+        "//python:py_cc_link_params_info_bzl",
+        "//python:py_import_bzl",
+        "//python:py_info_bzl",
+        "//python:py_library_bzl",
+        "//python:py_runtime_bzl",
+        "//python:py_runtime_info_bzl",
+        "//python:py_runtime_pair_bzl",
+        "//python:py_test_bzl",
+        "//python/cc:py_cc_toolchain_bzl",
+        "//python/cc:py_cc_toolchain_info_bzl",
+        "//python/entry_points:py_console_script_binary_bzl",
+    ],
+)
+
+genrule(
+    name = "assert_bazelversion",
+    srcs = ["//:.bazelversion"],
+    outs = ["assert_bazelversion_test.sh"],
+    cmd = """\
+set -o errexit -o nounset -o pipefail
+current=$$(cat "$(execpath //:.bazelversion)")
+cat > "$@" <<EOF
+#!/usr/bin/env bash
+set -o errexit -o nounset -o pipefail
+if [[ \"$${{current}}\" != \"{expected}\" ]]; then
+    >&2 echo "ERROR: current bazel version '$${{current}}' is not the expected '{expected}'"
+    exit 1
+fi
+EOF
+""".format(
+        expected = BAZEL_VERSION,
+    ),
+    executable = True,
+)
+
+sh_test(
+    name = "assert_bazelversion_test",
+    srcs = [":assert_bazelversion_test.sh"],
+)

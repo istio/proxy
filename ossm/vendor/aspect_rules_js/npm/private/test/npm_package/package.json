@@ -1,0 +1,8 @@
+{
+    "name": "test-npm_package",
+    "private": true,
+    "dependencies": {
+        "chalk": "5.0.1",
+        "chalk-alt": "npm:chalk@5.1.1"
+    }
+}

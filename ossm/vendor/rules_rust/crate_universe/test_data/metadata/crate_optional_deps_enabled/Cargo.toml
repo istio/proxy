@@ -1,0 +1,15 @@
+[package]
+name = "crate-with-optional-deps"
+version = "0.1.0"
+edition = "2021" # make sure resolver=2 is enabled for this test
+
+# Required to satisfy cargo but no `lib.rs` is expected to
+# exist within test data.
+[lib]
+path = "lib.rs"
+
+[dependencies]
+# enables the `termcolor` and `is-terminal` optional crates
+clap = { version = "=4.1.1", default-features = false, features = ["color"] }
+# the mio crate should be enabled by default on linux, but not on other platforms
+notify = "5.1"

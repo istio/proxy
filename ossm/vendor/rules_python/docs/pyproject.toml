@@ -1,0 +1,16 @@
+[project]
+name = "rules_python_docs"
+version = "0.0.0"
+
+dependencies = [
+    # NOTE: This is only used as input to create the resolved requirements.txt
+    # file, which is what builds, both Bazel and Readthedocs, both use.
+    "sphinx-autodoc2",
+    "sphinx",
+    "myst-parser",
+    "sphinx_rtd_theme >=2.0", # uv insists on downgrading for some reason
+    "readthedocs-sphinx-ext",
+    "absl-py",
+    "typing-extensions",
+    "sphinx-reredirects"
+]

@@ -1,0 +1,540 @@
+<html>
+<head>
+<script src="http://code.jquery.com/jquery-1.8.2.js"></script>
+<script src="http://www.google.com/jsapi?autoload={%22modules%22:[{%22name%22:%22visualization%22,%22version%22:%221%22,%22packages%22:[%22controls%22,%22charteditor%22]}]}"></script>
+<script src="jquery.csv.js"></script>
+<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+<script>
+$(function() {
+	google.load("visualization", "1", {packages:["corechart"]});
+  google.setOnLoadCallback(function() {
+
+    var csv = $('#textInput').val();
+    var data = $.csv.toArrays(csv, {
+        onParseValue: $.csv.hooks.castToScalar
+    });
+
+    // Convert data for bar chart (summing all digits)
+    var timeData = {};	// type -> table
+    var funcRowMap;
+    var maxDigit = 0;
+
+    for (var i = 1; i < data.length; i++) {
+    	var type = data[i][0];
+   		var func = data[i][1];
+      var digit = data[i][2];
+   		var time = data[i][3];
+   		if (timeData[type] == null) {
+   			timeData[type] = [["Function", "Time (ns)"/*, { role: "style" }*/]];
+        if (digit != 0)
+   			  funcRowMap = {};
+   		}
+
+   		var table = timeData[type];
+   		
+      if (digit != 0) {
+     		if (funcRowMap[func] == null)
+     			funcRowMap[func] = table.push([func, 0]) - 1;
+     		
+     		table[funcRowMap[func]][1] += time;
+      }
+      else 
+        table.push([func, time]);
+
+      maxDigit = Math.max(maxDigit, digit);
+    }
+
+    // Compute average
+    for (var type in timeData) {
+      var table = timeData[type];
+      for (var i = 1; i < table.length; i++)
+        table[i][1] /= maxDigit;
+    }
+
+    // Convert data for drawing line chart per random digit
+    var timeDigitData = {}; // type -> table
+    var funcColumnMap;
+
+    for (var i = 1; i < data.length; i++) {
+    	var type = data[i][0];
+   		var func = data[i][1];
+		  var digit = data[i][2];
+   		var time = data[i][3];
+
+      if (digit == 0)
+        continue;
+
+   		if (timeDigitData[type] == null) {
+   			timeDigitData[type] = [["Digit"]];
+   			funcColumnMap = {};
+   		}
+
+   		var table = timeDigitData[type];
+
+   		if (funcColumnMap[func] == null)
+   			funcColumnMap[func] = table[0].push(func) - 1;
+
+   		var row;
+   		for (row = 1; row < table.length; row++)
+   			if (table[row][0] == digit)
+   				break;
+
+    	if (row == table.length)
+    		table.push([digit]);
+
+		table[row][funcColumnMap[func]] = time;
+	}
+
+	for (var type in timeData) {
+		$("#main").append(
+      $("<a>", {name: type}),
+      $("<h2>", {style: "padding-top: 70px; margin-top: -70px;"}).append(type)
+    );
+
+    $("#section").append($("<li>").append($("<a>", {href: "#" + type}).append(type)));
+
+		drawTable(type, timeData[type]);
+		drawBarChart(type, timeData[type]);
+    if (timeDigitData[type] != null)
+		  drawDigitChart(type, timeDigitData[type]);
+	}
+
+	$(".chart").each(function() {
+		var chart = $(this);
+		var d = $("#downloadDD").clone().css("display", "");
+		$('li a', d).each(function() {
+	        $(this).click(function() {
+	            var svg = chart[0].getElementsByTagName('svg')[0].parentNode.innerHTML;
+	            svg=sanitize(svg);
+	            $('#imageFilename').val($("#title").html() + "_" + chart.data("filename"));
+	            $('#imageGetFormTYPE').val($(this).attr('dltype'));
+	            $('#imageGetFormSVG').val(svg);
+	            $('#imageGetForm').submit();
+	        });
+	    });		
+		$(this).after(d);
+	});
+
+  // Add configurations
+  var thisConfig = "unknown_win64_vc2019";
+  var configurations = ["corei7920@2.67_cygwin32_gcc4.8","corei7920@2.67_cygwin64_gcc4.8","corei7920@2.67_win32_vc2013","corei7920@2.67_win64_vc2013","unknown_mac32_clang7.0","unknown_mac64_clang7.0","unknown_win64_vc2019"];
+
+  for (var i in configurations) {
+    var c = configurations[i];
+    $("#configuration").append($("<li>", {class : (c == thisConfig ? "active" : "")}).append($("<a>", {href: c + ".html"}).append(c)));
+  }
+  })
+});
+
+function drawTable(type, timeData) {
+	var data = google.visualization.arrayToDataTable(timeData);
+    data.addColumn('number', 'Speedup');
+    data.sort([{ column: 1, desc: true }]);
+    var formatter1 = new google.visualization.NumberFormat({ fractionDigits: 3 });
+    formatter1.format(data, 1);
+
+	var div = document.createElement("div");
+	div.className = "tablechart";
+	$("#main").append(div);
+    var table = new google.visualization.Table(div);
+    redrawTable(0);
+    table.setSelection([{ row: 0, column: null}]);
+
+    function redrawTable(selectedRow) {
+        // Compute relative time using the first row as basis
+        var basis = data.getValue(selectedRow, 1);
+        for (var rowIndex = 0; rowIndex < data.getNumberOfRows(); rowIndex++)
+            data.setValue(rowIndex, 2, basis / data.getValue(rowIndex, 1));
+
+        var formatter = new google.visualization.NumberFormat({suffix: 'x'});
+        formatter.format(data, 2); // Apply formatter to second column
+
+        table.draw(data);
+    }
+
+    google.visualization.events.addListener(table, 'select',
+    function() {
+        var selection = table.getSelection();
+        if (selection.length > 0) {
+            var item = selection[0];
+            if (item.row != null)
+                redrawTable(item.row);
+        }
+    });
+
+}
+
+function drawBarChart(type, timeData) {
+    var defaultColors = ["#3366cc","#dc3912","#ff9900","#109618","#990099","#0099c6","#dd4477","#66aa00","#b82e2e","#316395","#994499","#22aa99","#aaaa11","#6633cc","#e67300","#8b0707","#651067","#329262","#5574a6","#3b3eac","#b77322","#16d620","#b91383","#f4359e","#9c5935","#a9c413","#2a778d","#668d1c","#bea413","#0c5922","#743411"];
+
+	var data = google.visualization.arrayToDataTable(timeData);
+	data.addColumn({ type: "string", role: "style" })
+	for (var rowIndex = 0; rowIndex < data.getNumberOfRows(); rowIndex++)
+		data.setValue(rowIndex, 2, defaultColors[rowIndex]);
+
+    data.sort([{ column: 1, desc: true }]);
+	var options = { 
+		title: type,
+		chartArea: {'width': '70%', 'height': '70%'},
+		width: 800,
+		height: 300,
+		legend: { position: "none" },
+		hAxis: { title: "Time (ns)" }
+	};
+	var div = document.createElement("div");
+	div.className = "chart";
+	$(div).data("filename", type + "_time");
+	$("#main").append(div);
+	var chart = new google.visualization.BarChart(div);
+
+	chart.draw(data, options);
+}
+
+function drawDigitChart(type, timeDigitData) {
+	var data = google.visualization.arrayToDataTable(timeDigitData);
+
+	var options = { 
+		title: type,
+		chartArea: {left:100, 'width': '60%', 'height': '80%'},
+		hAxis: {
+			title: "Digit",
+			gridlines: { count: timeDigitData.length - 1 },
+			maxAlternation: 1,
+			minTextSpacing: 0
+		},
+		vAxis: {
+			title: "Time (ns) in log scale",
+			logScale: true,
+			minorGridlines: { count: 0 },
+      baseline: 0,
+      viewWindow: {max: 150, min: 20},
+      minorGridlines: {interval: [1,2,3,4,5,6,7,8,9,10]}
+		},
+		width: 800,
+		height: 600
+	};
+	var div = document.createElement("div");
+	div.className = "chart";
+	$(div).data("filename", type + "_timedigit");
+	$("#main").append(div);
+	var chart = new google.visualization.LineChart(div);
+
+	chart.draw(data, options);
+}
+
+// http://jsfiddle.net/P6XXM/
+function sanitize(svg) {
+    svg = svg
+        .replace(/\<svg/,'<svg xmlns="http://www.w3.org/2000/svg" version="1.1"')
+        .replace(/zIndex="[^"]+"/g, '')
+        .replace(/isShadow="[^"]+"/g, '')
+        .replace(/symbolName="[^"]+"/g, '')
+        .replace(/jQuery[0-9]+="[^"]+"/g, '')
+        .replace(/isTracker="[^"]+"/g, '')
+        .replace(/url\([^#]+#/g, 'url(#')
+        .replace('<svg xmlns:xlink="http://www.w3.org/1999/xlink" ', '<svg ')
+        .replace(/ href=/g, ' xlink:href=')
+    /*.replace(/preserveAspectRatio="none">/g, 'preserveAspectRatio="none"/>')*/
+    /* This fails in IE < 8
+    .replace(/([0-9]+)\.([0-9]+)/g, function(s1, s2, s3) { // round off to save weight
+    return s2 +'.'+ s3[0];
+    })*/
+
+    // IE specific
+        .replace(/id=([^" >]+)/g, 'id="$1"')
+        .replace(/class=([^" ]+)/g, 'class="$1"')
+        .replace(/ transform /g, ' ')
+        .replace(/:(path|rect)/g, '$1')
+        .replace(/<img ([^>]*)>/gi, '<image $1 />')
+        .replace(/<\/image>/g, '') // remove closing tags for images as they'll never have any content
+        .replace(/<image ([^>]*)([^\/])>/gi, '<image $1$2 />') // closes image tags for firefox
+        .replace(/width=(\d+)/g, 'width="$1"')
+        .replace(/height=(\d+)/g, 'height="$1"')
+        .replace(/hc-svg-href="/g, 'xlink:href="')
+        .replace(/style="([^"]+)"/g, function (s) {
+            return s.toLowerCase();
+        });
+
+    // IE9 beta bugs with innerHTML. Test again with final IE9.
+    svg = svg.replace(/(url\(#highcharts-[0-9]+)&quot;/g, '$1')
+        .replace(/&quot;/g, "'");
+    if (svg.match(/ xmlns="/g).length == 2) {
+        svg = svg.replace(/xmlns="[^"]+"/, '');
+    }
+
+    return svg;
+}
+</script>
+<style type="text/css">
+@media (min-width: 800px) {
+  .container {
+    max-width: 800px;
+  }
+}
+textarea {
+	font-family: Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+}
+.tablechart {
+	width: 700px;
+	margin: auto;
+	padding-top: 20px;
+	padding-bottom: 20px;
+}
+.chart {
+	padding-top: 20px;
+	padding-bottom: 20px;
+}
+body { padding-top: 70px; }
+</style>
+</head>
+<body>
+<div class="container">
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+  <div class="container">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="https://github.com/miloyip/dtoa-benchmark"><span class="glyphicon glyphicon-home"></span> dtoa-benchmark</a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown">Configuration <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu" id="configuration">
+          </ul>
+        </li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown">Section <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu" id="section">
+          </ul>
+        </li>
+      </ul>
+      <p class="navbar-text navbar-right">Developed by <a href="https://github.com/miloyip" class="navbar-link">Milo Yip</a></p>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+<div class="page-header">
+<h1 id="title">unknown_win64_vc2019</h1>
+</div>
+<div id="main"></div>
+<h2>Source CSV</h2>
+<textarea id="textInput" class="form-control" rows="5" readonly>
+  Type,Function,Digit,Time(ns)
+randomdigit,doubleconv,1,86.228000
+randomdigit,doubleconv,2,95.433000
+randomdigit,doubleconv,3,106.244000
+randomdigit,doubleconv,4,110.417000
+randomdigit,doubleconv,5,115.523000
+randomdigit,doubleconv,6,121.489000
+randomdigit,doubleconv,7,117.749000
+randomdigit,doubleconv,8,124.299000
+randomdigit,doubleconv,9,117.958000
+randomdigit,doubleconv,10,121.491000
+randomdigit,doubleconv,11,132.732000
+randomdigit,doubleconv,12,136.973000
+randomdigit,doubleconv,13,131.999000
+randomdigit,doubleconv,14,132.294000
+randomdigit,doubleconv,15,138.627000
+randomdigit,doubleconv,16,139.850000
+randomdigit,doubleconv,17,146.298000
+randomdigit,emyg,1,51.573000
+randomdigit,emyg,2,55.405000
+randomdigit,emyg,3,61.655000
+randomdigit,emyg,4,63.348000
+randomdigit,emyg,5,62.883000
+randomdigit,emyg,6,64.313000
+randomdigit,emyg,7,72.009000
+randomdigit,emyg,8,78.801000
+randomdigit,emyg,9,82.410000
+randomdigit,emyg,10,76.806000
+randomdigit,emyg,11,78.349000
+randomdigit,emyg,12,79.419000
+randomdigit,emyg,13,83.289000
+randomdigit,emyg,14,83.178000
+randomdigit,emyg,15,83.538000
+randomdigit,emyg,16,90.624000
+randomdigit,emyg,17,98.789000
+randomdigit,erthink,1,36.237000
+randomdigit,erthink,2,33.432000
+randomdigit,erthink,3,40.198000
+randomdigit,erthink,4,36.666000
+randomdigit,erthink,5,39.073000
+randomdigit,erthink,6,37.726000
+randomdigit,erthink,7,41.059000
+randomdigit,erthink,8,44.301000
+randomdigit,erthink,9,45.250000
+randomdigit,erthink,10,42.244000
+randomdigit,erthink,11,44.638000
+randomdigit,erthink,12,51.162000
+randomdigit,erthink,13,47.595000
+randomdigit,erthink,14,49.340000
+randomdigit,erthink,15,53.488000
+randomdigit,erthink,16,52.795000
+randomdigit,erthink,17,60.616000
+randomdigit,floaxie,1,33.571000
+randomdigit,floaxie,2,40.230000
+randomdigit,floaxie,3,41.166000
+randomdigit,floaxie,4,46.787000
+randomdigit,floaxie,5,53.604000
+randomdigit,floaxie,6,71.616000
+randomdigit,floaxie,7,73.048000
+randomdigit,floaxie,8,76.735000
+randomdigit,floaxie,9,80.882000
+randomdigit,floaxie,10,94.187000
+randomdigit,floaxie,11,97.235000
+randomdigit,floaxie,12,100.801000
+randomdigit,floaxie,13,99.980000
+randomdigit,floaxie,14,103.489000
+randomdigit,floaxie,15,105.333000
+randomdigit,floaxie,16,110.717000
+randomdigit,floaxie,17,107.362000
+randomdigit,fmt,1,52.198000
+randomdigit,fmt,2,54.776000
+randomdigit,fmt,3,52.161000
+randomdigit,fmt,4,58.836000
+randomdigit,fmt,5,56.955000
+randomdigit,fmt,6,53.528000
+randomdigit,fmt,7,52.509000
+randomdigit,fmt,8,57.602000
+randomdigit,fmt,9,60.834000
+randomdigit,fmt,10,57.477000
+randomdigit,fmt,11,58.971000
+randomdigit,fmt,12,55.770000
+randomdigit,fmt,13,55.874000
+randomdigit,fmt,14,56.472000
+randomdigit,fmt,15,62.634000
+randomdigit,fmt,16,72.528000
+randomdigit,fmt,17,74.404000
+randomdigit,grisu2,1,114.043000
+randomdigit,grisu2,2,122.138000
+randomdigit,grisu2,3,120.953000
+randomdigit,grisu2,4,123.374000
+randomdigit,grisu2,5,122.704000
+randomdigit,grisu2,6,125.247000
+randomdigit,grisu2,7,130.645000
+randomdigit,grisu2,8,135.679000
+randomdigit,grisu2,9,138.106000
+randomdigit,grisu2,10,142.592000
+randomdigit,grisu2,11,145.814000
+randomdigit,grisu2,12,148.884000
+randomdigit,grisu2,13,152.208000
+randomdigit,grisu2,14,156.308000
+randomdigit,grisu2,15,162.578000
+randomdigit,grisu2,16,163.468000
+randomdigit,grisu2,17,172.360000
+randomdigit,milo,1,53.854000
+randomdigit,milo,2,58.307000
+randomdigit,milo,3,63.625000
+randomdigit,milo,4,63.469000
+randomdigit,milo,5,72.209000
+randomdigit,milo,6,74.151000
+randomdigit,milo,7,68.672000
+randomdigit,milo,8,69.694000
+randomdigit,milo,9,78.654000
+randomdigit,milo,10,73.236000
+randomdigit,milo,11,79.239000
+randomdigit,milo,12,82.419000
+randomdigit,milo,13,85.337000
+randomdigit,milo,14,87.659000
+randomdigit,milo,15,94.921000
+randomdigit,milo,16,91.800000
+randomdigit,milo,17,107.001000
+randomdigit,ryu,1,66.145000
+randomdigit,ryu,2,67.208000
+randomdigit,ryu,3,67.493000
+randomdigit,ryu,4,81.498000
+randomdigit,ryu,5,62.982000
+randomdigit,ryu,6,58.807000
+randomdigit,ryu,7,59.268000
+randomdigit,ryu,8,55.863000
+randomdigit,ryu,9,53.858000
+randomdigit,ryu,10,56.399000
+randomdigit,ryu,11,52.999000
+randomdigit,ryu,12,51.672000
+randomdigit,ryu,13,49.009000
+randomdigit,ryu,14,46.811000
+randomdigit,ryu,15,45.423000
+randomdigit,ryu,16,43.960000
+randomdigit,ryu,17,43.001000
+randomdigit,dragonbox,1,22.945000
+randomdigit,dragonbox,2,24.312000
+randomdigit,dragonbox,3,24.006000
+randomdigit,dragonbox,4,26.025000
+randomdigit,dragonbox,5,27.966000
+randomdigit,dragonbox,6,28.116000
+randomdigit,dragonbox,7,26.440000
+randomdigit,dragonbox,8,27.603000
+randomdigit,dragonbox,9,28.195000
+randomdigit,dragonbox,10,28.940000
+randomdigit,dragonbox,11,28.502000
+randomdigit,dragonbox,12,29.298000
+randomdigit,dragonbox,13,28.658000
+randomdigit,dragonbox,14,29.388000
+randomdigit,dragonbox,15,28.679000
+randomdigit,dragonbox,16,29.925000
+randomdigit,dragonbox,17,34.495000
+randomdigit,dragonbox_comp,1,30.176000
+randomdigit,dragonbox_comp,2,31.896000
+randomdigit,dragonbox_comp,3,34.401000
+randomdigit,dragonbox_comp,4,32.796000
+randomdigit,dragonbox_comp,5,30.836000
+randomdigit,dragonbox_comp,6,33.827000
+randomdigit,dragonbox_comp,7,34.167000
+randomdigit,dragonbox_comp,8,36.188000
+randomdigit,dragonbox_comp,9,38.506000
+randomdigit,dragonbox_comp,10,39.042000
+randomdigit,dragonbox_comp,11,34.974000
+randomdigit,dragonbox_comp,12,37.818000
+randomdigit,dragonbox_comp,13,36.373000
+randomdigit,dragonbox_comp,14,37.244000
+randomdigit,dragonbox_comp,15,36.696000
+randomdigit,dragonbox_comp,16,38.588000
+randomdigit,dragonbox_comp,17,40.965000
+randomdigit,fmt_full_cache,1,41.960000
+randomdigit,fmt_full_cache,2,46.757000
+randomdigit,fmt_full_cache,3,48.205000
+randomdigit,fmt_full_cache,4,57.211000
+randomdigit,fmt_full_cache,5,48.030000
+randomdigit,fmt_full_cache,6,53.682000
+randomdigit,fmt_full_cache,7,49.971000
+randomdigit,fmt_full_cache,8,51.311000
+randomdigit,fmt_full_cache,9,52.827000
+randomdigit,fmt_full_cache,10,52.186000
+randomdigit,fmt_full_cache,11,54.945000
+randomdigit,fmt_full_cache,12,55.276000
+randomdigit,fmt_full_cache,13,56.670000
+randomdigit,fmt_full_cache,14,56.003000
+randomdigit,fmt_full_cache,15,56.479000
+randomdigit,fmt_full_cache,16,57.826000
+randomdigit,fmt_full_cache,17,61.658000
+</textarea>
+</div>
+<div class="row" id="downloadDD" style="display: none">
+<div class="btn-group pull-right" >
+    <button class="btn dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-picture"></span></button>
+    <ul class="dropdown-menu">
+        <li><a tabindex="-1" href="#" dltype="image/jpeg">JPEG</a></li>
+        <li><a tabindex="-1" href="#" dltype="image/png">PNG</a></li>
+        <li><a tabindex="-1" href="#" dltype="application/pdf">PDF</a></li>
+        <li><a tabindex="-1" href="#" dltype="image/svg+xml">SVG</a></li>
+    </ul>
+</div>
+</div>
+<form method="post" action="http://export.highcharts.com/" id="imageGetForm">
+    <input type="hidden" name="filename" id="imageFilename" value="" />
+    <input type="hidden" name="type" id="imageGetFormTYPE" value="" />
+    <input type="hidden" name="width" value="900" />
+    <input type="hidden" name="svg" value="" id="imageGetFormSVG" />
+</form>
+</div>
+</body>
+</html>

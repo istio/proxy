@@ -1,0 +1,7 @@
+- name: tc_mx_inbound{{.N}}
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/envoy.tcp.metadataexchange.config.MetadataExchange
+    value:
+      protocol: "istio-peer-exchange"
+      enable_discovery: true

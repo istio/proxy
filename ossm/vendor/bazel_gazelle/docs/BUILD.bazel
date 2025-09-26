@@ -1,0 +1,67 @@
+"""Documentation generation with stardoc
+
+This is in a separate package from both the stardoc source files and the
+resulting documentation markdown files, to prevent users trying to load()
+the stardoc repository, which is not a dependency users should install.
+"""
+
+load("@bazel_gazelle_is_bazel_module//:defs.bzl", "GAZELLE_IS_BAZEL_MODULE")
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
+# gazelle:ignore
+_DOC_SRCS = {
+    "//:extensions": "extensions.md",
+    "//:def": "reference.md",
+}
+
+[
+    stardoc(
+        name = out.replace(".md", "_docgen"),
+        out = out,
+        # Convention: foo.bzl has bzl_library named "foo"
+        input = input + ".bzl",
+        deps = [
+            input,
+            "@rules_cc//cc:bzl_srcs",
+        ],
+    )
+    for [
+        input,
+        out,
+    ] in _DOC_SRCS.items()
+]
+
+[
+    diff_test(
+        name = "check_" + out,
+        failure_message = "Please run bazel run //docs:update",
+        # source file (InputArtifact)
+        file1 = "//:" + out,
+        # result from stardoc rule above
+        file2 = out,
+    )
+    # The repo names in the generated docs differ in WORKSPACE mode.
+    for out in _DOC_SRCS.values()
+    if GAZELLE_IS_BAZEL_MODULE
+]
+
+write_file(
+    name = "gen_update",
+    out = "update.sh",
+    content = [
+        "#!/usr/bin/env bash",
+        "cd $BUILD_WORKSPACE_DIRECTORY",
+    ] + [
+        "cp -fv bazel-bin/docs/{0} {0}".format(v)
+        for v in _DOC_SRCS.values()
+    ],
+)
+
+sh_binary(
+    name = "update",
+    srcs = ["update.sh"],
+    data = _DOC_SRCS.values(),
+)

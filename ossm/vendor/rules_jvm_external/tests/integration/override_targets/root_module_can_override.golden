@@ -1,0 +1,3 @@
+@root_module_can_override//:com_squareup_javapoet
+@root_module_can_override//:com_squareup_okhttp3_okhttp
+@root_module_can_override//:v1/https/repo1.maven.org/maven2/com/squareup/javapoet/1.11.1/javapoet-1.11.1.jar

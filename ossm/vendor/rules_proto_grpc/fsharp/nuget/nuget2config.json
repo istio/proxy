@@ -1,0 +1,32 @@
+﻿{
+  "externals": {},
+  "dependencies": {
+    "System.Buffers": "4.5.1",
+    "System.Numerics.Vectors": "4.5.0",
+    "System.Runtime.CompilerServices.Unsafe": "4.7.1",
+    "System.Memory": "4.5.5",
+    "Microsoft.Extensions.Logging.Abstractions": "3.1.32",
+    "Grpc.Core.Api": "2.53.0",
+    "Grpc.Net.Common": "2.53.0",
+    "Grpc.Net.Client": "2.53.0",
+    "Grpc.Tools": "2.54.0",
+    "Microsoft.Extensions.DependencyInjection.Abstractions": "3.1.32",
+    "Microsoft.Extensions.Primitives": "3.1.32",
+    "Microsoft.Extensions.Configuration.Abstractions": "3.1.32",
+    "Microsoft.Extensions.Configuration": "3.1.32",
+    "Microsoft.Extensions.Configuration.Binder": "3.1.32",
+    "Microsoft.Extensions.Options": "3.1.32",
+    "Google.Protobuf": "3.23.2",
+    "Grpc.AspNetCore.Server": "2.53.0",
+    "System.Threading.Tasks.Extensions": "4.5.4",
+    "Microsoft.Bcl.AsyncInterfaces": "1.1.1",
+    "Microsoft.Extensions.DependencyInjection": "3.1.32",
+    "Microsoft.Extensions.Logging": "3.1.32",
+    "Microsoft.Extensions.Http": "3.1.32",
+    "Grpc.Net.ClientFactory": "2.53.0",
+    "Grpc.AspNetCore.Server.ClientFactory": "2.53.0",
+    "Grpc.AspNetCore": "2.53.0",
+    "FSharp.Core": "6.0.7",
+    "Protobuf.FSharp": "0.2.0"
+  }
+}

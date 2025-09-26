@@ -1,0 +1,134 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "pointer",
+    srcs = [
+        "analysis.go",
+        "api.go",
+        "callgraph.go",
+        "constraint.go",
+        "doc.go",
+        "gen.go",
+        "hvn.go",
+        "intrinsics.go",
+        "labels.go",
+        "opt.go",
+        "print.go",
+        "query.go",
+        "reflect.go",
+        "solve.go",
+        "util.go",
+    ],
+    importpath = "golang.org/x/tools/go/pointer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//container/intsets",
+        "//go/callgraph",
+        "//go/ssa",
+        "//go/types/typeutil",
+        "//internal/typeparams",
+        "@org_golang_x_sys//execabs:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pointer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "pointer_test",
+    srcs = [
+        "example_test.go",
+        "pointer_go117_test.go",
+        "pointer_race_test.go",
+        "pointer_test.go",
+        "query_test.go",
+        "stdlib_test.go",
+    ],
+    embed = [":pointer"],
+    deps = [
+        "//go/callgraph",
+        "//go/loader",
+        "//go/ssa",
+        "//go/ssa/ssautil",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:osx": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:qnx": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//go/packages",
+            "//go/types/typeutil",
+            "//internal/typeparams",
+        ],
+        "//conditions:default": [],
+    }),
+)

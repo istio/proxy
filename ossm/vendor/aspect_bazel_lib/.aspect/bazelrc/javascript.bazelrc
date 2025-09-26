@@ -1,0 +1,11 @@
+# Aspect recommended Bazel flags when using Aspect's JavaScript rules: https://github.com/aspect-build/rules_js
+# Docs for Node.js flags: https://nodejs.org/en/docs/guides/debugging-getting-started/#command-line-options
+
+# Support for debugging Node.js tests. Use bazel run with `--config=debug` to turn on the NodeJS
+# inspector agent. The node process will break before user code starts and wait for the debugger to
+# connect. Pass the --inspect-brk option to all tests which enables the node inspector agent. See
+# https://nodejs.org/de/docs/guides/debugging-getting-started/#command-line-options for more
+# details.
+# Docs: https://nodejs.org/en/docs/guides/debugging-getting-started/#command-line-options
+run:debug -- --node_options=--inspect-brk
+test:debug --test_env=NODE_OPTIONS=--inspect-brk

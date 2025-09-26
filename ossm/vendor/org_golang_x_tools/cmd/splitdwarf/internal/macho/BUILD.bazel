@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "macho",
+    srcs = [
+        "fat.go",
+        "file.go",
+        "macho.go",
+        "reloctype.go",
+        "reloctype_string.go",
+    ],
+    importpath = "golang.org/x/tools/cmd/splitdwarf/internal/macho",
+    visibility = ["//cmd/splitdwarf:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":macho",
+    visibility = ["//cmd/splitdwarf:__subpackages__"],
+)
+
+go_test(
+    name = "macho_test",
+    srcs = ["file_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":macho"],
+)

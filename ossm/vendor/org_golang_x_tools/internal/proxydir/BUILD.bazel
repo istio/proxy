@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "proxydir",
+    srcs = ["proxydir.go"],
+    importpath = "golang.org/x/tools/internal/proxydir",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/testenv"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":proxydir",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "proxydir_test",
+    srcs = ["proxydir_test.go"],
+    embed = [":proxydir"],
+)

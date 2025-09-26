@@ -1,0 +1,956 @@
+diff --git a/quiche/common/internet_checksum.cc b/quiche/common/internet_checksum.cc
+index 668d54676..8de8924d0 100644
+--- a/quiche/common/internet_checksum.cc
++++ b/quiche/common/internet_checksum.cc
+@@ -10,6 +10,8 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/span.h"
+ 
++#include "quiche/common/quiche_endian.h"
++
+ namespace quiche {
+ 
+ void InternetChecksum::Update(const char* data, size_t size) {
+@@ -20,7 +22,9 @@ void InternetChecksum::Update(const char* data, size_t size) {
+     accumulator_ += v;
+   }
+   if (current < data + size) {
+-    accumulator_ += *reinterpret_cast<const unsigned char*>(current);
++    uint16_t v = *reinterpret_cast<const unsigned char*>(current);
++    v = quiche::QuicheEndian::HostToLittleEndian16(v);
++    accumulator_ += v;
+   }
+ }
+ 
+diff --git a/quiche/common/quiche_data_reader.cc b/quiche/common/quiche_data_reader.cc
+index 8f5bf8eee..7e5359d3c 100644
+--- a/quiche/common/quiche_data_reader.cc
++++ b/quiche/common/quiche_data_reader.cc
+@@ -38,6 +38,9 @@ bool QuicheDataReader::ReadUInt16(uint16_t* result) {
+   }
+   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
+     *result = quiche::QuicheEndian::NetToHost16(*result);
++  } else if (endianness_ == quiche::HOST_BYTE_ORDER
++             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    *result = quiche::QuicheEndian::ByteSwap16(*result);
+   }
+   return true;
+ }
+@@ -63,6 +66,9 @@ bool QuicheDataReader::ReadUInt32(uint32_t* result) {
+   }
+   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
+     *result = quiche::QuicheEndian::NetToHost32(*result);
++  } else if (endianness_ == quiche::HOST_BYTE_ORDER
++             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    *result = quiche::QuicheEndian::ByteSwap32(*result);
+   }
+   return true;
+ }
+@@ -73,6 +79,9 @@ bool QuicheDataReader::ReadUInt64(uint64_t* result) {
+   }
+   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
+     *result = quiche::QuicheEndian::NetToHost64(*result);
++  } else if (endianness_ == quiche::HOST_BYTE_ORDER
++             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    *result = quiche::QuicheEndian::ByteSwap64(*result);
+   }
+   return true;
+ }
+@@ -83,7 +92,13 @@ bool QuicheDataReader::ReadBytesToUInt64(size_t num_bytes, uint64_t* result) {
+     return false;
+   }
+   if (endianness_ == quiche::HOST_BYTE_ORDER) {
+-    return ReadBytes(result, num_bytes);
++    if (!ReadBytes(result, num_bytes)) {
++      return false;
++    }
++    if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++      *result = quiche::QuicheEndian::ByteSwap64(*result);
++    }
++    return true;
+   }
+ 
+   if (!ReadBytes(reinterpret_cast<char*>(result) + sizeof(*result) - num_bytes,
+diff --git a/quiche/common/quiche_data_writer.cc b/quiche/common/quiche_data_writer.cc
+index bf49f596d..6be993b34 100644
+--- a/quiche/common/quiche_data_writer.cc
++++ b/quiche/common/quiche_data_writer.cc
+@@ -33,6 +33,9 @@ bool QuicheDataWriter::WriteUInt8(uint8_t value) {
+ bool QuicheDataWriter::WriteUInt16(uint16_t value) {
+   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
+     value = quiche::QuicheEndian::HostToNet16(value);
++  } else if (endianness_ == quiche::HOST_BYTE_ORDER
++             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    value = quiche::QuicheEndian::ByteSwap16(value);
+   }
+   return WriteBytes(&value, sizeof(value));
+ }
+@@ -40,6 +43,9 @@ bool QuicheDataWriter::WriteUInt16(uint16_t value) {
+ bool QuicheDataWriter::WriteUInt32(uint32_t value) {
+   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
+     value = quiche::QuicheEndian::HostToNet32(value);
++  } else if (endianness_ == quiche::HOST_BYTE_ORDER
++             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    value = quiche::QuicheEndian::ByteSwap32(value);
+   }
+   return WriteBytes(&value, sizeof(value));
+ }
+@@ -47,6 +53,9 @@ bool QuicheDataWriter::WriteUInt32(uint32_t value) {
+ bool QuicheDataWriter::WriteUInt64(uint64_t value) {
+   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
+     value = quiche::QuicheEndian::HostToNet64(value);
++  } else if (endianness_ == quiche::HOST_BYTE_ORDER
++             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    value = quiche::QuicheEndian::ByteSwap64(value);
+   }
+   return WriteBytes(&value, sizeof(value));
+ }
+@@ -56,6 +65,9 @@ bool QuicheDataWriter::WriteBytesToUInt64(size_t num_bytes, uint64_t value) {
+     return false;
+   }
+   if (endianness_ == quiche::HOST_BYTE_ORDER) {
++    if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++      value = quiche::QuicheEndian::ByteSwap64(value);
++    }
+     return WriteBytes(&value, num_bytes);
+   }
+ 
+diff --git a/quiche/common/quiche_endian.h b/quiche/common/quiche_endian.h
+index 2aaa47831..9ab3eecf7 100644
+--- a/quiche/common/quiche_endian.h
++++ b/quiche/common/quiche_endian.h
+@@ -18,28 +18,65 @@ enum Endianness {
+   HOST_BYTE_ORDER      // little endian
+ };
+ 
++enum HostEndianness {
++  BIG,
++  LITTLE
++};
++
+ // Provide utility functions that convert from/to network order (big endian)
+ // to/from host order (little endian).
+ class QUICHE_EXPORT QuicheEndian {
+  public:
+-  // Convert |x| from host order (little endian) to network order (big endian).
+-#if defined(__clang__) || \
++  // Get host machine endianness
++#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && \
++    __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
++  static const quiche::HostEndianness HostEndianness = quiche::BIG;
++#else
++  static const quiche::HostEndianness HostEndianness = quiche::LITTLE;
++#endif
++
++  // Convert byte order of |x|.
++ #if defined(__clang__) || \
+     (defined(__GNUC__) && \
+      ((__GNUC__ == 4 && __GNUC_MINOR__ >= 8) || __GNUC__ >= 5))
+-  static uint16_t HostToNet16(uint16_t x) { return __builtin_bswap16(x); }
+-  static uint32_t HostToNet32(uint32_t x) { return __builtin_bswap32(x); }
+-  static uint64_t HostToNet64(uint64_t x) { return __builtin_bswap64(x); }
++  static uint16_t ByteSwap16(uint16_t x) { return __builtin_bswap16(x); }
++  static uint32_t ByteSwap32(uint32_t x) { return __builtin_bswap32(x); }
++  static uint64_t ByteSwap64(uint64_t x) { return __builtin_bswap64(x); }
+ #else
+-  static uint16_t HostToNet16(uint16_t x) { return PortableByteSwap(x); }
+-  static uint32_t HostToNet32(uint32_t x) { return PortableByteSwap(x); }
+-  static uint64_t HostToNet64(uint64_t x) { return PortableByteSwap(x); }
++  static uint16_t ByteSwap16(uint16_t x) { return PortableByteSwap(x); }
++  static uint32_t ByteSwap32(uint32_t x) { return PortableByteSwap(x); }
++  static uint64_t ByteSwap64(uint64_t x) { return PortableByteSwap(x); }
+ #endif
+ 
+-  // Convert |x| from network order (big endian) to host order (little endian).
++  // Convert |x| from host order to network order (big endian).
++#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && \
++    __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
++  static uint16_t HostToNet16(uint16_t x) { return x; }
++  static uint32_t HostToNet32(uint32_t x) { return x; }
++  static uint64_t HostToNet64(uint64_t x) { return x; }
++#else
++  static uint16_t HostToNet16(uint16_t x) { return ByteSwap16(x); }
++  static uint32_t HostToNet32(uint32_t x) { return ByteSwap32(x); }
++  static uint64_t HostToNet64(uint64_t x) { return ByteSwap64(x); }
++#endif
++
++  // Convert |x| from network order (big endian) to host order.
+   static uint16_t NetToHost16(uint16_t x) { return HostToNet16(x); }
+   static uint32_t NetToHost32(uint32_t x) { return HostToNet32(x); }
+   static uint64_t NetToHost64(uint64_t x) { return HostToNet64(x); }
+ 
++  // Convert |x| from host order to little endian order.
++#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && \
++    __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
++  static uint16_t HostToLittleEndian16(uint16_t x) { return ByteSwap16(x); }
++  static uint32_t HostToLittleEndian32(uint32_t x) { return ByteSwap32(x); }
++  static uint64_t HostToLittleEndian64(uint64_t x) { return ByteSwap64(x); }
++#else
++  static uint16_t HostToLittleEndian16(uint16_t x) { return x; }
++  static uint32_t HostToLittleEndian32(uint32_t x) { return x; }
++  static uint64_t HostToLittleEndian64(uint64_t x) { return x; }
++#endif
++
+   // Left public for tests.
+   template <typename T>
+   static T PortableByteSwap(T input) {
+diff --git a/quiche/common/quiche_endian_test.cc b/quiche/common/quiche_endian_test.cc
+index 66527a9a9..04590c29a 100644
+--- a/quiche/common/quiche_endian_test.cc
++++ b/quiche/common/quiche_endian_test.cc
+@@ -31,20 +31,20 @@ TEST_F(QuicheEndianTest, Portable) {
+ }
+ 
+ TEST_F(QuicheEndianTest, HostToNet) {
+-  EXPECT_EQ(k16BitSwappedTestData,
++  EXPECT_EQ(quiche::QuicheEndian::HostEndianness == quiche::BIG ? k16BitTestData : k16BitSwappedTestData,
+             quiche::QuicheEndian::HostToNet16(k16BitTestData));
+-  EXPECT_EQ(k32BitSwappedTestData,
++  EXPECT_EQ(quiche::QuicheEndian::HostEndianness == quiche::BIG ? k32BitTestData : k32BitSwappedTestData,
+             quiche::QuicheEndian::HostToNet32(k32BitTestData));
+-  EXPECT_EQ(k64BitSwappedTestData,
++  EXPECT_EQ(quiche::QuicheEndian::HostEndianness == quiche::BIG ? k64BitTestData : k64BitSwappedTestData,
+             quiche::QuicheEndian::HostToNet64(k64BitTestData));
+ }
+ 
+ TEST_F(QuicheEndianTest, NetToHost) {
+-  EXPECT_EQ(k16BitTestData,
++  EXPECT_EQ(quiche::QuicheEndian::HostEndianness == quiche::BIG ? k16BitSwappedTestData : k16BitTestData,
+             quiche::QuicheEndian::NetToHost16(k16BitSwappedTestData));
+-  EXPECT_EQ(k32BitTestData,
++  EXPECT_EQ(quiche::QuicheEndian::HostEndianness == quiche::BIG ? k32BitSwappedTestData : k32BitTestData,
+             quiche::QuicheEndian::NetToHost32(k32BitSwappedTestData));
+-  EXPECT_EQ(k64BitTestData,
++  EXPECT_EQ(quiche::QuicheEndian::HostEndianness == quiche::BIG ? k64BitSwappedTestData : k64BitTestData,
+             quiche::QuicheEndian::NetToHost64(k64BitSwappedTestData));
+ }
+ 
+diff --git a/quiche/common/quiche_ip_address_test.cc b/quiche/common/quiche_ip_address_test.cc
+index 609b6b250..7e201338c 100644
+--- a/quiche/common/quiche_ip_address_test.cc
++++ b/quiche/common/quiche_ip_address_test.cc
+@@ -47,16 +47,24 @@ TEST(QuicheIpAddressTest, IPv6) {
+ 
+   EXPECT_EQ("fe80::1ff:fe23:4567", ip_address.ToString());
+   const in6_addr v6_address = ip_address.GetIPv6();
+-  const uint16_t* const v6_address_ptr =
+-      reinterpret_cast<const uint16_t*>(&v6_address);
+-  EXPECT_EQ(0x80feu, *(v6_address_ptr + 0));
+-  EXPECT_EQ(0x0000u, *(v6_address_ptr + 1));
+-  EXPECT_EQ(0x0000u, *(v6_address_ptr + 2));
+-  EXPECT_EQ(0x0000u, *(v6_address_ptr + 3));
+-  EXPECT_EQ(0x0000u, *(v6_address_ptr + 4));
+-  EXPECT_EQ(0xff01u, *(v6_address_ptr + 5));
+-  EXPECT_EQ(0x23feu, *(v6_address_ptr + 6));
+-  EXPECT_EQ(0x6745u, *(v6_address_ptr + 7));
++  const uint8_t* const v6_address_ptr =
++      reinterpret_cast<const uint8_t*>(&v6_address);
++  EXPECT_EQ(0xfeu, *(v6_address_ptr + 0));
++  EXPECT_EQ(0x80u, *(v6_address_ptr + 1));
++  EXPECT_EQ(0x00u, *(v6_address_ptr + 2));
++  EXPECT_EQ(0x00u, *(v6_address_ptr + 3));
++  EXPECT_EQ(0x00u, *(v6_address_ptr + 4));
++  EXPECT_EQ(0x00u, *(v6_address_ptr + 5));
++  EXPECT_EQ(0x00u, *(v6_address_ptr + 6));
++  EXPECT_EQ(0x00u, *(v6_address_ptr + 7));
++  EXPECT_EQ(0x00u, *(v6_address_ptr + 8));
++  EXPECT_EQ(0x00u, *(v6_address_ptr + 9));
++  EXPECT_EQ(0x01u, *(v6_address_ptr + 10));
++  EXPECT_EQ(0xffu, *(v6_address_ptr + 11));
++  EXPECT_EQ(0xfeu, *(v6_address_ptr + 12));
++  EXPECT_EQ(0x23u, *(v6_address_ptr + 13));
++  EXPECT_EQ(0x45u, *(v6_address_ptr + 14));
++  EXPECT_EQ(0x67u, *(v6_address_ptr + 15));
+ 
+   EXPECT_EQ(ip_address, ip_address.Normalized());
+   EXPECT_EQ(ip_address, ip_address.DualStacked());
+diff --git a/quiche/quic/core/crypto/crypto_framer.cc b/quiche/quic/core/crypto/crypto_framer.cc
+index 1fbe19e90..e7ac3589a 100644
+--- a/quiche/quic/core/crypto/crypto_framer.cc
++++ b/quiche/quic/core/crypto/crypto_framer.cc
+@@ -46,6 +46,11 @@ class OneShotVisitor : public CryptoFramerVisitorInterface {
+   bool error_;
+ };
+ 
++bool TagGreater(QuicTag first, QuicTag second) {
++  return quiche::QuicheEndian::HostToLittleEndian32(first)
++             > quiche::QuicheEndian::HostToLittleEndian32(second);
++}
++
+ }  // namespace
+ 
+ CryptoFramer::CryptoFramer()
+@@ -180,7 +185,7 @@ std::unique_ptr<QuicData> CryptoFramer::ConstructHandshakeMessage(
+       return nullptr;
+     }
+ 
+-    if (it->first > kPAD && need_pad_tag) {
++    if (TagGreater(it->first, kPAD) && need_pad_tag) {
+       need_pad_tag = false;
+       if (!WritePadTag(&writer, pad_length, &end_offset)) {
+         return nullptr;
+@@ -207,7 +212,7 @@ std::unique_ptr<QuicData> CryptoFramer::ConstructHandshakeMessage(
+   // Values
+   for (auto it = message.tag_value_map().begin();
+        it != message.tag_value_map().end(); ++it) {
+-    if (it->first > kPAD && need_pad_value) {
++    if (TagGreater(it->first, kPAD) && need_pad_value) {
+       need_pad_value = false;
+       if (!writer.WriteRepeatedByte('-', pad_length)) {
+         QUICHE_DCHECK(false) << "Failed to write padding.";
+@@ -281,7 +286,7 @@ QuicErrorCode CryptoFramer::Process(absl::string_view input) {
+       for (unsigned i = 0; i < num_entries_; ++i) {
+         QuicTag tag;
+         reader.ReadTag(&tag);
+-        if (i > 0 && tag <= tags_and_lengths_[i - 1].first) {
++        if (i > 0 && !TagGreater(tag, tags_and_lengths_[i - 1].first)) {
+           if (tag == tags_and_lengths_[i - 1].first) {
+             error_detail_ = absl::StrCat("Duplicate tag:", tag);
+             return QUIC_CRYPTO_DUPLICATE_TAG;
+diff --git a/quiche/quic/core/crypto/crypto_framer_test.cc b/quiche/quic/core/crypto/crypto_framer_test.cc
+index 5f79f640b..2eef69ee4 100644
+--- a/quiche/quic/core/crypto/crypto_framer_test.cc
++++ b/quiche/quic/core/crypto/crypto_framer_test.cc
+@@ -13,6 +13,7 @@
+ #include "quiche/quic/core/crypto/crypto_handshake.h"
+ #include "quiche/quic/core/crypto/crypto_protocol.h"
+ #include "quiche/quic/core/quic_packets.h"
++#include "quiche/quic/core/quic_tag.h"
+ #include "quiche/quic/platform/api/quic_logging.h"
+ #include "quiche/quic/platform/api/quic_test.h"
+ #include "quiche/quic/test_tools/crypto_test_utils.h"
+@@ -46,10 +47,10 @@ class TestCryptoVisitor : public CryptoFramerVisitorInterface {
+ 
+ TEST(CryptoFramerTest, ConstructHandshakeMessage) {
+   CryptoHandshakeMessage message;
+-  message.set_tag(0xFFAA7733);
+-  message.SetStringPiece(0x12345678, "abcdef");
+-  message.SetStringPiece(0x12345679, "ghijk");
+-  message.SetStringPiece(0x1234567A, "lmnopqr");
++  message.set_tag(MakeQuicTag(0x33, 0x77, 0xAA, 0xFF));
++  message.SetStringPiece(MakeQuicTag(0x78, 0x56, 0x34, 0x12), "abcdef");
++  message.SetStringPiece(MakeQuicTag(0x79, 0x56, 0x34, 0x12), "ghijk");
++  message.SetStringPiece(MakeQuicTag(0x7A, 0x56, 0x34, 0x12), "lmnopqr");
+ 
+   unsigned char packet[] = {// tag
+                             0x33, 0x77, 0xAA, 0xFF,
+@@ -86,9 +87,9 @@ TEST(CryptoFramerTest, ConstructHandshakeMessage) {
+ 
+ TEST(CryptoFramerTest, ConstructHandshakeMessageWithTwoKeys) {
+   CryptoHandshakeMessage message;
+-  message.set_tag(0xFFAA7733);
+-  message.SetStringPiece(0x12345678, "abcdef");
+-  message.SetStringPiece(0x12345679, "ghijk");
++  message.set_tag(MakeQuicTag(0x33, 0x77, 0xAA, 0xFF));
++  message.SetStringPiece(MakeQuicTag(0x78, 0x56, 0x34, 0x12), "abcdef");
++  message.SetStringPiece(MakeQuicTag(0x79, 0x56, 0x34, 0x12), "ghijk");
+ 
+   unsigned char packet[] = {// tag
+                             0x33, 0x77, 0xAA, 0xFF,
+@@ -120,8 +121,8 @@ TEST(CryptoFramerTest, ConstructHandshakeMessageWithTwoKeys) {
+ 
+ TEST(CryptoFramerTest, ConstructHandshakeMessageZeroLength) {
+   CryptoHandshakeMessage message;
+-  message.set_tag(0xFFAA7733);
+-  message.SetStringPiece(0x12345678, "");
++  message.set_tag(MakeQuicTag(0x33, 0x77, 0xAA, 0xFF));
++  message.SetStringPiece(MakeQuicTag(0x78, 0x56, 0x34, 0x12), "");
+ 
+   unsigned char packet[] = {// tag
+                             0x33, 0x77, 0xAA, 0xFF,
+@@ -145,7 +146,7 @@ TEST(CryptoFramerTest, ConstructHandshakeMessageZeroLength) {
+ 
+ TEST(CryptoFramerTest, ConstructHandshakeMessageTooManyEntries) {
+   CryptoHandshakeMessage message;
+-  message.set_tag(0xFFAA7733);
++  message.set_tag(MakeQuicTag(0x33, 0x77, 0xAA, 0xFF));
+   for (uint32_t key = 1; key <= kMaxEntries + 1; ++key) {
+     message.SetStringPiece(key, "abcdef");
+   }
+@@ -157,8 +158,8 @@ TEST(CryptoFramerTest, ConstructHandshakeMessageTooManyEntries) {
+ 
+ TEST(CryptoFramerTest, ConstructHandshakeMessageMinimumSize) {
+   CryptoHandshakeMessage message;
+-  message.set_tag(0xFFAA7733);
+-  message.SetStringPiece(0x01020304, "test");
++  message.set_tag(MakeQuicTag(0x33, 0x77, 0xAA, 0xFF));
++  message.SetStringPiece(MakeQuicTag(0x04, 0x03, 0x02, 0x01), "test");
+   message.set_minimum_size(64);
+ 
+   unsigned char packet[] = {// tag
+@@ -194,8 +195,8 @@ TEST(CryptoFramerTest, ConstructHandshakeMessageMinimumSize) {
+ 
+ TEST(CryptoFramerTest, ConstructHandshakeMessageMinimumSizePadLast) {
+   CryptoHandshakeMessage message;
+-  message.set_tag(0xFFAA7733);
+-  message.SetStringPiece(1, "");
++  message.set_tag(MakeQuicTag(0x33, 0x77, 0xAA, 0xFF));
++  message.SetStringPiece(MakeQuicTag(0x01, 0x00, 0x00, 0x00), "");
+   message.set_minimum_size(64);
+ 
+   unsigned char packet[] = {// tag
+@@ -257,10 +258,10 @@ TEST(CryptoFramerTest, ProcessInput) {
+   EXPECT_EQ(0, visitor.error_count_);
+   ASSERT_EQ(1u, visitor.messages_.size());
+   const CryptoHandshakeMessage& message = visitor.messages_[0];
+-  EXPECT_EQ(0xFFAA7733, message.tag());
++  EXPECT_EQ(MakeQuicTag(0x33, 0x77, 0xAA, 0xFF), message.tag());
+   EXPECT_EQ(2u, message.tag_value_map().size());
+-  EXPECT_EQ("abcdef", crypto_test_utils::GetValueForTag(message, 0x12345678));
+-  EXPECT_EQ("ghijk", crypto_test_utils::GetValueForTag(message, 0x12345679));
++  EXPECT_EQ("abcdef", crypto_test_utils::GetValueForTag(message, MakeQuicTag(0x78, 0x56, 0x34, 0x12)));
++  EXPECT_EQ("ghijk", crypto_test_utils::GetValueForTag(message, MakeQuicTag(0x79, 0x56, 0x34, 0x12)));
+ }
+ 
+ TEST(CryptoFramerTest, ProcessInputWithThreeKeys) {
+@@ -299,11 +300,11 @@ TEST(CryptoFramerTest, ProcessInputWithThreeKeys) {
+   EXPECT_EQ(0, visitor.error_count_);
+   ASSERT_EQ(1u, visitor.messages_.size());
+   const CryptoHandshakeMessage& message = visitor.messages_[0];
+-  EXPECT_EQ(0xFFAA7733, message.tag());
++  EXPECT_EQ(MakeQuicTag(0x33, 0x77, 0xAA, 0xFF), message.tag());
+   EXPECT_EQ(3u, message.tag_value_map().size());
+-  EXPECT_EQ("abcdef", crypto_test_utils::GetValueForTag(message, 0x12345678));
+-  EXPECT_EQ("ghijk", crypto_test_utils::GetValueForTag(message, 0x12345679));
+-  EXPECT_EQ("lmnopqr", crypto_test_utils::GetValueForTag(message, 0x1234567A));
++  EXPECT_EQ("abcdef", crypto_test_utils::GetValueForTag(message, MakeQuicTag(0x78, 0x56, 0x34, 0x12)));
++  EXPECT_EQ("ghijk", crypto_test_utils::GetValueForTag(message, MakeQuicTag(0x79, 0x56, 0x34, 0x12)));
++  EXPECT_EQ("lmnopqr", crypto_test_utils::GetValueForTag(message, MakeQuicTag(0x7A, 0x56, 0x34, 0x12)));
+ }
+ 
+ TEST(CryptoFramerTest, ProcessInputIncrementally) {
+@@ -336,10 +337,10 @@ TEST(CryptoFramerTest, ProcessInputIncrementally) {
+   EXPECT_EQ(0u, framer.InputBytesRemaining());
+   ASSERT_EQ(1u, visitor.messages_.size());
+   const CryptoHandshakeMessage& message = visitor.messages_[0];
+-  EXPECT_EQ(0xFFAA7733, message.tag());
++  EXPECT_EQ(MakeQuicTag(0x33, 0x77, 0xAA, 0xFF), message.tag());
+   EXPECT_EQ(2u, message.tag_value_map().size());
+-  EXPECT_EQ("abcdef", crypto_test_utils::GetValueForTag(message, 0x12345678));
+-  EXPECT_EQ("ghijk", crypto_test_utils::GetValueForTag(message, 0x12345679));
++  EXPECT_EQ("abcdef", crypto_test_utils::GetValueForTag(message, MakeQuicTag(0x78, 0x56, 0x34, 0x12)));
++  EXPECT_EQ("ghijk", crypto_test_utils::GetValueForTag(message, MakeQuicTag(0x79, 0x56, 0x34, 0x12)));
+ }
+ 
+ TEST(CryptoFramerTest, ProcessInputTagsOutOfOrder) {
+diff --git a/quiche/quic/core/crypto/crypto_protocol.h b/quiche/quic/core/crypto/crypto_protocol.h
+index c1bf0dbc4..0f88c02ef 100644
+--- a/quiche/quic/core/crypto/crypto_protocol.h
++++ b/quiche/quic/core/crypto/crypto_protocol.h
+@@ -30,8 +30,14 @@ namespace internal {
+ // because of the trailing null byte.
+ constexpr QuicTag MakeStaticQuicTag(const char (&input)[5]) {
+   constexpr auto u8 = [](char c) { return static_cast<uint8_t>(c); };
++#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && \
++  __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
++  return static_cast<QuicTag>((u8(input[0]) << 24) | (u8(input[1]) << 16) |
++                              (u8(input[2]) << 8) | u8(input[3]));
++#else
+   return static_cast<QuicTag>((u8(input[3]) << 24) | (u8(input[2]) << 16) |
+                               (u8(input[1]) << 8) | u8(input[0]));
++#endif
+ }
+ 
+ // A variant for three-character QUIC tags. Pads the end with null bytes.
+diff --git a/quiche/quic/core/crypto/crypto_server_test.cc b/quiche/quic/core/crypto/crypto_server_test.cc
+index 1bcd97cee..2f63732cd 100644
+--- a/quiche/quic/core/crypto/crypto_server_test.cc
++++ b/quiche/quic/core/crypto/crypto_server_test.cc
+@@ -482,7 +482,7 @@ TEST_P(CryptoServerTest, RejectTooLargeButValidSTK) {
+                                      {"KEXS", "C255"},
+                                      {"PUBS", pub_hex_},
+                                      {"NONC", nonce_hex_},
+-                                     {"#004b5453", srct_hex_},
++                                     {"STK\0", srct_hex_},
+                                      {"PDMD", "X509"},
+                                      {"VER\0", client_version_string_}},
+                                     kClientHelloMinimumSize);
+@@ -555,7 +555,7 @@ TEST_P(CryptoServerTest, BadClientNonce) {
+                                        {"AEAD", "AESG"},
+                                        {"KEXS", "C255"},
+                                        {"SCID", scid_hex_},
+-                                       {"#004b5453", srct_hex_},
++                                       {"STK\0", srct_hex_},
+                                        {"PUBS", pub_hex_},
+                                        {"NONC", kBadNonces[i]},
+                                        {"NONP", kBadNonces[i]},
+@@ -593,7 +593,7 @@ TEST_P(CryptoServerTest, NoClientNonce) {
+                                      {"AEAD", "AESG"},
+                                      {"KEXS", "C255"},
+                                      {"SCID", scid_hex_},
+-                                     {"#004b5453", srct_hex_},
++                                     {"STK\0", srct_hex_},
+                                      {"PUBS", pub_hex_},
+                                      {"XLCT", XlctHexString()},
+                                      {"VER\0", client_version_string_}},
+@@ -632,7 +632,7 @@ TEST_P(CryptoServerTest, CorruptServerConfig) {
+        {"AEAD", "AESG"},
+        {"KEXS", "C255"},
+        {"SCID", (std::string(1, 'X') + scid_hex_)},
+-       {"#004b5453", srct_hex_},
++       {"STK\0", srct_hex_},
+        {"PUBS", pub_hex_},
+        {"NONC", nonce_hex_},
+        {"VER\0", client_version_string_}},
+@@ -652,7 +652,7 @@ TEST_P(CryptoServerTest, CorruptSourceAddressToken) {
+        {"AEAD", "AESG"},
+        {"KEXS", "C255"},
+        {"SCID", scid_hex_},
+-       {"#004b5453", (std::string(1, 'X') + srct_hex_)},
++       {"STK\0", (std::string(1, 'X') + srct_hex_)},
+        {"PUBS", pub_hex_},
+        {"NONC", nonce_hex_},
+        {"XLCT", XlctHexString()},
+@@ -680,7 +680,7 @@ TEST_P(CryptoServerTest, CorruptSourceAddressTokenIsStillAccepted) {
+        {"AEAD", "AESG"},
+        {"KEXS", "C255"},
+        {"SCID", scid_hex_},
+-       {"#004b5453", (std::string(1, 'X') + srct_hex_)},
++       {"STK\0", (std::string(1, 'X') + srct_hex_)},
+        {"PUBS", pub_hex_},
+        {"NONC", nonce_hex_},
+        {"XLCT", XlctHexString()},
+@@ -710,7 +710,7 @@ TEST_P(CryptoServerTest, CorruptClientNonceAndSourceAddressToken) {
+        {"AEAD", "AESG"},
+        {"KEXS", "C255"},
+        {"SCID", scid_hex_},
+-       {"#004b5453", (std::string(1, 'X') + srct_hex_)},
++       {"STK\0", (std::string(1, 'X') + srct_hex_)},
+        {"PUBS", pub_hex_},
+        {"NONC", (std::string(1, 'X') + nonce_hex_)},
+        {"XLCT", XlctHexString()},
+@@ -739,7 +739,7 @@ TEST_P(CryptoServerTest, CorruptMultipleTags) {
+        {"AEAD", "AESG"},
+        {"KEXS", "C255"},
+        {"SCID", scid_hex_},
+-       {"#004b5453", (std::string(1, 'X') + srct_hex_)},
++       {"STK\0", (std::string(1, 'X') + srct_hex_)},
+        {"PUBS", pub_hex_},
+        {"NONC", (std::string(1, 'X') + nonce_hex_)},
+        {"NONP", (std::string(1, 'X') + nonce_hex_)},
+@@ -763,7 +763,7 @@ TEST_P(CryptoServerTest, NoServerNonce) {
+                                      {"AEAD", "AESG"},
+                                      {"KEXS", "C255"},
+                                      {"SCID", scid_hex_},
+-                                     {"#004b5453", srct_hex_},
++                                     {"STK\0", srct_hex_},
+                                      {"PUBS", pub_hex_},
+                                      {"NONC", nonce_hex_},
+                                      {"NONP", nonce_hex_},
+@@ -791,7 +791,7 @@ TEST_P(CryptoServerTest, ProofForSuppliedServerConfig) {
+                                      {"KEXS", "C255"},
+                                      {"PDMD", "X509"},
+                                      {"SCID", kOldConfigId},
+-                                     {"#004b5453", srct_hex_},
++                                     {"STK\0", srct_hex_},
+                                      {"PUBS", pub_hex_},
+                                      {"NONC", nonce_hex_},
+                                      {"NONP", "123456789012345678901234567890"},
+@@ -856,7 +856,7 @@ TEST_P(CryptoServerTest, RejectInvalidXlct) {
+                                      {"AEAD", "AESG"},
+                                      {"KEXS", "C255"},
+                                      {"SCID", scid_hex_},
+-                                     {"#004b5453", srct_hex_},
++                                     {"STK\0", srct_hex_},
+                                      {"PUBS", pub_hex_},
+                                      {"NONC", nonce_hex_},
+                                      {"VER\0", client_version_string_},
+@@ -895,7 +895,7 @@ TEST_P(CryptoServerTest, ValidXlct) {
+                                      {"AEAD", "AESG"},
+                                      {"KEXS", "C255"},
+                                      {"SCID", scid_hex_},
+-                                     {"#004b5453", srct_hex_},
++                                     {"STK\0", srct_hex_},
+                                      {"PUBS", pub_hex_},
+                                      {"NONC", nonce_hex_},
+                                      {"VER\0", client_version_string_},
+@@ -931,7 +931,7 @@ TEST_P(CryptoServerTest, NonceInSHLO) {
+                                      {"AEAD", "AESG"},
+                                      {"KEXS", "C255"},
+                                      {"SCID", scid_hex_},
+-                                     {"#004b5453", srct_hex_},
++                                     {"STK\0", srct_hex_},
+                                      {"PUBS", pub_hex_},
+                                      {"NONC", nonce_hex_},
+                                      {"VER\0", client_version_string_},
+@@ -1159,7 +1159,7 @@ TEST_P(CryptoServerTestOldVersion, ServerIgnoresXlct) {
+                                      {"AEAD", "AESG"},
+                                      {"KEXS", "C255"},
+                                      {"SCID", scid_hex_},
+-                                     {"#004b5453", srct_hex_},
++                                     {"STK\0", srct_hex_},
+                                      {"PUBS", pub_hex_},
+                                      {"NONC", nonce_hex_},
+                                      {"VER\0", client_version_string_},
+@@ -1181,7 +1181,7 @@ TEST_P(CryptoServerTestOldVersion, XlctNotRequired) {
+                                      {"AEAD", "AESG"},
+                                      {"KEXS", "C255"},
+                                      {"SCID", scid_hex_},
+-                                     {"#004b5453", srct_hex_},
++                                     {"STK\0", srct_hex_},
+                                      {"PUBS", pub_hex_},
+                                      {"NONC", nonce_hex_},
+                                      {"VER\0", client_version_string_}},
+diff --git a/quiche/quic/core/quic_crypto_stream_test.cc b/quiche/quic/core/quic_crypto_stream_test.cc
+index 27232b468..8571a2395 100644
+--- a/quiche/quic/core/quic_crypto_stream_test.cc
++++ b/quiche/quic/core/quic_crypto_stream_test.cc
+@@ -140,8 +140,8 @@ class QuicCryptoStreamTest : public QuicTest {
+     session_.SetCryptoStream(stream_);
+     session_.Initialize();
+     message_.set_tag(kSHLO);
+-    message_.SetStringPiece(1, "abc");
+-    message_.SetStringPiece(2, "def");
++    message_.SetStringPiece(MakeQuicTag(0x01, 0x00, 0x00, 0x00), "abc");
++    message_.SetStringPiece(MakeQuicTag(0x02, 0x00, 0x00, 0x00), "def");
+     ConstructHandshakeMessage();
+   }
+   QuicCryptoStreamTest(const QuicCryptoStreamTest&) = delete;
+@@ -181,8 +181,8 @@ TEST_F(QuicCryptoStreamTest, ProcessRawData) {
+   const CryptoHandshakeMessage& message = (*stream_->messages())[0];
+   EXPECT_EQ(kSHLO, message.tag());
+   EXPECT_EQ(2u, message.tag_value_map().size());
+-  EXPECT_EQ("abc", crypto_test_utils::GetValueForTag(message, 1));
+-  EXPECT_EQ("def", crypto_test_utils::GetValueForTag(message, 2));
++  EXPECT_EQ("abc", crypto_test_utils::GetValueForTag(message, MakeQuicTag(0x01, 0x00, 0x00, 0x00)));
++  EXPECT_EQ("def", crypto_test_utils::GetValueForTag(message, MakeQuicTag(0x02, 0x00, 0x00, 0x00)));
+ }
+ 
+ TEST_F(QuicCryptoStreamTest, ProcessBadData) {
+diff --git a/quiche/quic/core/quic_data_writer.cc b/quiche/quic/core/quic_data_writer.cc
+index 09f192305..911938400 100644
+--- a/quiche/quic/core/quic_data_writer.cc
++++ b/quiche/quic/core/quic_data_writer.cc
+@@ -63,6 +63,9 @@ bool QuicDataWriter::WriteUFloat16(uint64_t value) {
+ 
+   if (endianness() == quiche::NETWORK_BYTE_ORDER) {
+     result = quiche::QuicheEndian::HostToNet16(result);
++  } else if (endianness() == quiche::HOST_BYTE_ORDER
++             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    result = quiche::QuicheEndian::ByteSwap16(result);
+   }
+   return WriteBytes(&result, sizeof(result));
+ }
+diff --git a/quiche/quic/core/quic_data_writer_test.cc b/quiche/quic/core/quic_data_writer_test.cc
+index 40262d0d9..0b0e9520e 100644
+--- a/quiche/quic/core/quic_data_writer_test.cc
++++ b/quiche/quic/core/quic_data_writer_test.cc
+@@ -143,6 +143,9 @@ TEST_P(QuicDataWriterTest, WriteUFloat16) {
+     uint16_t result = *reinterpret_cast<uint16_t*>(writer.data());
+     if (GetParam().endianness == quiche::NETWORK_BYTE_ORDER) {
+       result = quiche::QuicheEndian::HostToNet16(result);
++    } else if (GetParam().endianness == quiche::HOST_BYTE_ORDER
++               && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++      result = quiche::QuicheEndian::ByteSwap16(result);
+     }
+     EXPECT_EQ(test_cases[i].encoded, result);
+   }
+@@ -204,6 +207,9 @@ TEST_P(QuicDataWriterTest, ReadUFloat16) {
+     uint16_t encoded_ufloat = test_cases[i].encoded;
+     if (GetParam().endianness == quiche::NETWORK_BYTE_ORDER) {
+       encoded_ufloat = quiche::QuicheEndian::HostToNet16(encoded_ufloat);
++    } else if (GetParam().endianness == quiche::HOST_BYTE_ORDER
++               && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++      encoded_ufloat = quiche::QuicheEndian::ByteSwap16(encoded_ufloat);
+     }
+     QuicDataReader reader(reinterpret_cast<char*>(&encoded_ufloat), 2,
+                           GetParam().endianness);
+@@ -221,6 +227,9 @@ TEST_P(QuicDataWriterTest, RoundTripUFloat16) {
+     uint16_t read_number = i;
+     if (GetParam().endianness == quiche::NETWORK_BYTE_ORDER) {
+       read_number = quiche::QuicheEndian::HostToNet16(read_number);
++    } else if (GetParam().endianness == quiche::HOST_BYTE_ORDER
++               && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++      read_number = quiche::QuicheEndian::ByteSwap16(read_number);
+     }
+     QuicDataReader reader(reinterpret_cast<char*>(&read_number), 2,
+                           GetParam().endianness);
+@@ -253,6 +262,11 @@ TEST_P(QuicDataWriterTest, RoundTripUFloat16) {
+       encoded1 = quiche::QuicheEndian::NetToHost16(encoded1);
+       encoded2 = quiche::QuicheEndian::NetToHost16(encoded2);
+       encoded3 = quiche::QuicheEndian::NetToHost16(encoded3);
++    } else if (GetParam().endianness == quiche::HOST_BYTE_ORDER
++               && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++      encoded1 = quiche::QuicheEndian::ByteSwap16(encoded1);
++      encoded2 = quiche::QuicheEndian::ByteSwap16(encoded2);
++      encoded3 = quiche::QuicheEndian::ByteSwap16(encoded3);
+     }
+     EXPECT_EQ(i - 1, encoded1);
+     // Check roundtrip.
+diff --git a/quiche/quic/core/quic_framer.cc b/quiche/quic/core/quic_framer.cc
+index a727cada5..563fdc848 100644
+--- a/quiche/quic/core/quic_framer.cc
++++ b/quiche/quic/core/quic_framer.cc
+@@ -56,6 +56,7 @@
+ #include "quiche/quic/platform/api/quic_flags.h"
+ #include "quiche/quic/platform/api/quic_ip_address_family.h"
+ #include "quiche/quic/platform/api/quic_logging.h"
++#include "quiche/common/quiche_endian.h"
+ #include "quiche/common/quiche_text_utils.h"
+ #include "quiche/common/wire_serialization.h"
+ 
+@@ -1243,7 +1244,7 @@ std::unique_ptr<QuicEncryptedPacket> QuicFramer::BuildPublicResetPacket(
+     const QuicPublicResetPacket& packet) {
+   CryptoHandshakeMessage reset;
+   reset.set_tag(kPRST);
+-  reset.SetValue(kRNON, packet.nonce_proof);
++  reset.SetValue(kRNON, quiche::QuicheEndian::HostToLittleEndian64(packet.nonce_proof));
+   if (packet.client_address.host().address_family() !=
+       IpAddressFamily::IP_UNSPEC) {
+     // packet.client_address is non-empty.
+@@ -5348,7 +5349,8 @@ bool QuicFramer::AppendAckFrameAndTypeByte(const QuicAckFrame& frame,
+   }
+ 
+   if (num_ack_blocks > 0) {
+-    if (!writer->WriteBytes(&num_ack_blocks, 1)) {
++    uint8_t num_ack_blocks_serialized = static_cast<uint8_t>(num_ack_blocks);
++    if (!writer->WriteBytes(&num_ack_blocks_serialized, 1)) {
+       return false;
+     }
+   }
+diff --git a/quiche/quic/core/quic_socket_address_coder.cc b/quiche/quic/core/quic_socket_address_coder.cc
+index 9bf85b2ea..c98021df2 100644
+--- a/quiche/quic/core/quic_socket_address_coder.cc
++++ b/quiche/quic/core/quic_socket_address_coder.cc
+@@ -9,6 +9,7 @@
+ #include <vector>
+ 
+ #include "quiche/quic/platform/api/quic_ip_address_family.h"
++#include "quiche/common/quiche_endian.h"
+ 
+ namespace quic {
+ 
+@@ -33,10 +34,10 @@ std::string QuicSocketAddressCoder::Encode() const {
+   uint16_t address_family;
+   switch (address_.host().address_family()) {
+     case IpAddressFamily::IP_V4:
+-      address_family = kIPv4;
++      address_family = quiche::QuicheEndian::HostToLittleEndian16(kIPv4);
+       break;
+     case IpAddressFamily::IP_V6:
+-      address_family = kIPv6;
++      address_family = quiche::QuicheEndian::HostToLittleEndian16(kIPv6);
+       break;
+     default:
+       return serialized;
+@@ -44,7 +45,7 @@ std::string QuicSocketAddressCoder::Encode() const {
+   serialized.append(reinterpret_cast<const char*>(&address_family),
+                     sizeof(address_family));
+   serialized.append(address_.host().ToPackedString());
+-  uint16_t port = address_.port();
++  uint16_t port = quiche::QuicheEndian::HostToLittleEndian16(address_.port());
+   serialized.append(reinterpret_cast<const char*>(&port), sizeof(port));
+   return serialized;
+ }
+@@ -57,6 +58,9 @@ bool QuicSocketAddressCoder::Decode(const char* data, size_t length) {
+   memcpy(&address_family, data, sizeof(address_family));
+   data += sizeof(address_family);
+   length -= sizeof(address_family);
++  if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    address_family = quiche::QuicheEndian::ByteSwap16(address_family);
++  }
+ 
+   size_t ip_length;
+   switch (address_family) {
+@@ -82,6 +86,9 @@ bool QuicSocketAddressCoder::Decode(const char* data, size_t length) {
+     return false;
+   }
+   memcpy(&port, data, length);
++  if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    port = quiche::QuicheEndian::ByteSwap16(port);
++  }
+ 
+   QuicIpAddress ip_address;
+   ip_address.FromPackedString(reinterpret_cast<const char*>(&ip[0]), ip_length);
+diff --git a/quiche/quic/core/quic_tag.cc b/quiche/quic/core/quic_tag.cc
+index 27a71e495..bce4cf32c 100644
+--- a/quiche/quic/core/quic_tag.cc
++++ b/quiche/quic/core/quic_tag.cc
+@@ -15,10 +15,16 @@
+ #include "absl/strings/escaping.h"
+ #include "absl/strings/str_split.h"
+ #include "absl/strings/string_view.h"
++#include "quiche/common/quiche_endian.h"
+ #include "quiche/common/quiche_text_utils.h"
+ 
+ namespace quic {
+ 
++bool QuicTagLess::operator()(const QuicTag& a, const QuicTag& b) const {
++  return quiche::QuicheEndian::HostToLittleEndian32(a)
++             < quiche::QuicheEndian::HostToLittleEndian32(b);
++}
++
+ bool FindMutualQuicTag(const QuicTagVector& our_tags,
+                        const QuicTagVector& their_tags, QuicTag* out_result,
+                        size_t* out_index) {
+@@ -47,17 +53,31 @@ std::string QuicTagToString(QuicTag tag) {
+   bool ascii = true;
+   const QuicTag orig_tag = tag;
+ 
+-  for (size_t i = 0; i < ABSL_ARRAYSIZE(chars); i++) {
+-    chars[i] = static_cast<char>(tag);
+-    if ((chars[i] == 0 || chars[i] == '\xff') &&
+-        i == ABSL_ARRAYSIZE(chars) - 1) {
+-      chars[i] = ' ';
++  if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    memcpy(&chars, &tag, sizeof tag);
++    for (size_t i = 0; i < ABSL_ARRAYSIZE(chars); i++) {
++      if ((chars[i] == 0 || chars[i] == '\xff') &&
++          i == ABSL_ARRAYSIZE(chars) - 1) {
++        chars[i] = ' ';
++      }
++      if (!absl::ascii_isprint(static_cast<unsigned char>(chars[i]))) {
++        ascii = false;
++        break;
++      }
+     }
+-    if (!absl::ascii_isprint(static_cast<unsigned char>(chars[i]))) {
+-      ascii = false;
+-      break;
++  } else {
++    for (size_t i = 0; i < ABSL_ARRAYSIZE(chars); i++) {
++      chars[i] = static_cast<char>(tag);
++      if ((chars[i] == 0 || chars[i] == '\xff') &&
++          i == ABSL_ARRAYSIZE(chars) - 1) {
++        chars[i] = ' ';
++      }
++      if (!absl::ascii_isprint(static_cast<unsigned char>(chars[i]))) {
++        ascii = false;
++        break;
++      }
++      tag >>= 8;
+     }
+-    tag >>= 8;
+   }
+ 
+   if (ascii) {
+@@ -69,8 +89,13 @@ std::string QuicTagToString(QuicTag tag) {
+ }
+ 
+ uint32_t MakeQuicTag(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
+-  return static_cast<uint32_t>(a) | static_cast<uint32_t>(b) << 8 |
+-         static_cast<uint32_t>(c) << 16 | static_cast<uint32_t>(d) << 24;
++  if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    return static_cast<uint32_t>(d) | static_cast<uint32_t>(c) << 8 |
++           static_cast<uint32_t>(b) << 16 | static_cast<uint32_t>(a) << 24;
++  } else {
++    return static_cast<uint32_t>(a) | static_cast<uint32_t>(b) << 8 |
++           static_cast<uint32_t>(c) << 16 | static_cast<uint32_t>(d) << 24;
++  }
+ }
+ 
+ bool ContainsQuicTag(const QuicTagVector& tag_vector, QuicTag tag) {
+@@ -86,12 +111,18 @@ QuicTag ParseQuicTag(absl::string_view tag_string) {
+     tag_string = tag_bytes;
+   }
+   QuicTag tag = 0;
+-  // Iterate over every character from right to left.
+-  for (auto it = tag_string.rbegin(); it != tag_string.rend(); ++it) {
+-    // The cast here is required on platforms where char is signed.
+-    unsigned char token_char = static_cast<unsigned char>(*it);
+-    tag <<= 8;
+-    tag |= token_char;
++  if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    size_t len = tag_string.length() < sizeof tag
++                     ? tag_string.length() : sizeof tag;
++    memcpy(&tag, tag_string.data(), len);
++  } else {
++    // Iterate over every character from right to left.
++    for (auto it = tag_string.rbegin(); it != tag_string.rend(); ++it) {
++      // The cast here is required on platforms where char is signed.
++      unsigned char token_char = static_cast<unsigned char>(*it);
++      tag <<= 8;
++      tag |= token_char;
++    }
+   }
+   return tag;
+ }
+diff --git a/quiche/quic/core/quic_tag.h b/quiche/quic/core/quic_tag.h
+index 2736aac8a..aa3be6c94 100644
+--- a/quiche/quic/core/quic_tag.h
++++ b/quiche/quic/core/quic_tag.h
+@@ -24,7 +24,10 @@ namespace quic {
+ // just a mnemonic for the value 0x504d5845 (little-endian version of the ASCII
+ // string E X M P).
+ using QuicTag = uint32_t;
+-using QuicTagValueMap = std::map<QuicTag, std::string>;
++struct QUICHE_NO_EXPORT QuicTagLess {
++    bool operator()(const QuicTag& a, const QuicTag& b) const;
++};
++using QuicTagValueMap = std::map<QuicTag, std::string, QuicTagLess>;
+ using QuicTagVector = std::vector<QuicTag>;
+ 
+ // MakeQuicTag returns a value given the four bytes. For example:
+diff --git a/quiche/quic/core/quic_utils.cc b/quiche/quic/core/quic_utils.cc
+index 1bdf10834..9fab7a2e3 100644
+--- a/quiche/quic/core/quic_utils.cc
++++ b/quiche/quic/core/quic_utils.cc
+@@ -137,8 +137,8 @@ absl::uint128 QuicUtils::FNV1a_128_Hash_Three(absl::string_view data1,
+ 
+ // static
+ void QuicUtils::SerializeUint128Short(absl::uint128 v, uint8_t* out) {
+-  const uint64_t lo = absl::Uint128Low64(v);
+-  const uint64_t hi = absl::Uint128High64(v);
++  const uint64_t lo = quiche::QuicheEndian::HostToLittleEndian64(absl::Uint128Low64(v));
++  const uint64_t hi = quiche::QuicheEndian::HostToLittleEndian64(absl::Uint128High64(v));
+   // This assumes that the system is little-endian.
+   memcpy(out, &lo, sizeof(lo));
+   memcpy(out + sizeof(lo), &hi, sizeof(hi) / 2);
+diff --git a/quiche/quic/core/quic_versions.cc b/quiche/quic/core/quic_versions.cc
+index f40cc334a..9f3a12b92 100644
+--- a/quiche/quic/core/quic_versions.cc
++++ b/quiche/quic/core/quic_versions.cc
+@@ -196,7 +196,11 @@ std::ostream& operator<<(std::ostream& os,
+ }
+ 
+ QuicVersionLabel MakeVersionLabel(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
+-  return MakeQuicTag(d, c, b, a);
++  if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    return MakeQuicTag(a, b, c, d);
++  } else {
++    return MakeQuicTag(d, c, b, a);
++  }
+ }
+ 
+ std::ostream& operator<<(std::ostream& os,
+diff --git a/quiche/quic/test_tools/crypto_test_utils.cc b/quiche/quic/test_tools/crypto_test_utils.cc
+index f062ef200..7307f2e73 100644
+--- a/quiche/quic/test_tools/crypto_test_utils.cc
++++ b/quiche/quic/test_tools/crypto_test_utils.cc
+@@ -46,6 +46,7 @@
+ #include "quiche/quic/test_tools/simple_quic_framer.h"
+ #include "quiche/quic/test_tools/test_certificates.h"
+ #include "quiche/common/platform/api/quiche_logging.h"
++#include "quiche/common/quiche_endian.h"
+ #include "quiche/common/quiche_callbacks.h"
+ #include "quiche/common/test_tools/quiche_test_utils.h"
+ 
+@@ -786,6 +787,7 @@ QuicTag ParseTag(const char* tagstr) {
+       tag |= static_cast<uint32_t>(tagstr[i]) << 24;
+     }
+   }
++  tag = quiche::QuicheEndian::HostToLittleEndian32(tag);
+ 
+   return tag;
+ }
+diff --git a/quiche/quic/test_tools/quic_test_utils.cc b/quiche/quic/test_tools/quic_test_utils.cc
+index 2b49ce27a..6c4e8566a 100644
+--- a/quiche/quic/test_tools/quic_test_utils.cc
++++ b/quiche/quic/test_tools/quic_test_utils.cc
+@@ -218,7 +218,7 @@ bool ClearControlFrameWithTransmissionType(const QuicFrame& frame,
+ uint64_t SimpleRandom::RandUint64() {
+   uint64_t result;
+   RandBytes(&result, sizeof(result));
+-  return result;
++  return quiche::QuicheEndian::HostToLittleEndian64(result);;
+ }
+ 
+ void SimpleRandom::RandBytes(void* data, size_t len) {
+@@ -252,6 +252,7 @@ void SimpleRandom::FillBuffer() {
+ 
+ void SimpleRandom::set_seed(uint64_t seed) {
+   static_assert(sizeof(key_) == SHA256_DIGEST_LENGTH, "Key has to be 256 bits");
++  seed = quiche::QuicheEndian::HostToLittleEndian64(seed);
+   SHA256(reinterpret_cast<const uint8_t*>(&seed), sizeof(seed), key_);
+ 
+   memset(buffer_, 0, sizeof(buffer_));

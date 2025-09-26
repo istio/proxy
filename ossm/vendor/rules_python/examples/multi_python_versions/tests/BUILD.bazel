@@ -1,0 +1,201 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@pythons_hub//:versions.bzl", "MINOR_MAPPING", "PYTHON_VERSIONS")
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@rules_python//python:py_test.bzl", "py_test")
+load("@rules_python//python:versions.bzl", DEFAULT_MINOR_MAPPING = "MINOR_MAPPING", DEFAULT_TOOL_VERSIONS = "TOOL_VERSIONS")
+load("@rules_python//python/private:text_util.bzl", "render")  # buildifier: disable=bzl-visibility
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+copy_file(
+    name = "copy_version",
+    src = "version.py",
+    out = "version_default.py",
+    is_executable = True,
+)
+
+# NOTE: We are testing that the `main` is an optional param as per official
+# docs https://bazel.build/reference/be/python#py_binary.main
+py_binary(
+    name = "version_default",
+    srcs = ["version_default.py"],
+)
+
+py_binary(
+    name = "version_3_9",
+    srcs = ["version.py"],
+    main = "version.py",
+    python_version = "3.9",
+)
+
+py_binary(
+    name = "version_3_10",
+    srcs = ["version.py"],
+    main = "version.py",
+    python_version = "3.10",
+)
+
+py_binary(
+    name = "version_3_11",
+    srcs = ["version.py"],
+    main = "version.py",
+    python_version = "3.11",
+)
+
+py_test(
+    name = "my_lib_default_test",
+    srcs = ["my_lib_test.py"],
+    main = "my_lib_test.py",
+    deps = ["//libs/my_lib"],
+)
+
+py_test(
+    name = "my_lib_3_9_test",
+    srcs = ["my_lib_test.py"],
+    main = "my_lib_test.py",
+    python_version = "3.9",
+    deps = ["//libs/my_lib"],
+)
+
+py_test(
+    name = "my_lib_3_10_test",
+    srcs = ["my_lib_test.py"],
+    main = "my_lib_test.py",
+    python_version = "3.10",
+    deps = ["//libs/my_lib"],
+)
+
+py_test(
+    name = "my_lib_3_11_test",
+    srcs = ["my_lib_test.py"],
+    main = "my_lib_test.py",
+    python_version = "3.11",
+    deps = ["//libs/my_lib"],
+)
+
+copy_file(
+    name = "copy_version_test",
+    src = "version_test.py",
+    out = "version_default_test.py",
+    is_executable = True,
+)
+
+py_test(
+    name = "version_default_test",
+    srcs = ["version_default_test.py"],
+    env = {"VERSION_CHECK": "3.9"},  # The default defined in the WORKSPACE.
+)
+
+py_test(
+    name = "version_3_9_test",
+    srcs = ["version_test.py"],
+    env = {"VERSION_CHECK": "3.9"},
+    main = "version_test.py",
+    python_version = "3.9",
+)
+
+py_test(
+    name = "version_3_10_test",
+    srcs = ["version_test.py"],
+    env = {"VERSION_CHECK": "3.10"},
+    main = "version_test.py",
+    python_version = "3.10",
+)
+
+py_test(
+    name = "version_3_11_test",
+    srcs = ["version_test.py"],
+    env = {"VERSION_CHECK": "3.11"},
+    main = "version_test.py",
+    python_version = "3.11",
+)
+
+py_test(
+    name = "version_default_takes_3_10_subprocess_test",
+    srcs = ["cross_version_test.py"],
+    data = [":version_3_10"],
+    env = {
+        "SUBPROCESS_VERSION_CHECK": "3.10",
+        "SUBPROCESS_VERSION_PY_BINARY": "$(rootpaths :version_3_10)",
+        "VERSION_CHECK": "3.9",
+    },
+    main = "cross_version_test.py",
+)
+
+py_test(
+    name = "version_3_10_takes_3_9_subprocess_test",
+    srcs = ["cross_version_test.py"],
+    data = [":version_3_9"],
+    env = {
+        "SUBPROCESS_VERSION_CHECK": "3.9",
+        "SUBPROCESS_VERSION_PY_BINARY": "$(rootpaths :version_3_9)",
+        "VERSION_CHECK": "3.10",
+    },
+    main = "cross_version_test.py",
+    python_version = "3.10",
+)
+
+sh_test(
+    name = "version_test_binary_default",
+    srcs = ["version_test.sh"],
+    data = [":version_default"],
+    env = {
+        "VERSION_CHECK": "3.9",  # The default defined in the WORKSPACE.
+        "VERSION_PY_BINARY": "$(rootpaths :version_default)",
+    },
+)
+
+sh_test(
+    name = "version_test_binary_3_9",
+    srcs = ["version_test.sh"],
+    data = [":version_3_9"],
+    env = {
+        "VERSION_CHECK": "3.9",
+        "VERSION_PY_BINARY": "$(rootpaths :version_3_9)",
+    },
+)
+
+sh_test(
+    name = "version_test_binary_3_10",
+    srcs = ["version_test.sh"],
+    data = [":version_3_10"],
+    env = {
+        "VERSION_CHECK": "3.10",
+        "VERSION_PY_BINARY": "$(rootpaths :version_3_10)",
+    },
+)
+
+# The following test ensures that default toolchain versions are the same as in
+# the TOOL_VERSIONS array.
+
+# NOTE @aignas 2024-10-26: This test here is to do a sanity check and not
+# include extra dependencies - if rules_testing is included here, we can
+# potentially uses `rules_testing` for a more lightweight test.
+write_file(
+    name = "default_python_versions",
+    out = "default_python_versions.txt",
+    content = [
+        "MINOR_MAPPING:",
+        render.dict(dict(sorted(DEFAULT_MINOR_MAPPING.items()))),
+        "PYTHON_VERSIONS:",
+        render.list(sorted(DEFAULT_TOOL_VERSIONS)),
+    ],
+)
+
+write_file(
+    name = "pythons_hub_versions",
+    out = "pythons_hub_versions.txt",
+    content = [
+        "MINOR_MAPPING:",
+        render.dict(dict(sorted(MINOR_MAPPING.items()))),
+        "PYTHON_VERSIONS:",
+        render.list(sorted(PYTHON_VERSIONS)),
+    ],
+)
+
+diff_test(
+    name = "test_versions",
+    file1 = "default_python_versions",
+    file2 = "pythons_hub_versions",
+)

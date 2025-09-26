@@ -1,0 +1,47 @@
+name: Alpine Linux
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    name: Build on Alpine ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch:
+          - x86_64
+          - x86
+          - aarch64
+          - armv7
+          - ppc64le
+          - riscv64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install latest Alpine Linux for ${{ matrix.arch }}
+        uses: jirutka/setup-alpine@v1
+        with:
+          arch: ${{ matrix.arch }}
+          branch: ${{ matrix.arch == 'riscv64' && 'edge' || 'latest-stable' }}
+          packages: >
+            build-base
+            cmake
+            g++
+            linux-headers
+            git
+            bash
+            build-base
+      - name: Prepare
+        run: |
+          cmake -DFASTFLOAT_TEST=ON -B build
+        shell: alpine.sh {0}
+      - name: Build
+        run: |
+          cmake --build build
+        shell: alpine.sh {0}
+      - name: Test
+        run: |
+          ctest --test-dir build -R basictest
+        shell: alpine.sh {0}

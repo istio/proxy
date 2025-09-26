@@ -1,0 +1,5 @@
+syntax="proto3";
+package names.import_path_mapped;
+option go_package="github.com/fizz/buzz;go_package";
+
+message Mapped {}

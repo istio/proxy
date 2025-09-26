@@ -1,0 +1,210 @@
+load("//go:def.bzl", "go_binary", "go_library", "go_source", "go_test")
+load("//go/tools/bazel_testing:def.bzl", "go_bazel_test")
+load(":def.bzl", "embedsrcs_files")
+
+go_library(
+    name = "empty",
+    srcs = [
+        # foo and bar have different package names
+        "empty_foo.go",
+        "empty_bar.go",
+        "empty_baz.s",
+    ],
+    importpath = "empty",
+)
+
+go_library(
+    name = "asm_include",
+    srcs = [
+        "inc.go",
+        "inc_bar.s",
+        "inc_foo.s",
+    ],
+    importpath = "asm_include",
+)
+
+go_library(
+    name = "asm_header",
+    srcs = [
+        "inc.go",
+        "inc_asmhdr.s",
+    ],
+    importpath = "asm_header",
+)
+
+go_library(
+    name = "package_height",
+    srcs = ["package_height.go"],
+    importpath = "package_height",
+    deps = [
+        ":package_height_dep_deep",
+        ":package_height_embedder",
+    ],
+)
+
+go_library(
+    name = "package_height_embedder",
+    srcs = ["package_height_embedder.go"],
+    embed = [":package_height_embeddee"],
+    importpath = "package_height/embed",
+    deps = [":package_height_dep_deep"],
+)
+
+go_library(
+    name = "package_height_embeddee",
+    srcs = ["package_height_embeddee.go"],
+    importpath = "package_height/embed",
+    deps = [":package_height_dep_shallow"],
+)
+
+go_library(
+    name = "package_height_dep_deep",
+    srcs = ["package_height_dep_deep.go"],
+    importpath = "package_height/dep",
+)
+
+go_library(
+    name = "package_height_dep_shallow",
+    srcs = ["package_height_dep_shallow.go"],
+    importpath = "package_height/dep",
+)
+
+go_test(
+    name = "import_alias_test",
+    srcs = ["import_alias_test.go"],
+    deps = [
+        ":import_alias_a_v2",
+        ":import_alias_b",
+        ":import_alias_b_v2",
+    ],
+)
+
+go_library(
+    name = "import_alias_a_v2",
+    srcs = ["import_alias_a_v2.go"],
+    importpath = "import_alias/a/v2",
+    importpath_aliases = ["import_alias/a"],
+)
+
+go_library(
+    name = "import_alias_b",
+    srcs = ["import_alias_b.go"],
+    importpath = "import_alias/b",
+)
+
+go_library(
+    name = "import_alias_b_v2",
+    importpath = "import_alias/b/v2",
+    importpath_aliases = ["import_alias/b"],
+)
+
+go_test(
+    name = "embedsrcs_test",
+    srcs = [
+        "embedsrcs_gen_test.go",
+        "embedsrcs_test.go",
+    ],
+    embedsrcs = [
+        ":embedsrcs_transitioned",
+        ":embedsrcs_dynamic",
+        "embedsrcs_test.go",
+    ] + glob(["embedsrcs_static/**"]),
+)
+
+genrule(
+    name = "embedsrcs_gen",
+    srcs = ["embedsrcs_gen_test.go.in"],
+    outs = ["embedsrcs_gen_test.go"],
+    cmd = "cp $< $@",
+)
+
+embedsrcs_files(
+    name = "embedsrcs_dynamic",
+    files = [
+        "dir/_no",
+        "dir/f",
+        "empty/",
+        "file",
+        "glob/_hidden",
+        "glob/f",
+        "no",
+    ],
+)
+
+go_binary(
+    name = "embedsrcs_transitioned",
+    srcs = ["empty_main.go"],
+    out = "embedsrcs_transitioned",
+    # Causes a transition on the incoming dependency edge.
+    race = "on",
+)
+
+go_binary(
+    name = "gen_embedsrcs_files",
+    srcs = ["gen_embedsrcs_files.go"],
+)
+
+go_bazel_test(
+    name = "embedsrcs_error_test",
+    size = "medium",
+    srcs = ["embedsrcs_error_test.go"],
+)
+
+go_test(
+    name = "embedsrcs_simple_test",
+    srcs = ["embedsrcs_simple_test.go"],
+    embedsrcs = ["embedsrcs_static/no"],
+)
+
+go_bazel_test(
+    name = "no_srcs_test",
+    size = "medium",
+    srcs = ["no_srcs_test.go"],
+)
+
+go_library(
+    name = "no_srcs_lib",
+    importpath = "github.com/bazelbuild/rules_go/tests/core/no_srcs_lib",
+)
+
+# Tests for go_library and go_source support for .syso srcs
+cc_library(
+    name = "imported",
+    srcs = ["imported.c"],
+    linkstatic = True,
+)
+
+# TODO(eljobe): This feels like a little bit of a hack.
+#               Maybe it would be better to have a go_syso rule?
+genrule(
+    name = "sysolib",
+    srcs = [":imported"],
+    outs = ["imported.syso"],
+    cmd = "cp $< $@",
+)
+
+go_source(
+    name = "use_syso_srcs",
+    srcs = [
+        ":sysolib",
+        "wrap_imported_amd64.s",
+        "wrap_imported_arm64.s",
+    ],
+    visibility = [
+        "//tests/core/go_binary:__pkg__",
+        "//tests/core/go_test:__pkg__",
+    ],
+)
+
+go_library(
+    name = "use_syso_lib",
+    srcs = [
+        "use_syso.go",
+        ":use_syso_srcs",
+    ],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/usesyso",
+    visibility = [
+        "//tests/core/go_binary:__pkg__",
+        "//tests/core/go_test:__pkg__",
+    ],
+)

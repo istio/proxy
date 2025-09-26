@@ -1,0 +1,47 @@
+module(
+    name = "e2e_bzlmod",
+    version = "0.0.0",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "aspect_rules_js", version = "0.0.0")
+bazel_dep(name = "aspect_bazel_lib", version = "2.7.1")
+bazel_dep(name = "bazel_skylib", version = "1.5.0")
+
+local_path_override(
+    module_name = "aspect_rules_js",
+    path = "../..",
+)
+
+npm = use_extension(
+    "@aspect_rules_js//npm:extensions.bzl",
+    "npm",
+    dev_dependency = True,
+)
+npm.npm_translate_lock(
+    name = "npm",
+    # Test that lifecycle hooks can resolve node, npm as well as dep bins on that PATH.
+    # This e2e test is run on Windows as well so this test coverage is here for now. Once
+    # Windows CI runs on the root WORKSPACE, coverage can be moved there.
+    # See https://github.com/aspect-build/rules_js/pull/1142 for more info.
+    custom_postinstalls = {
+        "chalk": "node --version",
+        "less": "npm --version",
+        "jasmine": "tsc --version",
+    },
+    pnpm_lock = "//:pnpm-lock.yaml",
+    verify_node_modules_ignored = "//:.bazelignore",
+)
+use_repo(npm, "npm")
+
+# The following is just a demonstration that you can skip the npm_translate_lock feature
+# and import npm packages directly, with no lock file.
+# This is not typical use.
+# See docs in /docs/npm_import.md about the difference.
+npm.npm_import(
+    name = "npm_meaning-of-life",
+    package = "meaning-of-life",
+    version = "1.0.0",
+)
+use_repo(npm, "npm_meaning-of-life")
+use_repo(npm, "npm_meaning-of-life__links")

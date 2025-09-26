@@ -1,0 +1,13 @@
+"Private lifecycle files"
+
+load("//js:defs.bzl", "js_binary")
+
+js_binary(
+    name = "lifecycle-hooks",
+    # NB: intentionally include package.json in the runfiles of this binary to prevent
+    # https://github.com/aspect-build/rules_js/issues/447
+    data = glob(["min/**"]) + ["package.json"],
+    entry_point = "min/index.min.js",
+    include_npm = True,
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "textfuzz",
+    srcs = ["fuzz.go"],
+    importpath = "google.golang.org/protobuf/internal/fuzz/textfuzz",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//encoding/prototext",
+        "//internal/testprotos/fuzz",
+        "//proto",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":textfuzz",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "textfuzz_test",
+    srcs = ["fuzz_test.go"],
+    embed = [":textfuzz"],
+    deps = ["//internal/fuzztest"],
+)

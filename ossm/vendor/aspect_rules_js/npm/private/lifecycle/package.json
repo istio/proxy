@@ -1,0 +1,14 @@
+{
+    "name": "lifecycle-deps",
+    "private": true,
+    "dependencies": {
+        "@pnpm/lifecycle": "14.1.7",
+        "@pnpm/logger": "5.0.0"
+    },
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^24.1.0-0",
+        "@rollup/plugin-json": "^6.0.0",
+        "@rollup/plugin-node-resolve": "^15.0.1",
+        "@rollup/plugin-replace": "^5.0.2"
+    }
+}

@@ -1,0 +1,6 @@
+sh_test(
+    name = "info",
+    srcs = ["info_test.sh"],
+    args = ["$(location @io_bazel_rules_go//:go_info)"],
+    data = ["@io_bazel_rules_go//:go_info"],
+)

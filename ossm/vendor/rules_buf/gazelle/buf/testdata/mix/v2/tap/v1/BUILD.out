@@ -1,0 +1,15 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_buf//buf:defs.bzl", "buf_lint_test")
+
+proto_library(
+    name = "tap_proto",
+    srcs = ["tap.proto"],
+    strip_import_prefix = "/v2",
+    visibility = ["//visibility:public"],
+)
+
+buf_lint_test(
+    name = "tap_proto_lint",
+    config = "//v2:buf.yaml",
+    targets = [":tap_proto"],
+)

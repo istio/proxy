@@ -1,0 +1,30 @@
+{
+    "private": true,
+    "// devDependencies": "test linking & building 3rd party npm packages with problematic postinstall",
+    "devDependencies": {
+        "hello": "https://gitpkg.vercel.app/EqualMa/gitpkg-hello/packages/hello",
+        "@figma/nodegit": "^0.28.0-figma.2",
+        "@kubernetes/client-node": "https://github.com/kubernetes-client/javascript#fc681991e61c6808dd26012a2331f83671a11218",
+        "@plotly/regl": "2.1.2",
+        "bufferutil": "4.0.7",
+        "debug": "ngokevin/debug#9742c5f383a6f8046241920156236ade8ec30d53",
+        "esbuild": "0.14.38",
+        "handlebars-helpers/helper-date": "github:coda/helper-date#a2cb4284148cbba7d36173dff4c7c60ce59eae55",
+        "hot-shots": "10.0.0",
+        "inline-fixtures": "https://registry.yarnpkg.com/inline-fixtures/-/inline-fixtures-1.1.0.tgz#5f9edf644ac02a1322012dbbb9f0a4739831d662",
+        "json-stable-stringify": "1.0.1",
+        "lodash": "file:vendored/lodash-4.17.21.tgz",
+        "node-gyp": "9.3.0",
+        "plotly.js": "2.25.2",
+        "protoc-gen-grpc": "git+ssh://git@github.com:gregmagolan-codaio/protoc-gen-grpc-ts#be5580b06348d3eb9b4610a4a94065154a0df41f",
+        "puppeteer": "19.11.0",
+        "regl": "npm:@plotly/regl@2.1.2",
+        "segfault-handler": "1.3.0",
+        "semver-first-satisfied": "1.1.0",
+        "syncpack": "git+https://github.com/JamieMason/syncpack.git#c245af8ea73ce3345d92bbda6c684092a841e262",
+        "typescript": "*",
+        "unused": "latest",
+        "test-npm_package": "workspace:*",
+        "webpack-bundle-analyzer": "4.5.0"
+    }
+}

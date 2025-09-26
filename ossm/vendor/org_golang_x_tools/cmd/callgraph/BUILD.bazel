@@ -1,0 +1,80 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "callgraph_lib",
+    srcs = ["main.go"],
+    importpath = "golang.org/x/tools/cmd/callgraph",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//go/buildutil",
+        "//go/callgraph",
+        "//go/callgraph/cha",
+        "//go/callgraph/rta",
+        "//go/callgraph/static",
+        "//go/callgraph/vta",
+        "//go/packages",
+        "//go/pointer",
+        "//go/ssa",
+        "//go/ssa/ssautil",
+    ],
+)
+
+go_binary(
+    name = "callgraph",
+    embed = [":callgraph_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "callgraph_test",
+    srcs = ["main_test.go"],
+    embed = [":callgraph_lib"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:osx": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:qnx": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "//internal/testenv",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//internal/testenv",
+        ],
+        "//conditions:default": [],
+    }),
+)

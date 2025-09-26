@@ -1,0 +1,77 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "filelock",
+    srcs = [
+        "filelock.go",
+        "filelock_fcntl.go",
+        "filelock_other.go",
+        "filelock_plan9.go",
+        "filelock_unix.go",
+        "filelock_windows.go",
+    ],
+    importpath = "golang.org/x/tools/internal/lockedfile/internal/filelock",
+    visibility = ["//:__subpackages__"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:windows": [
+            "@org_golang_x_sys//windows:go_default_library",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":filelock",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "filelock_test",
+    srcs = ["filelock_test.go"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            ":filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:android": [
+            ":filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            ":filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            ":filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            ":filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            ":filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            ":filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            ":filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            ":filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            ":filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:osx": [
+            ":filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:qnx": [
+            ":filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            ":filelock",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            ":filelock",
+        ],
+        "//conditions:default": [],
+    }),
+)

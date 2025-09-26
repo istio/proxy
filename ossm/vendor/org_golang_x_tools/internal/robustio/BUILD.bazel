@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "robustio",
+    srcs = [
+        "gopls_windows.go",
+        "robustio.go",
+        "robustio_darwin.go",
+        "robustio_flaky.go",
+        "robustio_other.go",
+        "robustio_plan9.go",
+        "robustio_posix.go",
+        "robustio_windows.go",
+    ],
+    importpath = "golang.org/x/tools/internal/robustio",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":robustio",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "robustio_test",
+    srcs = ["robustio_test.go"],
+    deps = [":robustio"],
+)

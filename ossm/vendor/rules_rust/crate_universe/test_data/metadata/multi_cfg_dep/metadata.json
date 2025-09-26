@@ -1,0 +1,363 @@
+{
+    "metadata": null,
+    "packages": [
+        {
+            "authors": [
+                "RustCrypto Developers"
+            ],
+            "categories": [
+                "hardware-support",
+                "no-std"
+            ],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "libc",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.2.95",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "aarch64-linux-android",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "libc",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.2.95",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(all(target_arch = \"aarch64\", target_os = \"linux\"))",
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "libc",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.2.95",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": "cfg(all(target_arch = \"aarch64\", target_vendor = \"apple\"))",
+                    "uses_default_features": true
+                }
+            ],
+            "description": "Lightweight runtime CPU feature detection for x86/x86_64 and aarch64 with\nno_std support and support for mobile targets including Android and iOS\n",
+            "documentation": "https://docs.rs/cpufeatures",
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.2.7",
+            "keywords": [
+                "cpuid",
+                "target-feature"
+            ],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/cpufeatures-0.2.7/Cargo.toml",
+            "metadata": null,
+            "name": "cpufeatures",
+            "publish": null,
+            "readme": "README.md",
+            "repository": "https://github.com/RustCrypto/utils",
+            "rust_version": null,
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "cpufeatures",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/cpufeatures-0.2.7/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "x86",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/cpufeatures-0.2.7/tests/x86.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "aarch64",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/cpufeatures-0.2.7/tests/aarch64.rs",
+                    "test": true
+                }
+            ],
+            "version": "0.2.7"
+        },
+        {
+            "authors": [
+                "The Rust Project Developers"
+            ],
+            "categories": [
+                "external-ffi-bindings",
+                "no-std",
+                "os"
+            ],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "rustc-std-workspace-core",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                }
+            ],
+            "description": "Raw FFI bindings to platform libraries like libc.\n",
+            "documentation": "https://docs.rs/libc/",
+            "edition": "2015",
+            "features": {
+                "align": [],
+                "const-extern-fn": [],
+                "default": [
+                    "std"
+                ],
+                "extra_traits": [],
+                "rustc-dep-of-std": [
+                    "align",
+                    "rustc-std-workspace-core"
+                ],
+                "rustc-std-workspace-core": [
+                    "dep:rustc-std-workspace-core"
+                ],
+                "std": [],
+                "use_std": [
+                    "std"
+                ]
+            },
+            "homepage": "https://github.com/rust-lang/libc",
+            "id": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.117",
+            "keywords": [
+                "libc",
+                "ffi",
+                "bindings",
+                "operating",
+                "system"
+            ],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.117/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "features": [
+                            "const-extern-fn",
+                            "extra_traits"
+                        ]
+                    }
+                }
+            },
+            "name": "libc",
+            "publish": null,
+            "readme": "README.md",
+            "repository": "https://github.com/rust-lang/libc",
+            "rust_version": null,
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2015",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "libc",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.117/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2015",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "const_fn",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.117/tests/const_fn.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2015",
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/libc-0.2.117/build.rs",
+                    "test": false
+                }
+            ],
+            "version": "0.2.117"
+        },
+        {
+            "authors": [],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "cpufeatures",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "=0.2.7",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                }
+            ],
+            "description": null,
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "path+file://{TEMP_DIR}/multi_cfg_dep#0.1.0",
+            "keywords": [],
+            "license": null,
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{TEMP_DIR}/multi_cfg_dep/Cargo.toml",
+            "metadata": null,
+            "name": "multi_cfg_dep",
+            "publish": null,
+            "readme": null,
+            "repository": null,
+            "rust_version": null,
+            "source": null,
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "multi_cfg_dep",
+                    "src_path": "{TEMP_DIR}/multi_cfg_dep/lib.rs",
+                    "test": true
+                }
+            ],
+            "version": "0.1.0"
+        }
+    ],
+    "resolve": {
+        "nodes": [
+            {
+                "dependencies": [
+                    "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.117"
+                ],
+                "deps": [
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": "aarch64-linux-android"
+                            },
+                            {
+                                "kind": null,
+                                "target": "cfg(all(target_arch = \"aarch64\", target_os = \"linux\"))"
+                            },
+                            {
+                                "kind": null,
+                                "target": "cfg(all(target_arch = \"aarch64\", target_vendor = \"apple\"))"
+                            }
+                        ],
+                        "name": "libc",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.117"
+                    }
+                ],
+                "features": [],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.2.7"
+            },
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [
+                    "default",
+                    "std"
+                ],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.117"
+            },
+            {
+                "dependencies": [
+                    "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.2.7"
+                ],
+                "deps": [
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "cpufeatures",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#cpufeatures@0.2.7"
+                    }
+                ],
+                "features": [],
+                "id": "path+file://{TEMP_DIR}/multi_cfg_dep#0.1.0"
+            }
+        ],
+        "root": "path+file://{TEMP_DIR}/multi_cfg_dep#0.1.0"
+    },
+    "target_directory": "{TEMP_DIR}/multi_cfg_dep/target",
+    "version": 1,
+    "workspace_default_members": [
+        "path+file://{TEMP_DIR}/multi_cfg_dep#0.1.0"
+    ],
+    "workspace_members": [
+        "path+file://{TEMP_DIR}/multi_cfg_dep#0.1.0"
+    ],
+    "workspace_root": "{TEMP_DIR}/multi_cfg_dep"
+}

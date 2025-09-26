@@ -1,0 +1,42 @@
+load("@aspect_bazel_lib//lib:diff_test.bzl", "diff_test")
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//npm:defs.bzl", "npm_package")
+load("//js:defs.bzl", "js_library")
+
+npm_link_all_packages(name = "node_modules")
+
+js_library(
+    name = "lib_a",
+    srcs = [
+        ":index.js",
+        ":package.json",
+    ],
+    deps = [
+        # 1. node_modules deps should be excluded from the contents of the npm_package
+        # 2. include 2 versions of chalk to test cases such as https://github.com/aspect-build/rules_js/issues/1110
+        ":node_modules/chalk",
+        "//:node_modules/chalk",
+    ],
+)
+
+npm_package(
+    name = "npm_package",
+    srcs = [":lib_a"],
+    include_runfiles = False,
+    visibility = ["//visibility:public"],
+)
+
+copy_to_directory(
+    name = "expected_npm_package",
+    srcs = [
+        "index.js",
+        ":package.json",
+    ],
+)
+
+diff_test(
+    name = "test",
+    file1 = ":npm_package",
+    file2 = ":expected_npm_package",
+)

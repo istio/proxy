@@ -1,0 +1,53 @@
+load("//python:py_test.bzl", "py_test")
+
+alias(
+    name = "lib",
+    actual = "//python/private/pypi/whl_installer:lib",
+)
+
+py_test(
+    name = "arguments_test",
+    size = "small",
+    srcs = [
+        "arguments_test.py",
+    ],
+    deps = [
+        ":lib",
+    ],
+)
+
+py_test(
+    name = "platform_test",
+    size = "small",
+    srcs = [
+        "platform_test.py",
+    ],
+    data = ["//examples/wheel:minimal_with_py_package"],
+    deps = [
+        ":lib",
+    ],
+)
+
+py_test(
+    name = "wheel_installer_test",
+    size = "small",
+    srcs = [
+        "wheel_installer_test.py",
+    ],
+    data = ["//examples/wheel:minimal_with_py_package"],
+    deps = [
+        ":lib",
+    ],
+)
+
+py_test(
+    name = "wheel_test",
+    size = "small",
+    srcs = [
+        "wheel_test.py",
+    ],
+    data = ["//examples/wheel:minimal_with_py_package"],
+    deps = [
+        ":lib",
+    ],
+)

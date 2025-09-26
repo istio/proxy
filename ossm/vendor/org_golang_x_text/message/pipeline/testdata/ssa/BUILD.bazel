@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "ssa_lib",
+    srcs = [
+        "catalog_gen.go",
+        "ssa.go",
+    ],
+    importpath = "golang.org/x/text/message/pipeline/testdata/ssa",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//language",
+        "//message",
+        "//message/catalog",
+    ],
+)
+
+go_binary(
+    name = "ssa",
+    embed = [":ssa_lib"],
+    visibility = ["//visibility:public"],
+)

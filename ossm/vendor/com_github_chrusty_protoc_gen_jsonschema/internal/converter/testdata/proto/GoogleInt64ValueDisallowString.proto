@@ -1,0 +1,8 @@
+syntax = "proto3";
+package samples;
+
+import "google/protobuf/wrappers.proto";
+
+message GoogleInt64ValueDisallowString {
+  google.protobuf.Int64Value big_number = 1;
+}

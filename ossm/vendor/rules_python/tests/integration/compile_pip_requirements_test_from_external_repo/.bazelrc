@@ -1,0 +1,2 @@
+test --test_output=errors
+common:bazel7.x --incompatible_python_disallow_native_rules

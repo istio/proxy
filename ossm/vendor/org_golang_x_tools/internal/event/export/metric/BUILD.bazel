@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "metric",
+    srcs = [
+        "data.go",
+        "exporter.go",
+        "info.go",
+    ],
+    importpath = "golang.org/x/tools/internal/event/export/metric",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/event",
+        "//internal/event/core",
+        "//internal/event/keys",
+        "//internal/event/label",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":metric",
+    visibility = ["//:__subpackages__"],
+)

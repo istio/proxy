@@ -1,0 +1,63 @@
+load("//js:defs.bzl", "js_binary", "js_run_binary")
+load("@aspect_bazel_lib//lib:testing.bzl", "assert_contains")
+
+js_binary(
+    name = "fixed_args_bin",
+    entry_point = "fixed_args.mjs",
+    fixed_args = [
+        "--pneumonoultramicroscopicsilicovolcanoconiosis",
+    ],
+)
+
+js_run_binary(
+    name = "run_fixed_args_binary",
+    stdout = "fixed_args_out",
+    tool = ":fixed_args_bin",
+)
+
+assert_contains(
+    name = "fixed_args_test",
+    actual = "fixed_args_out",
+    expected = "--pneumonoultramicroscopicsilicovolcanoconiosis",
+)
+
+js_binary(
+    name = "args_bin",
+    args = [
+        "--pneumonoultramicroscopicsilicovolcanoconiosis",
+    ],
+    entry_point = "fixed_args.mjs",
+)
+
+js_run_binary(
+    name = "run_args_binary",
+    stdout = "args_out",
+    tool = ":args_bin",
+)
+
+assert_contains(
+    name = "args_test",
+    actual = "args_out",
+    expected = "undefined",
+)
+
+js_binary(
+    name = "locations_bin",
+    data = ["test.txt"],
+    entry_point = "fixed_args.mjs",
+    fixed_args = [
+        "$(rootpaths :test.txt)",
+    ],
+)
+
+js_run_binary(
+    name = "run_locations",
+    stdout = "locations_out",
+    tool = ":locations_bin",
+)
+
+assert_contains(
+    name = "locations_test",
+    actual = "locations_out",
+    expected = "js/private/test/fixed_args/test.txt",
+)

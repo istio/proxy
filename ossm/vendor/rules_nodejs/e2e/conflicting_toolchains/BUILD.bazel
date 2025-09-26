@@ -1,0 +1,13 @@
+# this is set up to make bazel test //... pass
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+
+write_file(
+    name = "empty",
+    out = "empty.sh",
+    content = [],
+)
+
+sh_test(
+    name = "dummy",
+    srcs = [":empty"],
+)

@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+package_group(
+    name = "vis",
+    packages = [
+        "//...",
+    ],
+)
+
+go_library(
+    name = "go_default_library",
+    srcs = ["foo.go"],
+    importpath = "github.com/bazelbuild/rules_go/tests/visibility",
+    visibility = [":vis"],
+)

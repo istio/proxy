@@ -1,0 +1,8 @@
+toolchain(
+    name = "toolchain",
+    exec_compatible_with = ["@platforms//cpu:x86_64","@platforms//os:windows"],
+    target_compatible_with = ["@platforms//cpu:x86_64","@platforms//os:windows"],
+    toolchain = "@rw-1704990954_tools//:rust_toolchain",
+    toolchain_type = "@rules_rust//rust:toolchain",
+    target_settings = ["@rules_rust//rust/toolchain/channel:stable"],
+)

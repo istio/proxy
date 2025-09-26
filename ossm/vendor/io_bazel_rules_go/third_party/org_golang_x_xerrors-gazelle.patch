@@ -1,0 +1,62 @@
+diff -urN a/BUILD.bazel b/BUILD.bazel
+--- a/BUILD.bazel	1970-01-01 00:00:00.000000000 +0000
++++ b/BUILD.bazel	2000-01-01 00:00:00.000000000 -0000
+@@ -0,0 +1,40 @@
++load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
++
++go_library(
++    name = "xerrors",
++    srcs = [
++        "adaptor.go",
++        "doc.go",
++        "errors.go",
++        "fmt.go",
++        "format.go",
++        "frame.go",
++        "wrap.go",
++    ],
++    importpath = "golang.org/x/xerrors",
++    visibility = ["//visibility:public"],
++    deps = ["//internal"],
++)
++
++alias(
++    name = "go_default_library",
++    actual = ":xerrors",
++    visibility = ["//visibility:public"],
++)
++
++go_test(
++    name = "xerrors_test",
++    srcs = [
++        "errors_test.go",
++        "example_As_test.go",
++        "example_FormatError_test.go",
++        "example_test.go",
++        "fmt_test.go",
++        "fmt_unexported_test.go",
++        "stack_test.go",
++        "wrap_113_test.go",
++        "wrap_test.go",
++    ],
++    embed = [":xerrors"],
++    deps = ["//internal"],
++)
+diff -urN a/internal/BUILD.bazel b/internal/BUILD.bazel
+--- a/internal/BUILD.bazel	1970-01-01 00:00:00.000000000 +0000
++++ b/internal/BUILD.bazel	2000-01-01 00:00:00.000000000 -0000
+@@ -0,0 +1,14 @@
++load("@io_bazel_rules_go//go:def.bzl", "go_library")
++
++go_library(
++    name = "internal",
++    srcs = ["internal.go"],
++    importpath = "golang.org/x/xerrors/internal",
++    visibility = ["//:__subpackages__"],
++)
++
++alias(
++    name = "go_default_library",
++    actual = ":internal",
++    visibility = ["//:__subpackages__"],
++)

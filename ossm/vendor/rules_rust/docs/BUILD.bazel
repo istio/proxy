@@ -1,0 +1,263 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_rust_mdbook//:defs.bzl", "mdbook", "mdbook_server")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@stardoc//stardoc:stardoc.bzl", "stardoc")
+load("//:page.bzl", "gen_header", "page")
+
+package(default_visibility = ["//visibility:private"])
+
+bzl_library(
+    name = "docs_deps",
+    srcs = [
+        "@bazel_tools//tools:bzl_srcs",
+    ],
+    deps = [
+        "@bazel_skylib//lib:paths",
+        "@bazel_skylib//lib:selects",
+        "@bazel_skylib//lib:structs",
+        "@bazel_skylib//rules:common_settings",
+    ],
+)
+
+bzl_library(
+    name = "all_docs",
+    deps = [
+        ":docs_deps",
+        "@rules_rust//cargo:bzl_lib",
+        "@rules_rust//crate_universe:bzl_lib",
+        "@rules_rust//rust:bzl_lib",
+        "@rules_rust_bindgen//:bzl_lib",
+        "@rules_rust_prost//:bzl_lib",
+        "@rules_rust_protobuf//:bzl_lib",
+        "@rules_rust_wasm_bindgen//:bzl_lib",
+    ],
+)
+
+PAGES = dict([
+    page(
+        name = "cargo",
+        symbols = [
+            "cargo_bootstrap_repository",
+            "cargo_build_script",
+            "cargo_dep_env",
+            "cargo_env",
+        ],
+    ),
+    page(
+        name = "rust",
+        symbols = [
+            "rust_binary",
+            "rust_library",
+            "rust_library_group",
+            "rust_static_library",
+            "rust_shared_library",
+            "rust_proc_macro",
+            "rust_test",
+            "rust_test_suite",
+            "error_format",
+            "extra_rustc_flag",
+            "extra_rustc_flags",
+            "capture_clippy_output",
+        ],
+    ),
+    page(
+        name = "providers",
+        symbols = [
+            "CrateInfo",
+            "DepInfo",
+            "StdLibInfo",
+        ],
+    ),
+    page(
+        name = "rust_analyzer",
+        header_template = ":rust_analyzer.vm",
+        symbols = [
+            "rust_analyzer_aspect",
+            "rust_analyzer_toolchain",
+        ],
+    ),
+    page(
+        name = "rust_clippy",
+        header_template = ":rust_clippy.vm",
+        symbols = [
+            "rust_clippy",
+            "rust_clippy_aspect",
+        ],
+    ),
+    page(
+        name = "rust_doc",
+        symbols = [
+            "rust_doc",
+            "rust_doc_test",
+        ],
+    ),
+    page(
+        name = "rust_fmt",
+        header_template = ":rust_fmt.vm",
+        symbols = [
+            "rustfmt_aspect",
+            "rustfmt_test",
+            "rustfmt_toolchain",
+        ],
+    ),
+    page(
+        name = "rust_repositories",
+        symbols = [
+            "rules_rust_dependencies",
+            "rust_analyzer_toolchain_repository",
+            "rust_register_toolchains",
+            "rust_repositories",
+            "rust_repository_set",
+            "rust_stdlib_filegroup",
+            "rust_toolchain_repository_proxy",
+            "rust_toolchain_repository",
+            "rust_toolchain_tools_repository",
+            "rust_toolchain",
+        ],
+    ),
+    page(
+        name = "settings",
+        symbols = [
+            "incompatible_flag",
+            "fail_when_enabled",
+        ],
+    ),
+])
+
+# Generate headers for each page
+[gen_header(page = p) for p in PAGES.values()]
+
+[
+    stardoc(
+        name = "%s_md" % k,
+        out = "%s.md" % k,
+        header_template = ":%s_gen_header_vm" % k,
+        input = ":symbols.bzl",
+        symbol_names = PAGES[k].symbols,
+        deps = [":all_docs"],
+    )
+    for k in PAGES.keys()
+]
+
+genrule(
+    name = "flatten_header_vm",
+    outs = ["flatten_header.vm"],
+    cmd = ">$@ echo '# Rust rules\n\n%s\n'" % "\n".join(
+        sorted(["* [{rule}](#{rule})".format(rule = v) for k in PAGES.keys() for v in PAGES[k].symbols]),
+    ),
+    output_to_bindir = True,
+)
+
+stardoc(
+    name = "flatten_md",
+    out = "flatten.md",
+    header_template = ":flatten_header_vm",
+    input = ":symbols.bzl",
+    symbol_names = sorted([symbol for k in PAGES.keys() for symbol in PAGES[k].symbols]),
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "crate_universe_workspace",
+    out = "crate_universe.md",
+    input = "@rules_rust//crate_universe:docs_workspace.bzl",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "crate_universe_bzlmod",
+    out = "crate_universe_bzlmod.md",
+    input = "@rules_rust//crate_universe:docs_bzlmod.bzl",
+    deps = [":all_docs"],
+)
+
+# This target exists to avoid this issue:
+# https://github.com/bazelbuild/rules_cc/issues/279
+bzl_library(
+    name = "bindgen_lib",
+    srcs = [
+        "@com_google_protobuf//:bzl_srcs",
+        "@rules_cc//cc:bzl_srcs",
+    ],
+    deps = [
+        "@com_google_protobuf//bazel:cc_proto_library_bzl",
+        "@rules_cc//cc/common",
+        "@rules_cc//cc/toolchains:toolchain_rules",
+        "@rules_rust_bindgen//:bzl_lib",
+    ],
+)
+
+stardoc(
+    name = "rust_bindgen",
+    out = "rust_bindgen.md",
+    input = "@rules_rust_bindgen//:defs.bzl",
+    deps = [":bindgen_lib"],
+)
+
+stardoc(
+    name = "rust_mdbook",
+    out = "rust_mdbook.md",
+    input = "@rules_rust_mdbook//:defs.bzl",
+    deps = ["@rules_rust_mdbook//:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_protobuf",
+    out = "rust_protobuf.md",
+    input = "@rules_rust_protobuf//:defs.bzl",
+    deps = ["@rules_rust_protobuf//:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_prost",
+    out = "rust_prost.md",
+    input = "@rules_rust_prost//:defs.bzl",
+    deps = ["@rules_rust_prost//:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_wasm_bindgen",
+    out = "rust_wasm_bindgen.md",
+    input = "@rules_rust_wasm_bindgen//:defs.bzl",
+    deps = ["@rules_rust_wasm_bindgen//:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_wasm_bindgen_rules_js",
+    out = "rust_wasm_bindgen_rules_js.md",
+    input = "@rules_rust_wasm_bindgen//rules_js:defs.bzl",
+    deps = ["@rules_rust_wasm_bindgen//rules_js:bzl_lib"],
+)
+
+mdbook(
+    name = "book",
+    srcs = glob(["src/**/*.md"]),
+    book = "book.toml",
+)
+
+alias(
+    name = "docs",
+    actual = ":book",
+)
+
+mdbook_server(
+    name = "server",
+    book = ":book",
+)
+
+sh_binary(
+    name = "update_docs",
+    srcs = ["update_docs.sh"],
+)
+
+sh_binary(
+    name = "test_docs",
+    srcs = ["test_docs.sh"],
+)
+
+sh_binary(
+    name = "publish_book",
+    srcs = ["publish_book.sh"],
+    data = [":book"],
+    env = {"BOOK_DIR": "$(rootpath :book)"},
+)

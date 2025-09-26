@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cfg",
+    srcs = [
+        "builder.go",
+        "cfg.go",
+    ],
+    importpath = "golang.org/x/tools/go/cfg",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cfg",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "cfg_test",
+    srcs = ["cfg_test.go"],
+    embed = [":cfg"],
+)

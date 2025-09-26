@@ -1,0 +1,48 @@
+load("@rules_proto_grpc//buf:defs.bzl", "buf_proto_lint_test")
+
+buf_proto_lint_test(
+    name = "person_buf_proto_lint",
+    except_rules = ["PACKAGE_VERSION_SUFFIX"],
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+    use_rules = [
+        "DEFAULT",
+        "COMMENTS",
+    ],
+)
+
+buf_proto_lint_test(
+    name = "place_buf_proto_lint",
+    except_rules = ["PACKAGE_VERSION_SUFFIX"],
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+    use_rules = [
+        "DEFAULT",
+        "COMMENTS",
+    ],
+)
+
+buf_proto_lint_test(
+    name = "thing_buf_proto_lint",
+    except_rules = ["PACKAGE_VERSION_SUFFIX"],
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+    use_rules = [
+        "DEFAULT",
+        "COMMENTS",
+    ],
+)
+
+buf_proto_lint_test(
+    name = "routeguide_buf_proto_lint",
+    except_rules = [
+        "PACKAGE_VERSION_SUFFIX",
+        "RPC_REQUEST_STANDARD_NAME",
+        "RPC_RESPONSE_STANDARD_NAME",
+        "SERVICE_SUFFIX",
+        "PACKAGE_DIRECTORY_MATCH",
+        "RPC_REQUEST_RESPONSE_UNIQUE",
+    ],
+    protos = ["@rules_proto_grpc//example/proto:routeguide_proto"],
+    use_rules = [
+        "DEFAULT",
+        "COMMENTS",
+    ],
+)

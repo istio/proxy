@@ -1,0 +1,21 @@
+name: Docs-CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Run tests
+        run: bazel run --compilation_mode=opt --stamp //:publish_book
+        working-directory: docs
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@4.1.7
+        with:
+          branch: docs # The branch the action should deploy to.
+          folder: docs/book # The folder the action should deploy.

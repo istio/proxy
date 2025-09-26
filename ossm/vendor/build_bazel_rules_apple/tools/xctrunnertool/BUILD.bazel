@@ -1,0 +1,14 @@
+py_library(
+    name = "lib",
+    srcs = glob(["lib/*.py"]),
+    imports = ["."],
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "run",
+    srcs = ["run.py"],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    deps = [":lib"],
+)

@@ -1,0 +1,9 @@
+@version_interval_testing//:com_google_android_annotations
+@version_interval_testing//:com_google_code_gson_gson
+@version_interval_testing//:com_google_errorprone_error_prone_annotations
+@version_interval_testing//:io_grpc_grpc_api
+@version_interval_testing//:io_grpc_grpc_core
+@version_interval_testing//:io_grpc_grpc_netty_shaded
+@version_interval_testing//:io_perfmark_perfmark_api
+@version_interval_testing//:v1/https/repo1.maven.org/maven2/io/grpc/grpc-core/1.29.0/grpc-core-1.29.0.jar
+@version_interval_testing//:v1/https/repo1.maven.org/maven2/io/grpc/grpc-netty-shaded/1.29.0/grpc-netty-shaded-1.29.0.jar

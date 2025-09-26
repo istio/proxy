@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+message demo {
+    bool field = 1;
+}
+
+service Demo {
+    rpc Demo (demo) returns (demo);
+}

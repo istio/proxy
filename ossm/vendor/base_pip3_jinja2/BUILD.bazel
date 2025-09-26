@@ -1,0 +1,20 @@
+load("@rules_python//python/private/pypi:whl_library_targets.bzl", "whl_library_targets")
+
+package(default_visibility = ["//visibility:public"])
+
+whl_library_targets(
+    data_exclude = [],
+    dep_template = "@base_pip3_{name}//:{target}",
+    dependencies = ["markupsafe"],
+    dependencies_by_platform = {},
+    enable_implicit_namespace_pkgs = False,
+    entry_points = {},
+    group_deps = [],
+    group_name = "",
+    name = "jinja2-3.1.6-py3-none-any.whl",
+    sdist_filename = None,
+    tags = [
+        "pypi_name=jinja2",
+        "pypi_version=3.1.6",
+    ],
+)

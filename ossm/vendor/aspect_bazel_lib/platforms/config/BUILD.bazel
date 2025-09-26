@@ -1,0 +1,29 @@
+load(":defs.bzl", "platforms")
+
+config_setting(
+    name = "aarch64",
+    constraint_values = [
+        "@platforms//cpu:aarch64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "x86_64",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+[config_setting(
+    name = "{}_{}".format(
+        p.os,
+        p.cpu,
+    ),
+    constraint_values = [
+        "@platforms//os:{}".format(p.os),
+        "@platforms//cpu:{}".format(p.cpu),
+    ],
+    visibility = ["//visibility:public"],
+) for p in platforms]

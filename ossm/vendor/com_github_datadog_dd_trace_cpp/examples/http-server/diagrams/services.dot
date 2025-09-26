@@ -1,0 +1,28 @@
+digraph {
+    rankdir="TB";
+
+    curl [label="curl 'http://localhost:8000/[...]'"];
+    curl -> proxy;
+
+     subgraph cluster_docker_compose {
+        label="docker compose";
+        rankdir="LR";
+        graph[style=dotted];
+
+        proxy [label="Proxy ⭐\n(C++)"];
+        server [label="Server ⭐\n(C++)"];
+        database [label="Database\n(Python)"];
+        agent [label="Datadog Agent"];
+
+        {
+            rank=source;
+            proxy -> server -> database;
+        }
+
+        {
+            proxy -> agent;
+            server -> agent;
+            database -> agent;
+        }
+     }
+}

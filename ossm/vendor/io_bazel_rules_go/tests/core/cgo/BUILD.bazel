@@ -1,0 +1,520 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+load("@io_bazel_rules_go//go/tools/bazel_testing:def.bzl", "go_bazel_test")
+
+package(
+    # go_* rules do not emit module maps.
+    features = ["-layering_check"],
+)
+
+go_test(
+    name = "opts_test",
+    srcs = ["adder_test.go"],
+    embed = [":opts"],
+)
+
+genrule(
+    name = "generate_header_copts",
+    outs = ["generated_copts/generated_copts.h"],
+    cmd = "echo '#define GENERATED_COPTS 1' >$@",
+)
+
+genrule(
+    name = "generate_header_cppopts",
+    outs = ["generated_cppopts/generated_cppopts.h"],
+    cmd = "echo '#define GENERATED_CPPOPTS 1' >$@",
+)
+
+genrule(
+    name = "generate_header_cxxopts",
+    outs = ["generated_cxxopts/generated_cxxopts.h"],
+    cmd = "echo '#define GENERATED_CXXOPTS 1' >$@",
+)
+
+cc_library(
+    name = "generated_headers",
+    hdrs = [
+        "generated_copts/generated_copts.h",
+        "generated_cppopts/generated_cppopts.h",
+        "generated_cxxopts/generated_cxxopts.h",
+    ],
+)
+
+COPTS_INCLUDE_PREFIX = (package_name() if repository_name() == "@" else "external/%s/%s" % (
+    repository_name()[1:],
+    package_name(),
+))
+
+go_library(
+    name = "opts",
+    srcs = [
+        "add.c",
+        "add.cpp",
+        "add.h",
+        "adder.go",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "add.m",
+            "add.mm",
+        ],
+        "//conditions:default": [],
+    }),
+    cdeps = [":generated_headers"],
+    cgo = True,
+    copts = [
+        "-DRULES_GO_C",
+        "-I$(GENDIR)/%s/generated_copts" % COPTS_INCLUDE_PREFIX,
+        "-DDOLLAR_SIGN_C=$$",  # the dollar sign should be escaped
+    ],
+    cppopts = [
+        "-DRULES_GO_CPP",
+        "-I$(GENDIR)/%s/generated_cppopts" % COPTS_INCLUDE_PREFIX,
+        "-DDOLLAR_SIGN_CPP=$$",  # the dollar sign should be escaped
+    ],
+    cxxopts = [
+        "-DRULES_GO_CXX",
+        "-I$(GENDIR)/%s/generated_cxxopts" % COPTS_INCLUDE_PREFIX,
+        "-DDOLLAR_SIGN_CXX=$$",  # the dollar sign should be escaped
+    ],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/cxx",
+)
+
+go_test(
+    name = "dylib_test",
+    srcs = ["dylib_test.go"],
+    embed = [":dylib_client"],
+    rundir = ".",
+    tags = ["manual"],  # //tests/core/cgo:generate_imported_dylib.sh must be run first
+)
+
+go_library(
+    name = "dylib_client",
+    srcs = ["dylib_client.go"],
+    cdeps = select({
+        "@io_bazel_rules_go//go/platform:darwin": [":darwin_imported_dylib"],
+        "//conditions:default": [":linux_imported_dylib"],
+        # TODO(jayconrod): Support windows, skip others.
+    }),
+    cgo = True,
+    importpath = "github.com/bazelbuild/rules_go/tests/core/cgo/dylib",
+    tags = ["manual"],
+)
+
+
+genrule(
+    name = "generate_imported_dylib_linux",
+    srcs = ["imported.c"],
+    tools = ["generate_imported_dylib.sh"],
+    outs = [
+        "libimported.so",
+        "libversioned.so.2",
+    ],
+    cmd = "$(location generate_imported_dylib.sh) $(location imported.c) $(@D)",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+genrule(
+    name = "generate_imported_dylib_darwin",
+    srcs = ["imported.c"],
+    tools = ["generate_imported_dylib.sh"],
+    outs = [
+        "libimported.dylib",
+        "libversioned.2.dylib",
+        "libversioned.dylib.2",
+        "libversioned.dylib",
+    ],
+    cmd = "$(location generate_imported_dylib.sh) $(location imported.c) $(@D)",
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+cc_import(
+    name = "darwin_imported_dylib",
+    shared_library = "libimported.dylib",
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+cc_import(
+    name = "linux_imported_dylib",
+    shared_library = "libimported.so",
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+go_test(
+    name = "generated_dylib_test",
+    srcs = ["dylib_test.go"],
+    embed = [":generated_dylib_client"],
+    rundir = ".",
+)
+
+go_library(
+    name = "generated_dylib_client",
+    srcs = ["dylib_client.go"],
+    cdeps = select({
+        "@io_bazel_rules_go//go/platform:darwin": [":darwin_imported_generated_dylib"],
+        "//conditions:default": [":linux_imported_generated_dylib"],
+        # TODO(jayconrod): Support windows, skip others.
+    }),
+    cgo = True,
+    importpath = "github.com/bazelbuild/rules_go/tests/core/cgo/dylib",
+)
+
+cc_import(
+    name = "darwin_imported_generated_dylib",
+    shared_library = ":libimported_generated.dylib",
+    tags = ["manual"],
+)
+
+cc_binary(
+    name = "libimported_generated.dylib",
+    srcs = ["imported.c"],
+    linkopts = ["-Wl,-install_name,@rpath/libimported_generated.dylib"],
+    linkshared = True,
+    tags = ["manual"],
+)
+
+cc_import(
+    name = "linux_imported_generated_dylib",
+    shared_library = ":libimported_generated.so",
+    tags = ["manual"],
+)
+
+cc_binary(
+    name = "libimported_generated.so",
+    srcs = ["imported.c"],
+    linkshared = True,
+    tags = ["manual"],
+)
+
+# //tests/core/cgo:generate_imported_dylib.sh must be run first
+go_test(
+    name = "versioned_dylib_test",
+    srcs = ["dylib_test.go"],
+    embed = [":versioned_dylib_client"],
+    rundir = ".",
+    target_compatible_with = select({
+        "@platforms//os:osx": [],
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+go_library(
+    name = "versioned_dylib_client",
+    srcs = ["dylib_client.go"],
+    cdeps = select({
+        "@io_bazel_rules_go//go/platform:darwin": [":darwin_imported_versioned_dylib"],
+        "//conditions:default": [":linux_imported_versioned_dylib"],
+        # TODO(jayconrod): Support windows, skip others.
+    }),
+    cgo = True,
+    importpath = "github.com/bazelbuild/rules_go/tests/core/cgo/dylib",
+    tags = ["manual"],
+)
+
+cc_import(
+    name = "linux_imported_versioned_dylib",
+    shared_library = "libversioned.so.2",
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+cc_import(
+    name = "darwin_imported_versioned_dylib",
+    shared_library = "libversioned.2.dylib",
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+go_test(
+    name = "oracle_convention_darwin_dylib_test",
+    srcs = ["dylib_test.go"],
+    embed = [":oracle_convention_darwin_dylib_client"],
+    rundir = ".",
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+go_library(
+    name = "oracle_convention_darwin_dylib_client",
+    srcs = ["dylib_client.go"],
+    cdeps = [":oracle_convention_darwin_dylib"],
+    cgo = True,
+    importpath = "github.com/bazelbuild/rules_go/tests/core/cgo/dylib",
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+cc_library(
+    name = "oracle_convention_darwin_dylib",
+    srcs = [
+        "libversioned.dylib",
+        "libversioned.dylib.2",
+    ],
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+go_test(
+    name = "generated_versioned_dylib_test",
+    srcs = ["dylib_test.go"],
+    embed = [":generated_versioned_dylib_client"],
+    rundir = ".",
+)
+
+go_library(
+    name = "generated_versioned_dylib_client",
+    srcs = ["dylib_client.go"],
+    cdeps = select({
+        # This test exists just for versioned `.so`s on Linux,
+        # but we can reuse the above test's dylib so it passes on darwin,
+        # where filename suffixes are not used for library version.
+        "@io_bazel_rules_go//go/platform:darwin": [":darwin_imported_generated_dylib"],
+        "//conditions:default": [":linux_imported_generated_versioned_dylib"],
+        # TODO(jayconrod): Support windows, skip others.
+    }),
+    cgo = True,
+    importpath = "github.com/bazelbuild/rules_go/tests/core/cgo/dylib",
+)
+
+cc_library(
+    name = "linux_imported_generated_versioned_dylib",
+    srcs = [":libimported_generated.so.2"],
+    linkstatic = False,
+    tags = ["manual"],
+)
+
+cc_binary(
+    name = "libimported_generated.so.2",
+    srcs = ["imported.c"],
+    linkshared = True,
+    tags = ["manual"],
+)
+
+go_test(
+    name = "cc_libs_test",
+    srcs = [
+        "cc_libs_common.go",
+        "cc_libs_darwin_test.go",
+        "cc_libs_linux_test.go",
+    ],
+    data = [
+        ":c_srcs",
+        ":cc_deps",
+        ":cc_srcs",
+        ":pure",
+    ],
+    deps = ["//go/tools/bazel:go_default_library"],
+)
+
+go_binary(
+    name = "pure",
+    srcs = ["pure.go"],
+    out = "pure_bin",
+    cgo = True,
+    pure = "on",
+)
+
+go_binary(
+    name = "c_srcs",
+    srcs = [
+        "foo.c",
+        "foo.go",
+    ],
+    out = "c_srcs_bin",
+    cgo = True,
+)
+
+go_binary(
+    name = "cc_srcs",
+    srcs = [
+        "bar.cc",
+        "bar.go",
+    ],
+    out = "cc_srcs_bin",
+    cgo = True,
+)
+
+go_binary(
+    name = "cc_deps",
+    srcs = ["bar.go"],
+    out = "cc_deps_bin",
+    cdeps = [":bar_dep"],
+    cgo = True,
+)
+
+cc_library(
+    name = "bar_dep",
+    srcs = ["bar.cc"],
+)
+
+go_test(
+    name = "race_test",
+    srcs = [
+        "race_off.c",
+        "race_off.go",
+        "race_on.c",
+        "race_on.go",
+        "race_test.go",
+    ],
+    cgo = True,
+    race = "on",
+)
+
+go_test(
+    name = "tag_test",
+    srcs = ["tag_test.go"],
+    data = [
+        ":tag_cgo_bin",
+        ":tag_pure_bin",
+    ],
+    rundir = ".",
+    deps = ["//go/tools/bazel:go_default_library"],
+)
+
+go_binary(
+    name = "tag_pure_bin",
+    srcs = [
+        "tag_pure.go",
+        "tag_pure_err.c",
+        "tag_pure_err.go",
+    ],
+    cgo = True,
+    pure = "on",
+)
+
+go_binary(
+    name = "tag_cgo_bin",
+    srcs = [
+        "tag_cgo.go",
+        "tag_cgo_err.go",
+    ],
+    cgo = True,
+    pure = "off",
+)
+
+go_test(
+    name = "cgo_link_test",
+    srcs = [
+        "cgo_link_test.go",
+        "cgo_ref.go",
+    ],
+    cdeps = [":cgo_link_dep"],
+    cgo = True,
+)
+
+go_bazel_test(
+    name = "cgo_abs_paths_test",
+    srcs = ["cgo_abs_paths_test.go"],
+)
+
+cc_library(
+    name = "cgo_link_dep",
+    srcs = ["cgo_link_dep.c"],
+)
+
+go_test(
+    name = "split_import_test",
+    srcs = [
+        "split_import_i_test.go",
+        "split_import_x_test.go",
+    ],
+    embed = [":split_import_a"],
+    deps = [":split_import_b"],
+)
+
+go_library(
+    name = "split_import_a",
+    srcs = ["split_import_a.go"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/cgo/split_import/a",
+)
+
+go_library(
+    name = "split_import_b",
+    srcs = ["split_import_b.go"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/cgo/split_import/b",
+    deps = [
+        ":split_import_a",
+        ":split_import_cgo",
+    ],
+)
+
+go_library(
+    name = "split_import_cgo",
+    srcs = ["split_import_cgo.go"],
+    cdeps = [":split_import_c"],
+    cgo = True,
+    importpath = "github.com/bazelbuild/rules_go/tests/core/cgo/split_import/cgo",
+)
+
+cc_library(
+    name = "split_import_c",
+    srcs = ["split_import_c.c"],
+    hdrs = ["split_import_c.h"],
+)
+
+go_bazel_test(
+    name = "external_includes_test",
+    srcs = ["external_includes_test.go"],
+)
+
+go_library(
+    name = "use_external_symbol",
+    srcs = ["use_external_symbol.go"],
+    cgo = True,
+    importpath = "github.com/bazelbuild/rules_go/tests/core/cgo/use_external_symbol",
+    tags = ["manual"],
+)
+
+go_binary(
+    name = "provide_external_symbol",
+    srcs = ["provide_external_symbol.go"],
+    cgo = True,
+    target_compatible_with = select({
+        "@platforms//os:osx": [],
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    deps = [":use_external_symbol"],
+)
+
+cc_library(
+    name = "native_dep",
+    srcs = ["native_dep.c"],
+    hdrs = ["native_dep.h"],
+    # Force static linking to ensure that the build doesn't succeed by
+    # accidentally picking up the shared library in the search path.
+    linkstatic = True,
+)
+
+go_library(
+    name = "transitive_dep",
+    srcs = ["transitive_dep.go"],
+    cdeps = [":native_dep"],
+    cgo = True,
+    importpath = "github.com/bazelbuild/rules_go/tests/core/cgo/transitive_dep",
+)
+
+go_library(
+    name = "direct_dep",
+    srcs = ["direct_dep.go"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/cgo/direct_dep",
+    deps = [":transitive_dep"],
+)
+
+go_binary(
+    name = "use_transitive_symbol",
+    srcs = ["use_transitive_symbol.go"],
+    cgo = True,
+    linkmode = "c-archive",
+    deps = [":direct_dep"],
+)
+
+cc_binary(
+    name = "use_c_symbol_through_go",
+    srcs = ["use_c_symbol_through_go.c"],
+    deps = [":use_transitive_symbol"],
+)
+
+go_test(
+    name = "cgo_required",
+    srcs = ["cgo_required_test.go"],
+    pure = "on",
+)

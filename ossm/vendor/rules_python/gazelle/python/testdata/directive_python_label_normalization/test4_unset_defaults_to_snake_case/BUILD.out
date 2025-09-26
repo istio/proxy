@@ -1,0 +1,8 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "test4_unset_defaults_to_snake_case",
+    srcs = ["bar.py"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@gazelle_python_test//google_cloud_storage"],
+)

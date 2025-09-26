@@ -1,0 +1,43 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_binary", "swift_library")
+
+# C libraries
+cc_library(
+    name = "CGRPCZlib",
+    srcs = glob(["Sources/CGRPCZlib/**/*.c", "Sources/CGRPCZlib/**/*.h"]),
+    hdrs = glob(["Sources/CGRPCZlib/include/**/*.h"]),
+    includes = ["Sources/CGRPCZlib/include"],
+    tags = ["swift_module=CGRPCZlib"],
+    deps = ["@zlib"],
+)
+
+
+# Swift libraries
+swift_library(
+    name = "GRPC",
+    srcs = glob(["Sources/GRPC/**/*.swift"]),
+    module_name = "GRPC",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":CGRPCZlib",
+        "@com_github_apple_swift_log//:Logging",
+        "@com_github_apple_swift_nio//:NIO",
+        "@com_github_apple_swift_nio//:NIOHTTP1",
+        "@com_github_apple_swift_nio//:NIOFoundationCompat",
+        "@com_github_apple_swift_nio_extras//:NIOExtras",
+        "@com_github_apple_swift_nio_http2//:NIOHTTP2",
+        "@com_github_apple_swift_nio_ssl//:NIOSSL",
+        "@com_github_apple_swift_nio_transport_services//:NIOTransportServices",
+        "@com_github_apple_swift_protobuf//:SwiftProtobuf",
+    ],
+)
+
+swift_binary(
+    name = "protoc-gen-grpc-swift",
+    srcs = glob(["Sources/protoc-gen-grpc-swift/*.swift"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_apple_swift_protobuf//:SwiftProtobuf",
+        "@com_github_apple_swift_protobuf//:SwiftProtobufPluginLibrary",
+    ],
+)

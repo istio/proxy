@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "bitfield",
+    srcs = ["bitfield.go"],
+    importpath = "golang.org/x/text/internal/gen/bitfield",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":bitfield",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "bitfield_test",
+    srcs = [
+        "bitfield_test.go",
+        "gen1_test.go",
+        "gen2_test.go",
+    ],
+    embed = [":bitfield"],
+)

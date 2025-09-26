@@ -1,0 +1,242 @@
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("@pythons_hub//:versions.bzl", "DEFAULT_PYTHON_VERSION", "MINOR_MAPPING", "PYTHON_VERSIONS")
+load(
+    "//python/private:flags.bzl",
+    "AddSrcsToRunfilesFlag",
+    "BootstrapImplFlag",
+    "ExecToolsToolchainFlag",
+    "FreeThreadedFlag",
+    "LibcFlag",
+    "PrecompileFlag",
+    "PrecompileSourceRetentionFlag",
+    "VenvsSitePackages",
+    "VenvsUseDeclareSymlinkFlag",
+    rp_string_flag = "string_flag",
+)
+load(
+    "//python/private/pypi:flags.bzl",
+    "UniversalWhlFlag",
+    "UseWhlFlag",
+    "define_pypi_internal_flags",
+)
+load(":config_settings.bzl", "construct_config_settings")
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]) + [
+        "//python/config_settings/private:distribution",
+    ],
+    visibility = ["//python:__pkg__"],
+)
+
+construct_config_settings(
+    name = "construct_config_settings",
+    default_version = DEFAULT_PYTHON_VERSION,
+    documented_flags = [
+        ":pip_whl",
+        ":pip_whl_glibc_version",
+        ":pip_whl_muslc_version",
+        ":pip_whl_osx_arch",
+        ":pip_whl_osx_version",
+        ":py_freethreaded",
+        ":py_linux_libc",
+    ],
+    minor_mapping = MINOR_MAPPING,
+    versions = PYTHON_VERSIONS,
+)
+
+string_flag(
+    name = "add_srcs_to_runfiles",
+    build_setting_default = AddSrcsToRunfilesFlag.AUTO,
+    values = AddSrcsToRunfilesFlag.flag_values(),
+    # NOTE: Only public because it is dependency of public rules.
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "exec_tools_toolchain",
+    build_setting_default = ExecToolsToolchainFlag.ENABLED,
+    values = sorted(ExecToolsToolchainFlag.__members__.values()),
+    # NOTE: Only public because it is used in py_toolchain_suite from toolchain
+    # repositories
+    visibility = ["//visibility:private"],
+)
+
+config_setting(
+    name = "is_exec_tools_toolchain_enabled",
+    flag_values = {
+        "exec_tools_toolchain": ExecToolsToolchainFlag.ENABLED,
+    },
+    # NOTE: Only public because it is used in py_toolchain_suite from toolchain
+    # repositories
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "precompile",
+    build_setting_default = PrecompileFlag.AUTO,
+    values = sorted(PrecompileFlag.__members__.values()),
+    # NOTE: Only public because it's an implicit dependency
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "precompile_source_retention",
+    build_setting_default = PrecompileSourceRetentionFlag.AUTO,
+    values = sorted(PrecompileSourceRetentionFlag.__members__.values()),
+    # NOTE: Only public because it's an implicit dependency
+    visibility = ["//visibility:public"],
+)
+
+rp_string_flag(
+    name = "bootstrap_impl",
+    build_setting_default = BootstrapImplFlag.SYSTEM_PYTHON,
+    override = select({
+        # Windows doesn't yet support bootstrap=script, so force disable it
+        ":_is_windows": BootstrapImplFlag.SYSTEM_PYTHON,
+        "//conditions:default": "",
+    }),
+    values = sorted(BootstrapImplFlag.__members__.values()),
+    # NOTE: Only public because it's an implicit dependency
+    visibility = ["//visibility:public"],
+)
+
+# For some reason, @platforms//os:windows can't be directly used
+# in the select() for the flag. But it can be used when put behind
+# a config_setting().
+config_setting(
+    name = "_is_windows",
+    constraint_values = ["@platforms//os:windows"],
+)
+
+# This is used for pip and hermetic toolchain resolution.
+string_flag(
+    name = "py_linux_libc",
+    build_setting_default = LibcFlag.GLIBC,
+    values = LibcFlag.flag_values(),
+    # NOTE: Only public because it is used in pip hub and toolchain repos.
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "py_freethreaded",
+    build_setting_default = FreeThreadedFlag.NO,
+    values = sorted(FreeThreadedFlag.__members__.values()),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "is_py_freethreaded",
+    actual = ":_is_py_freethreaded_yes",
+    deprecation = "not actually public, please create your own config_setting using the flag that rules_python exposes",
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "is_py_non_freethreaded",
+    actual = ":_is_py_freethreaded_no",
+    deprecation = "not actually public, please create your own config_setting using the flag that rules_python exposes",
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "venvs_use_declare_symlink",
+    build_setting_default = VenvsUseDeclareSymlinkFlag.YES,
+    values = VenvsUseDeclareSymlinkFlag.flag_values(),
+    visibility = ["//visibility:public"],
+)
+
+# pip.parse related flags
+
+string_flag(
+    name = "pip_whl",
+    build_setting_default = UseWhlFlag.AUTO,
+    values = sorted(UseWhlFlag.__members__.values()),
+    # NOTE: Only public because it is used in pip hub repos.
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "is_pip_whl_auto",
+    flag_values = {
+        ":pip_whl": UseWhlFlag.AUTO,
+    },
+    # NOTE: Only public because it is used in pip hub repos.
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "is_pip_whl_no",
+    flag_values = {
+        ":pip_whl": UseWhlFlag.NO,
+    },
+    # NOTE: Only public because it is used in pip hub repos.
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "is_pip_whl_only",
+    flag_values = {
+        ":pip_whl": UseWhlFlag.ONLY,
+    },
+    # NOTE: Only public because it is used in pip hub repos.
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "pip_whl_osx_arch",
+    build_setting_default = UniversalWhlFlag.ARCH,
+    values = sorted(UniversalWhlFlag.__members__.values()),
+    # NOTE: Only public because it is used in pip hub repos.
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "pip_whl_glibc_version",
+    build_setting_default = "",
+    # NOTE: Only public because it is used in pip hub repos.
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "pip_whl_muslc_version",
+    build_setting_default = "",
+    # NOTE: Only public because it is used in pip hub repos.
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "pip_whl_osx_version",
+    build_setting_default = "",
+    # NOTE: Only public because it is used in pip hub repos.
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "venvs_site_packages",
+    build_setting_default = VenvsSitePackages.NO,
+    # NOTE: Only public because it is used in pip hub repos.
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "is_venvs_site_packages",
+    flag_values = {
+        ":venvs_site_packages": VenvsSitePackages.YES,
+    },
+    # NOTE: Only public because it is used in whl_library repos.
+    visibility = ["//visibility:public"],
+)
+
+define_pypi_internal_flags(
+    name = "define_pypi_internal_flags",
+)
+
+label_flag(
+    name = "pip_env_marker_config",
+    build_setting_default = ":_pip_env_marker_default_config",
+    # NOTE: Only public because it is used in pip hub repos.
+    visibility = ["//visibility:public"],
+)

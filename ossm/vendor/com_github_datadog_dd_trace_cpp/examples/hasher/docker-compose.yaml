@@ -1,0 +1,15 @@
+services:
+  dd-agent:
+    image: datadog/agent
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock:ro'
+      - '/run/user:/run/user:ro'
+      - '/proc/:/host/proc/:ro'
+      - '/sys/fs/cgroup/:/host/sys/fs/cgroup:ro'
+    environment:
+      - DD_API_KEY
+      - DD_APM_ENABLED=true
+      - DD_LOG_LEVEL=ERROR
+      - DOCKER_HOST
+    ports:
+      - 8126:8126

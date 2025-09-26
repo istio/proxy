@@ -1,0 +1,445 @@
+#
+# Copyright 2018-2019 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: Zipkin API
+  description: |
+    Zipkin's Query api is rooted at `api/v1`, on a host that by default listens
+    on port 9411. It primarily serves the zipkin-ui, although it includes a POST
+    endpoint that can receive spans.
+host: localhost:9411
+basePath: /api/v1
+schemes:
+  - http
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /services:
+    get:
+      description: |
+        Returns a list of all service names associated with annotations.
+      responses:
+        '200':
+          description: Succes
+          schema:
+            type: array
+            items:
+              type: string
+        '400':
+          description: Bad Request Error
+  /spans:
+    get:
+      description: Get all the span names logged by a particular service
+      parameters:
+      - name: serviceName
+        in: query
+        required: true
+        description: |
+          Ex zipkin-server (required) - service that logged an annotation in a
+          trace. The /services endpoint enumerates possible input values.
+        type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: array
+            items:
+              type: string
+        '400':
+          description: Bad Request Error
+    post:
+      description: |
+          Uploads a list of spans encoded per content-type, for example json
+          or thrift (TBinaryProtocol big-endian).
+      consumes:
+        - application/json
+        - application/x-thrift
+      produces: []
+      parameters:
+        - name: span
+          in: body
+          description: A list of spans that belong to any trace.
+          required: true
+          schema:
+            $ref: "#/definitions/ListOfSpans"
+      responses:
+        '202':
+          description: Accepted
+  /traces:
+    get:
+      description: |
+          Invoking this request retrieves traces matching the below filters.
+
+          Results should be filtered against endTs, subject to limit and
+          lookback. For example, if endTs is 10:20 today, limit is 10, and
+          lookback is 7 days, traces returned should be those nearest to 10:20
+          today, not 10:20 a week ago.
+
+          Time units of endTs and lookback are milliseconds as opposed to
+          microseconds, the grain of Span.timestamp. Milliseconds is a more
+          familiar and supported granularity for query, index and windowing
+          functions
+      parameters:
+        - name: serviceName
+          in: query
+          required: false
+          description: |
+            Ex zipkin-server - service that logged an annotation in a trace.
+            Required when constraining on parameters except time and duration.
+            The /services endpoint enumerates possible input values.
+          type: string
+        - name: spanName
+          in: query
+          required: false
+          description: |
+            Ex my_span_name - name of a span in a trace.
+            Only return traces that contains spans with this name.
+          type: string
+        - name: annotationQuery
+          in: query
+          type: string
+          required: false
+          description: |
+             Ex. `http.uri=/foo and retried` - If key/value (has an `=`),
+             constrains against Span.binaryAnnotations of time string. If just
+             a word, constrains against Span.annotations. Any values are AND
+             against eachother. This means a span in the trace must match all of
+             these.
+        - name: minDuration
+          in: query
+          type: integer
+          description: |
+             Ex. 100000 (for 100ms). Only return traces whose `Span.duration` is
+             greater than or equal to minDuration microseconds.
+        - name: maxDuration
+          in: query
+          type: integer
+          description: |
+            Only return traces whose Span.duration is less than or equal to
+            `maxDuration` microseconds. Only valid with minDuration.
+        - name: endTs
+          in: query
+          type: integer
+          format: int64
+          description: |
+            Only return traces where all Span.timestamp are at or before this
+            time in epoch milliseconds. Defaults to current time.
+        - name: lookback
+          type: integer
+          format: int64
+          in: query
+          description: |
+            Only return traces where all Span.timestamp are at or after
+            (`endTs - * lookback`) in milliseconds. Defaults to `endTs`, limited
+            to a system parameter `QUERY_LOOKBACK`.
+        - name: limit
+          in: query
+          default: 10
+          type: integer
+          description: |
+            Maximum number of traces to return. Defaults to 10
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: "#/definitions/ListOfTraces"
+  /trace/{traceId}:
+    get:
+      parameters:
+        - name: traceId
+          in: path
+          required: true
+          type: string
+          maxLength: 32
+          minLength: 16
+          pattern: "[a-f0-9]{16,32}"
+          description: |
+                      Trace identifier, set on all spans within it.
+
+                      Encoded as 16 or 32 lowercase hex characters corresponding to 64 or 128 bits.
+                      For example, a 128bit trace ID looks like 4e441824ec2b6a44ffdc9bb9a6453df3
+        - name: raw
+          in: query
+          required: false
+          description: |
+            Note this flag has no value. Ex. /trace/{traceId}?raw
+
+            Normally, the trace endpoint cleans trace data. For example, it merges
+            spans by id, adds missing timestamp or duration, corrects clock skew..
+
+            Specifying this flag is a debug case, when you are debugging zipkin
+            logic or zipkin instrumentation, and want to see the input to these
+            adjusters. For example, this might explain or rule out clock skew.
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: "#/definitions/Trace"
+        '404':
+          description: "`traceId` not found"
+  /dependencies:
+    get:
+      description: |
+        Returns dependency links derived from spans.
+
+        Span names are in lowercase, rpc method for example. Conventionally,
+        when the span name isn't known, name = "unknown".
+      parameters:
+        - name: endTs
+          in: query
+          description: |
+            Only return links from spans where `Span.timestamp` are at or before
+            this time in epoch milliseconds.
+          required: true
+          type: integer
+          format: int64
+        - name: lookback
+          in: query
+          description: |
+            Only return links from spans where all Span.timestamp are at or after
+            (`endTs - * lookback`) in milliseconds. Defaults to `endTs`, limited
+            to a system parameter `QUERY_LOOKBACK`.
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: array
+            title: ListOfDependencyLinks
+            items:
+              $ref: "#/definitions/DependencyLink"
+definitions:
+  Endpoint:
+    type: object
+    title: Endpoint
+    description: The network context of a node in the service graph
+    required:
+      - serviceName
+    properties:
+      serviceName:
+        type: string
+        description: |
+                    Lower-case label of this node in the service graph, such as "favstar". Set
+                    to empty string if unknown.
+                    
+                    This is a primary label for trace lookup and aggregation, so it should be
+                    intuitive and consistent. Many use a name from service discovery.
+      ipv4:
+        type: string
+        format: ipv4
+        description: |
+                    The text representation of the primary IPv4 address associated with this
+                    connection. Ex. 192.168.99.100 Absent if unknown.
+      ipv6:
+        type: string
+        format: ipv6
+        description: |
+                    The text representation of the primary IPv6 address associated with a
+                    connection. Ex. 2001:db8::c001 Absent if unknown.
+                    
+                    Prefer using the ipv4 field for mapped addresses.
+      port:
+        type: integer
+        description: |
+                    Depending on context, this could be a listen port or the client-side of a
+                    socket. Absent if unknown. Please don't set to zero.
+  Annotation:
+    title: Annotation
+    type: object
+    required:
+      - timestamp
+      - value
+    description: |
+                Associates an event that explains latency with a timestamp.
+                Unlike log statements, annotations are often codes. Ex. "sr" for ServerReceive
+    properties:     
+      timestamp:
+        type: integer
+        description: |
+                    Epoch **microseconds** of this event.
+                    
+                    For example, 1502787600000000 corresponds to 2017-08-15 09:00 UTC
+                    
+                    This value should be set directly by instrumentation, using the most precise
+                    value possible. For example, gettimeofday or multiplying epoch millis by 1000.
+      value:
+        type: string
+        description: |
+                  Usually a short tag indicating an event, like "sr"
+                  
+                  While possible to add larger data, such as garbage collection details, low
+                  cardinality event names both keep the size of spans down and also are easy
+                  to search against.
+      endpoint:
+        $ref: "#/definitions/Endpoint"
+        description: |
+                    The host that recorded this span, primarily for query by service name.
+                    
+                    Instrumentation should always record this. Usually, absent implies late
+                    data. The IP address corresponding to this is usually the site local or
+                    advertised service address. When present, the port indicates the listen
+                    port.
+  BinaryAnnotation:
+    title: BinaryAnnotation
+    type: object
+    required:
+      - key
+      - value
+    description: |
+                Adds context to a span, for search, viewing and analysis.
+                
+                For example, a key "your_app.version" would let you lookup traces by version.
+                A tag "sql.query" isn't searchable, but it can help in debugging when viewing
+                a trace.
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+      endpoint:
+        $ref: "#/definitions/Endpoint"
+        description: |
+                    The host that recorded this span, primarily for query by service name.
+                    
+                    There is an exception, when the key is "sa", "ca" or "ma" this is an
+                    address annotation. In such case, the endpoint is not what recorded the
+                    span, rather the remote address. The value field is set to boolean true
+                    in this case. This feature was refactored in v2 format as "remoteEndpoint"
+  ListOfSpans:
+    title: ListOfSpans
+    description: 'A list of spans with possibly different trace ids, in no particular order'
+    type: array
+    items:
+      $ref: "#/definitions/Span"
+  Trace:
+    title: Trace
+    type: array
+    description: 'List of spans who have the same trace id. Spans in the trace, and annotations in a span are sorted ascending by timestamp. ie first event should be first in the spans list.'
+    items:
+      $ref: "#/definitions/Span"
+  ListOfTraces:
+    title: ListOfTraces
+    type: array
+    items:
+      $ref: "#/definitions/Trace"
+  Span:
+    title: Span
+    type: object
+    required:
+      - traceId
+      - id
+      - name
+    properties:
+      traceId:
+        type: string
+        maxLength: 32
+        minLength: 16
+        pattern: "[a-f0-9]{16,32}"
+        description: |
+                    Randomly generated, unique identifier for a trace, set on all spans within it.
+                    
+                    Encoded as 16 or 32 lowercase hex characters in big endian byte order,
+                    corresponding to 64 or 128 bits,
+                    For example, a 128bit trace ID looks like 4e441824ec2b6a44ffdc9bb9a6453df3
+      name:
+        type: string
+        description: |
+                    The logical operation this span represents in lowercase (e.g. rpc method).
+                    Set to empty string if unknown.
+                    
+                    As these are lookup labels, take care to ensure names are low cardinality.
+                    For example, do not embed variables into the name.
+      parentId:
+        type: string
+        pattern: "[a-f0-9]{16}"
+        maxLength: 16
+        minLength: 16
+        description: 'The parent span ID or absent if this the root span in a trace.'
+      id:
+        type: string
+        maxLength: 16
+        minLength: 16
+        pattern: "[a-f0-9]{16}"
+        description: |
+                    Unique 64bit identifier for this operation within the trace.
+                    
+                    Encoded as 16 lowercase hex characters. For example ffdc9bb9a6453df3
+      timestamp:
+        type: integer
+        format: int64
+        description: |
+                    Epoch microseconds of the start of this span, possibly absent if
+                    incomplete.
+                    
+                    For example, 1502787600000000 corresponds to 2017-08-15 09:00 UTC
+                    
+                    This value should be set directly by instrumentation, using the most
+                    precise value possible. For example, gettimeofday or multiplying epoch
+                    millis by 1000.
+                    
+                    There are three known edge-cases where this could be reported absent.
+                     * A span was allocated but never started (ex not yet received a timestamp)
+                     * The span's start event was lost
+                     * Data about a completed span (ex tags) were sent after the fact
+      duration:
+        type: integer
+        format: int64
+        minimum: 1
+        description: |
+                    Duration in **microseconds** of the critical path, if known. Durations of less
+                    than one are rounded up. Duration of children can be longer than their
+                    parents due to asynchronous operations.
+                    
+                    For example 150 milliseconds is 150000 microseconds.
+      debug:
+        type: boolean
+        description: |
+                    True is a request to store this span even if it overrides sampling policy.
+                    
+                    This is true when the `X-B3-Flags` header has a value of 1.
+      annotations:
+        title: ListOfAnnotations
+        type: array
+        description: 'Associates events that explain latency with the time they happened.'
+        items:
+          $ref: '#/definitions/Annotation'
+      binaryAnnotations:
+        title: ListOfBinaryAnnotations
+        type: array
+        description: 'Binary Annotations are tags that give your span context for search, viewing and analysis.'
+        items:
+          $ref: '#/definitions/BinaryAnnotation'
+  DependencyLink:
+    title: DependencyLink
+    type: object
+    required:
+      - parent
+      - child
+      - callCount
+    properties:
+      parent:
+        type: string
+      child:
+        type: string
+      callCount:
+        type: integer
+      errorCount:
+        type: integer

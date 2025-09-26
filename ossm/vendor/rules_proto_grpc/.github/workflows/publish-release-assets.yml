@@ -1,0 +1,35 @@
+name: Publish Release Assets
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Env
+        run: |
+          REPO_NAME=$(echo ${GITHUB_REPOSITORY?missing} | cut -d "/" -f 2)
+          FILE_STEM=${REPO_NAME?mising}-${GITHUB_REF_NAME?missing}
+          UPLOAD_URL=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${GITHUB_REPOSITORY?missing}/releases/tags/${GITHUB_REF_NAME?missing} | jq -r '.upload_url')
+          echo "REPO_NAME=${REPO_NAME}" >> $GITHUB_ENV
+          echo "FILE_STEM=${FILE_STEM}" >> $GITHUB_ENV
+          echo "FILE_NAME=${FILE_STEM}.tar.gz" >> $GITHUB_ENV
+          echo "UPLOAD_URL=${UPLOAD_URL}" >> $GITHUB_ENV
+      - name: Build Assets
+        run: |
+          git archive --format=tar --prefix="${FILE_STEM?missing}/" "${GITHUB_REF_NAME?missing}" | gzip --best > "${FILE_NAME?missing}"
+          echo "Asset SHA256: $(sha256sum ${FILE_NAME?missing})" >> $GITHUB_STEP_SUMMARY
+      - name: Upload Assets to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ env.UPLOAD_URL }}
+          asset_path: ./${{ env.FILE_NAME }}
+          asset_name: ${{ env.FILE_NAME }}
+          asset_content_type: application/gzip

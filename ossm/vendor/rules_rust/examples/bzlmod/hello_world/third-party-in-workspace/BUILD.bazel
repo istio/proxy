@@ -1,0 +1,10 @@
+load("@rules_rust//crate_universe:defs.bzl", "crates_vendor")
+
+crates_vendor(
+    name = "vendor",
+    cargo_lockfile = "//third-party-in-workspace:Cargo.lock",
+    generate_build_scripts = True,
+    manifests = ["//third-party-in-workspace:Cargo.toml"],
+    mode = "remote",
+    tags = ["manual"],
+)

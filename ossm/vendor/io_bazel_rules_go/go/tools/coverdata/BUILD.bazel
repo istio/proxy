@@ -1,0 +1,15 @@
+load("//go/private/rules:library.bzl", "go_tool_library")
+
+go_tool_library(
+    name = "coverdata",
+    srcs = ["coverdata.go"],
+    importpath = "github.com/bazelbuild/rules_go/go/tools/coverdata",
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)

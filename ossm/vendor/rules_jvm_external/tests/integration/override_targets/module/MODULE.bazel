@@ -1,0 +1,20 @@
+module(
+    name = "transitive_module_can_override",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_jvm_external", version = "0.0")
+local_path_override(
+    module_name = "rules_jvm_external",
+    path = "../../../..",
+)
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    name = "root_module_can_override",
+    artifacts = ["com.squareup.okhttp3:okhttp:4.12.0"],
+)
+maven.override(
+    coordinates = "com.squareup.okhttp3:okhttp3",
+    target = "//:poison_pill_non_existent_target",
+)

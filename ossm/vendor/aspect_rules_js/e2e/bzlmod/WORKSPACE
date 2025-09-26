@@ -1,0 +1,2 @@
+# Marker file that this folder is the root of a Bazel workspace.
+# See MODULE.bazel for dependencies and setup.

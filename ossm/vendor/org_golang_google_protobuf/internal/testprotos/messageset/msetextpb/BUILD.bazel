@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "msetextpb_proto",
+    srcs = ["msetextpb.proto"],
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/testprotos/messageset/messagesetpb:messagesetpb_proto"],
+)
+
+go_proto_library(
+    name = "msetextpb_go_proto",
+    importpath = "google.golang.org/protobuf/internal/testprotos/messageset/msetextpb",
+    proto = ":msetextpb_proto",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/testprotos/messageset/messagesetpb"],
+)
+
+go_library(
+    name = "msetextpb",
+    embed = [":msetextpb_go_proto"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/messageset/msetextpb",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":msetextpb",
+    visibility = ["//:__subpackages__"],
+)

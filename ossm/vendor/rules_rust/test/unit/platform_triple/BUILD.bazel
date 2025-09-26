@@ -1,0 +1,5 @@
+load(":platform_triple_test.bzl", "platform_triple_test_suite")
+
+platform_triple_test_suite(
+    name = "platform_triple_test_suite",
+)

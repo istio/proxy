@@ -1,0 +1,4 @@
+load(":check_runfiles_test.bzl", "check_runfiles_test_suite")
+
+############################ UNIT TESTS #############################
+check_runfiles_test_suite(name = "check_runfiles_test_suite")

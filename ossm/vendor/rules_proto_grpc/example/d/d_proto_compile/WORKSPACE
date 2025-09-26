@@ -1,0 +1,24 @@
+local_repository(
+    name = "rules_proto_grpc",
+    path = "../../../",
+)
+
+load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
+
+rules_proto_grpc_toolchains()
+
+rules_proto_grpc_repos()
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
+rules_proto_dependencies()
+
+rules_proto_toolchains()
+
+load("@rules_proto_grpc//d:repositories.bzl", rules_proto_grpc_d_repos = "d_repos")
+
+rules_proto_grpc_d_repos()
+
+load("@io_bazel_rules_d//d:d.bzl", "d_repositories")
+
+d_repositories()

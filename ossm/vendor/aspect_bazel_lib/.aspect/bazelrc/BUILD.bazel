@@ -1,0 +1,27 @@
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_file")
+
+exports_files(glob([
+    "*.bazelrc",
+    "*.md",
+]))
+
+# `usage.md` & `intro.md` are also used for [docsite](https://docs.aspect.build/guides/bazelrc)
+# content which is why they are separated into individual md files
+genrule(
+    name = "gen_readme_md",
+    srcs = glob(["*.md"]),
+    outs = ["_README.md"],
+    cmd = """
+      cat .aspect/bazelrc/intro.md > $@
+      echo '' >> $@
+      cat .aspect/bazelrc/usage.md >> $@
+      echo '' >> $@
+      cat .aspect/bazelrc/automatic_updates.md >> $@
+    """,
+)
+
+write_source_file(
+    name = "update_readme_md",
+    in_file = "_README.md",
+    out_file = "README.md",
+)

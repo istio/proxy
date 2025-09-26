@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "note",
+    srcs = ["note.go"],
+    importpath = "golang.org/x/mod/sumdb/note",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":note",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "note_test",
+    srcs = [
+        "example_test.go",
+        "note_test.go",
+    ],
+    embed = [":note"],
+)

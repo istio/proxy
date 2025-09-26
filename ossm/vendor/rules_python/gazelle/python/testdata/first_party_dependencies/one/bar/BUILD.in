@@ -1,0 +1,10 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "bar",
+    srcs = ["__init__.py"],
+    visibility = [
+        "//one:__subpackages__",
+        "//three:__subpackages__",
+    ],
+)

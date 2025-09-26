@@ -1,0 +1,87 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ssautil",
+    srcs = [
+        "load.go",
+        "switch.go",
+        "visit.go",
+    ],
+    importpath = "golang.org/x/tools/go/ssa/ssautil",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/loader",
+        "//go/packages",
+        "//go/ssa",
+        "//internal/typeparams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ssautil",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "ssautil_test",
+    srcs = [
+        "load_test.go",
+        "switch_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    deps = [
+        ":ssautil",
+        "//go/packages",
+        "//go/packages/packagestest",
+        "//go/ssa",
+        "//internal/testenv",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:osx": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:qnx": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "//go/loader",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//go/loader",
+        ],
+        "//conditions:default": [],
+    }),
+)

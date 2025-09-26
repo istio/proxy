@@ -1,0 +1,11 @@
+--- a/requests-2.25.1.dist-info/RECORD
++++ b/requests-2.25.1.dist-info/RECORD
+@@ -17,7 +17,7 @@
+ requests/structures.py,sha256=msAtr9mq1JxHd-JRyiILfdFlpbJwvvFuP3rfUQT_QxE,3005
+ requests/utils.py,sha256=_K9AgkN6efPe-a-zgZurXzds5PBC0CzDkyjAE2oCQFQ,30529
+ requests-2.25.1.dist-info/LICENSE,sha256=CeipvOyAZxBGUsFoaFqwkx54aPnIKEtm9a5u2uXxEws,10142
+-requests-2.25.1.dist-info/METADATA,sha256=RuNh38uN0IMsRT3OwaTNB_WyGx6RMwwQoMwujXfkUVM,4168
++requests-2.25.1.dist-info/METADATA,sha256=fRSAA0u0Bi0heD4zYq91wdNUTJlbzhK6_iDOcRRNDx4,4177
+ requests-2.25.1.dist-info/WHEEL,sha256=Z-nyYpwrcSqxfdux5Mbn_DQ525iP7J2DG3JgGvOYyTQ,110
+ requests-2.25.1.dist-info/top_level.txt,sha256=fMSVmHfb5rbGOo6xv-O_tUX6j-WyixssE-SnwcDRxNQ,9
+ requests-2.25.1.dist-info/RECORD,,

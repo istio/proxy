@@ -1,0 +1,276 @@
+---
+tasks:
+  ubuntu2204:
+    platform: ubuntu2204
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    test_flags:
+      - "--@aspect_rules_lint//lint:fail_on_violation"
+  rbe_ubuntu2204:
+    platform: rbe_ubuntu2204
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    test_flags:
+      - "--@aspect_rules_lint//lint:fail_on_violation"
+  macos:
+    platform: macos
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    test_flags:
+      - "--@aspect_rules_lint//lint:fail_on_violation"
+  macos_arm64:
+    platform: macos_arm64
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    test_flags:
+      - "--@aspect_rules_lint//lint:fail_on_violation"
+  windows:
+    platform: windows
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+      # TODO: https://github.com/bazel-contrib/rules_foreign_cc/issues/495
+      - "-//test:shell_method_symlink_contents_to_dir_test"
+      - "-//test:shell_script_inner_fun_test"
+    build_flags:
+      - "--noenable_bzlmod"
+      - "--enable_workspace"
+    test_flags:
+      - "--noenable_bzlmod"
+      - "--enable_workspace"
+      - "--@aspect_rules_lint//lint:fail_on_violation"
+  ubuntu1804_examples_standalone:
+    name: Examples (spawn_strategy=standalone)
+    platform: ubuntu1804
+    working_directory: examples
+    linux_targets: &linux_targets_standalone
+      - "//..."
+      - "//:third_party_examples_linux_tests"
+    build_targets: *linux_targets_standalone
+    build_flags:
+      - "-c"
+      - "dbg"
+      - "--spawn_strategy=standalone"
+      - "--noenable_bzlmod"
+      - "--enable_workspace"
+    test_targets: *linux_targets_standalone
+    test_flags:
+      - "-c"
+      - "dbg"
+      - "--spawn_strategy=standalone"
+      - "--noenable_bzlmod"
+      - "--enable_workspace"
+  ubuntu2204_examples:
+    name: Examples
+    platform: ubuntu2204
+    working_directory: examples
+    linux_targets: &linux_targets
+      - "//..."
+      - "//:third_party_examples_linux_tests"
+    build_targets: *linux_targets
+    test_targets: *linux_targets
+    build_flags:
+      - "--noenable_bzlmod"
+      - "--enable_workspace"
+    test_flags:
+      - "--noenable_bzlmod"
+      - "--enable_workspace"
+  ubuntu2204_examples_bzlmod:
+    name: Examples (bzlmod)
+    platform: ubuntu2204
+    working_directory: examples
+    linux_targets: &linux_targets_bzlmod
+      - "//..."
+      - "//:third_party_examples_linux_tests"
+      # gives error '//external:databinding_annotation_processor': target 'databinding_annotation_processor' not declared in package 'external' defined by /workdir/examples/WORKSPACE.bazel (Tip: use `query "//external:*"` to see all the targets in that package) and referenced by '@bazel_tools//tools/android:databinding_annotation_processor'
+      - "-//cmake_android/..."
+    build_targets: *linux_targets_bzlmod
+    test_targets: *linux_targets_bzlmod
+    build_flags:
+      - "--enable_bzlmod"
+  rbe_ubuntu2204_examples:
+    name: Examples
+    platform: rbe_ubuntu2204
+    working_directory: examples
+    rbe_targets: &rbe_targets
+      - "//..."
+      - "//:third_party_examples_linux_rbe_tests"
+      # Gives error: zipalign: error while loading shared libraries: /usr/local/lib/libc++.so: file too short
+      - "-//cmake_android/..."
+      # Python requirements not supported on Ubuntu 16.04
+      - "-//:requirements_test"
+    build_targets: *rbe_targets
+    test_targets: *rbe_targets
+  macos_examples_standalone:
+    name: Examples (spawn_strategy=standalone)
+    platform: macos
+    working_directory: examples
+    macos_targets: &macos_targets_standalone
+      - "//..."
+      - "//:third_party_examples_macos_tests"
+      - "-//cmake_android/..."
+      # Remove tests that depend on shared libraries, which currently doesn't work on MacOS - https://github.com/bazelbuild/bazel/issues/10254
+      - "-@rules_foreign_cc_examples_third_party//curl:curl_test"
+      - "-@rules_foreign_cc_examples_third_party//openssl:openssl_test"
+    build_targets: *macos_targets_standalone
+    build_flags:
+      - "-c"
+      - "dbg"
+      - "--spawn_strategy=standalone"
+      - "--noincompatible_enable_cc_toolchain_resolution"
+      - "--noenable_bzlmod"
+      - "--enable_workspace"
+    test_targets: *macos_targets_standalone
+    test_flags:
+      - "-c"
+      - "dbg"
+      - "--spawn_strategy=standalone"
+      - "--noincompatible_enable_cc_toolchain_resolution"
+      - "--noenable_bzlmod"
+      - "--enable_workspace"
+  macos_examples:
+    name: Examples
+    platform: macos
+    working_directory: examples
+    macos_targets: &macos_targets
+      - "//..."
+      - "//:third_party_examples_macos_tests"
+      - "-//cmake_android/..."
+      # Remove tests that depend on shared libraries, which currently doesn't work on MacOS - https://github.com/bazelbuild/bazel/issues/10254
+      - "-@rules_foreign_cc_examples_third_party//curl:curl_test"
+      - "-@rules_foreign_cc_examples_third_party//openssl:openssl_test"
+    build_targets: *macos_targets
+    build_flags:
+      - "--noincompatible_enable_cc_toolchain_resolution"
+      - "--noenable_bzlmod"
+      - "--enable_workspace"
+    test_targets: *macos_targets
+    test_flags:
+      - "--noincompatible_enable_cc_toolchain_resolution"
+      - "--noenable_bzlmod"
+      - "--enable_workspace"
+  windows_examples:
+    name: Examples
+    platform: windows
+    working_directory: examples
+    windows_targets: &windows_targets
+      - "//..."
+      - "//:third_party_examples_windows_tests"
+      # TODO: Support all targets on windows
+      - "-//cmake_android/..."
+      # TODO: Fix `error C2118: negative subscript`
+      - "-//cmake_defines/..."
+      # TODO: Fix linker error
+      - "-//cmake_synthetic/..."
+      # TODO: Fix `error LNK2019: unresolved external symbol hello_func`
+      - "-//cmake_hello_world_lib/shared/..."
+      # TODO: Fix `CreateProcess failed: The system cannot find the file specified.`
+      - "-//ninja_simple/..."
+      # TODO: The use of Visual Studio generator targets are broken. These should
+      # be re-enabled pending a resolution to
+      # https://github.com/bazelbuild/continuous-integration/issues/1204
+      - "-//cmake_hello_world_lib/static:libhello"
+      - "-//cmake_hello_world_lib/static:libhello_example"
+      - "-//cmake_hello_world_lib/static:test_hello"
+      - "-//cmake_with_data/..."
+      - "-//rust/..."
+    batch_commands:
+      - powershell -noexit "& "".\..\.bazelci\windows-update-certs.ps1"""
+    build_targets: *windows_targets
+    test_targets: *windows_targets
+    build_flags:
+      - "--noenable_bzlmod"
+      - "--enable_workspace"
+    test_flags:
+      - "--noenable_bzlmod"
+      - "--enable_workspace"
+  rbe_ubuntu2204_flags:
+    name: Flags
+    platform: rbe_ubuntu2204
+    working_directory: test/standard_cxx_flags_test
+    test_targets:
+      - "//:flags_test"
+  ubuntu2204_flags:
+    name: Flags
+    platform: ubuntu2204
+    working_directory: test/standard_cxx_flags_test
+    test_targets:
+      - "//:flags_test"
+  macos_flags:
+    name: Flags
+    platform: macos
+    working_directory: test/standard_cxx_flags_test
+    test_targets:
+      - "//:flags_test"
+  windows_flags:
+    name: Flags
+    platform: windows
+    working_directory: test/standard_cxx_flags_test
+    test_targets:
+      - "//:flags_test"
+  rbe_ubuntu2204_detect_root:
+    name: Detect root
+    platform: rbe_ubuntu2204
+    working_directory: test/detect_root_test
+    test_targets:
+      - "//:tests"
+  ubuntu2204_detect_root:
+    name: Detect root
+    platform: ubuntu2204
+    working_directory: test/detect_root_test
+    test_targets:
+      - "//:tests"
+  macos_detect_root:
+    name: Detect root
+    platform: macos
+    working_directory: test/detect_root_test
+    test_targets:
+      - "//:tests"
+  windows_detect_root:
+    name: Detect root
+    platform: windows
+    working_directory: test/detect_root_test
+    test_targets:
+      - "//:tests"
+  docs_linux:
+    name: Docs
+    platform: ubuntu2204
+    working_directory: docs
+    build_targets:
+      - //...
+  min_supported_version:
+    name: "Minimum Supported Version"
+    bazel: "7.4.1"
+    skip_in_bazel_downstream_pipeline: "Duplicates tests in other targets"
+    platform: ubuntu2204
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  min_supported_version_examples:
+    name: "Minimum Supported Version Examples"
+    bazel: "6.5.0"
+    skip_in_bazel_downstream_pipeline: "Duplicates tests in other targets"
+    platform: ubuntu2204
+    working_directory: examples
+    min_supported_targets: &min_supported_targets
+      - "--"
+      - "//..."
+      # The min supported version of rules_rust is `>=7`
+      - "-//rust/..."
+    build_targets: *min_supported_targets
+    test_targets: *min_supported_targets
+
+buildifier:
+  version: "7.3.1"
+  # keep this argument in sync with .pre-commit-config.yaml
+  warnings: "all"

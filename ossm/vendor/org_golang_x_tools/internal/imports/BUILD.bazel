@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "imports",
+    srcs = [
+        "fix.go",
+        "imports.go",
+        "mod.go",
+        "mod_cache.go",
+        "sortimports.go",
+        "zstdlib.go",
+    ],
+    importpath = "golang.org/x/tools/internal/imports",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//go/ast/astutil",
+        "//internal/gocommand",
+        "//internal/gopathwalk",
+        "@org_golang_x_mod//module:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":imports",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "imports_test",
+    srcs = [
+        "fix_test.go",
+        "imports_test.go",
+        "mod_cache_test.go",
+        "mod_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":imports"],
+    deps = [
+        "//go/packages/packagestest",
+        "//internal/gocommand",
+        "//internal/gopathwalk",
+        "//internal/proxydir",
+        "//internal/testenv",
+        "//txtar",
+        "@org_golang_x_mod//module:go_default_library",
+    ],
+)

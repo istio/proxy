@@ -1,0 +1,21 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+# gazelle:python_generation_mode file
+# gazelle:python_test_file_pattern test_*.py
+
+py_library(
+    name = "not_a_test",
+    srcs = ["not_a_test.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_library(
+    name = "not_a_unittest",
+    srcs = ["not_a_unittest.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_test(
+    name = "test_bar",
+    srcs = ["test_bar.py"],
+)
