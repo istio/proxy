@@ -1,6 +1,6 @@
 module istio.io/proxy
 
-go 1.24
+go 1.24.0
 
 require (
 	github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443
