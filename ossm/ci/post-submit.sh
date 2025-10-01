@@ -19,6 +19,10 @@ bazel_build envoy_tar
 # Copy artifacts to GCS
 SHA="$(git rev-parse --verify HEAD)"
 
-# Envoy
-gsutil cp bazel-bin/envoy_tar.tar.gz "${ARTIFACTS_GCS_PATH}/envoy-alpha-${SHA}.tar.gz"
-gsutil cp "${ARTIFACTS_GCS_PATH}/envoy-alpha-${SHA}.tar.gz" "${ARTIFACTS_GCS_PATH}/envoy-centos-alpha-${SHA}.tar.gz"
+if [[ "$(uname -m)" == "aarch64" ]]; then
+  ARCH_SUFFIX="-arm64"
+else
+  ARCH_SUFFIX=""
+fi
+
+gsutil cp bazel-bin/envoy_tar.tar.gz "${ARTIFACTS_GCS_PATH}/envoy-alpha-${SHA}${ARCH_SUFFIX}.tar.gz"
