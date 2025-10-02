@@ -313,7 +313,7 @@ WorkloadMetadataObject::getField(absl::string_view field_name) const {
       if (const auto value = toSuffix(workload_type_); value.has_value()) {
         return *value;
       }
-      break;
+      return "unknown";
     case BaggageToken::InstanceName:
       return instance_name_;
     }
