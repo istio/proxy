@@ -779,9 +779,9 @@ public:
   // AccessLog::Instance
   void log(const Formatter::HttpFormatterContext& log_context,
            const StreamInfo::StreamInfo& info) override {
-    const Http::RequestHeaderMap* request_headers = log_context.requestHeaders().ptr();
-    const Http::ResponseHeaderMap* response_headers = log_context.responseHeaders().ptr();
-    const Http::ResponseTrailerMap* response_trailers = log_context.responseTrailers().ptr();
+    const Http::RequestHeaderMap* request_headers = &log_context.requestHeaders();
+    const Http::ResponseHeaderMap* response_headers = &log_context.responseHeaders();
+    const Http::ResponseTrailerMap* response_trailers = &log_context.responseTrailers();
 
     reportHelper(true);
     if (is_grpc_) {
