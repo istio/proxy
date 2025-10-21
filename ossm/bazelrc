@@ -14,8 +14,8 @@ build --test_output=all
 
 # Arch-specific build flags, triggered with --config=$ARCH in bazel build command
 build:x86_64 --define=DUMMY=dummy
-build:s390x --@envoy//source/extensions/filters/common/lua:luajit2=1 --cxxopt='-includeoptional' --copt=-Wno-error=type-limits --copt=-Wno-error=uninitialized --copt=-fno-builtin-strlen --action_env=BAZEL_LINKLIBS=-lstdc++
-build:ppc --@envoy//source/extensions/filters/common/lua:luajit2=1
+build:s390x --@envoy//source/extensions/filters/common/lua:luajit2=1 --copt=-DTOOLCHAIN_MISS_ASM_HWCAP_H --host_copt=-DTOOLCHAIN_MISS_ASM_HWCAP_H --cxxopt='-includeoptional' --copt=-Wno-error=type-limits --copt=-Wno-error=uninitialized --copt=-fno-builtin-strlen --action_env=BAZEL_LINKLIBS=-lstdc++
+build:ppc --@envoy//source/extensions/filters/common/lua:luajit2=1 --copt=-DTOOLCHAIN_MISS_ASM_HWCAP_H --host_copt=-DTOOLCHAIN_MISS_ASM_HWCAP_H --action_env=BAZEL_LINKLIBS=-lstdc++
 build:aarch64 --define=DUMMY=dummy
 
 # Colored ouput messes with some of the logging systems in CI, so we disable that.
