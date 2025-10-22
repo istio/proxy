@@ -47,9 +47,14 @@ function main() {
   get_envoy_sha
   get_envoy_sha_256
 
-  sed -i "s|^# Commit date: .*|# Commit date: ${today}|" WORKSPACE
-  sed -i "s|^OPENSSL_ENVOY_SHA = .*|OPENSSL_ENVOY_SHA = \"${SHA}\"|" WORKSPACE
-  sed -i "s|^OPENSSL_ENVOY_SHA256 = .*|OPENSSL_ENVOY_SHA256 = \"${SHA256}\"|" WORKSPACE
+  OLD_SHA=$(grep "^OPENSSL_ENVOY_SHA = " WORKSPACE | sed 's/.*= "\(.*\)"/\1/')
+  OLD_SHA256=$(grep "^OPENSSL_ENVOY_SHA256 = " WORKSPACE | sed 's/.*= "\(.*\)"/\1/')
+
+  if [[ "${OLD_SHA}" != "${SHA}" ]] || [[ "${OLD_SHA256}" != "${SHA256}" ]]; then
+    sed -i "s|^# Commit date: .*|# Commit date: ${today}|" WORKSPACE
+    sed -i "s|^OPENSSL_ENVOY_SHA = .*|OPENSSL_ENVOY_SHA = \"${SHA}\"|" WORKSPACE
+    sed -i "s|^OPENSSL_ENVOY_SHA256 = .*|OPENSSL_ENVOY_SHA256 = \"${SHA256}\"|" WORKSPACE
+  fi
 }
 
 main
