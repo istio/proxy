@@ -265,6 +265,14 @@ void FilterConfig::discover(StreamInfo::StreamInfo& info, bool downstream, Http:
     const auto result = method->derivePeerInfo(info, headers, ctx);
     if (result) {
       setFilterState(info, downstream, *result);
+      // For waypoint case, set dynamic metadata with SOURCE workload name for tracing
+      // ONLY set for downstream (client) discovery - not upstream (destination).
+      if (downstream && !result->workload_name_.empty()) {
+        google::protobuf::Struct metadata_struct;
+        (*metadata_struct.mutable_fields())["source_workload"].set_string_value(
+            result->workload_name_);
+        info.setDynamicMetadata("envoy.filters.http.peer_metadata", metadata_struct);
+      }
       break;
     }
   }
