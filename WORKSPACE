@@ -54,6 +54,10 @@ load("@envoy//bazel:api_repositories.bzl", "envoy_api_dependencies")
 
 envoy_api_dependencies()
 
+load("@envoy//bazel:repo.bzl", "envoy_repo")
+
+envoy_repo()
+
 load("@envoy//bazel:repositories.bzl", "envoy_dependencies")
 
 envoy_dependencies()
