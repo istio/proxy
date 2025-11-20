@@ -153,6 +153,66 @@ TEST_F(PeerMetadataTest, DownstreamXDS) {
   checkShared(false);
 }
 
+TEST_F(PeerMetadataTest, DownstreamDynamicMetadata) {
+  const WorkloadMetadataObject pod("pod-foo-1234", "test-cluster", "test-ns", "test-workload",
+                                   "test-service", "v1", "test-app", "v2",
+                                   Istio::Common::WorkloadType::Pod, "");
+  EXPECT_CALL(*metadata_provider_, GetMetadata(_))
+      .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
+                                 -> std::optional<WorkloadMetadataObject> {
+        if (absl::StartsWith(address->asStringView(), "127.0.0.1")) {
+          return {pod};
+        }
+        return {};
+      }));
+  initialize(R"EOF(
+    downstream_discovery:
+      - workload_discovery: {}
+  )EOF");
+
+  // Verify dynamic metadata was set for downstream
+  const auto& dynamic_metadata = stream_info_.dynamicMetadata();
+  ASSERT_TRUE(dynamic_metadata.filter_metadata().contains("envoy.filters.http.peer_metadata"));
+  const auto& peer_metadata =
+      dynamic_metadata.filter_metadata().at("envoy.filters.http.peer_metadata");
+
+  // Check all expected fields are present
+  EXPECT_EQ("pod-foo-1234", extractString(peer_metadata, "NAME"));
+  EXPECT_EQ("test-ns", extractString(peer_metadata, "NAMESPACE"));
+  EXPECT_EQ("test-cluster", extractString(peer_metadata, "CLUSTER_ID"));
+  EXPECT_EQ("test-workload", extractString(peer_metadata, "WORKLOAD_NAME"));
+
+  // Check labels sub-struct
+  ASSERT_TRUE(peer_metadata.fields().contains("LABELS"));
+  const auto& labels = peer_metadata.fields().at("LABELS").struct_value();
+  EXPECT_EQ("test-service", extractString(labels, "service.istio.io/canonical-name"));
+  EXPECT_EQ("v1", extractString(labels, "service.istio.io/canonical-revision"));
+  EXPECT_EQ("test-app", extractString(labels, "app"));
+  EXPECT_EQ("v2", extractString(labels, "version"));
+}
+
+TEST_F(PeerMetadataTest, UpstreamNoDynamicMetadata) {
+  const WorkloadMetadataObject pod("pod-foo-1234", "test-cluster", "test-ns", "test-workload",
+                                   "test-service", "v1", "", "", Istio::Common::WorkloadType::Pod,
+                                   "");
+  EXPECT_CALL(*metadata_provider_, GetMetadata(_))
+      .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
+                                 -> std::optional<WorkloadMetadataObject> {
+        if (absl::StartsWith(address->asStringView(), "10.0.0.1")) {
+          return {pod};
+        }
+        return {};
+      }));
+  initialize(R"EOF(
+    upstream_discovery:
+      - workload_discovery: {}
+  )EOF");
+
+  // Verify dynamic metadata was NOT set for upstream
+  const auto& dynamic_metadata = stream_info_.dynamicMetadata();
+  EXPECT_FALSE(dynamic_metadata.filter_metadata().contains("envoy.filters.http.peer_metadata"));
+}
+
 TEST_F(PeerMetadataTest, UpstreamXDS) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
                                    "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
