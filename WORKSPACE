@@ -23,11 +23,11 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
 # Commit date: 2025-11-19
-ENVOY_SHA = "3c23a5c7010397da0b97a29d6f55e6d52ab4cb84"
+ENVOY_SHA = "626203404452d418c364037a3bc078fa917d62d6"
 
-ENVOY_SHA256 = "acb5d6c3fb4fcb02443d3fe325991b021cb19f8f157ef2ab93217ae003479bed"
+ENVOY_SHA256 = "cdde0df78e36a4bd5d10df65907944e30586ef4572588f5103c699de0479f560"
 
-ENVOY_ORG = "istio"
+ENVOY_ORG = "envoyproxy"
 
 ENVOY_REPO = "envoy"
 
@@ -35,6 +35,12 @@ ENVOY_REPO = "envoy"
 # persist the option in `user.bazelrc`.
 http_archive(
     name = "envoy",
+    patch_args = ["-p1"],
+    patches = [
+        "@io_istio_proxy//bazel:0001-tls-fix-SAN-validation-for-OTHERNAME-types-with-embe.patch",
+        "@io_istio_proxy//bazel:0002-fix-jwt_auth-crash-with-two-or-more-auth-header.patch",
+        "@io_istio_proxy//bazel:0003-Add-option-to-reject-early-CONNECT-data.patch",
+    ],
     sha256 = ENVOY_SHA256,
     strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
     url = "https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz",
