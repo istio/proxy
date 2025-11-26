@@ -35,6 +35,12 @@ ENVOY_REPO = "envoy"
 # persist the option in `user.bazelrc`.
 http_archive(
     name = "envoy",
+    patch_args = ["-p1"],
+    patches = [
+        "@io_istio_proxy//bazel:0001-tls-fix-SAN-validation-for-OTHERNAME-types-with-embe.patch",
+        "@io_istio_proxy//bazel:0002-fix-jwt_auth-crash-with-two-or-more-auth-header.patch",
+        "@io_istio_proxy//bazel:0003-Add-option-to-reject-early-CONNECT-data.patch",
+    ],
     sha256 = ENVOY_SHA256,
     strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
     url = "https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz",
