@@ -1,0 +1,195 @@
+From 4daea98a1346fafa279a1b1900fbb717a9ebcaab Mon Sep 17 00:00:00 2001
+From: Boteng Yao <boteng@google.com>
+Date: Fri, 24 Oct 2025 13:05:29 +0000
+Subject: [PATCH 2/3] fix jwt_auth crash with two or more auth header
+
+Signed-off-by: Boteng Yao <boteng@google.com>
+---
+ changelogs/current.yaml                       |  3 ++
+ .../filters/http/common/jwks_fetcher.cc       |  7 ++-
+ .../filters/http/jwt_authn/authenticator.cc   |  6 +++
+ .../http/jwt_authn/authenticator_test.cc      |  1 +
+ .../http/jwt_authn/filter_integration_test.cc | 54 +++++++++++++++++++
+ .../filters/http/jwt_authn/test_common.h      | 26 +++++++++
+ 6 files changed, 95 insertions(+), 2 deletions(-)
+
+diff --git a/changelogs/current.yaml b/changelogs/current.yaml
+index 793e7663ac..9dde6b49e3 100644
+--- a/changelogs/current.yaml
++++ b/changelogs/current.yaml
+@@ -22,6 +22,9 @@ bug_fixes:
+   change: |
+     Fixed an issue where SANs of type ``OTHERNAME`` in a TLS cert were truncated if there was
+     an embedded null octet, leading to incorrect SAN validation.
++- area: http
++  change: |
++    Fixed a remote ``jwt_auth`` token fetch crash with two or more auth headers when ``allow_missing_or_failed`` is set.
+ 
+ removed_config_or_runtime:
+ # *Normally occurs at the end of the* :ref:`deprecation period <deprecated>`
+diff --git a/source/extensions/filters/http/common/jwks_fetcher.cc b/source/extensions/filters/http/common/jwks_fetcher.cc
+index f881c5031e..aba110cc50 100644
+--- a/source/extensions/filters/http/common/jwks_fetcher.cc
++++ b/source/extensions/filters/http/common/jwks_fetcher.cc
+@@ -35,6 +35,7 @@ public:
+       request_->cancel();
+       ENVOY_LOG(debug, "fetch pubkey [uri = {}]: canceled", remote_jwks_.http_uri().uri());
+     }
++    complete_ = true;
+     reset();
+   }
+ 
+@@ -129,8 +130,10 @@ private:
+   Http::AsyncClient::Request* request_{};
+ 
+   void reset() {
+-    request_ = nullptr;
+-    receiver_ = nullptr;
++    if (complete_) {
++      request_ = nullptr;
++      receiver_ = nullptr;
++    }
+   }
+ };
+ } // namespace
+diff --git a/source/extensions/filters/http/jwt_authn/authenticator.cc b/source/extensions/filters/http/jwt_authn/authenticator.cc
+index 01b9597073..f5e2d7da43 100644
+--- a/source/extensions/filters/http/jwt_authn/authenticator.cc
++++ b/source/extensions/filters/http/jwt_authn/authenticator.cc
+@@ -288,6 +288,12 @@ void AuthenticatorImpl::startVerify() {
+   if (jwks_data_->getJwtProvider().has_remote_jwks()) {
+     if (!fetcher_) {
+       fetcher_ = create_jwks_fetcher_cb_(cm_, jwks_data_->getJwtProvider().remote_jwks());
++    } else {
++      // Cancel the previous fetch to reset if it is pending or not completed.
++      // At most one outstanding request may be in-flight, and it is possible that
++      // a new call is from the callback itself, which in-turn will reset the
++      // fetcher afterwards.
++      fetcher_->cancel();
+     }
+     fetcher_->fetch(*parent_span_, *this);
+     return;
+diff --git a/test/extensions/filters/http/jwt_authn/authenticator_test.cc b/test/extensions/filters/http/jwt_authn/authenticator_test.cc
+index 946b3bb839..d1d7aef309 100644
+--- a/test/extensions/filters/http/jwt_authn/authenticator_test.cc
++++ b/test/extensions/filters/http/jwt_authn/authenticator_test.cc
+@@ -1031,6 +1031,7 @@ TEST_F(AuthenticatorTest, TestAllowFailedMultipleIssuers) {
+   header->set_value_prefix("Bearer ");
+ 
+   createAuthenticator(nullptr, absl::nullopt, /*allow_failed=*/true);
++  EXPECT_CALL(*raw_fetcher_, cancel());
+   EXPECT_CALL(*raw_fetcher_, fetch(_, _))
+       .Times(2)
+       .WillRepeatedly(Invoke([](Tracing::Span&, JwksFetcher::JwksReceiver& receiver) {
+diff --git a/test/extensions/filters/http/jwt_authn/filter_integration_test.cc b/test/extensions/filters/http/jwt_authn/filter_integration_test.cc
+index b7c78fa1e1..bb8dd4280b 100644
+--- a/test/extensions/filters/http/jwt_authn/filter_integration_test.cc
++++ b/test/extensions/filters/http/jwt_authn/filter_integration_test.cc
+@@ -410,6 +410,19 @@ public:
+     initialize();
+   }
+ 
++  void initializeFilterWithAllowMissingOrFailed() {
++    config_helper_.prependFilter(
++        getAuthFilterConfig(AllowMissingExampleConfig, false, false, false));
++
++    config_helper_.addConfigModifier([](envoy::config::bootstrap::v3::Bootstrap& bootstrap) {
++      auto* jwks_cluster = bootstrap.mutable_static_resources()->add_clusters();
++      jwks_cluster->MergeFrom(bootstrap.static_resources().clusters()[0]);
++      jwks_cluster->set_name("pubkey_cluster");
++    });
++
++    initialize();
++  }
++
+   void initializeAsyncFetchFilter(bool fast_listener) {
+     config_helper_.prependFilter(getAsyncFetchFilterConfig(ExampleConfig, fast_listener, false));
+ 
+@@ -570,6 +583,47 @@ TEST_P(RemoteJwksIntegrationTest, FetchFailedMissingCluster) {
+   cleanup();
+ }
+ 
++// With remote Jwks, this test verifies a request is passed with two good JWTs
++// and allow_missing_or_failed but the jwks fetching fails.
++TEST_P(RemoteJwksIntegrationTest, WithTwoGoodTokensAllowMissing) {
++  initializeFilterWithAllowMissingOrFailed();
++
++  codec_client_ = makeHttpConnection(lookupPort("http"));
++
++  auto response = codec_client_->makeHeaderOnlyRequest(Http::TestRequestHeaderMapImpl{
++      {":method", "GET"},
++      {":path", "/"},
++      {":scheme", "http"},
++      {":authority", "host"},
++      {"Authorization", "Bearer " + std::string(GoodToken)},
++      {"Authorization", "Bearer " + std::string(GoodToken)},
++  });
++
++  // Fails the jwks fetching.
++  waitForJwksResponse("500", "");
++
++  // Wait for the second fetching.
++  auto result = fake_jwks_connection_->waitForNewStream(*dispatcher_, jwks_request_);
++  RELEASE_ASSERT(result, result.message());
++  result = jwks_request_->waitForEndStream(*dispatcher_);
++  RELEASE_ASSERT(result, result.message());
++
++  Http::TestResponseHeaderMapImpl response_headers{{":status", "500"}};
++  jwks_request_->encodeHeaders(response_headers, false);
++  Buffer::OwnedImpl response_data1("");
++  jwks_request_->encodeData(response_data1, true);
++
++  waitForNextUpstreamRequest();
++
++  upstream_request_->encodeHeaders(Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
++
++  ASSERT_TRUE(response->waitForEndStream());
++  ASSERT_TRUE(response->complete());
++  EXPECT_EQ("200", response->headers().getStatusValue());
++
++  cleanup();
++}
++
+ TEST_P(RemoteJwksIntegrationTest, WithGoodTokenAsyncFetch) {
+   on_server_init_function_ = [this]() { waitForJwksResponse("200", PublicKey); };
+   initializeAsyncFetchFilter(false);
+diff --git a/test/extensions/filters/http/jwt_authn/test_common.h b/test/extensions/filters/http/jwt_authn/test_common.h
+index aa9eb099a5..775c916b28 100644
+--- a/test/extensions/filters/http/jwt_authn/test_common.h
++++ b/test/extensions/filters/http/jwt_authn/test_common.h
+@@ -186,6 +186,32 @@ rules:
+ bypass_cors_preflight: true
+ )";
+ 
++// A good config with allow_missing_or_failed.
++const char AllowMissingExampleConfig[] = R"(
++providers:
++  example_provider:
++    issuer: https://example.com
++    audiences:
++    - example_service
++    - http://example_service1
++    - https://example_service2/
++    remote_jwks:
++      http_uri:
++        uri: https://www.pubkey-server.com/pubkey-path
++        cluster: pubkey_cluster
++        timeout:
++          seconds: 5
++      cache_duration:
++        seconds: 600
++    forward_payload_header: sec-istio-auth-userinfo
++rules:
++- match:
++    path: "/"
++  requires:
++    allow_missing_or_failed: {}
++bypass_cors_preflight: true
++)";
++
+ // Config with claim_to_headers and clear_route_cache.
+ const char ClaimToHeadersConfig[] = R"(
+ providers:
+-- 
+2.51.2
+

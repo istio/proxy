@@ -1,0 +1,125 @@
+From 32942be24a0c03d90080f8a0c3c26e621d4bed6e Mon Sep 17 00:00:00 2001
+From: Yan Avlasov <yavlasov@google.com>
+Date: Fri, 7 Nov 2025 18:21:16 +0000
+Subject: [PATCH 1/3] tls: fix SAN validation for OTHERNAME types with embedded
+ nulls Certificates with an OTHERNAME SAN using type `V_ASN1_UNIVERSALSTRING`
+ or `V_ASN1_BMPSTRING` with an embedded null would have the name truncated at
+ the first null, resulting in an incorrect check.
+
+Signed-off-by: Greg Greenway <ggreenway@apple.com>
+Signed-off-by: Yan Avlasov <yavlasov@google.com>
+---
+ changelogs/current.yaml         |  4 +++
+ source/common/tls/utility.cc    | 12 +++++----
+ test/common/tls/utility_test.cc | 46 +++++++++++++++++++++++++++++++++
+ 3 files changed, 57 insertions(+), 5 deletions(-)
+
+diff --git a/changelogs/current.yaml b/changelogs/current.yaml
+index 58a3ce7860..793e7663ac 100644
+--- a/changelogs/current.yaml
++++ b/changelogs/current.yaml
+@@ -18,6 +18,10 @@ bug_fixes:
+     Fixed an issue where the custom
+     :ref:`header_prefix <envoy_v3_api_field_config.bootstrap.v3.Bootstrap.header_prefix>`
+     will result in crash at startup.
++- area: tls
++  change: |
++    Fixed an issue where SANs of type ``OTHERNAME`` in a TLS cert were truncated if there was
++    an embedded null octet, leading to incorrect SAN validation.
+ 
+ removed_config_or_runtime:
+ # *Normally occurs at the end of the* :ref:`deprecation period <deprecated>`
+diff --git a/source/common/tls/utility.cc b/source/common/tls/utility.cc
+index 24b2ba40e5..a9ecbfe0b8 100644
+--- a/source/common/tls/utility.cc
++++ b/source/common/tls/utility.cc
+@@ -339,22 +339,24 @@ std::string Utility::generalNameAsString(const GENERAL_NAME* general_name) {
+       break;
+     }
+     case V_ASN1_BMPSTRING: {
+-      // `ASN1_BMPSTRING` is encoded using `UCS-4`, which needs conversion to UTF-8.
++      // `ASN1_BMPSTRING` is encoded using `UTF-16`, which needs conversion to UTF-8.
+       unsigned char* tmp = nullptr;
+-      if (ASN1_STRING_to_UTF8(&tmp, value->value.bmpstring) < 0) {
++      int length = ASN1_STRING_to_UTF8(&tmp, value->value.bmpstring);
++      if (length < 0) {
+         break;
+       }
+-      san.assign(reinterpret_cast<const char*>(tmp));
++      san.assign(reinterpret_cast<const char*>(tmp), length);
+       OPENSSL_free(tmp);
+       break;
+     }
+     case V_ASN1_UNIVERSALSTRING: {
+       // `ASN1_UNIVERSALSTRING` is encoded using `UCS-4`, which needs conversion to UTF-8.
+       unsigned char* tmp = nullptr;
+-      if (ASN1_STRING_to_UTF8(&tmp, value->value.universalstring) < 0) {
++      int length = ASN1_STRING_to_UTF8(&tmp, value->value.universalstring);
++      if (length < 0) {
+         break;
+       }
+-      san.assign(reinterpret_cast<const char*>(tmp));
++      san.assign(reinterpret_cast<const char*>(tmp), length);
+       OPENSSL_free(tmp);
+       break;
+     }
+diff --git a/test/common/tls/utility_test.cc b/test/common/tls/utility_test.cc
+index d70bd3e7f5..1738acb267 100644
+--- a/test/common/tls/utility_test.cc
++++ b/test/common/tls/utility_test.cc
+@@ -60,6 +60,52 @@ TEST(UtilityTest, TestDnsNameMatching) {
+   EXPECT_FALSE(Utility::dnsNameMatch("lyft.com", ""));
+ }
+ 
++TEST(UtilityTest, TestOtherNameUniversalWithEmbeddedNull) {
++  // Universal strings are utf-32.
++  uint32_t utf32_data[] = {
++      htonl('t'), htonl('e'), htonl('s'), htonl('t'), 0 /* embedded null */, htonl('s'), htonl('t'),
++      htonl('r'), htonl('i'), htonl('n'), htonl('g'),
++  };
++  ASN1_STRING* asn1_str = ASN1_UNIVERSALSTRING_new();
++  ASN1_STRING_set(asn1_str, utf32_data, sizeof(utf32_data));
++  GENERAL_NAME* name = GENERAL_NAME_new();
++  ASN1_OBJECT* oid = OBJ_txt2obj("1.2.3.4.5", 1);
++  ASN1_TYPE* type = ASN1_TYPE_new();
++  ASN1_TYPE_set(type, V_ASN1_UNIVERSALSTRING, asn1_str);
++  GENERAL_NAME_set0_othername(name, oid, type);
++
++  std::string expected = "test";
++  expected += '\0';
++  expected += "string";
++
++  EXPECT_EQ(Utility::generalNameAsString(name), expected);
++
++  GENERAL_NAME_free(name);
++}
++
++TEST(UtilityTest, TestOtherNameBmpWithEmbeddedNull) {
++  // `BMP` strings are utf-16.
++  uint16_t utf16_data[] = {
++      htons('t'), htons('e'), htons('s'), htons('t'), 0 /* embedded null */, htons('s'), htons('t'),
++      htons('r'), htons('i'), htons('n'), htons('g'),
++  };
++  ASN1_STRING* asn1_str = ASN1_BMPSTRING_new();
++  ASN1_STRING_set(asn1_str, utf16_data, sizeof(utf16_data));
++  GENERAL_NAME* name = GENERAL_NAME_new();
++  ASN1_OBJECT* oid = OBJ_txt2obj("1.2.3.4.5", 1);
++  ASN1_TYPE* type = ASN1_TYPE_new();
++  ASN1_TYPE_set(type, V_ASN1_BMPSTRING, asn1_str);
++  GENERAL_NAME_set0_othername(name, oid, type);
++
++  std::string expected = "test";
++  expected += '\0';
++  expected += "string";
++
++  EXPECT_EQ(Utility::generalNameAsString(name), expected);
++
++  GENERAL_NAME_free(name);
++}
++
+ TEST(UtilityTest, TestGetSubjectAlternateNamesWithDNS) {
+   bssl::UniquePtr<X509> cert = readCertFromFile(
+       TestEnvironment::substitute("{{ test_rundir }}/test/common/tls/test_data/san_dns_cert.pem"));
+-- 
+2.51.2
+
