@@ -81,3 +81,8 @@ envoy_repo()
 load("@envoy//bazel:toolchains.bzl", "envoy_toolchains")
 
 envoy_toolchains()
+
+load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")
+
+llvm_register_toolchains()
+
