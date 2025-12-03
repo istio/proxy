@@ -1,0 +1,77 @@
+diff --git a/source/common/conn_pool/conn_pool_base.cc b/source/common/conn_pool/conn_pool_base.cc
+index 2c1aa0f6fd..a0a3e02d60 100644
+--- a/source/common/conn_pool/conn_pool_base.cc
++++ b/source/common/conn_pool/conn_pool_base.cc
+@@ -63,6 +63,20 @@ ConnPoolImplBase::ConnPoolImplBase(
+   ENVOY_LOG_ONCE_IF(trace, create_new_connection_load_shed_ == nullptr,
+                     "LoadShedPoint envoy.load_shed_points.connection_pool_new_connection is not "
+                     "found. Is it configured?");
++  const auto metadata = host_->metadata(); 
++  if (metadata && metadata->filter_metadata().contains("connection_pool_options")) {
++    const auto& options = metadata->filter_metadata().at("connection_pool_options").fields();
++    if (options.contains("max_concurrent_streams")) {
++      endpoint_limits_.max_concurrent_streams = options.at("max_concurrent_streams").number_value();
++    }
++    if (options.contains("max_requests_per_connection")) {
++      endpoint_limits_.max_requests_per_connection = options.at("max_requests_per_connection").number_value();
++    }
++    ENVOY_LOG(debug, "endpoint {} has specific options: max_concurrent_streams={}, max_requests_per_connection={}", 
++      host_->address() ? host_->address()->asString() : "without address", 
++      endpoint_limits_.max_concurrent_streams, 
++      endpoint_limits_.max_requests_per_connection);
++  }
+ }
+ 
+ ConnPoolImplBase::~ConnPoolImplBase() {
+@@ -830,7 +844,8 @@ void ConnPoolImplBase::onUpstreamReadyForEarlyData(ActiveClient& client) {
+ namespace {
+ // Translate zero to UINT32_MAX so that the zero/unlimited case doesn't
+ // have to be handled specially.
+-uint32_t translateZeroToUnlimited(uint32_t limit) {
++uint32_t translateZeroToUnlimited(uint32_t cluster_limit, uint32_t endpoint_limit = 0) {
++  const auto limit = endpoint_limit != 0 ? endpoint_limit : cluster_limit;
+   return (limit != 0) ? limit : std::numeric_limits<uint32_t>::max();
+ }
+ } // namespace
+@@ -842,9 +857,9 @@ ActiveClient::ActiveClient(ConnPoolImplBase& parent, uint32_t lifetime_stream_li
+ 
+ ActiveClient::ActiveClient(ConnPoolImplBase& parent, uint32_t lifetime_stream_limit,
+                            uint32_t effective_concurrent_streams, uint32_t concurrent_stream_limit)
+-    : parent_(parent), remaining_streams_(translateZeroToUnlimited(lifetime_stream_limit)),
+-      configured_stream_limit_(translateZeroToUnlimited(effective_concurrent_streams)),
+-      concurrent_stream_limit_(translateZeroToUnlimited(concurrent_stream_limit)),
++    : parent_(parent), remaining_streams_(translateZeroToUnlimited(lifetime_stream_limit, parent.endpointLimits().max_requests_per_connection)),
++      configured_stream_limit_(translateZeroToUnlimited(effective_concurrent_streams, std::min(parent.endpointLimits().max_concurrent_streams, effective_concurrent_streams))),
++      concurrent_stream_limit_(translateZeroToUnlimited(concurrent_stream_limit, parent.endpointLimits().max_concurrent_streams)),
+       connect_timer_(parent_.dispatcher().createTimer([this]() { onConnectTimeout(); })) {
+   conn_connect_ms_ = std::make_unique<Stats::HistogramCompletableTimespanImpl>(
+       parent_.host()->cluster().trafficStats()->upstream_cx_connect_ms_,
+diff --git a/source/common/conn_pool/conn_pool_base.h b/source/common/conn_pool/conn_pool_base.h
+index 8b854d2e55..e9435ed200 100644
+--- a/source/common/conn_pool/conn_pool_base.h
++++ b/source/common/conn_pool/conn_pool_base.h
+@@ -315,6 +315,15 @@ public:
+   // Called when an upstream is ready to serve early data streams.
+   void onUpstreamReadyForEarlyData(ActiveClient& client);
+ 
++  struct EndpointLimitOptions {
++    uint32_t max_concurrent_streams{0};
++    uint32_t max_requests_per_connection{0};
++  };
++
++  const EndpointLimitOptions& endpointLimits() {
++    return endpoint_limits_;
++  }
++
+ protected:
+   virtual void onConnected(Envoy::ConnectionPool::ActiveClient&) {}
+   virtual void onConnectFailed(Envoy::ConnectionPool::ActiveClient&) {}
+@@ -419,6 +428,8 @@ private:
+   Event::SchedulableCallbackPtr upstream_ready_cb_;
+   Common::DebugRecursionChecker recursion_checker_;
+   Server::LoadShedPoint* create_new_connection_load_shed_{nullptr};
++
++  EndpointLimitOptions endpoint_limits_;
+ };
+ 
+ } // namespace ConnectionPool
