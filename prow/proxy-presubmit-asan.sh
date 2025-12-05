@@ -24,5 +24,4 @@ WD=$(cd "$WD" || exit 1 ; pwd)
 source "${WD}/proxy-common.inc"
 
 echo 'Bazel Tests'
-cat WORKSPACE
 make test_asan
