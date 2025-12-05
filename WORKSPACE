@@ -101,7 +101,7 @@ llvm_toolchain(
     name = "llvm_toolchain",
     cxx_standard = {"": "c++20"},
     llvm_version = "18.1.8",
-    toolchain_roots = "/usr/lib/llvm",
+    toolchain_root = "/usr/lib/llvm",
 )
 
 load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")
