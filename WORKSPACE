@@ -78,9 +78,9 @@ load("@envoy//bazel:repo.bzl", "envoy_repo")
 
 envoy_repo()
 
-load("@envoy//bazel:toolchains.bzl", "envoy_toolchains")
+# load("@envoy//bazel:toolchains.bzl", "envoy_toolchains")
 
-envoy_toolchains()
+# envoy_toolchains()
 
 # this's workaround for use local LLVM toolchain
 load("@envoy_repo//:compiler.bzl", "LLVM_PATH")
