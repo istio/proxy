@@ -22,10 +22,10 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit date: 2025-12-02
-ENVOY_SHA = "44b00e0264cfcdbbc593998a407b3f957ec28c77"
+# Commit date: 2025-12-03
+ENVOY_SHA = "1caf0d7396786bac7f4fcf7b9d291ed761191b68"
 
-ENVOY_SHA256 = "1c8bc33cf9b758604042212d69d8bc37f41991facc43ed139d070b6b94aeddb0"
+ENVOY_SHA256 = "10df99872f4f4c24c456970fdbedae1a25ecf2de4d4db57a34cd271f46fc7ac0"
 
 ENVOY_ORG = "envoyproxy"
 
@@ -82,6 +82,27 @@ load("@envoy//bazel:repo.bzl", "envoy_repo")
 
 envoy_repo()
 
-load("@envoy//bazel:toolchains.bzl", "envoy_toolchains")
+load("@envoy_repo//:compiler.bzl", "LLVM_PATH")
+load("@envoy_toolshed//repository:utils.bzl", "arch_alias")
+load("@toolchains_llvm//toolchain:rules.bzl", "llvm_toolchain")
 
-envoy_toolchains()
+register_toolchains("@envoy//bazel/rbe/toolchains/configs/linux/gcc/config:cc-toolchain")
+
+arch_alias(
+    name = "clang_platform",
+    aliases = {
+        "amd64": "@envoy//bazel/platforms/rbe:linux_x64",
+        "aarch64": "@envoy//bazel/platforms/rbe:linux_arm64",
+    },
+)
+
+llvm_toolchain(
+    name = "llvm_toolchain",
+    cxx_standard = {"": "c++20"},
+    llvm_version = "18.1.8",
+    toolchain_roots = {"": LLVM_PATH} if LLVM_PATH else {},
+)
+
+load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")
+
+llvm_register_toolchains()
