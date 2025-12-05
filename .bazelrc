@@ -14,7 +14,7 @@ build:remote --remote_timeout=7200
 # ========================================
 
 # Enable libc++ and C++20 by default.
-# build --repo_env=BAZEL_LLVM_PATH=/usr/lib/llvm
+build --repo_env=BAZEL_LLVM_PATH=/usr/lib/llvm
 build:linux --config=clang
 
 # put /usr/local/bin before /usr/bin to avoid picking up wrong python3.6 when building envoy.tls.key_providers.cryptomb
