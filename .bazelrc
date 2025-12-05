@@ -56,6 +56,7 @@ build --cxxopt -Wformat-security
 
 # CI sanitizer configuration
 #
+build:clang-asan-ci --config=clang
 build:clang-asan-ci --config=asan
 build:clang-asan-ci --linkopt='-L/usr/lib/llvm/lib/x86_64-unknown-linux-gnu'
 build:clang-asan-ci --linkopt='-Wl,-rpath,/usr/lib/llvm/lib/x86_64-unknown-linux-gnu'
