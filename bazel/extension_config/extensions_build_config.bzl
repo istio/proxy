@@ -501,6 +501,12 @@ ENVOY_CONTRIB_EXTENSIONS = {
     #
 
     "envoy.network.connection_balance.dlb":                     "//contrib/dlb/source:connection_balancer",
+
+    #
+    # Peak EWMA Loadbalancer
+    #
+    "envoy.load_balancing_policies.peak_ewma":                  "//contrib/peak_ewma/load_balancing_policies/source:config",
+    "envoy.filters.http.peak_ewma":                             "//contrib/peak_ewma/filters/http/source:config",
 }
 
 
@@ -519,6 +525,8 @@ ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.tls.key_providers.cryptomb",
     # "envoy.tls.key_providers.qat",
     "envoy.network.connection_balance.dlb",
+    "envoy.load_balancing_policies.peak_ewma",
+    "envoy.filters.http.peak_ewma",
 ]
 
 EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_DISABLED_EXTENSIONS] +
