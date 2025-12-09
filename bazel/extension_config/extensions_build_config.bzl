@@ -517,7 +517,7 @@ ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.filters.network.sip_proxy",
     "envoy.filters.sip.router",
     "envoy.tls.key_providers.cryptomb",
-    # "envoy.tls.key_providers.qat",
+    "envoy.tls.key_providers.qat",
     "envoy.network.connection_balance.dlb",
 ]
 
