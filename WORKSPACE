@@ -64,7 +64,10 @@ envoy_bazel_dependencies()
 
 load("@envoy//bazel:repositories_extra.bzl", "envoy_dependencies_extra")
 
-envoy_dependencies_extra(ignore_root_user_error = True, glibc_version = "2.28")
+envoy_dependencies_extra(
+    glibc_version = "2.28",
+    ignore_root_user_error = True,
+)
 
 load("@envoy//bazel:python_dependencies.bzl", "envoy_python_dependencies")
 
