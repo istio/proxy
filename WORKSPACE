@@ -22,10 +22,10 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit date: 2025-12-05
-ENVOY_SHA = "df7ddf53f997efd9e080f5940bd996ee9827405b"
+# Commit date: 2025-12-12
+ENVOY_SHA = "1f29f29b6ff37aa7cb87135cc28bc058a623b629"
 
-ENVOY_SHA256 = "481954044392c767e58b5971f3f0e53baa1707b62f20fca63794fefd279b9c90"
+ENVOY_SHA256 = "cc634a5541c5b39ebd1b9d3538f4c8f897cab77ac04033ebd361d72e2f35021a"
 
 ENVOY_ORG = "envoyproxy"
 
@@ -64,7 +64,10 @@ envoy_bazel_dependencies()
 
 load("@envoy//bazel:repositories_extra.bzl", "envoy_dependencies_extra")
 
-envoy_dependencies_extra(ignore_root_user_error = True)
+envoy_dependencies_extra(
+    glibc_version = "2.28",
+    ignore_root_user_error = True,
+)
 
 load("@envoy//bazel:python_dependencies.bzl", "envoy_python_dependencies")
 
@@ -78,11 +81,6 @@ load("@envoy//bazel:repo.bzl", "envoy_repo")
 
 envoy_repo()
 
-# load("@envoy//bazel:toolchains.bzl", "envoy_toolchains")
-
-# envoy_toolchains()
-
-# this's workaround for use local LLVM toolchain
 load("@envoy_repo//:compiler.bzl", "LLVM_PATH")
 load("@envoy_toolshed//repository:utils.bzl", "arch_alias")
 load("@toolchains_llvm//toolchain:rules.bzl", "llvm_toolchain")
@@ -101,10 +99,6 @@ llvm_toolchain(
     name = "llvm_toolchain",
     cxx_standard = {"": "c++20"},
     llvm_version = "18.1.8",
-    # sysroot = {
-    #     "linux-x86_64": "@sysroot_linux_amd64//:sysroot",
-    #     "linux-aarch64": "@sysroot_linux_arm64//:sysroot",
-    # },
     toolchain_roots = {"": LLVM_PATH} if LLVM_PATH else {},
 )
 

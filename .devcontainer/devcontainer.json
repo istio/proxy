@@ -8,10 +8,10 @@
     "CARGO_HOME": "/home/.cargo",
     "RUSTUP_HOME": "/home/.rustup"
   },
-  "features": {
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
-    "ghcr.io/mpriscella/features/kind:1": {}
-  },
+  // "features": {
+  //   "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+  //   "ghcr.io/mpriscella/features/kind:1": {}
+  // },
   "customizations": {
     "vscode": {
       "extensions": [
