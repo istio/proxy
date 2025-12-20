@@ -19,6 +19,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -80,12 +81,21 @@ func main() {
 // Depends on go.starlark.net/starlark.
 func extensions(filename, key string) (map[string]string, error) {
 	thread := &starlark.Thread{
-		Name:  "extensions",
-		Print: func(_ *starlark.Thread, msg string) { fmt.Println(msg) },
+		Name: "extensions",
+		Print: func(_ *starlark.Thread, msg string) {
+			fmt.Println(msg)
+		},
 	}
-	globals, err := starlark.ExecFile(thread, filename, nil, nil)
+
+	src, err := os.ReadFile(filename)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to read script file: %v", err)
+	}
+
+	predeclared := starlark.StringDict{}
+	globals, err := starlark.ExecFile(thread, filename, src, predeclared)
+	if err != nil {
+		log.Fatalf("Execution failed: %v", err)
 	}
 
 	if v, ok := globals[key]; ok {
