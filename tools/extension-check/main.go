@@ -19,10 +19,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
 	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
 )
 
 var (
@@ -83,9 +85,17 @@ func extensions(filename, key string) (map[string]string, error) {
 		Name:  "extensions",
 		Print: func(_ *starlark.Thread, msg string) { fmt.Println(msg) },
 	}
-	globals, err := starlark.ExecFile(thread, filename, nil, nil)
+
+	fileOptions := syntax.FileOptions{}
+	execOptions := &starlark.ExecFileOptions{
+		Thread:  thread,
+		Globals: nil,
+		Options: fileOptions,
+	}
+
+	globals, err := starlark.ExecFileOptions(execOptions, filename)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Execution failed: %v", err)
 	}
 
 	if v, ok := globals[key]; ok {
