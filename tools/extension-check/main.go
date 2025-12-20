@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"go.starlark.net/starlark"
-	"go.starlark.net/syntax"
 )
 
 var (
@@ -82,8 +81,10 @@ func main() {
 // Depends on go.starlark.net/starlark.
 func extensions(filename, key string) (map[string]string, error) {
 	thread := &starlark.Thread{
-		Name:  "extensions",
-		Print: func(_ *starlark.Thread, msg string) { fmt.Println(msg) },
+		Name: "extensions",
+		Print: func(_ *starlark.Thread, msg string) {
+			fmt.Println(msg)
+		},
 	}
 
 	src, err := os.ReadFile(filename)
@@ -93,18 +94,6 @@ func extensions(filename, key string) (map[string]string, error) {
 
 	predeclared := starlark.StringDict{}
 	globals, err := starlark.ExecFile(thread, filename, src, predeclared)
-	if err != nil {
-		log.Fatalf("Execution failed: %v", err)
-	}
-
-	fileOptions := syntax.FileOptions{}
-	execOptions := &starlark.ExecFileOptions{
-		Thread:  thread,
-		Globals: nil,
-		Options: fileOptions,
-	}
-
-	globals, err := starlark.ExecFileOptions(execOptions, filename)
 	if err != nil {
 		log.Fatalf("Execution failed: %v", err)
 	}
