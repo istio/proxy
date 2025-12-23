@@ -443,6 +443,11 @@ ENVOY_EXTENSIONS = {
     "envoy.config_subscription.ads_collection":                   "//source/extensions/config_subscription/grpc:grpc_collection_subscription_lib",
 
     #
+    # Geolocation Provider
+    #
+    "envoy.geoip_providers.maxmind":                         "//source/extensions/geoip_providers/maxmind:config",
+
+    #
     # cluster specifier plugin
     #
 
