@@ -5,8 +5,8 @@ github.com/cncf/xds/go v0.0.0-20251110193048-8bfbf64dc13e/go.mod h1:KdCmV+x/Buvy
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/envoyproxy/go-control-plane v0.14.1-0.20251219221756-ac19f4abb92b h1:S62pcWvmcfL0byKuTIHJT247Ha8Q6yPvsxnL45Me7/U=
-github.com/envoyproxy/go-control-plane v0.14.1-0.20251219221756-ac19f4abb92b/go.mod h1:sXHZLub4PyTfA1Iym8H/swNowVLVxnidaEplV4YXWVQ=
+github.com/envoyproxy/go-control-plane v0.14.1-0.20251227024949-09d95521e5a1 h1:9e0qQbrunxgyuJ9O7L0I7Sdh66IpvbNUCy8rCBw/55Y=
+github.com/envoyproxy/go-control-plane v0.14.1-0.20251227024949-09d95521e5a1/go.mod h1:sXHZLub4PyTfA1Iym8H/swNowVLVxnidaEplV4YXWVQ=
 github.com/envoyproxy/go-control-plane/envoy v1.36.0 h1:yg/JjO5E7ubRyKX3m07GF3reDNEnfOboJ0QySbH736g=
 github.com/envoyproxy/go-control-plane/envoy v1.36.0/go.mod h1:ty89S1YCCVruQAm9OtKeEkQLTb+Lkz0k8v9W0Oxsv98=
 github.com/envoyproxy/go-control-plane/ratelimit v0.1.0 h1:/G9QYbddjL25KvtKTv3an9lx6VBE2cnb8wp1vEGNYGI=
