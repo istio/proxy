@@ -4,13 +4,14 @@ go 1.24.0
 
 require (
 	github.com/cncf/xds/go v0.0.0-20251110193048-8bfbf64dc13e
-	github.com/envoyproxy/go-control-plane v0.14.1-0.20260103185439-d6ff64e48402
-	github.com/envoyproxy/go-control-plane/envoy v1.36.0
+	github.com/envoyproxy/go-control-plane v0.14.1-0.20260104160915-41b8a0a79543
+	github.com/envoyproxy/go-control-plane/contrib v1.36.1-0.20260104160915-41b8a0a79543
+	github.com/envoyproxy/go-control-plane/envoy v1.36.1-0.20260104160915-41b8a0a79543
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.7.0
 	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.46.0
-	go.opentelemetry.io/proto/otlp v1.7.1
+	go.opentelemetry.io/proto/otlp v1.9.0
 	go.starlark.net v0.0.0-20240123142251-f86470692795
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251029180050-ab9386a59fda
 	google.golang.org/grpc v1.78.0
@@ -23,7 +24,7 @@ require (
 	cel.dev/expr v0.24.0 // indirect
 	github.com/envoyproxy/go-control-plane/ratelimit v0.1.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.3.0 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	golang.org/x/net v0.47.0 // indirect

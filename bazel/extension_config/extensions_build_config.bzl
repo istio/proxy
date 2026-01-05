@@ -519,6 +519,11 @@ ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.tls.key_providers.cryptomb",
     # "envoy.tls.key_providers.qat",
     "envoy.network.connection_balance.dlb",
+    # Extensions that contributed by Istio.
+    "envoy.filters.network.metadata_exchange",
+    "envoy.filters.http.alpn",
+    "envoy.filters.http.peer_metadata",
+    "envoy.filters.http.istio_stats",
 ]
 
 EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_DISABLED_EXTENSIONS] +
