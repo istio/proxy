@@ -463,6 +463,9 @@ ENVOY_CONTRIB_EXTENSIONS = {
     "envoy.filters.http.golang":                                "//contrib/golang/filters/http/source:config",
     "envoy.filters.http.squash":                                "//contrib/squash/filters/http/source:config",
     "envoy.filters.http.sxg":                                   "//contrib/sxg/filters/http/source:config",
+    "envoy.filters.http.peer_metadata":                         "//contrib/istio/filters/http/peer_metadata/source:config",
+    "envoy.filters.http.istio_stats":                           "//contrib/istio/filters/http/istio_stats/source:istio_stats",
+    "envoy.filters.http.alpn":                                  "//contrib/istio/filters/http/alpn/source:config_lib",
 
     #
     # Network filters
@@ -475,6 +478,7 @@ ENVOY_CONTRIB_EXTENSIONS = {
     "envoy.filters.network.mysql_proxy":                        "//contrib/mysql_proxy/filters/network/source:config",
     "envoy.filters.network.postgres_proxy":                     "//contrib/postgres_proxy/filters/network/source:config",
     "envoy.filters.network.rocketmq_proxy":                     "//contrib/rocketmq_proxy/filters/network/source:config",
+    "envoy.filters.network.metadata_exchange":                  "//contrib/istio/filters/network/metadata_exchange/source:config",
 
     #
     # Sip proxy
