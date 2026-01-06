@@ -85,30 +85,9 @@ load("@envoy//bazel:repo.bzl", "envoy_repo")
 
 envoy_repo()
 
-load("@envoy_repo//:compiler.bzl", "LLVM_PATH")
-load("@envoy_toolshed//repository:utils.bzl", "arch_alias")
-load("@toolchains_llvm//toolchain:rules.bzl", "llvm_toolchain")
+load("@envoy//bazel:toolchains.bzl", "envoy_toolchains")
 
-register_toolchains("@envoy//bazel/rbe/toolchains/configs/linux/gcc/config:cc-toolchain")
-
-arch_alias(
-    name = "clang_platform",
-    aliases = {
-        "amd64": "@envoy//bazel/platforms/rbe:linux_x64",
-        "aarch64": "@envoy//bazel/platforms/rbe:linux_arm64",
-    },
-)
-
-llvm_toolchain(
-    name = "llvm_toolchain",
-    cxx_standard = {"": "c++20"},
-    llvm_version = "18.1.8",
-    sysroot = {
-        "linux-x86_64": "@sysroot_linux_amd64//:sysroot",
-        "linux-aarch64": "@sysroot_linux_arm64//:sysroot",
-    },
-    toolchain_roots = {"": LLVM_PATH} if LLVM_PATH else {},
-)
+envoy_toolchains()
 
 load("@llvm_toolchain//:toolchains.bzl", "llvm_register_toolchains")
 
