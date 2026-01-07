@@ -124,6 +124,9 @@ do
       BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
       ;;
     "asan")
+        echo "ASAN RELEASE TEST"
+        cat WORKSPACE
+
       # Asan is skipped on ARM64
       if [[ "$(uname -m)" != "aarch64" ]]; then
         # NOTE: libc++ is dynamically linked in this build.
