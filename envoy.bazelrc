@@ -11,7 +11,7 @@
 # The number 3G is chosen heuristically to both support large VM and small VM with RBE.
 # Startup options cannot be selected via config.
 # TODO: Adding just to test android
-startup --host_jvm_args=-Xmx3g
+startup --host_jvm_args=-Xmx4g
 startup --host_jvm_args="-DBAZEL_TRACK_SOURCE_DIRECTORIES=1"
 
 
