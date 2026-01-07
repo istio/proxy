@@ -21,6 +21,10 @@ build:linux --action_env=PATH=/usr/local/bin:/bin:/usr/bin
 
 # Need for CI image to pickup docker-credential-gcloud, PATH is fixed in rbe-toolchain-* configs.
 build:remote-ci --action_env=PATH=/usr/local/google-cloud-sdk/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/llvm/bin
+# These flags reduce bazel memory consumption at the cost of slower incremental builds
+# CI builds are not incremental, since we build with a clean state, so the performance impact is not
+# relevant for CI
+build:remote-ci --discard_analysis_cache --nokeep_state_after_build --notrack_incremental_state
 
 # Enable path normalization by default.
 # See: https://github.com/envoyproxy/envoy/pull/6519
