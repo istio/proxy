@@ -11,7 +11,7 @@
 # The number 3G is chosen heuristically to both support large VM and small VM with RBE.
 # Startup options cannot be selected via config.
 # TODO: Adding just to test android
-startup --host_jvm_args=-Xmx3g
+startup --host_jvm_args=-Xmx4g
 startup --host_jvm_args="-DBAZEL_TRACK_SOURCE_DIRECTORIES=1"
 
 
@@ -44,12 +44,6 @@ build --enable_platform_specific_config
 build --incompatible_merge_fixed_and_default_shell_env
 # A workaround for slow ICU download.
 build --http_timeout_scaling=6.0
-
-# Pass CC, CXX and LLVM_CONFIG variables from the environment.
-# We assume they have stable values, so this won't cause action cache misses.
-build --action_env=CC --host_action_env=CC
-build --action_env=CXX --host_action_env=CXX
-build --action_env=LLVM_CONFIG --host_action_env=LLVM_CONFIG
 
 # Allow stamped caches to bust when local filesystem changes.
 # Requires setting `BAZEL_VOLATILE_DIRTY` in the env.
@@ -99,7 +93,6 @@ build:linux --cxxopt=-fsized-deallocation --host_cxxopt=-fsized-deallocation
 build:linux --conlyopt=-fexceptions
 build:linux --fission=dbg,opt
 build:linux --features=per_object_debug_info
-build:linux --action_env=BAZEL_LINKOPTS=-lm:-fuse-ld=gold
 
 # macOS
 build:macos --action_env=PATH=/opt/homebrew/bin:/opt/local/bin:/usr/local/bin:/usr/bin:/bin
@@ -114,15 +107,14 @@ build:macos --cxxopt=-Wno-nullability-completeness
 
 # Common flags for Clang (shared between all clang variants)
 common:clang-common --linkopt=-fuse-ld=lld
-common:clang-common --action_env=BAZEL_COMPILER=clang
-common:clang-common --action_env=LDFLAGS="-fuse-ld=lld"
-common:clang-common --action_env=CC=clang --host_action_env=CC=clang
-common:clang-common --action_env=CXX=clang++ --host_action_env=CXX=clang++
+common:clang-common --@toolchains_llvm//toolchain/config:compiler-rt=false
+common:clang-common --@toolchains_llvm//toolchain/config:libunwind=false
 
 # Clang with libc++ (default)
 common:clang --config=clang-common
 common:clang --config=libc++
 common:clang --host_platform=@clang_platform
+common:clang --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 
 # Clang installed to non-standard location (ie not /opt/llvm/)
 common:clang-local --config=clang-common

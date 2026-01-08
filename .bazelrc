@@ -14,13 +14,17 @@ build:remote --remote_timeout=7200
 # ========================================
 
 # Enable libc++ and C++20 by default.
-build:linux --config=clang-local
+build:linux --config=clang
 
 # put /usr/local/bin before /usr/bin to avoid picking up wrong python3.6 when building envoy.tls.key_providers.cryptomb
-build:linux --action_env=PATH=/usr/lib/llvm/bin:/usr/local/bin:/bin:/usr/bin
+build:linux --action_env=PATH=/usr/local/bin:/bin:/usr/bin
 
 # Need for CI image to pickup docker-credential-gcloud, PATH is fixed in rbe-toolchain-* configs.
 build:remote-ci --action_env=PATH=/usr/local/google-cloud-sdk/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/llvm/bin
+# These flags reduce bazel memory consumption at the cost of slower incremental builds
+# CI builds are not incremental, since we build with a clean state, so the performance impact is not
+# relevant for CI
+build:remote-ci --discard_analysis_cache --nokeep_state_after_build --notrack_incremental_state
 
 # Enable path normalization by default.
 # See: https://github.com/envoyproxy/envoy/pull/6519
@@ -49,9 +53,6 @@ build:debug -c dbg
 # build --cxxopt -Wnon-virtual-dtor
 build --cxxopt -Wformat
 build --cxxopt -Wformat-security
-
-build:clang --host_action_env=CC=
-build:clang --host_action_env=CXX=
 
 # CI sanitizer configuration
 #
