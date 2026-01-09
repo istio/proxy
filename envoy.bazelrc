@@ -11,7 +11,7 @@
 # The number 3G is chosen heuristically to both support large VM and small VM with RBE.
 # Startup options cannot be selected via config.
 # TODO: Adding just to test android
-startup --host_jvm_args=-Xmx4g
+startup --host_jvm_args=-Xmx3g
 startup --host_jvm_args="-DBAZEL_TRACK_SOURCE_DIRECTORIES=1"
 
 
@@ -63,6 +63,7 @@ common --experimental_allow_tags_propagation
 
 # Python
 common --@rules_python//python/config_settings:bootstrap_impl=script
+build --incompatible_default_to_explicit_init_py
 
 # We already have absl in the build, define absl=1 to tell googletest to use absl for backtrace.
 build --define absl=1
@@ -99,6 +100,8 @@ build:macos --action_env=PATH=/opt/homebrew/bin:/opt/local/bin:/usr/local/bin:/u
 build:macos --host_action_env=PATH=/opt/homebrew/bin:/opt/local/bin:/usr/local/bin:/usr/bin:/bin
 build:macos --define tcmalloc=disabled
 build:macos --cxxopt=-Wno-nullability-completeness
+build:macos --@toolchains_llvm//toolchain/config:compiler-rt=false
+build:macos --@toolchains_llvm//toolchain/config:libunwind=false
 
 
 #############################################################################
@@ -137,8 +140,11 @@ build:gcc --copt=-Wno-error=uninitialized
 build:gcc --cxxopt=-Wno-missing-requires
 build:gcc --cxxopt=-Wno-dangling-reference
 build:gcc --cxxopt=-Wno-nonnull-compare
+build:gcc --cxxopt=-Wno-trigraphs
 build:gcc --linkopt=-fuse-ld=gold --host_linkopt=-fuse-ld=gold
 build:gcc --host_platform=@envoy//bazel/rbe/toolchains:rbe_linux_gcc_platform
+build:gcc --linkopt=-fuse-ld=gold --host_linkopt=-fuse-ld=gold
+build:gcc --action_env=BAZEL_LINKOPTS=-lm:-fuse-ld=gold
 
 # libc++ - default for clang
 common:libc++ --action_env=CXXFLAGS=-stdlib=libc++
@@ -360,8 +366,7 @@ build:clang-pch --spawn_strategy=local
 build:clang-pch --define=ENVOY_CLANG_PCH=1
 
 # Clang-tidy
-# TODO(phlax): enable this, its throwing some errors as well as finding more issues
-# build:clang-tidy --@envoy_toolshed//format/clang_tidy:executable=@envoy//tools/clang-tidy
+build:clang-tidy --@envoy_toolshed//format/clang_tidy:executable=@envoy//tools/clang-tidy
 build:clang-tidy --@envoy_toolshed//format/clang_tidy:config=//:clang_tidy_config
 build:clang-tidy --aspects @envoy_toolshed//format/clang_tidy:clang_tidy.bzl%clang_tidy_aspect
 build:clang-tidy --output_groups=report
@@ -387,6 +392,9 @@ build:remote --strategy=Javac=remote,sandboxed,local
 build:remote --strategy=Closure=remote,sandboxed,local
 build:remote --strategy=Genrule=remote,sandboxed,local
 build:remote --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+# This flag may be more generally useful - it sets foreign_cc builds -jauto.
+# It is only set here because if it were the default it risks OOMing on local builds.
+build:remote --@envoy//bazel/foreign_cc:parallel_builds
 
 ## RBE (Engflow Envoy)
 
