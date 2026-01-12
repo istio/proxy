@@ -6,6 +6,11 @@
 # curl -sSL https://raw.githubusercontent.com/envoyproxy/envoy/master/.bazelrc > envoy.bazelrc
 import %workspace%/envoy.bazelrc
 
+# Istio override: increase JVM heap to 4GB for ARM64 builds (envoy.bazelrc sets 3GB)
+# The 3GB limit causes memory pressure during large downloads which breaks gRPC remote cache connections
+# See: https://github.com/istio/proxy/pull/6726
+startup --host_jvm_args=-Xmx4g
+
 # Overrides workspace_status_command
 build --workspace_status_command=bazel/bazel_get_workspace_status
 build:remote --remote_timeout=7200
