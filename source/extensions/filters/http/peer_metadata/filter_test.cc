@@ -79,10 +79,8 @@ protected:
         downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer));
   }
   void checkPeerNamespace(bool downstream, const std::string& expected) {
-    const auto* peer_info =
-        stream_info_.filterState()
-            ->getDataReadOnly<PeerInfo>(
-                downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer);
+    const auto* peer_info = stream_info_.filterState()->getDataReadOnly<PeerInfo>(
+        downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer);
     ASSERT_NE(peer_info, nullptr);
     EXPECT_EQ(expected, peer_info->namespace_name_);
   }
@@ -504,8 +502,7 @@ TEST_F(PeerMetadataTest, FieldAccessorSupport) {
   )EOF");
 
   const auto* peer_info =
-      stream_info_.filterState()
-          ->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeer);
+      stream_info_.filterState()->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeer);
   ASSERT_NE(peer_info, nullptr);
 
   // Test hasFieldSupport
@@ -541,8 +538,7 @@ TEST_F(PeerMetadataTest, CelExpressionCompatibility) {
   )EOF");
 
   const auto* peer_info =
-      stream_info_.filterState()
-          ->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeer);
+      stream_info_.filterState()->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeer);
   ASSERT_NE(peer_info, nullptr);
 
   // Test that serializeAsProto still works for CEL compatibility
