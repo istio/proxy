@@ -1,0 +1,2 @@
+# DO NOT EDIT: automatically generated WORKSPACE file for new_local_repository rule
+workspace(name = "antlr4-cpp-runtime")

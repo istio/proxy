@@ -1,0 +1,8 @@
+
+package(default_visibility = ["//visibility:public"])
+
+# Alias to cel-cpp's embedded ANTLR4 runtime.
+alias(
+    name = "antlr4-cpp-runtime",
+    actual = "@antlr4_runtimes//:cpp",
+)
