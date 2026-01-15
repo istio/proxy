@@ -150,7 +150,7 @@ peerInfo(Reporter reporter, const StreamInfo::FilterState& filter_state) {
     return {};
   }
 
-  return Istio::Common::WorkloadMetadataObject(
+  Istio::Common::WorkloadMetadataObject peer_info(
       extractString(obj, Istio::Common::InstanceNameToken),
       extractString(obj, Istio::Common::ClusterNameToken),
       extractString(obj, Istio::Common::NamespaceNameToken),
@@ -161,6 +161,18 @@ peerInfo(Reporter reporter, const StreamInfo::FilterState& filter_state) {
       extractString(obj, Istio::Common::AppVersionToken),
       Istio::Common::fromSuffix(extractString(obj, Istio::Common::WorkloadTypeToken)),
       extractString(obj, Istio::Common::IdentityToken));
+
+  // Extract labels from the "labels" field
+  const auto& labels_it = obj.fields().find(Istio::Common::LabelsToken);
+  if (labels_it != obj.fields().end() && labels_it->second.has_struct_value()) {
+    std::vector<std::pair<std::string, std::string>> labels;
+    for (const auto& label : labels_it->second.struct_value().fields()) {
+      labels.push_back({std::string(label.first), std::string(label.second.string_value())});
+    }
+    peer_info.setLabels(labels);
+  }
+
+  return peer_info;
 }
 
 // Process-wide context shared with all filter instances.
