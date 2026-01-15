@@ -537,6 +537,12 @@ TEST_F(PeerMetadataTest, CelExpressionCompatibility) {
       - workload_discovery: {}
   )EOF");
 
+  // Verify both CelState and WorkloadMetadataObject can be retrieved
+  const auto* cel_state = stream_info_.filterState()
+                              ->getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
+                                  Istio::Common::DownstreamPeer);
+  ASSERT_NE(cel_state, nullptr);
+
   const auto* peer_info =
       stream_info_.filterState()->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeer);
   ASSERT_NE(peer_info, nullptr);
