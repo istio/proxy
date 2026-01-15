@@ -85,9 +85,7 @@ load("@envoy//bazel:repo.bzl", "envoy_repo")
 
 envoy_repo()
 
-load("@envoy_repo//:compiler.bzl", "LLVM_PATH")
-load("@envoy_toolshed//repository:utils.bzl", "arch_alias")
-load("@toolchains_llvm//toolchain:rules.bzl", "llvm_toolchain")
+load("@envoy//bazel:toolchains.bzl", "envoy_toolchains")
 
 envoy_toolchains()
 
