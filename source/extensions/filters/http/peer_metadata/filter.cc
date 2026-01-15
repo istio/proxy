@@ -291,6 +291,8 @@ void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
                                   const PeerInfo& value) const {
   const absl::string_view key =
       downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer;
+  const absl::string_view obj_key =
+      downstream ? Istio::Common::DownstreamPeerObj : Istio::Common::UpstreamPeerObj;
   if (!info.filterState()->hasDataWithName(key)) {
     // Store CelState for CEL expressions like filter_state.downstream_peer.labels['role']
     auto pb = value.serializeAsProto();
@@ -300,12 +302,12 @@ void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
         key, std::move(cel_state), StreamInfo::FilterState::StateType::Mutable,
         StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());
 
-    // Also store WorkloadMetadataObject for FIELD accessor support.
+    // Also store WorkloadMetadataObject under a separate key for FIELD accessor support.
     // WorkloadMetadataObject implements hasFieldSupport() + getField() for
-    // formatters using %FILTER_STATE(downstream_peer:FIELD:fieldname)% syntax.
+    // formatters using %FILTER_STATE(downstream_peer_obj:FIELD:fieldname)% syntax.
     auto workload_metadata = std::make_unique<PeerInfo>(value);
     info.filterState()->setData(
-        key, std::move(workload_metadata), StreamInfo::FilterState::StateType::Mutable,
+        obj_key, std::move(workload_metadata), StreamInfo::FilterState::StateType::Mutable,
         StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());
   } else {
     ENVOY_LOG(debug, "Duplicate peer metadata, skipping");
