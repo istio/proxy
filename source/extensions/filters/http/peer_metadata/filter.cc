@@ -292,10 +292,17 @@ void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
   const absl::string_view key =
       downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer;
   if (!info.filterState()->hasDataWithName(key)) {
-    // Store WorkloadMetadataObject directly for both FIELD accessor and CEL support.
-    // WorkloadMetadataObject implements:
-    // - hasFieldSupport() + getField() for FIELD accessor in formatters
-    // - serializeAsProto() for CEL expressions
+    // Store CelState for CEL expressions like filter_state.downstream_peer.labels['role']
+    auto pb = value.serializeAsProto();
+    auto cel_state = std::make_unique<CelState>(FilterConfig::peerInfoPrototype());
+    cel_state->setValue(absl::string_view(pb->SerializeAsString()));
+    info.filterState()->setData(
+        key, std::move(cel_state), StreamInfo::FilterState::StateType::Mutable,
+        StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());
+
+    // Also store WorkloadMetadataObject for FIELD accessor support.
+    // WorkloadMetadataObject implements hasFieldSupport() + getField() for
+    // formatters using %FILTER_STATE(downstream_peer:FIELD:fieldname)% syntax.
     auto workload_metadata = std::make_unique<PeerInfo>(value);
     info.filterState()->setData(
         key, std::move(workload_metadata), StreamInfo::FilterState::StateType::Mutable,
