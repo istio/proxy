@@ -509,15 +509,15 @@ TEST_F(PeerMetadataTest, FieldAccessorSupport) {
   EXPECT_TRUE(peer_info->hasFieldSupport());
 
   // Test getField() for all 9 fields
-  EXPECT_EQ("foo", std::get<std::string>(peer_info->getField("workload")));
-  EXPECT_EQ("default", std::get<std::string>(peer_info->getField("namespace")));
-  EXPECT_EQ("my-cluster", std::get<std::string>(peer_info->getField("cluster")));
-  EXPECT_EQ("foo-service", std::get<std::string>(peer_info->getField("service")));
-  EXPECT_EQ("v1alpha3", std::get<std::string>(peer_info->getField("revision")));
-  EXPECT_EQ("myapp", std::get<std::string>(peer_info->getField("app")));
-  EXPECT_EQ("v1", std::get<std::string>(peer_info->getField("version")));
-  EXPECT_EQ("pod", std::get<std::string>(peer_info->getField("type")));
-  EXPECT_EQ("pod-foo-1234", std::get<std::string>(peer_info->getField("name")));
+  EXPECT_EQ("foo", std::get<absl::string_view>(peer_info->getField("workload")));
+  EXPECT_EQ("default", std::get<absl::string_view>(peer_info->getField("namespace")));
+  EXPECT_EQ("my-cluster", std::get<absl::string_view>(peer_info->getField("cluster")));
+  EXPECT_EQ("foo-service", std::get<absl::string_view>(peer_info->getField("service")));
+  EXPECT_EQ("v1alpha3", std::get<absl::string_view>(peer_info->getField("revision")));
+  EXPECT_EQ("myapp", std::get<absl::string_view>(peer_info->getField("app")));
+  EXPECT_EQ("v1", std::get<absl::string_view>(peer_info->getField("version")));
+  EXPECT_EQ("pod", std::get<absl::string_view>(peer_info->getField("type")));
+  EXPECT_EQ("pod-foo-1234", std::get<absl::string_view>(peer_info->getField("name")));
 }
 
 TEST_F(PeerMetadataTest, CelExpressionCompatibility) {
