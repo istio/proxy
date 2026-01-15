@@ -129,9 +129,15 @@ peerInfo(Reporter reporter, const StreamInfo::FilterState& filter_state) {
       reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
           ? Istio::Common::DownstreamPeer
           : Istio::Common::UpstreamPeer;
-  // This's a workaround before FilterStateObject support operation like `.labels['role']`.
-  // The workaround is to use CelState to store the peer metadata.
-  // Rebuild the WorkloadMetadataObject from the CelState.
+
+  // Try reading as WorkloadMetadataObject first (new format)
+  const auto* peer_info =
+      filter_state.getDataReadOnly<Istio::Common::WorkloadMetadataObject>(filter_state_key);
+  if (peer_info) {
+    return *peer_info;
+  }
+
+  // Fall back to CelState for backward compatibility with older deployments
   const auto* cel_state =
       filter_state.getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
           filter_state_key);
@@ -144,7 +150,7 @@ peerInfo(Reporter reporter, const StreamInfo::FilterState& filter_state) {
     return {};
   }
 
-  Istio::Common::WorkloadMetadataObject peer_info(
+  return Istio::Common::WorkloadMetadataObject(
       extractString(obj, Istio::Common::InstanceNameToken),
       extractString(obj, Istio::Common::ClusterNameToken),
       extractString(obj, Istio::Common::NamespaceNameToken),
@@ -155,8 +161,6 @@ peerInfo(Reporter reporter, const StreamInfo::FilterState& filter_state) {
       extractString(obj, Istio::Common::AppVersionToken),
       Istio::Common::fromSuffix(extractString(obj, Istio::Common::WorkloadTypeToken)),
       extractString(obj, Istio::Common::IdentityToken));
-
-  return peer_info;
 }
 
 // Process-wide context shared with all filter instances.
