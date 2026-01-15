@@ -6,6 +6,13 @@
 # curl -sSL https://raw.githubusercontent.com/envoyproxy/envoy/master/.bazelrc > envoy.bazelrc
 import %workspace%/envoy.bazelrc
 
+# Istio override: increase JVM heap to 4GB for ARM64 builds (envoy.bazelrc sets 3GB)
+# The 3GB limit causes memory pressure during large downloads which breaks gRPC remote cache connections
+# Also increase direct buffer memory for large file transfers
+# See: https://github.com/istio/proxy/pull/6726
+startup --host_jvm_args=-Xmx4g
+startup --host_jvm_args=-XX:MaxDirectMemorySize=4g
+
 # Overrides workspace_status_command
 build --workspace_status_command=bazel/bazel_get_workspace_status
 build:remote --remote_timeout=7200
@@ -21,6 +28,13 @@ build:linux --action_env=PATH=/usr/local/bin:/bin:/usr/bin
 
 # Need for CI image to pickup docker-credential-gcloud, PATH is fixed in rbe-toolchain-* configs.
 build:remote-ci --action_env=PATH=/usr/local/google-cloud-sdk/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/llvm/bin
+# These flags reduce bazel memory consumption at the cost of slower incremental builds
+# CI builds are not incremental, since we build with a clean state, so the performance impact is not
+# relevant for CI
+build:remote-ci --discard_analysis_cache --nokeep_state_after_build --notrack_incremental_state
+
+# Apply memory optimization flags to all remote cache builds
+build:remote --discard_analysis_cache --nokeep_state_after_build --notrack_incremental_state
 
 # Enable path normalization by default.
 # See: https://github.com/envoyproxy/envoy/pull/6519
