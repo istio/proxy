@@ -96,9 +96,13 @@ Envoy::ProtobufTypes::MessagePtr WorkloadMetadataObject::serializeAsProto() cons
   }
 
   // Always create labels field for CEL compatibility, even if empty
-  auto* labels = (*message->mutable_fields())[LabelsToken].mutable_struct_value();
-  for (const auto& l : labels_) {
-    (*labels->mutable_fields())[std::string(l.first)].set_string_value(std::string(l.second));
+  if (!labels_.empty()) {
+    auto* labels = (*message->mutable_fields())[LabelsToken].mutable_struct_value();
+    for (const auto& l : labels_) {
+      (*labels->mutable_fields())[std::string(l.first)].set_string_value(std::string(l.second));
+    }
+  } else {
+    (*message->mutable_fields())[LabelsToken].mutable_struct_value();
   }
 
   return message;

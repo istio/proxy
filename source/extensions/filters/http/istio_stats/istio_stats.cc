@@ -150,7 +150,7 @@ peerInfo(Reporter reporter, const StreamInfo::FilterState& filter_state) {
     return {};
   }
 
-  Istio::Common::WorkloadMetadataObject peer_info(
+  Istio::Common::WorkloadMetadataObject result(
       extractString(obj, Istio::Common::InstanceNameToken),
       extractString(obj, Istio::Common::ClusterNameToken),
       extractString(obj, Istio::Common::NamespaceNameToken),
@@ -169,10 +169,10 @@ peerInfo(Reporter reporter, const StreamInfo::FilterState& filter_state) {
     for (const auto& label : labels_it->second.struct_value().fields()) {
       labels.push_back({std::string(label.first), std::string(label.second.string_value())});
     }
-    peer_info.setLabels(labels);
+    result.setLabels(labels);
   }
 
-  return peer_info;
+  return result;
 }
 
 // Process-wide context shared with all filter instances.
