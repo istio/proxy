@@ -125,14 +125,17 @@ bool peerInfoRead(Reporter reporter, const StreamInfo::FilterState& filter_state
 
 std::optional<Istio::Common::WorkloadMetadataObject>
 peerInfo(Reporter reporter, const StreamInfo::FilterState& filter_state) {
-  const auto& filter_state_key =
+  const auto& cel_state_key =
       reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
           ? Istio::Common::DownstreamPeer
           : Istio::Common::UpstreamPeer;
+  const auto& obj_key = reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
+                            ? Istio::Common::DownstreamPeerObj
+                            : Istio::Common::UpstreamPeerObj;
 
-  // Try reading as WorkloadMetadataObject first (new format)
+  // Try reading as WorkloadMetadataObject first (new format, stored under *_obj key)
   const auto* peer_info =
-      filter_state.getDataReadOnly<Istio::Common::WorkloadMetadataObject>(filter_state_key);
+      filter_state.getDataReadOnly<Istio::Common::WorkloadMetadataObject>(obj_key);
   if (peer_info) {
     return *peer_info;
   }
@@ -140,7 +143,7 @@ peerInfo(Reporter reporter, const StreamInfo::FilterState& filter_state) {
   // Fall back to CelState for backward compatibility with older deployments
   const auto* cel_state =
       filter_state.getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
-          filter_state_key);
+          cel_state_key);
   if (!cel_state) {
     return {};
   }
