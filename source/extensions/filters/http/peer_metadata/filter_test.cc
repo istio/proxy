@@ -80,7 +80,7 @@ protected:
   }
   void checkPeerNamespace(bool downstream, const std::string& expected) {
     const auto* peer_info = stream_info_.filterState()->getDataReadOnly<PeerInfo>(
-        downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer);
+        downstream ? Istio::Common::DownstreamPeerObj : Istio::Common::UpstreamPeerObj);
     ASSERT_NE(peer_info, nullptr);
     EXPECT_EQ(expected, peer_info->namespace_name_);
   }
@@ -502,7 +502,7 @@ TEST_F(PeerMetadataTest, FieldAccessorSupport) {
   )EOF");
 
   const auto* peer_info =
-      stream_info_.filterState()->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeer);
+      stream_info_.filterState()->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeerObj);
   ASSERT_NE(peer_info, nullptr);
 
   // Test hasFieldSupport
@@ -537,14 +537,15 @@ TEST_F(PeerMetadataTest, CelExpressionCompatibility) {
       - workload_discovery: {}
   )EOF");
 
-  // Verify both CelState and WorkloadMetadataObject can be retrieved
+  // Verify CelState is stored under downstream_peer for CEL expressions
   const auto* cel_state = stream_info_.filterState()
                               ->getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
                                   Istio::Common::DownstreamPeer);
   ASSERT_NE(cel_state, nullptr);
 
+  // Verify WorkloadMetadataObject is stored under downstream_peer_obj for FIELD accessor
   const auto* peer_info =
-      stream_info_.filterState()->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeer);
+      stream_info_.filterState()->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeerObj);
   ASSERT_NE(peer_info, nullptr);
 
   // Test that serializeAsProto still works for CEL compatibility

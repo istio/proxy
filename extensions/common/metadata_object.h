@@ -27,8 +27,13 @@ namespace Istio {
 namespace Common {
 
 // Filter state key to store the peer metadata under.
+// CelState is stored under these keys for CEL expression support.
 constexpr absl::string_view DownstreamPeer = "downstream_peer";
 constexpr absl::string_view UpstreamPeer = "upstream_peer";
+
+// Filter state keys for WorkloadMetadataObject (FIELD accessor support).
+constexpr absl::string_view DownstreamPeerObj = "downstream_peer_obj";
+constexpr absl::string_view UpstreamPeerObj = "upstream_peer_obj";
 
 // Special filter state key to indicate the filter is done looking for peer metadata.
 // This is used by network metadata exchange on failure.
