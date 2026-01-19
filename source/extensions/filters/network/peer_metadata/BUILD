@@ -40,8 +40,8 @@ envoy_cc_library(
         "@envoy//source/common/common:minimal_logger_lib",
         "@envoy//source/common/singleton:const_singleton",
         "@envoy//source/common/stream_info:bool_accessor_lib",
-	"@envoy//source/common/tcp_proxy",
-	"@envoy//source/extensions/filters/common/expr:cel_state_lib",
+        "@envoy//source/common/tcp_proxy",
+        "@envoy//source/extensions/filters/common/expr:cel_state_lib",
         "@envoy//source/extensions/filters/network/common:factory_base_lib",
     ],
 )
