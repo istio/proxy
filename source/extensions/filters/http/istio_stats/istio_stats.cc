@@ -114,11 +114,12 @@ enum class Reporter {
 };
 
 // Detect if peer info read is completed by TCP metadata exchange.
+// Checks for WorkloadMetadataObject key (set atomically with CelState by peer_metadata filter).
 bool peerInfoRead(Reporter reporter, const StreamInfo::FilterState& filter_state) {
   const auto& filter_state_key =
       reporter == Reporter::ServerSidecar || reporter == Reporter::ServerGateway
-          ? Istio::Common::DownstreamPeer
-          : Istio::Common::UpstreamPeer;
+          ? Istio::Common::DownstreamPeerObj
+          : Istio::Common::UpstreamPeerObj;
   return filter_state.hasDataWithName(filter_state_key) ||
          filter_state.hasDataWithName(Istio::Common::NoPeer);
 }
