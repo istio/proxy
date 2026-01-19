@@ -129,7 +129,8 @@ enum class PeerMetadataState {
 google::protobuf::Any encodeBaggage(std::string_view baggage) {
   using namespace ::Istio::Common;
 
-  const std::unique_ptr<WorkloadMetadataObject> metadata = convertBaggageToWorkloadMetadata(baggage);
+  const std::unique_ptr<WorkloadMetadataObject> metadata =
+      convertBaggageToWorkloadMetadata(baggage);
   google::protobuf::Struct data = convertWorkloadMetadataToStruct(*metadata);
   google::protobuf::Any wrapped;
   wrapped.PackFrom(data);
@@ -162,7 +163,7 @@ public:
         propagatePeerMetadata(*peer_metadata);
       } else {
         propagateNoPeerMetadata();
-      } 
+      }
       state_ = PeerMetadataState::PassThrough;
       break;
     }
@@ -186,23 +187,27 @@ private:
     ENVOY_LOG(trace, "Trying to discovery peer metadata from filter state set by TCP Proxy");
     ASSERT(callbacks_);
 
-    const Network::Connection &conn = callbacks_->connection();
-    const StreamInfo::StreamInfo &stream = conn.streamInfo();
-    const TcpProxy::TunnelResponseHeaders *state = stream.filterState()
-      .getDataReadOnly<TcpProxy::TunnelResponseHeaders>(TcpProxy::TunnelResponseHeaders::key());
+    const Network::Connection& conn = callbacks_->connection();
+    const StreamInfo::StreamInfo& stream = conn.streamInfo();
+    const TcpProxy::TunnelResponseHeaders* state =
+        stream.filterState().getDataReadOnly<TcpProxy::TunnelResponseHeaders>(
+            TcpProxy::TunnelResponseHeaders::key());
     if (!state) {
       ENVOY_LOG(trace, "TCP Proxy didn't set expected filter state");
       return std::nullopt;
     }
 
-    const Http::HeaderMap &headers = state->value();
+    const Http::HeaderMap& headers = state->value();
     const auto baggage = headers.get(Headers::get().Baggage);
     if (baggage.empty()) {
-      ENVOY_LOG(trace, "TCP Proxy saved response headers to the filter state, but there is no baggage header");
+      ENVOY_LOG(
+          trace,
+          "TCP Proxy saved response headers to the filter state, but there is no baggage header");
       return std::nullopt;
     }
 
-    ENVOY_LOG(trace, "Successfully discovered peer metadata from the baggage header saved by TCP Proxy");
+    ENVOY_LOG(trace,
+              "Successfully discovered peer metadata from the baggage header saved by TCP Proxy");
     return encodeBaggage(baggage[0]->value().getStringView());
   }
 
@@ -219,12 +224,10 @@ private:
     }
 
     std::string data = peer_metadata.SerializeAsString();
-    PeerMetadataHeader header{
-      PeerMetadataHeader::magic_number,
-      static_cast<uint32_t>(data.size())
-    };
+    PeerMetadataHeader header{PeerMetadataHeader::magic_number, static_cast<uint32_t>(data.size())};
 
-    Buffer::OwnedImpl buffer{std::string_view(reinterpret_cast<const char *>(&header), sizeof(header))};
+    Buffer::OwnedImpl buffer{
+        std::string_view(reinterpret_cast<const char*>(&header), sizeof(header))};
     buffer.add(data);
     // TODO: I went with communicating over the data stream because it appears
     // simpler than alternatives, but maybe I haven't thought of a good
@@ -240,16 +243,14 @@ private:
     ENVOY_LOG(trace, "Sending no peer metadata downstream with the data");
     ASSERT(callbacks_);
 
-    PeerMetadataHeader header{
-      PeerMetadataHeader::magic_number,
-      0
-    };
-    Buffer::OwnedImpl buffer{std::string_view(reinterpret_cast<const char *>(&header), sizeof(header))};
+    PeerMetadataHeader header{PeerMetadataHeader::magic_number, 0};
+    Buffer::OwnedImpl buffer{
+        std::string_view(reinterpret_cast<const char*>(&header), sizeof(header))};
     callbacks_->injectWriteDataToFilterChain(buffer, false);
   }
 
   PeerMetadataState state_ = PeerMetadataState::WaitingForData;
-  Network::WriteFilterCallbacks *callbacks_{};
+  Network::WriteFilterCallbacks* callbacks_{};
   Config config_;
 };
 
@@ -283,8 +284,8 @@ public:
         state_ = PeerMetadataState::PassThrough;
       } else {
         // If we got here it means that we are waiting for more data to arrive.
-	// NOTE: if error happened, we will not get here, consumePeerMetadata
-	// will just return true and we will enter PassThrough state.
+        // NOTE: if error happened, we will not get here, consumePeerMetadata
+        // will just return true and we will enter PassThrough state.
         return Network::FilterStatus::StopIteration;
       }
       break;
@@ -295,9 +296,7 @@ public:
     return Network::FilterStatus::Continue;
   }
 
-  Network::FilterStatus onNewConnection() override {
-    return Network::FilterStatus::Continue;
-  }
+  Network::FilterStatus onNewConnection() override { return Network::FilterStatus::Continue; }
 
   void initializeReadFilterCallbacks(Network::ReadFilterCallbacks& callbacks) override {
     callbacks_ = &callbacks;
@@ -317,11 +316,14 @@ private:
 
     if (buffer.length() < sizeof(PeerMetadataHeader)) {
       if (end_stream) {
-        ENVOY_LOG(trace, "Not enough data in the data stream for peer metadata header and no more data is coming");
+        ENVOY_LOG(trace, "Not enough data in the data stream for peer metadata header and no more "
+                         "data is coming");
         populateNoPeerMetadata();
-	return true;
+        return true;
       }
-      ENVOY_LOG(trace, "Not enough data in the data stream for peer metadata header, waiting for more data");
+      ENVOY_LOG(
+          trace,
+          "Not enough data in the data stream for peer metadata header, waiting for more data");
       return false;
     }
 
@@ -345,15 +347,19 @@ private:
 
     if (buffer.length() < peer_metadata_size) {
       if (end_stream) {
-        ENVOY_LOG(trace, "Not enough data in the data stream for peer metadata and no more data is coming");
+        ENVOY_LOG(
+            trace,
+            "Not enough data in the data stream for peer metadata and no more data is coming");
         populateNoPeerMetadata();
-	return true;
+        return true;
       }
-      ENVOY_LOG(trace, "Not enough data in the data stream for peer metadata, waiting for more data");
+      ENVOY_LOG(trace,
+                "Not enough data in the data stream for peer metadata, waiting for more data");
       return false;
     }
 
-    std::string_view data{static_cast<const char*>(buffer.linearize(peer_metadata_size)), peer_metadata_size};
+    std::string_view data{static_cast<const char*>(buffer.linearize(peer_metadata_size)),
+                          peer_metadata_size};
     data = data.substr(sizeof(PeerMetadataHeader));
     google::protobuf::Any any;
     if (!any.ParseFromArray(data.data(), data.size())) {
@@ -369,7 +375,8 @@ private:
       return true;
     }
 
-    std::unique_ptr<WorkloadMetadataObject> workload = convertStructToWorkloadMetadata(peer_metadata);
+    std::unique_ptr<WorkloadMetadataObject> workload =
+        convertStructToWorkloadMetadata(peer_metadata);
     populatePeerMetadata(*workload);
     buffer.drain(peer_metadata_size);
     ENVOY_LOG(trace, "Successfully consumed peer metadata from the data stream");
@@ -378,8 +385,8 @@ private:
 
   static const CelStatePrototype& peerInfoPrototype() {
     static const CelStatePrototype* const prototype = new CelStatePrototype(
-      true, CelStateType::Protobuf, "type.googleapis.com/google.protobuf.Struct",
-      StreamInfo::FilterState::LifeSpan::Connection);
+        true, CelStateType::Protobuf, "type.googleapis.com/google.protobuf.Struct",
+        StreamInfo::FilterState::LifeSpan::Connection);
     return *prototype;
   }
 
@@ -391,8 +398,8 @@ private:
     auto cel = std::make_shared<CelState>(peerInfoPrototype());
     cel->setValue(std::string_view(proto->SerializeAsString()));
     callbacks_->connection().streamInfo().filterState()->setData(
-      ::Istio::Common::UpstreamPeer, std::move(cel), StreamInfo::FilterState::StateType::ReadOnly,
-      StreamInfo::FilterState::LifeSpan::Connection);
+        ::Istio::Common::UpstreamPeer, std::move(cel), StreamInfo::FilterState::StateType::ReadOnly,
+        StreamInfo::FilterState::LifeSpan::Connection);
   }
 
   void populateNoPeerMetadata() {
@@ -400,12 +407,13 @@ private:
     ASSERT(callbacks_);
 
     callbacks_->connection().streamInfo().filterState()->setData(
-      ::Istio::Common::NoPeer, std::make_shared<StreamInfo::BoolAccessorImpl>(true),
-      StreamInfo::FilterState::StateType::ReadOnly, StreamInfo::FilterState::LifeSpan::Connection);
+        ::Istio::Common::NoPeer, std::make_shared<StreamInfo::BoolAccessorImpl>(true),
+        StreamInfo::FilterState::StateType::ReadOnly,
+        StreamInfo::FilterState::LifeSpan::Connection);
   }
 
   PeerMetadataState state_ = PeerMetadataState::WaitingForData;
-  Network::ReadFilterCallbacks *callbacks_{};
+  Network::ReadFilterCallbacks* callbacks_{};
   UpstreamConfig config_;
 };
 
@@ -419,7 +427,8 @@ private:
 class ConfigFactory : public Common::ExceptionFreeFactoryBase<Config> {
 public:
   ConfigFactory()
-    : Common::ExceptionFreeFactoryBase<Config>("envoy.filters.network.peer_metadata", /*is_termnial*/false) {}
+      : Common::ExceptionFreeFactoryBase<Config>("envoy.filters.network.peer_metadata",
+                                                 /*is_termnial*/ false) {}
 
 private:
   absl::StatusOr<Network::FilterFactoryCb>
@@ -439,7 +448,8 @@ private:
  * removing it from the data stream, so that downstream filters can process
  * the data as usual.
  */
-class UpstreamConfigFactory : public Server::Configuration::NamedUpstreamNetworkFilterConfigFactory {
+class UpstreamConfigFactory
+    : public Server::Configuration::NamedUpstreamNetworkFilterConfigFactory {
 public:
   Network::FilterFactoryCb
   createFilterFactoryFromProto(const Protobuf::Message& config,
@@ -451,9 +461,7 @@ public:
     return std::make_unique<UpstreamConfig>();
   }
 
-  std::string name() const override {
-    return "envoy.filters.network.upstream.peer_metadata";
-  }
+  std::string name() const override { return "envoy.filters.network.upstream.peer_metadata"; }
 
   bool isTerminalFilterByProto(const Protobuf::Message&,
                                Server::Configuration::ServerFactoryContext&) override {
@@ -464,8 +472,7 @@ public:
   }
 
 private:
-  Network::FilterFactoryCb
-  createFilterFactory(const UpstreamConfig& config) {
+  Network::FilterFactoryCb createFilterFactory(const UpstreamConfig& config) {
     return [config](Network::FilterManager& filter_manager) -> void {
       filter_manager.addReadFilter(std::make_shared<UpstreamFilter>(config));
     };
@@ -473,7 +480,8 @@ private:
 };
 
 REGISTER_FACTORY(ConfigFactory, Server::Configuration::NamedNetworkFilterConfigFactory);
-REGISTER_FACTORY(UpstreamConfigFactory, Server::Configuration::NamedUpstreamNetworkFilterConfigFactory);
+REGISTER_FACTORY(UpstreamConfigFactory,
+                 Server::Configuration::NamedUpstreamNetworkFilterConfigFactory);
 
 } // namespace
 
