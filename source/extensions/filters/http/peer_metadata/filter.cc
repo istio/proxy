@@ -76,13 +76,17 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
         case Network::Address::Type::EnvoyInternal:
           if (upstream_host->metadata()) {
             const auto& filter_metadata = upstream_host->metadata()->filter_metadata();
-            const auto& double_hbone_it =
-                filter_metadata.find("istio.double_hbone.hbone_target_address");
-            // This is an E/W gateway endpoint, so we should explicitly not use workload discovery
-            if (double_hbone_it != filter_metadata.end()) {
-              ENVOY_LOG_MISC(info, "Skipping upstream workload discovery for an endpoint on a remote network");
-              peer_address = nullptr;
-              break;
+            const auto& istio_it = filter_metadata.find("istio");
+            if (istio_it != filter_metadata.end()) {
+              const auto& double_hbone_it = istio_it->second.fields().find("double_hbone");
+              // This is an E/W gateway endpoint, so we should explicitly not use workload discovery
+              if (double_hbone_it != istio_it->second.fields().end()) {
+                ENVOY_LOG_MISC(info, "Skipping upstream workload discovery for an endpoint on a remote network");
+                peer_address = nullptr;
+                break;
+              }
+            } else {
+              ENVOY_LOG_MISC(debug, "No istio metadata found on upstream host.");
             }
             const auto& it = filter_metadata.find("envoy.filters.listener.original_dst");
             if (it != filter_metadata.end()) {

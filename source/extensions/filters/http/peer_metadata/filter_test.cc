@@ -153,6 +153,29 @@ TEST_F(PeerMetadataTest, DownstreamXDS) {
   checkShared(false);
 }
 
+TEST_F(PeerMetadataTest, DownstreamXDSCrossNetwork) {
+  request_headers_.setReference(Headers::get().ExchangeMetadataOriginNetwork, "remote-network");
+  const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+  EXPECT_CALL(*metadata_provider_, GetMetadata(_))
+      .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
+                                 -> std::optional<WorkloadMetadataObject> {
+        if (absl::StartsWith(address->asStringView(), "127.0.0.1")) {
+          return {pod};
+        }
+        return {};
+      }));
+  initialize(R"EOF(
+    downstream_discovery:
+      - workload_discovery: {}
+  )EOF");
+  EXPECT_EQ(1, request_headers_.size()); // We don't remove the header because we terminate the tunnel that delivered it
+  EXPECT_EQ(0, response_headers_.size());
+  checkNoPeer(true); // No downstream peer because it's a cross-network request
+  checkNoPeer(false);
+  checkShared(false);
+}
+
 TEST_F(PeerMetadataTest, UpstreamXDS) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
                                    "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
@@ -208,6 +231,45 @@ TEST_F(PeerMetadataTest, UpstreamXDSInternal) {
   EXPECT_EQ(0, response_headers_.size());
   checkNoPeer(true);
   checkPeerNamespace(false, "foo");
+}
+
+TEST_F(PeerMetadataTest, UpstreamXDSInternalCrossNetwork) {
+  Network::Address::InstanceConstSharedPtr upstream_address =
+      std::make_shared<Network::Address::EnvoyInternalInstance>("internal_address", "endpoint_id");
+  std::shared_ptr<NiceMock<Envoy::Upstream::MockHostDescription>> upstream_host(
+      new NiceMock<Envoy::Upstream::MockHostDescription>());
+  EXPECT_CALL(*upstream_host, address()).WillRepeatedly(Return(upstream_address));
+  stream_info_.upstreamInfo()->setUpstreamHost(upstream_host);
+  auto host_metadata = std::make_shared<envoy::config::core::v3::Metadata>();
+  ON_CALL(*upstream_host, metadata()).WillByDefault(testing::Return(host_metadata));
+  TestUtility::loadFromYaml(R"EOF(
+  filter_metadata:
+    envoy.filters.listener.original_dst:
+      local: 127.0.0.100:80
+    istio:
+      double_hbone:
+        hbone_target_address: 10.0.0.1
+  )EOF",
+                            *host_metadata);
+
+  const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+  EXPECT_CALL(*metadata_provider_, GetMetadata(_))
+      .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
+                                 -> std::optional<WorkloadMetadataObject> {
+        if (absl::StartsWith(address->asStringView(), "127.0.0.100")) {
+          return {pod};
+        }
+        return {};
+      }));
+  initialize(R"EOF(
+    upstream_discovery:
+      - workload_discovery: {}
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  checkNoPeer(true);
+  checkNoPeer(false); // Shouldn't be any upstream filter state since it's a cross-network endpoint
 }
 
 TEST_F(PeerMetadataTest, DownstreamMXEmpty) {
