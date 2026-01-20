@@ -18,8 +18,6 @@ SHELL := /bin/bash
 BAZEL_STARTUP_ARGS ?=
 BAZEL_BUILD_ARGS ?=
 BAZEL_TARGETS ?= //...
-# Don't build Debian packages and Docker images in tests.
-BAZEL_TEST_TARGETS ?= ${BAZEL_TARGETS}
 E2E_TEST_TARGETS ?= $$(go list ./...)
 E2E_TEST_FLAGS := -p=1 -parallel=1
 HUB ?=
@@ -73,10 +71,6 @@ check_wasm:
 clean:
 	@bazel clean
 
-.PHONY: gen-extensions-doc
-gen-extensions-doc:
-	buf generate --path source/extensions/filters
-
 gen:
 	@scripts/gen-testdata.sh
 
@@ -84,10 +78,7 @@ gen-check:
 	@scripts/gen-testdata.sh -c
 
 test:
-	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(TEST_ENVOY_TARGET) $(BAZEL_TEST_TARGETS)
-	if [ -n "$(BAZEL_TEST_TARGETS)" ]; then \
-	  bazel $(BAZEL_STARTUP_ARGS) test $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(BAZEL_TEST_TARGETS); \
-	fi
+	bazel $(BAZEL_STARTUP_ARGS) build $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) -- $(TEST_ENVOY_TARGET)
 	if [ -n "$(E2E_TEST_TARGETS)" ]; then \
 	  env ENVOY_DEBUG=$(TEST_ENVOY_DEBUG) ENVOY_PATH=$(shell bazel $(BAZEL_STARTUP_ARGS) info $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) bazel-bin)/envoy $(E2E_TEST_ENVS) GO111MODULE=on go test -timeout 30m $(E2E_TEST_FLAGS) $(E2E_TEST_TARGETS); \
 	fi
@@ -105,7 +96,7 @@ check:
 	@echo >&2 "Please use \"make lint\" instead."
 	@false
 
-lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts gen-extensions-doc
+lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts
 	@scripts/check-repository.sh
 	@scripts/check-style.sh
 

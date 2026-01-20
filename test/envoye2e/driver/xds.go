@@ -33,7 +33,7 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"google.golang.org/grpc"
 
-	"istio.io/proxy/test/envoye2e/workloadapi"
+	workloadapi "github.com/envoyproxy/go-control-plane/contrib/envoy/extensions/filters/common/workload_discovery/v3"
 )
 
 // XDS creates an xDS server
