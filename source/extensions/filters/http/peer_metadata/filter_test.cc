@@ -79,13 +79,10 @@ protected:
         downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer));
   }
   void checkPeerNamespace(bool downstream, const std::string& expected) {
-    const auto* cel_state =
-        stream_info_.filterState()
-            ->getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
-                downstream ? Istio::Common::DownstreamPeer : Istio::Common::UpstreamPeer);
-    Protobuf::Struct obj;
-    ASSERT_TRUE(obj.ParseFromString(cel_state->value().data()));
-    EXPECT_EQ(expected, extractString(obj, "namespace"));
+    const auto* peer_info = stream_info_.filterState()->getDataReadOnly<PeerInfo>(
+        downstream ? Istio::Common::DownstreamPeerObj : Istio::Common::UpstreamPeerObj);
+    ASSERT_NE(peer_info, nullptr);
+    EXPECT_EQ(expected, peer_info->namespace_name_);
   }
 
   absl::string_view extractString(const Protobuf::Struct& metadata, absl::string_view key) {
@@ -486,6 +483,81 @@ TEST_F(PeerMetadataTest, UpstreamMXPropagationSkipPassthrough) {
   EXPECT_EQ(0, response_headers_.size());
   checkNoPeer(true);
   checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, FieldAccessorSupport) {
+  const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
+                                   "v1alpha3", "myapp", "v1", Istio::Common::WorkloadType::Pod, "");
+  EXPECT_CALL(*metadata_provider_, GetMetadata(_))
+      .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
+                                 -> std::optional<WorkloadMetadataObject> {
+        if (absl::StartsWith(address->asStringView(), "127.0.0.1")) {
+          return {pod};
+        }
+        return {};
+      }));
+  initialize(R"EOF(
+    downstream_discovery:
+      - workload_discovery: {}
+  )EOF");
+
+  const auto* peer_info =
+      stream_info_.filterState()->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeerObj);
+  ASSERT_NE(peer_info, nullptr);
+
+  // Test hasFieldSupport
+  EXPECT_TRUE(peer_info->hasFieldSupport());
+
+  // Test getField() for all 9 fields
+  EXPECT_EQ("foo", std::get<absl::string_view>(peer_info->getField("workload")));
+  EXPECT_EQ("default", std::get<absl::string_view>(peer_info->getField("namespace")));
+  EXPECT_EQ("my-cluster", std::get<absl::string_view>(peer_info->getField("cluster")));
+  EXPECT_EQ("foo-service", std::get<absl::string_view>(peer_info->getField("service")));
+  EXPECT_EQ("v1alpha3", std::get<absl::string_view>(peer_info->getField("revision")));
+  EXPECT_EQ("myapp", std::get<absl::string_view>(peer_info->getField("app")));
+  EXPECT_EQ("v1", std::get<absl::string_view>(peer_info->getField("version")));
+  EXPECT_EQ("pod", std::get<absl::string_view>(peer_info->getField("type")));
+  EXPECT_EQ("pod-foo-1234", std::get<absl::string_view>(peer_info->getField("name")));
+}
+
+TEST_F(PeerMetadataTest, CelExpressionCompatibility) {
+  const WorkloadMetadataObject pod("pod-bar-5678", "test-cluster", "production", "bar",
+                                   "bar-service", "v2", "barapp", "v2",
+                                   Istio::Common::WorkloadType::Pod, "");
+  EXPECT_CALL(*metadata_provider_, GetMetadata(_))
+      .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
+                                 -> std::optional<WorkloadMetadataObject> {
+        if (absl::StartsWith(address->asStringView(), "127.0.0.1")) {
+          return {pod};
+        }
+        return {};
+      }));
+  initialize(R"EOF(
+    downstream_discovery:
+      - workload_discovery: {}
+  )EOF");
+
+  // Verify CelState is stored under downstream_peer for CEL expressions
+  const auto* cel_state = stream_info_.filterState()
+                              ->getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
+                                  Istio::Common::DownstreamPeer);
+  ASSERT_NE(cel_state, nullptr);
+
+  // Verify WorkloadMetadataObject is stored under downstream_peer_obj for FIELD accessor
+  const auto* peer_info =
+      stream_info_.filterState()->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeerObj);
+  ASSERT_NE(peer_info, nullptr);
+
+  // Test that serializeAsProto still works for CEL compatibility
+  auto proto = peer_info->serializeAsProto();
+  ASSERT_NE(proto, nullptr);
+
+  // Verify the protobuf contains expected data
+  const auto* struct_proto = dynamic_cast<const google::protobuf::Struct*>(proto.get());
+  ASSERT_NE(struct_proto, nullptr);
+  EXPECT_EQ("production", extractString(*struct_proto, "namespace"));
+  EXPECT_EQ("bar", extractString(*struct_proto, "workload"));
+  EXPECT_EQ("test-cluster", extractString(*struct_proto, "cluster"));
 }
 
 } // namespace
