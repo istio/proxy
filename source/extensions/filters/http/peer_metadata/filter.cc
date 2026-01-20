@@ -58,8 +58,11 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
     const auto& it = local_metadata.fields().find("NETWORK");
     // We might not have a local network configured in the single cluster case, so default to empty.
     auto local_network = it != local_metadata.fields().end() ? it->second.string_value() : "";
-    if (!origin_network_header.empty() && origin_network_header[0]->value().getStringView() != local_network) {
-      ENVOY_LOG_MISC(info, "Origin network header present: {}; skipping downstream workload discovery", origin_network_header[0]->value().getStringView());
+    if (!origin_network_header.empty() &&
+        origin_network_header[0]->value().getStringView() != local_network) {
+      ENVOY_LOG_MISC(info,
+                     "Origin network header present: {}; skipping downstream workload discovery",
+                     origin_network_header[0]->value().getStringView());
       peer_address = {};
     } else {
       peer_address = info.downstreamAddressProvider().remoteAddress();
@@ -81,7 +84,9 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
               const auto& double_hbone_it = istio_it->second.fields().find("double_hbone");
               // This is an E/W gateway endpoint, so we should explicitly not use workload discovery
               if (double_hbone_it != istio_it->second.fields().end()) {
-                ENVOY_LOG_MISC(info, "Skipping upstream workload discovery for an endpoint on a remote network");
+                ENVOY_LOG_MISC(
+                    info,
+                    "Skipping upstream workload discovery for an endpoint on a remote network");
                 peer_address = nullptr;
                 break;
               }
