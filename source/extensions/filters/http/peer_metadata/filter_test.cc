@@ -169,7 +169,8 @@ TEST_F(PeerMetadataTest, DownstreamXDSCrossNetwork) {
     downstream_discovery:
       - workload_discovery: {}
   )EOF");
-  EXPECT_EQ(1, request_headers_.size()); // We don't remove the header because we terminate the tunnel that delivered it
+  EXPECT_EQ(1, request_headers_.size()); // We don't remove the header because we terminate the
+                                         // tunnel that delivered it
   EXPECT_EQ(0, response_headers_.size());
   checkNoPeer(true); // No downstream peer because it's a cross-network request
   checkNoPeer(false);
