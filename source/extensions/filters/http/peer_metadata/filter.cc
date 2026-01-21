@@ -145,6 +145,51 @@ absl::optional<PeerInfo> MXMethod::lookup(absl::string_view id, absl::string_vie
   return *out;
 }
 
+class UpstreamFilterStateMethod : public DiscoveryMethod {
+public:
+  UpstreamFilterStateMethod(
+      const io::istio::http::peer_metadata::Config_UpstreamFilterState& config)
+      : peer_metadata_key_(config.peer_metadata_key()) {}
+  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
+                                          Context&) const override;
+
+private:
+  std::string peer_metadata_key_;
+};
+
+absl::optional<PeerInfo>
+UpstreamFilterStateMethod::derivePeerInfo(const StreamInfo::StreamInfo& info, Http::HeaderMap&,
+                                          Context&) const {
+  const auto upstream = info.upstreamInfo();
+  if (!upstream) {
+    return {};
+  }
+
+  const auto filter_state = upstream->upstreamFilterState();
+  if (!filter_state) {
+    return {};
+  }
+
+  const auto* cel_state =
+      filter_state->getDataReadOnly<Envoy::Extensions::Filters::Common::Expr::CelState>(
+          peer_metadata_key_);
+  if (!cel_state) {
+    return {};
+  }
+
+  google::protobuf::Struct obj;
+  if (!obj.ParseFromString(absl::string_view(cel_state->value()))) {
+    return {};
+  }
+
+  std::unique_ptr<PeerInfo> peer_info = ::Istio::Common::convertStructToWorkloadMetadata(obj);
+  if (!peer_info) {
+    return {};
+  }
+
+  return *peer_info;
+}
+
 MXPropagationMethod::MXPropagationMethod(
     bool downstream, Server::Configuration::ServerFactoryContext& factory_context,
     const absl::flat_hash_set<std::string>& additional_labels,
@@ -210,6 +255,11 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
         kIstioHeaders:
       methods.push_back(std::make_unique<MXMethod>(downstream, additional_labels,
                                                    factory_context.serverFactoryContext()));
+      break;
+    case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::
+        kUpstreamFilterState:
+      methods.push_back(
+          std::make_unique<UpstreamFilterStateMethod>(method.upstream_filter_state()));
       break;
     default:
       break;

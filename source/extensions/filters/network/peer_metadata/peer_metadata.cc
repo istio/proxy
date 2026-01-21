@@ -394,9 +394,9 @@ private:
     ENVOY_LOG(trace, "Populating peer metadata in the upstream filter state");
     ASSERT(callbacks_);
 
-    auto proto = peer.serializeAsProto();
+    auto proto = ::Istio::Common::convertWorkloadMetadataToStruct(peer);
     auto cel = std::make_shared<CelState>(peerInfoPrototype());
-    cel->setValue(std::string_view(proto->SerializeAsString()));
+    cel->setValue(std::string_view(proto.SerializeAsString()));
     callbacks_->connection().streamInfo().filterState()->setData(
         ::Istio::Common::UpstreamPeer, std::move(cel), StreamInfo::FilterState::StateType::ReadOnly,
         StreamInfo::FilterState::LifeSpan::Connection);
