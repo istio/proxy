@@ -62,28 +62,11 @@ absl::optional<absl::string_view> toSuffix(WorkloadType workload_type) {
 } // namespace
 
 std::string WorkloadMetadataObject::baggage() const {
-  std::string workload_type = std::string(PodSuffix);
-  switch (workload_type_) {
-  case WorkloadType::Deployment:
-    workload_type = std::string(DeploymentSuffix);
-    break;
-  case WorkloadType::CronJob:
-    workload_type = std::string(CronJobSuffix);
-    break;
-  case WorkloadType::Job:
-    workload_type = std::string(JobSuffix);
-    break;
-  case WorkloadType::Pod:
-    workload_type = std::string(PodSuffix);
-    break;
-  default:
-    break;
-  }
+  const auto workload_type = toSuffix(workload_type_).value_or(PodSuffix);
   std::vector<std::string> parts;
-  parts.push_back("k8s.");
-  parts.push_back(workload_type);
-  parts.push_back(".name=");
-  parts.push_back(workload_name_);
+  if (!workload_name_.empty()) {
+    parts.push_back("k8s." + std::string(workload_type) + ".name=" + std::string(workload_name_));
+  }
   // Map the workload metadata fields to baggage tokens
   const std::vector<std::pair<absl::string_view, absl::string_view>> field_to_baggage = {
       {Istio::Common::NamespaceNameToken, "k8s.namespace.name"},

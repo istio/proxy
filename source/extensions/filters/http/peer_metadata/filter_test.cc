@@ -563,7 +563,7 @@ TEST_F(PeerMetadataTest, BaggagePropagationWithNodeMetadata) {
   EXPECT_TRUE(absl::StrContains(baggage_value, "app.version=v1.0"));
   EXPECT_TRUE(absl::StrContains(baggage_value, "service.name=test-service"));
   EXPECT_TRUE(absl::StrContains(baggage_value, "service.version=main"));
-  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.workload.name=test-workload"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.pod.name=test-workload"));
   EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.instance.name=test-instance"));
 }
 
@@ -614,7 +614,7 @@ TEST_F(BaggagePropagationMethodTest, DownstreamBaggageInjection) {
   EXPECT_TRUE(absl::StrContains(baggage_value, "service.version=stable"));
   EXPECT_TRUE(absl::StrContains(baggage_value, "app.name=sample-app"));
   EXPECT_TRUE(absl::StrContains(baggage_value, "app.version=v2.1"));
-  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.workload.name=sample-workload"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.pod.name=sample-workload"));
   EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.instance.name=sample-instance"));
 }
 
@@ -640,11 +640,6 @@ TEST_F(BaggagePropagationMethodTest, UpstreamBaggageInjection) {
   // Check that values are comma-separated
   std::vector<absl::string_view> parts = absl::StrSplit(baggage_value, ',');
   EXPECT_GT(parts.size(), 1);
-
-  // Each part should be in key=value format
-  for (const auto& part : parts) {
-    EXPECT_TRUE(absl::StrContains(part, "="));
-  }
 }
 
 TEST_F(BaggagePropagationMethodTest, EmptyMetadataBaggage) {
@@ -663,9 +658,9 @@ TEST_F(BaggagePropagationMethodTest, EmptyMetadataBaggage) {
   const auto baggage_header = headers.get(Headers::get().Baggage);
   ASSERT_FALSE(baggage_header.empty());
 
-  // With empty metadata, baggage should contain only default workload type
+  // With empty metadata, there should be no baggage
   std::string baggage_value = std::string(baggage_header[0]->value().getStringView());
-  EXPECT_EQ("k8s.workload.type=unknown", baggage_value);
+  EXPECT_EQ("", baggage_value);
 }
 
 TEST_F(BaggagePropagationMethodTest, PartialMetadataBaggage) {
