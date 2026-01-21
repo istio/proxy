@@ -62,65 +62,48 @@ absl::optional<absl::string_view> toSuffix(WorkloadType workload_type) {
 } // namespace
 
 std::string WorkloadMetadataObject::baggage() const {
-  absl::string_view workload_type = PodSuffix;
+  std::string workload_type = std::string(PodSuffix);
   switch (workload_type_) {
   case WorkloadType::Deployment:
-    workload_type = DeploymentSuffix;
+    workload_type = std::string(DeploymentSuffix);
     break;
   case WorkloadType::CronJob:
-    workload_type = CronJobSuffix;
+    workload_type = std::string(CronJobSuffix);
     break;
   case WorkloadType::Job:
-    workload_type = JobSuffix;
+    workload_type = std::string(JobSuffix);
     break;
   case WorkloadType::Pod:
-    workload_type = PodSuffix;
+    workload_type = std::string(PodSuffix);
     break;
   default:
     break;
   }
-  std::vector<absl::string_view> parts;
+  std::vector<std::string> parts;
   parts.push_back("k8s.");
   parts.push_back(workload_type);
   parts.push_back(".name=");
   parts.push_back(workload_name_);
-  if (!cluster_name_.empty()) {
-    parts.push_back(",");
-    parts.push_back(ClusterNameToken);
-    parts.push_back("=");
-    parts.push_back(cluster_name_);
+  // Map the workload metadata fields to baggage tokens
+  const std::vector<std::pair<absl::string_view, absl::string_view>> field_to_baggage = {
+      {Istio::Common::NamespaceNameToken, "k8s.namespace.name"},
+      {Istio::Common::ClusterNameToken, "k8s.cluster.name"},
+      {Istio::Common::ServiceNameToken, "service.name"},
+      {Istio::Common::ServiceVersionToken, "service.version"},
+      {Istio::Common::AppNameToken, "app.name"},
+      {Istio::Common::AppVersionToken, "app.version"},
+      {Istio::Common::InstanceNameToken, "k8s.instance.name"},
+  };
+
+  for (const auto& [field_name, baggage_key] : field_to_baggage) {
+    const auto field_result = getField(field_name);
+    if (auto field_value = std::get_if<absl::string_view>(&field_result)) {
+      if (!field_value->empty()) {
+        parts.push_back(absl::StrCat(baggage_key, "=", *field_value));
+      }
+    }
   }
-  if (!namespace_name_.empty()) {
-    parts.push_back(",");
-    parts.push_back(NamespaceNameToken);
-    parts.push_back("=");
-    parts.push_back(namespace_name_);
-  }
-  if (!canonical_name_.empty()) {
-    parts.push_back(",");
-    parts.push_back(ServiceNameToken);
-    parts.push_back("=");
-    parts.push_back(canonical_name_);
-  }
-  if (!canonical_revision_.empty()) {
-    parts.push_back(",");
-    parts.push_back(ServiceVersionToken);
-    parts.push_back("=");
-    parts.push_back(canonical_revision_);
-  }
-  if (!app_name_.empty()) {
-    parts.push_back(",");
-    parts.push_back(AppNameToken);
-    parts.push_back("=");
-    parts.push_back(app_name_);
-  }
-  if (!app_version_.empty()) {
-    parts.push_back(",");
-    parts.push_back(AppVersionToken);
-    parts.push_back("=");
-    parts.push_back(app_version_);
-  }
-  return absl::StrJoin(parts, "");
+  return absl::StrJoin(parts, ",");
 }
 
 Envoy::ProtobufTypes::MessagePtr WorkloadMetadataObject::serializeAsProto() const {
