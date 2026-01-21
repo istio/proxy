@@ -61,6 +61,68 @@ absl::optional<absl::string_view> toSuffix(WorkloadType workload_type) {
 
 } // namespace
 
+std::string WorkloadMetadataObject::baggage() const {
+  absl::string_view workload_type = PodSuffix;
+  switch (workload_type_) {
+  case WorkloadType::Deployment:
+    workload_type = DeploymentSuffix;
+    break;
+  case WorkloadType::CronJob:
+    workload_type = CronJobSuffix;
+    break;
+  case WorkloadType::Job:
+    workload_type = JobSuffix;
+    break;
+  case WorkloadType::Pod:
+    workload_type = PodSuffix;
+    break;
+  default:
+    break;
+  }
+  std::vector<absl::string_view> parts;
+  parts.push_back("k8s.");
+  parts.push_back(workload_type);
+  parts.push_back(".name=");
+  parts.push_back(workload_name_);
+  if (!cluster_name_.empty()) {
+    parts.push_back(",");
+    parts.push_back(ClusterNameToken);
+    parts.push_back("=");
+    parts.push_back(cluster_name_);
+  }
+  if (!namespace_name_.empty()) {
+    parts.push_back(",");
+    parts.push_back(NamespaceNameToken);
+    parts.push_back("=");
+    parts.push_back(namespace_name_);
+  }
+  if (!canonical_name_.empty()) {
+    parts.push_back(",");
+    parts.push_back(ServiceNameToken);
+    parts.push_back("=");
+    parts.push_back(canonical_name_);
+  }
+  if (!canonical_revision_.empty()) {
+    parts.push_back(",");
+    parts.push_back(ServiceVersionToken);
+    parts.push_back("=");
+    parts.push_back(canonical_revision_);
+  }
+  if (!app_name_.empty()) {
+    parts.push_back(",");
+    parts.push_back(AppNameToken);
+    parts.push_back("=");
+    parts.push_back(app_name_);
+  }
+  if (!app_version_.empty()) {
+    parts.push_back(",");
+    parts.push_back(AppVersionToken);
+    parts.push_back("=");
+    parts.push_back(app_version_);
+  }
+  return absl::StrJoin(parts, "");
+}
+
 Envoy::ProtobufTypes::MessagePtr WorkloadMetadataObject::serializeAsProto() const {
   auto message = std::make_unique<Envoy::Protobuf::Struct>();
   const auto suffix = toSuffix(workload_type_);
