@@ -126,17 +126,6 @@ enum class PeerMetadataState {
   PassThrough,
 };
 
-google::protobuf::Any encodeBaggage(std::string_view baggage) {
-  using namespace ::Istio::Common;
-
-  const std::unique_ptr<WorkloadMetadataObject> metadata =
-      convertBaggageToWorkloadMetadata(baggage);
-  google::protobuf::Struct data = convertWorkloadMetadataToStruct(*metadata);
-  google::protobuf::Any wrapped;
-  wrapped.PackFrom(data);
-  return wrapped;
-}
-
 /**
  * This is a regular network filter that will be installed in the
  * connect_originate or inner_connect_originate filter chains. It will take
@@ -208,7 +197,24 @@ private:
 
     ENVOY_LOG(trace,
               "Successfully discovered peer metadata from the baggage header saved by TCP Proxy");
-    return encodeBaggage(baggage[0]->value().getStringView());
+
+    std::string identity{};
+    const auto upstream = callbacks_->connection().streamInfo().upstreamInfo();
+    if (upstream) {
+      const auto conn = upstream->upstreamSslConnection();
+      if (conn) {
+        identity = absl::StrJoin(conn->uriSanPeerCertificate(), ",");
+        ENVOY_LOG(trace, "Discovered upstream peer identity to be {}", identity);
+      }
+    }
+
+    std::unique_ptr<::Istio::Common::WorkloadMetadataObject> metadata =
+        ::Istio::Common::convertBaggageToWorkloadMetadata(baggage[0]->value().getStringView(), identity);
+
+    google::protobuf::Struct data = convertWorkloadMetadataToStruct(*metadata);
+    google::protobuf::Any wrapped;
+    wrapped.PackFrom(data);
+    return wrapped;
   }
 
   void propagatePeerMetadata(const google::protobuf::Any& peer_metadata) {
