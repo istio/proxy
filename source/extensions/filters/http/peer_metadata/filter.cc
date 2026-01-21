@@ -176,6 +176,47 @@ void MXPropagationMethod::inject(const StreamInfo::StreamInfo& info, Http::Heade
   }
 }
 
+BaggagePropagationMethod::BaggagePropagationMethod(
+    Server::Configuration::ServerFactoryContext& factory_context,
+    const io::istio::http::peer_metadata::Config_Baggage&)
+    : value_(computeBaggageValue(factory_context)) {}
+
+std::string BaggagePropagationMethod::computeBaggageValue(
+    Server::Configuration::ServerFactoryContext& factory_context) const {
+  const auto obj = Istio::Common::convertStructToWorkloadMetadata(
+      factory_context.localInfo().node().metadata());
+  std::vector<std::string> parts;
+
+  // Map the workload metadata fields to baggage tokens
+  const std::vector<std::pair<absl::string_view, absl::string_view>> field_to_baggage = {
+      {Istio::Common::NamespaceNameToken, "k8s.namespace.name"},
+      {Istio::Common::ClusterNameToken, "k8s.cluster.name"},
+      {Istio::Common::ServiceNameToken, "service.name"},
+      {Istio::Common::ServiceVersionToken, "service.version"},
+      {Istio::Common::AppNameToken, "app.name"},
+      {Istio::Common::AppVersionToken, "app.version"},
+      {Istio::Common::WorkloadNameToken, "k8s.workload.name"},
+      {Istio::Common::WorkloadTypeToken, "k8s.workload.type"},
+      {Istio::Common::InstanceNameToken, "k8s.instance.name"},
+  };
+
+  for (const auto& [field_name, baggage_key] : field_to_baggage) {
+    const auto field_result = obj->getField(field_name);
+    if (auto field_value = std::get_if<absl::string_view>(&field_result)) {
+      if (!field_value->empty()) {
+        parts.push_back(absl::StrCat(baggage_key, "=", *field_value));
+      }
+    }
+  }
+  return absl::StrJoin(parts, ",");
+}
+
+void BaggagePropagationMethod::inject(const StreamInfo::StreamInfo&,
+                                     Http::HeaderMap& headers, Context&) const {
+  headers.setReference(Headers::get().Baggage, value_);
+}
+
+
 FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
                            Server::Configuration::FactoryContext& factory_context)
     : shared_with_upstream_(config.shared_with_upstream()),
@@ -232,6 +273,11 @@ std::vector<PropagationMethodPtr> FilterConfig::buildPropagationMethods(
       methods.push_back(
           std::make_unique<MXPropagationMethod>(downstream, factory_context.serverFactoryContext(),
                                                 additional_labels, method.istio_headers()));
+      break;
+    case io::istio::http::peer_metadata::Config::PropagationMethod::MethodSpecifierCase::
+        kBaggage:
+      methods.push_back(std::make_unique<BaggagePropagationMethod>(
+          factory_context.serverFactoryContext(), method.baggage()));
       break;
     default:
       break;
