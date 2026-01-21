@@ -541,7 +541,8 @@ TEST_F(PeerMetadataTest, BaggagePropagationWithNodeMetadata) {
         version: v1.0
         service.istio.io/canonical-name: test-service
         service.istio.io/canonical-revision: main
-  )EOF", node);
+  )EOF",
+                            node);
 
   initialize(R"EOF(
     downstream_propagation:
@@ -583,7 +584,8 @@ protected:
           version: v2.1
           service.istio.io/canonical-name: sample-service
           service.istio.io/canonical-revision: stable
-    )EOF", context_.server_factory_context_.local_info_.node_);
+    )EOF",
+                              context_.server_factory_context_.local_info_.node_);
   }
 
   NiceMock<Server::Configuration::MockFactoryContext> context_;
@@ -674,7 +676,8 @@ TEST_F(BaggagePropagationMethodTest, PartialMetadataBaggage) {
       LABELS:
         app: partial-app
         # Missing other fields like version, cluster, etc.
-  )EOF", context_.server_factory_context_.local_info_.node_);
+  )EOF",
+                            context_.server_factory_context_.local_info_.node_);
 
   io::istio::http::peer_metadata::Config_Baggage baggage_config;
   BaggagePropagationMethod method(context_.server_factory_context_, baggage_config);
@@ -710,7 +713,7 @@ TEST_F(PeerMetadataTest, BaggagePropagationWithMixedConfig) {
   )EOF");
 
   // Baggage should always be propagated, Istio headers are also propagated for upstream only
-  EXPECT_EQ(3, request_headers_.size()); // baggage + istio headers (id + metadata)
+  EXPECT_EQ(3, request_headers_.size());  // baggage + istio headers (id + metadata)
   EXPECT_EQ(1, response_headers_.size()); // baggage only (no discovery, so no MX downstream)
 
   EXPECT_TRUE(request_headers_.has(Headers::get().Baggage));

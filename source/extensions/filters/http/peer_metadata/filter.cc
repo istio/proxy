@@ -183,8 +183,8 @@ BaggagePropagationMethod::BaggagePropagationMethod(
 
 std::string BaggagePropagationMethod::computeBaggageValue(
     Server::Configuration::ServerFactoryContext& factory_context) const {
-  const auto obj = Istio::Common::convertStructToWorkloadMetadata(
-      factory_context.localInfo().node().metadata());
+  const auto obj =
+      Istio::Common::convertStructToWorkloadMetadata(factory_context.localInfo().node().metadata());
   std::vector<std::string> parts;
 
   // Map the workload metadata fields to baggage tokens
@@ -211,11 +211,10 @@ std::string BaggagePropagationMethod::computeBaggageValue(
   return absl::StrJoin(parts, ",");
 }
 
-void BaggagePropagationMethod::inject(const StreamInfo::StreamInfo&,
-                                     Http::HeaderMap& headers, Context&) const {
+void BaggagePropagationMethod::inject(const StreamInfo::StreamInfo&, Http::HeaderMap& headers,
+                                      Context&) const {
   headers.setReference(Headers::get().Baggage, value_);
 }
-
 
 FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
                            Server::Configuration::FactoryContext& factory_context)
@@ -274,8 +273,7 @@ std::vector<PropagationMethodPtr> FilterConfig::buildPropagationMethods(
           std::make_unique<MXPropagationMethod>(downstream, factory_context.serverFactoryContext(),
                                                 additional_labels, method.istio_headers()));
       break;
-    case io::istio::http::peer_metadata::Config::PropagationMethod::MethodSpecifierCase::
-        kBaggage:
+    case io::istio::http::peer_metadata::Config::PropagationMethod::MethodSpecifierCase::kBaggage:
       methods.push_back(std::make_unique<BaggagePropagationMethod>(
           factory_context.serverFactoryContext(), method.baggage()));
       break;
