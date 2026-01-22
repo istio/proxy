@@ -15,7 +15,7 @@
 
 syntax = "proto3";
 
-package envoy.extensions.network_filters.peer_metadata.proto;
+package envoy.extensions.network_filters.peer_metadata;
 
 message Config {
   // What filter state to use to save the baggage value that encodes the proxy

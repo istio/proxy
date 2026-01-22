@@ -93,8 +93,8 @@
 #include "source/common/tcp_proxy/tcp_proxy.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/network/common/factory_base.h"
-#include "source/extensions/filters/network/peer_metadata/proto/peer_metadata.pb.h"
-#include "source/extensions/filters/network/peer_metadata/proto/peer_metadata.pb.validate.h"
+#include "source/extensions/filters/network/peer_metadata/config.pb.h"
+#include "source/extensions/filters/network/peer_metadata/config.pb.validate.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -103,8 +103,8 @@ namespace PeerMetadata {
 
 namespace {
 
-using Config = ::envoy::extensions::network_filters::peer_metadata::proto::Config;
-using UpstreamConfig = ::envoy::extensions::network_filters::peer_metadata::proto::UpstreamConfig;
+using Config = ::envoy::extensions::network_filters::peer_metadata::Config;
+using UpstreamConfig = ::envoy::extensions::network_filters::peer_metadata::UpstreamConfig;
 
 using CelState = ::Envoy::Extensions::Filters::Common::Expr::CelState;
 using CelStatePrototype = ::Envoy::Extensions::Filters::Common::Expr::CelStatePrototype;

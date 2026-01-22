@@ -19,10 +19,19 @@ load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
 )
+load(
+    "@envoy//bazel:envoy_library.bzl",
+    "envoy_proto_library",
+)
 
 package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])
+
+envoy_proto_library(
+    name = "config",
+    srcs = ["config.proto"],
+)
 
 envoy_cc_library(
     name = "peer_metadata",
@@ -31,8 +40,8 @@ envoy_cc_library(
     ],
     repository = "@envoy",
     deps = [
+        ":config_cc_proto",
         "//extensions/common:metadata_object_lib",
-        "//source/extensions/filters/network/peer_metadata/proto:peer_metadata_cc_proto",
         "@envoy//envoy/buffer:buffer_interface",
         "@envoy//envoy/network:address_interface",
         "@envoy//envoy/network:filter_interface",
