@@ -176,6 +176,23 @@ void MXPropagationMethod::inject(const StreamInfo::StreamInfo& info, Http::Heade
   }
 }
 
+BaggagePropagationMethod::BaggagePropagationMethod(
+    Server::Configuration::ServerFactoryContext& factory_context,
+    const io::istio::http::peer_metadata::Config_Baggage&)
+    : value_(computeBaggageValue(factory_context)) {}
+
+std::string BaggagePropagationMethod::computeBaggageValue(
+    Server::Configuration::ServerFactoryContext& factory_context) const {
+  const auto obj =
+      Istio::Common::convertStructToWorkloadMetadata(factory_context.localInfo().node().metadata());
+  return obj->baggage();
+}
+
+void BaggagePropagationMethod::inject(const StreamInfo::StreamInfo&, Http::HeaderMap& headers,
+                                      Context&) const {
+  headers.setReference(Headers::get().Baggage, value_);
+}
+
 FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
                            Server::Configuration::FactoryContext& factory_context)
     : shared_with_upstream_(config.shared_with_upstream()),
@@ -232,6 +249,10 @@ std::vector<PropagationMethodPtr> FilterConfig::buildPropagationMethods(
       methods.push_back(
           std::make_unique<MXPropagationMethod>(downstream, factory_context.serverFactoryContext(),
                                                 additional_labels, method.istio_headers()));
+      break;
+    case io::istio::http::peer_metadata::Config::PropagationMethod::MethodSpecifierCase::kBaggage:
+      methods.push_back(std::make_unique<BaggagePropagationMethod>(
+          factory_context.serverFactoryContext(), method.baggage()));
       break;
     default:
       break;

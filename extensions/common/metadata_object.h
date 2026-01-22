@@ -115,6 +115,7 @@ public:
   FieldType getField(absl::string_view) const override;
   void setLabels(std::vector<std::pair<std::string, std::string>> labels) { labels_ = labels; }
   std::vector<std::pair<std::string, std::string>> getLabels() const { return labels_; }
+  std::string baggage() const;
 
   const std::string instance_name_;
   const std::string cluster_name_;

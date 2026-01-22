@@ -559,6 +559,235 @@ TEST_F(PeerMetadataTest, CelExpressionCompatibility) {
   EXPECT_EQ("bar", extractString(*struct_proto, "workload"));
   EXPECT_EQ("test-cluster", extractString(*struct_proto, "cluster"));
 }
+TEST_F(PeerMetadataTest, DownstreamBaggagePropagation) {
+  initialize(R"EOF(
+    downstream_propagation:
+      - baggage: {}
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(1, response_headers_.size());
+  EXPECT_TRUE(response_headers_.has(Headers::get().Baggage));
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, UpstreamBaggagePropagation) {
+  initialize(R"EOF(
+    upstream_propagation:
+      - baggage: {}
+  )EOF");
+  EXPECT_EQ(1, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  EXPECT_TRUE(request_headers_.has(Headers::get().Baggage));
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, BothDirectionsBaggagePropagation) {
+  initialize(R"EOF(
+    downstream_propagation:
+      - baggage: {}
+    upstream_propagation:
+      - baggage: {}
+  )EOF");
+  EXPECT_EQ(1, request_headers_.size());
+  EXPECT_EQ(1, response_headers_.size());
+  EXPECT_TRUE(request_headers_.has(Headers::get().Baggage));
+  EXPECT_TRUE(response_headers_.has(Headers::get().Baggage));
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, BaggagePropagationWithNodeMetadata) {
+  // Setup node metadata that would be converted to baggage
+  auto& node = context_.server_factory_context_.local_info_.node_;
+  TestUtility::loadFromYaml(R"EOF(
+    metadata:
+      NAMESPACE: production
+      CLUSTER_ID: test-cluster
+      WORKLOAD_NAME: test-workload
+      NAME: test-instance
+      LABELS:
+        app: test-app
+        version: v1.0
+        service.istio.io/canonical-name: test-service
+        service.istio.io/canonical-revision: main
+  )EOF",
+                            node);
+
+  initialize(R"EOF(
+    downstream_propagation:
+      - baggage: {}
+  )EOF");
+
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(1, response_headers_.size());
+
+  const auto baggage_header = response_headers_.get(Headers::get().Baggage);
+  ASSERT_FALSE(baggage_header.empty());
+
+  std::string baggage_value = std::string(baggage_header[0]->value().getStringView());
+  // Verify baggage contains expected key-value pairs
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.namespace.name=production"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.cluster.name=test-cluster"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "app.name=test-app"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "app.version=v1.0"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "service.name=test-service"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "service.version=main"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.pod.name=test-workload"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.instance.name=test-instance"));
+}
+
+// Test class specifically for BaggagePropagationMethod unit tests
+class BaggagePropagationMethodTest : public testing::Test {
+protected:
+  BaggagePropagationMethodTest() = default;
+
+  void SetUp() override {
+    TestUtility::loadFromYaml(R"EOF(
+      metadata:
+        NAMESPACE: test-namespace
+        CLUSTER_ID: sample-cluster
+        WORKLOAD_NAME: sample-workload
+        NAME: sample-instance
+        LABELS:
+          app: sample-app
+          version: v2.1
+          service.istio.io/canonical-name: sample-service
+          service.istio.io/canonical-revision: stable
+    )EOF",
+                              context_.server_factory_context_.local_info_.node_);
+  }
+
+  NiceMock<Server::Configuration::MockFactoryContext> context_;
+  NiceMock<StreamInfo::MockStreamInfo> stream_info_;
+};
+
+TEST_F(BaggagePropagationMethodTest, DownstreamBaggageInjection) {
+  io::istio::http::peer_metadata::Config_Baggage baggage_config;
+  BaggagePropagationMethod method(context_.server_factory_context_, baggage_config);
+
+  Http::TestResponseHeaderMapImpl headers;
+  Context ctx;
+
+  method.inject(stream_info_, headers, ctx);
+
+  EXPECT_EQ(1, headers.size());
+  const auto baggage_header = headers.get(Headers::get().Baggage);
+  ASSERT_FALSE(baggage_header.empty());
+
+  std::string baggage_value = std::string(baggage_header[0]->value().getStringView());
+
+  // Verify all expected tokens are present
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.namespace.name=test-namespace"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.cluster.name=sample-cluster"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "service.name=sample-service"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "service.version=stable"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "app.name=sample-app"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "app.version=v2.1"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.pod.name=sample-workload"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.instance.name=sample-instance"));
+}
+
+TEST_F(BaggagePropagationMethodTest, UpstreamBaggageInjection) {
+  io::istio::http::peer_metadata::Config_Baggage baggage_config;
+  BaggagePropagationMethod method(context_.server_factory_context_, baggage_config);
+
+  Http::TestRequestHeaderMapImpl headers;
+  Context ctx;
+
+  method.inject(stream_info_, headers, ctx);
+
+  EXPECT_EQ(1, headers.size());
+  const auto baggage_header = headers.get(Headers::get().Baggage);
+  ASSERT_FALSE(baggage_header.empty());
+
+  std::string baggage_value = std::string(baggage_header[0]->value().getStringView());
+
+  // Verify tokens are properly formatted
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.namespace.name=test-namespace"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.cluster.name=sample-cluster"));
+
+  // Check that values are comma-separated
+  std::vector<absl::string_view> parts = absl::StrSplit(baggage_value, ',');
+  EXPECT_GT(parts.size(), 1);
+}
+
+TEST_F(BaggagePropagationMethodTest, EmptyMetadataBaggage) {
+  // Reset node metadata to empty
+  context_.server_factory_context_.local_info_.node_.Clear();
+
+  io::istio::http::peer_metadata::Config_Baggage baggage_config;
+  BaggagePropagationMethod method(context_.server_factory_context_, baggage_config);
+
+  Http::TestResponseHeaderMapImpl headers;
+  Context ctx;
+
+  method.inject(stream_info_, headers, ctx);
+
+  EXPECT_EQ(1, headers.size());
+  const auto baggage_header = headers.get(Headers::get().Baggage);
+  ASSERT_FALSE(baggage_header.empty());
+
+  // With empty metadata, there should be no baggage
+  std::string baggage_value = std::string(baggage_header[0]->value().getStringView());
+  EXPECT_EQ("", baggage_value);
+}
+
+TEST_F(BaggagePropagationMethodTest, PartialMetadataBaggage) {
+  // Setup node metadata with only some fields
+  TestUtility::loadFromYaml(R"EOF(
+    metadata:
+      NAMESPACE: partial-namespace
+      LABELS:
+        app: partial-app
+        # Missing other fields like version, cluster, etc.
+  )EOF",
+                            context_.server_factory_context_.local_info_.node_);
+
+  io::istio::http::peer_metadata::Config_Baggage baggage_config;
+  BaggagePropagationMethod method(context_.server_factory_context_, baggage_config);
+
+  Http::TestRequestHeaderMapImpl headers;
+  Context ctx;
+
+  method.inject(stream_info_, headers, ctx);
+
+  EXPECT_EQ(1, headers.size());
+  const auto baggage_header = headers.get(Headers::get().Baggage);
+  ASSERT_FALSE(baggage_header.empty());
+
+  std::string baggage_value = std::string(baggage_header[0]->value().getStringView());
+
+  // Should contain only the fields that were present
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.namespace.name=partial-namespace"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "app.name=partial-app"));
+
+  // Should not contain fields that were not present
+  EXPECT_FALSE(absl::StrContains(baggage_value, "app.version="));
+  EXPECT_FALSE(absl::StrContains(baggage_value, "k8s.cluster.name="));
+}
+
+TEST_F(PeerMetadataTest, BaggagePropagationWithMixedConfig) {
+  initialize(R"EOF(
+    downstream_propagation:
+      - baggage: {}
+      - istio_headers: {}
+    upstream_propagation:
+      - baggage: {}
+      - istio_headers: {}
+  )EOF");
+
+  // Baggage should always be propagated, Istio headers are also propagated for upstream only
+  EXPECT_EQ(3, request_headers_.size());  // baggage + istio headers (id + metadata)
+  EXPECT_EQ(1, response_headers_.size()); // baggage only (no discovery, so no MX downstream)
+
+  EXPECT_TRUE(request_headers_.has(Headers::get().Baggage));
+  EXPECT_TRUE(request_headers_.has(Headers::get().ExchangeMetadataHeaderId));
+  EXPECT_TRUE(request_headers_.has(Headers::get().ExchangeMetadataHeader));
+
+  EXPECT_TRUE(response_headers_.has(Headers::get().Baggage));
+}
 
 } // namespace
 } // namespace PeerMetadata
