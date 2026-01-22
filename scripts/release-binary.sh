@@ -1,169 +1,168 @@
-// Copyright Istio Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License aton 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.S OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-#pragma onces under the License.
+#!/bin/bash
 #
-#include "source/extensions/filters/common/expr/cel_state.h"####################
-#include "source/extensions/filters/http/common/factory_base.h"
-#include "source/extensions/filters/http/common/pass_through_filter.h"
-#include "source/extensions/filters/http/peer_metadata/config.pb.h"
-#include "source/extensions/common/workload_discovery/api.h"
-#include "source/common/singleton/const_singleton.h"
-#include <string>usr/lib/llvm/bin/clang}
+# Copyright 2016 Istio Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+################################################################################
+#
+set -ex
+
+# Use clang for the release builds.
+export PATH=/usr/lib/llvm/bin:$PATH
+export CC=${CC:-/usr/lib/llvm/bin/clang}
 export CXX=${CXX:-/usr/lib/llvm/bin/clang++}
-namespace Envoy {
-namespace Extensions {ptionally appending a -{ARCH} suffix to published binaries.
-namespace HttpFilters {bility, Istio skips this for amd64.
-namespace PeerMetadata {rm64"; we expand to "-arm64" for simple usage in script.
+
+# ARCH_SUFFIX allows optionally appending a -{ARCH} suffix to published binaries.
+# For backwards compatibility, Istio skips this for amd64.
+# Note: user provides "arm64"; we expand to "-arm64" for simple usage in script.
 export ARCH_SUFFIX="${ARCH_SUFFIX+-${ARCH_SUFFIX}}"
-using ::Envoy::Extensions::Filters::Common::Expr::CelStatePrototype;
-using ::Envoy::Extensions::Filters::Common::Expr::CelStateType;
+
+# Expliticly stamp.
 BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --stamp"
-struct HeaderValues {
-  const Http::LowerCaseString Baggage{"baggage"};
-  const Http::LowerCaseString ExchangeMetadataHeader{"x-envoy-peer-metadata"};
-  const Http::LowerCaseString ExchangeMetadataHeaderId{"x-envoy-peer-metadata-id"};
-};BAZEL_CONFIG_ASAN="--config=clang-asan-ci"
+
+if [[ "$(uname)" == "Darwin" ]]; then
+  BAZEL_CONFIG_ASAN="--config=macos-asan"
+else
+  BAZEL_CONFIG_ASAN="--config=clang-asan-ci"
 fi
-using Headers = ConstSingleton<HeaderValues>;
+
 # The bucket name to store proxy binaries.
-using PeerInfo = Istio::Common::WorkloadMetadataObject;
+DST=""
 
-struct Context {'re building binaries on Ubuntu 18.04 (Bionic).
-  bool request_peer_id_received_{false};
-  bool request_peer_received_{false};
-};Defines the base binary name for artifacts. For example, this will be "envoy-debug".
+# Verify that we're building binaries on Ubuntu 18.04 (Bionic).
+CHECK=1
+
+# Defines the base binary name for artifacts. For example, this will be "envoy-debug".
 BASE_BINARY_NAME="${BASE_BINARY_NAME:-"envoy"}"
-// Base class for the discovery methods. First derivation wins but all methods perform removal.
-class DiscoveryMethod {ust build the Envoy binary rather than wasm, etc
-public:NVOY_BINARY_ONLY="${BUILD_ENVOY_BINARY_ONLY:-0}"
-  virtual ~DiscoveryMethod() = default;
-  virtual absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
-                                                  Context&) const PURE;
-  virtual void remove(Http::HeaderMap&) const {}ptional).
-};      If not provided, both envoy binary push and docker image push are skipped.
+
+# If enabled, we will just build the Envoy binary rather than wasm, etc
+BUILD_ENVOY_BINARY_ONLY="${BUILD_ENVOY_BINARY_ONLY:-0}"
+
+function usage() {
+  echo "$0
+    -d  The bucket name to store proxy binary (optional).
+        If not provided, both envoy binary push and docker image push are skipped.
     -i  Skip Ubuntu Bionic check. DO NOT USE THIS FOR RELEASED BINARIES."
-using DiscoveryMethodPtr = std::unique_ptr<DiscoveryMethod>;
+  exit 1
 }
-class MXMethod : public DiscoveryMethod {
-public:etopts d:i arg ; do
-  MXMethod(bool downstream, const absl::flat_hash_set<std::string> additional_labels,
-           Server::Configuration::ServerFactoryContext& factory_context);
-  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
-                                          Context&) const override;
-  void remove(Http::HeaderMap&) const override;
+
+while getopts d:i arg ; do
+  case "${arg}" in
+    d) DST="${OPTARG}";;
+    i) CHECK=0;;
+    *) usage;;
+  esac
 done
-private:
-  absl::optional<PeerInfo> lookup(absl::string_view id, absl::string_view value) const;
-  const bool downstream_;ntal limitation; however, the support for the other release types
-  struct MXCache : public ThreadLocal::ThreadLocalObject {
-    absl::flat_hash_map<std::string, PeerInfo> cache_;ARY_ONLY"
-  };it 1
-  mutable ThreadLocal::TypedSlot<MXCache> tls_;
-  const absl::flat_hash_set<std::string> additional_labels_;
-  const int64_t max_peer_cache_size_{500};
-};
+
+if [[ "${BUILD_ENVOY_BINARY_ONLY}" != 1 && "${ARCH_SUFFIX}" != "" ]]; then
+  # This is not a fundamental limitation; however, the support for the other release types
+  # has not been updated to support this.
+  echo "ARCH_SUFFIX currently requires BUILD_ENVOY_BINARY_ONLY"
+  exit 1
+fi
+
+echo "Destination bucket: $DST"
+
 if [ "${DST}" == "none" ]; then
-// Base class for the propagation methods.
-class PropagationMethod {
-public:
-  virtual ~PropagationMethod() = default;t on x86_64 Ubuntu 18.04 (Bionic)
-  virtual void inject(const StreamInfo::StreamInfo&, Http::HeaderMap&, Context&) const PURE;
-};if [[ "${BAZEL_BUILD_ARGS}" != *"--config=remote-"* ]]; then
+  DST=""
+fi
+
+# Make sure the release binaries are built on x86_64 Ubuntu 18.04 (Bionic)
+if [ "${CHECK}" -eq 1 ] ; then
+  if [[ "${BAZEL_BUILD_ARGS}" != *"--config=remote-"* ]]; then
     UBUNTU_RELEASE=${UBUNTU_RELEASE:-$(lsb_release -c -s)}
-using PropagationMethodPtr = std::unique_ptr<PropagationMethod>; Ubuntu Bionic.'; exit 1; }
+    [[ "${UBUNTU_RELEASE}" == 'bionic' ]] || { echo 'Must run on Ubuntu Bionic.'; exit 1; }
   fi
-class MXPropagationMethod : public PropagationMethod {on x86_64.'; exit 1; }
-public:
-  MXPropagationMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context,
-                      const absl::flat_hash_set<std::string>& additional_labels,
-                      const io::istio::http::peer_metadata::Config_IstioHeaders&);
-  void inject(const StreamInfo::StreamInfo&, Http::HeaderMap&, Context&) const override;
+  [[ "$(uname -m)" == 'x86_64' ]] || { echo 'Must run on x86_64.'; exit 1; }
+fi
+
+# The proxy binary name.
+SHA="$(git rev-parse --verify HEAD)"
+
 if [ -n "${DST}" ]; then
-private:inary already exists skip.
-  const bool downstream_;ast artifact to make sure that everything was uploaded.
-  std::string computeValue(const absl::flat_hash_set<std::string>&,
-                           Server::Configuration::ServerFactoryContext&) const;
-  const std::string id_;ready exists'; exit 0; } \
-  const std::string value_; binary.'
-  const bool skip_external_clusters_;
-  bool skipMXHeaders(const bool, const StreamInfo::StreamInfo&) const;
-};CH_NAME="k8"
+  # If binary already exists skip.
+  # Use the name of the last artifact to make sure that everything was uploaded.
+  BINARY_NAME="${HOME}/istio-proxy-debug-${SHA}.deb"
+  gsutil stat "${DST}/${BINARY_NAME}" \
+    && { echo 'Binary already exists'; exit 0; } \
+    || echo 'Building a new binary.'
+fi
+
+ARCH_NAME="k8"
 case "$(uname -m)" in
-class BaggagePropagationMethod : public PropagationMethod {
-public:
-  BaggagePropagationMethod(Server::Configuration::ServerFactoryContext& factory_context,
-                           const io::istio::http::peer_metadata::Config_Baggage&);
-  void inject(const StreamInfo::StreamInfo&, Http::HeaderMap&, Context&) const override;
+  aarch64) ARCH_NAME="aarch64";;
+esac
+
+# BAZEL_OUT: Symlinks don't work, use full path as a temporary workaround.
+# See: https://github.com/istio/istio/issues/15714 for details.
 # k8-opt is the output directory for x86_64 optimized builds (-c opt, so --config=release-symbol and --config=release).
-private: is the output directory for -c dbg builds.
-  std::string computeBaggageValue(Server::Configuration::ServerFactoryContext&) const;
-  const std::string value_;
-};case $config in
+# k8-dbg is the output directory for -c dbg builds.
+for config in release release-symbol asan debug
+do
+  case $config in
     "release" )
-class FilterConfig : public Logger::Loggable<Logger::Id::filter> {
-public:INARY_BASE_NAME="${BASE_BINARY_NAME}-alpha"
-  FilterConfig(const io::istio::http::peer_metadata::Config&,
-               Server::Configuration::FactoryContext&);t_path)/${ARCH_NAME}-opt/bin"
-  void discoverDownstream(StreamInfo::StreamInfo&, Http::RequestHeaderMap&, Context&) const;
-  void discoverUpstream(StreamInfo::StreamInfo&, Http::ResponseHeaderMap&, Context&) const;
-  void injectDownstream(const StreamInfo::StreamInfo&, Http::ResponseHeaderMap&, Context&) const;
-  void injectUpstream(const StreamInfo::StreamInfo&, Http::RequestHeaderMap&, Context&) const;
+      CONFIG_PARAMS="--config=release"
+      BINARY_BASE_NAME="${BASE_BINARY_NAME}-alpha"
       # shellcheck disable=SC2086
-  static const CelStatePrototype& peerInfoPrototype() {t_path)/${ARCH_NAME}-opt/bin"
-    static const CelStatePrototype* const prototype = new CelStatePrototype(
-        true, CelStateType::Protobuf, "type.googleapis.com/google.protobuf.Struct",
-        StreamInfo::FilterState::LifeSpan::FilterChain);
-    return *prototype;m)" != "aarch64" ]]; then
-  }     # NOTE: libc++ is dynamically linked in this build.
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
+      ;;
+    "release-symbol")
+      CONFIG_PARAMS="--config=release-symbol"
+      BINARY_BASE_NAME="${BASE_BINARY_NAME}-symbol"
+      # shellcheck disable=SC2086
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
+      ;;
+    "asan")
+      # Asan is skipped on ARM64
+      if [[ "$(uname -m)" != "aarch64" ]]; then
+        # NOTE: libc++ is dynamically linked in this build.
         CONFIG_PARAMS="${BAZEL_CONFIG_ASAN} --config=release-symbol"
-private:BINARY_BASE_NAME="${BASE_BINARY_NAME}-asan"
-  std::vector<DiscoveryMethodPtr> buildDiscoveryMethods(
-      const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::DiscoveryMethod>&,
-      const absl::flat_hash_set<std::string>& additional_labels, bool downstream,
-      Server::Configuration::FactoryContext&) const;
-  std::vector<PropagationMethodPtr> buildPropagationMethods(
-      const Protobuf::RepeatedPtrField<io::istio::http::peer_metadata::Config::PropagationMethod>&,
-      const absl::flat_hash_set<std::string>& additional_labels, bool downstream,
-      Server::Configuration::FactoryContext&) const;
-  absl::flat_hash_set<std::string>ZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-dbg/bin"
-  buildAdditionalLabels(const Protobuf::RepeatedPtrField<std::string>&) const;
-  StreamInfo::StreamSharingMayImpactPooling sharedWithUpstream() const {
-    return shared_with_upstream_
-               ? StreamInfo::StreamSharingMayImpactPooling::SharedWithUpstreamConnectionOnce
-               : StreamInfo::StreamSharingMayImpactPooling::None;
-  }cho "Building ${config} proxy"
-  void discover(StreamInfo::StreamInfo&, bool downstream, Http::HeaderMap&, Context&) const;
-  void setFilterState(StreamInfo::StreamInfo&, bool downstream, const PeerInfo& value) const;
-  const bool shared_with_upstream_;E_NAME}-${SHA}${ARCH_SUFFIX}.sha256"
-  const std::vector<DiscoveryMethodPtr> downstream_discovery_;
-  const std::vector<DiscoveryMethodPtr> upstream_discovery_;tar //:envoy.dwp
-  const std::vector<PropagationMethodPtr> downstream_propagation_;
-  const std::vector<PropagationMethodPtr> upstream_propagation_;
-};cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
+        BINARY_BASE_NAME="${BASE_BINARY_NAME}-asan"
+        # shellcheck disable=SC2086
+        BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-opt/bin"
+      fi
+      ;;
+    "debug")
+      CONFIG_PARAMS="-c dbg"
+      BINARY_BASE_NAME="${BASE_BINARY_NAME}-debug"
+      # shellcheck disable=SC2086
+      BAZEL_OUT="$(bazel info ${BAZEL_BUILD_ARGS} output_path)/${ARCH_NAME}-dbg/bin"
+      ;;
+  esac
+
+  export BUILD_CONFIG=${config}
+
+  echo "Building ${config} proxy"
+  BINARY_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}${ARCH_SUFFIX}.tar.gz"
+  DWP_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}${ARCH_SUFFIX}.dwp"
+  SHA256_NAME="${HOME}/${BINARY_BASE_NAME}-${SHA}${ARCH_SUFFIX}.sha256"
+  # shellcheck disable=SC2086
+  bazel build ${BAZEL_BUILD_ARGS} ${CONFIG_PARAMS} //:envoy_tar //:envoy.dwp
+  BAZEL_TARGET="${BAZEL_OUT}/envoy_tar.tar.gz"
+  DWP_TARGET="${BAZEL_OUT}/envoy.dwp"
+  cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
   cp -f "${DWP_TARGET}" "${DWP_NAME}"
-using FilterConfigSharedPtr = std::shared_ptr<FilterConfig>;
+  sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
 
-class Filter : public Http::PassThroughFilter,
-               public Logger::Loggable<Logger::Id::filter> {opy it to the bucket.
-public:
-  Filter(const FilterConfigSharedPtr& config) : config_(config) {}
-  Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap&, bool) override;
-  Http::FilterHeadersStatus encodeHeaders(Http::ResponseHeaderMap&, bool) override;done
+  if [ -n "${DST}" ]; then
+    # Copy it to the bucket.
+    echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
+    gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DWP_NAME}" "${DST}/"
+  fi
+done
 
-private:
-  FilterConfigSharedPtr config_;NVOY_BINARY_ONLY}" -eq 1 ]; then
-  Context ctx_;exit 0
-};fi
-class FilterConfigFactory : public Server::Configuration::NamedHttpFilterConfigFactory {public:  std::string name() const override { return "envoy.filters.http.peer_metadata"; }  ProtobufTypes::MessagePtr createEmptyConfigProto() override {    return std::make_unique<io::istio::http::peer_metadata::Config>();  }  absl::StatusOr<Http::FilterFactoryCb>  createFilterFactoryFromProto(const Protobuf::Message& proto_config, const std::string&,                               Server::Configuration::FactoryContext&) override;};} // namespace PeerMetadata} // namespace HttpFilters} // namespace Extensions} // namespace Envoy
+# Exit early to skip wasm build
+if [ "${BUILD_ENVOY_BINARY_ONLY}" -eq 1 ]; then
+  exit 0
+fi
