@@ -185,30 +185,7 @@ std::string BaggagePropagationMethod::computeBaggageValue(
     Server::Configuration::ServerFactoryContext& factory_context) const {
   const auto obj =
       Istio::Common::convertStructToWorkloadMetadata(factory_context.localInfo().node().metadata());
-  std::vector<std::string> parts;
-
-  // Map the workload metadata fields to baggage tokens
-  const std::vector<std::pair<absl::string_view, absl::string_view>> field_to_baggage = {
-      {Istio::Common::NamespaceNameToken, "k8s.namespace.name"},
-      {Istio::Common::ClusterNameToken, "k8s.cluster.name"},
-      {Istio::Common::ServiceNameToken, "service.name"},
-      {Istio::Common::ServiceVersionToken, "service.version"},
-      {Istio::Common::AppNameToken, "app.name"},
-      {Istio::Common::AppVersionToken, "app.version"},
-      {Istio::Common::WorkloadNameToken, "k8s.workload.name"},
-      {Istio::Common::WorkloadTypeToken, "k8s.workload.type"},
-      {Istio::Common::InstanceNameToken, "k8s.instance.name"},
-  };
-
-  for (const auto& [field_name, baggage_key] : field_to_baggage) {
-    const auto field_result = obj->getField(field_name);
-    if (auto field_value = std::get_if<absl::string_view>(&field_result)) {
-      if (!field_value->empty()) {
-        parts.push_back(absl::StrCat(baggage_key, "=", *field_value));
-      }
-    }
-  }
-  return absl::StrJoin(parts, ",");
+  return obj->baggage();
 }
 
 void BaggagePropagationMethod::inject(const StreamInfo::StreamInfo&, Http::HeaderMap& headers,

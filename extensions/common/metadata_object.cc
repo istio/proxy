@@ -76,6 +76,34 @@ absl::optional<absl::string_view> toSuffix(WorkloadType workload_type) {
 
 } // namespace
 
+std::string WorkloadMetadataObject::baggage() const {
+  const auto workload_type = toSuffix(workload_type_).value_or(PodSuffix);
+  std::vector<std::string> parts;
+  if (!workload_name_.empty()) {
+    parts.push_back("k8s." + std::string(workload_type) + ".name=" + std::string(workload_name_));
+  }
+  // Map the workload metadata fields to baggage tokens
+  const std::vector<std::pair<absl::string_view, absl::string_view>> field_to_baggage = {
+      {Istio::Common::NamespaceNameToken, "k8s.namespace.name"},
+      {Istio::Common::ClusterNameToken, "k8s.cluster.name"},
+      {Istio::Common::ServiceNameToken, "service.name"},
+      {Istio::Common::ServiceVersionToken, "service.version"},
+      {Istio::Common::AppNameToken, "app.name"},
+      {Istio::Common::AppVersionToken, "app.version"},
+      {Istio::Common::InstanceNameToken, "k8s.instance.name"},
+  };
+
+  for (const auto& [field_name, baggage_key] : field_to_baggage) {
+    const auto field_result = getField(field_name);
+    if (auto field_value = std::get_if<absl::string_view>(&field_result)) {
+      if (!field_value->empty()) {
+        parts.push_back(absl::StrCat(baggage_key, "=", *field_value));
+      }
+    }
+  }
+  return absl::StrJoin(parts, ",");
+}
+
 Envoy::ProtobufTypes::MessagePtr WorkloadMetadataObject::serializeAsProto() const {
   auto message = std::make_unique<Envoy::Protobuf::Struct>();
   const auto suffix = toSuffix(workload_type_);
