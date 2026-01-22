@@ -193,13 +193,12 @@ void BaggagePropagationMethod::inject(const StreamInfo::StreamInfo&, Http::Heade
   headers.setReference(Headers::get().Baggage, value_);
 }
 
-BaggageDiscoveryMethod::BaggageDiscoveryMethod(bool /*downstream*/,
-           Server::Configuration::ServerFactoryContext& /*factory_context*/) {
-}
+BaggageDiscoveryMethod::BaggageDiscoveryMethod(
+    bool /*downstream*/, Server::Configuration::ServerFactoryContext& /*factory_context*/) {}
 
 absl::optional<PeerInfo> BaggageDiscoveryMethod::derivePeerInfo(const StreamInfo::StreamInfo&,
-                                                                 Http::HeaderMap& headers,
-                                                                 Context&) const {
+                                                                Http::HeaderMap& headers,
+                                                                Context&) const {
   const auto baggage_header = headers.get(Headers::get().Baggage);
   if (baggage_header.empty()) {
     return {};
@@ -248,7 +247,8 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
                                                    factory_context.serverFactoryContext()));
       break;
     case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::kBaggage:
-      methods.push_back(std::make_unique<BaggageDiscoveryMethod>(downstream, factory_context.serverFactoryContext()));
+      methods.push_back(std::make_unique<BaggageDiscoveryMethod>(
+          downstream, factory_context.serverFactoryContext()));
       break;
     default:
       break;

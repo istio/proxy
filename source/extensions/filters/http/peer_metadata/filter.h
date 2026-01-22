@@ -115,7 +115,7 @@ private:
 class BaggageDiscoveryMethod : public DiscoveryMethod, public Logger::Loggable<Logger::Id::filter> {
 public:
   BaggageDiscoveryMethod(bool downstream,
-           Server::Configuration::ServerFactoryContext& factory_context);
+                         Server::Configuration::ServerFactoryContext& factory_context);
   absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
                                           Context&) const override;
 };
@@ -163,8 +163,7 @@ private:
 
 using FilterConfigSharedPtr = std::shared_ptr<FilterConfig>;
 
-class Filter : public Http::PassThroughFilter,
-               public Logger::Loggable<Logger::Id::filter> {
+class Filter : public Http::PassThroughFilter, public Logger::Loggable<Logger::Id::filter> {
 public:
   Filter(const FilterConfigSharedPtr& config) : config_(config) {}
   Http::FilterHeadersStatus decodeHeaders(Http::RequestHeaderMap&, bool) override;

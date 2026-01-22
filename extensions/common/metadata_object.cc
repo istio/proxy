@@ -399,13 +399,13 @@ std::unique_ptr<WorkloadMetadataObject> convertBaggageToWorkloadMetadata(absl::s
         app_version = parts.second;
         break;
       case BaggageToken::WorkloadName: {
-          workload = parts.second;
-          std::vector<absl::string_view> splitWorkloadKey = absl::StrSplit(parts.first, ".");
-          if (splitWorkloadKey.size() >= 2 && splitWorkloadKey[0] == "k8s") {
-            workload_type = fromSuffix(splitWorkloadKey[1]);
-          }
-          break;
+        workload = parts.second;
+        std::vector<absl::string_view> splitWorkloadKey = absl::StrSplit(parts.first, ".");
+        if (splitWorkloadKey.size() >= 2 && splitWorkloadKey[0] == "k8s") {
+          workload_type = fromSuffix(splitWorkloadKey[1]);
         }
+        break;
+      }
       case BaggageToken::InstanceName:
         instance = parts.second;
         break;

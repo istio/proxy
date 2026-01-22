@@ -778,12 +778,10 @@ TEST_F(PeerMetadataTest, UpstreamBaggageDiscovery) {
 }
 
 TEST_F(PeerMetadataTest, BothDirectionsBaggageDiscovery) {
-  request_headers_.setReference(
-      Headers::get().Baggage,
-      "k8s.namespace.name=downstream-ns,service.name=downstream-svc");
-  response_headers_.setReference(
-      Headers::get().Baggage,
-      "k8s.namespace.name=upstream-ns,service.name=upstream-svc");
+  request_headers_.setReference(Headers::get().Baggage,
+                                "k8s.namespace.name=downstream-ns,service.name=downstream-svc");
+  response_headers_.setReference(Headers::get().Baggage,
+                                 "k8s.namespace.name=upstream-ns,service.name=upstream-svc");
   initialize(R"EOF(
     downstream_discovery:
       - baggage: {}
@@ -799,8 +797,7 @@ TEST_F(PeerMetadataTest, BothDirectionsBaggageDiscovery) {
 TEST_F(PeerMetadataTest, DownstreamBaggageFallbackFirst) {
   // Baggage is present, so XDS should not be called
   request_headers_.setReference(
-      Headers::get().Baggage,
-      "k8s.namespace.name=baggage-namespace,service.name=baggage-service");
+      Headers::get().Baggage, "k8s.namespace.name=baggage-namespace,service.name=baggage-service");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_)).Times(0);
   initialize(R"EOF(
     downstream_discovery:
@@ -880,9 +877,8 @@ TEST_F(PeerMetadataTest, UpstreamBaggageFallbackSecond) {
 
 TEST_F(PeerMetadataTest, DownstreamBaggageWithMXFallback) {
   // Baggage is present, so MX should not be used
-  request_headers_.setReference(
-      Headers::get().Baggage,
-      "k8s.namespace.name=baggage-ns,service.name=baggage-svc");
+  request_headers_.setReference(Headers::get().Baggage,
+                                "k8s.namespace.name=baggage-ns,service.name=baggage-svc");
   request_headers_.setReference(Headers::get().ExchangeMetadataHeaderId, "test-pod");
   request_headers_.setReference(Headers::get().ExchangeMetadataHeader, SampleIstioHeader);
   initialize(R"EOF(
@@ -898,9 +894,8 @@ TEST_F(PeerMetadataTest, DownstreamBaggageWithMXFallback) {
 
 TEST_F(PeerMetadataTest, DownstreamMXWithBaggageFallback) {
   // MX is first, so it should be used even if baggage is present
-  request_headers_.setReference(
-      Headers::get().Baggage,
-      "k8s.namespace.name=baggage-ns,service.name=baggage-svc");
+  request_headers_.setReference(Headers::get().Baggage,
+                                "k8s.namespace.name=baggage-ns,service.name=baggage-svc");
   request_headers_.setReference(Headers::get().ExchangeMetadataHeaderId, "test-pod");
   request_headers_.setReference(Headers::get().ExchangeMetadataHeader, SampleIstioHeader);
   initialize(R"EOF(
@@ -916,9 +911,8 @@ TEST_F(PeerMetadataTest, DownstreamMXWithBaggageFallback) {
 }
 
 TEST_F(PeerMetadataTest, BaggageDiscoveryWithPropagation) {
-  request_headers_.setReference(
-      Headers::get().Baggage,
-      "k8s.namespace.name=discovered-ns,service.name=discovered-svc");
+  request_headers_.setReference(Headers::get().Baggage,
+                                "k8s.namespace.name=discovered-ns,service.name=discovered-svc");
   initialize(R"EOF(
     downstream_discovery:
       - baggage: {}
@@ -985,9 +979,8 @@ TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoPartialBaggage) {
   BaggageDiscoveryMethod method(false, context_.server_factory_context_);
 
   Http::TestResponseHeaderMapImpl headers;
-  headers.setReference(
-      Headers::get().Baggage,
-      "k8s.namespace.name=partial-ns,service.name=partial-svc");
+  headers.setReference(Headers::get().Baggage,
+                       "k8s.namespace.name=partial-ns,service.name=partial-svc");
   Context ctx;
 
   const auto result = method.derivePeerInfo(stream_info_, headers, ctx);
