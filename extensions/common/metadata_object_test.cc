@@ -83,7 +83,8 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
   {
     const auto r = convertBaggageToWorkloadMetadata(
         "k8s.deployment.name=foo,k8s.cluster.name=my-cluster,"
-        "k8s.namespace.name=default,service.name=foo-service,service.version=v1alpha3,app.name=foo-app,app.version=latest");
+        "k8s.namespace.name=default,service.name=foo-service,service.version=v1alpha3,app.name=foo-"
+        "app,app.version=latest");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("service")), "foo-service");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("revision")), "v1alpha3");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("type")), DeploymentSuffix);
@@ -97,9 +98,9 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
   }
 
   {
-    const auto r =
-        convertBaggageToWorkloadMetadata("k8s.pod.name=foo-pod-435,k8s.cluster.name=my-cluster,k8s.namespace.name="
-                                         "test,k8s.instance.name=foo-instance-435,service.name=foo-service,service.version=v1beta2");
+    const auto r = convertBaggageToWorkloadMetadata(
+        "k8s.pod.name=foo-pod-435,k8s.cluster.name=my-cluster,k8s.namespace.name="
+        "test,k8s.instance.name=foo-instance-435,service.name=foo-service,service.version=v1beta2");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("service")), "foo-service");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("revision")), "v1beta2");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("type")), PodSuffix);
@@ -113,9 +114,9 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
   }
 
   {
-    const auto r =
-        convertBaggageToWorkloadMetadata("k8s.job.name=foo-job-435,k8s.cluster.name=my-cluster,k8s.namespace.name="
-                                         "test,k8s.instance.name=foo-instance-435,service.name=foo-service,service.version=v1beta4");
+    const auto r = convertBaggageToWorkloadMetadata(
+        "k8s.job.name=foo-job-435,k8s.cluster.name=my-cluster,k8s.namespace.name="
+        "test,k8s.instance.name=foo-instance-435,service.name=foo-service,service.version=v1beta4");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("service")), "foo-service");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("revision")), "v1beta4");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("type")), JobSuffix);
@@ -127,9 +128,9 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
   }
 
   {
-    const auto r =
-        convertBaggageToWorkloadMetadata("k8s.cronjob.name=foo-cronjob,k8s.cluster.name=my-cluster,"
-                                         "k8s.namespace.name=test,service.name=foo-service,service.version=v1beta4");
+    const auto r = convertBaggageToWorkloadMetadata(
+        "k8s.cronjob.name=foo-cronjob,k8s.cluster.name=my-cluster,"
+        "k8s.namespace.name=test,service.name=foo-service,service.version=v1beta4");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("service")), "foo-service");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("revision")), "v1beta4");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("type")), CronJobSuffix);
@@ -141,8 +142,9 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
   }
 
   {
-    const auto r = convertBaggageToWorkloadMetadata(
-        "k8s.deployment.name=foo,k8s.namespace.name=default,service.name=foo-service,service.version=v1alpha3");
+    const auto r =
+        convertBaggageToWorkloadMetadata("k8s.deployment.name=foo,k8s.namespace.name=default,"
+                                         "service.name=foo-service,service.version=v1alpha3");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("service")), "foo-service");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("revision")), "v1alpha3");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("type")), DeploymentSuffix);
