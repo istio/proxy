@@ -24,7 +24,7 @@ namespace Istio {
 namespace Common {
 
 namespace {
-// TODO: find a propper name for this mapping
+
 static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_METADATA_FIELDS = {
     {NamespaceNameToken, BaggageToken::NamespaceName},
     {ClusterNameToken, BaggageToken::ClusterName},
