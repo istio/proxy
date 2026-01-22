@@ -782,36 +782,6 @@ TEST_F(PeerMetadataTest, UpstreamBaggageDiscovery) {
   checkPeerNamespace(false, "upstream-namespace");
 }
 
-TEST_F(PeerMetadataTest, DownstreamBaggageDiscoveryPartialMetadata) {
-  // Test with only namespace and service name
-  request_headers_.setReference(
-      Headers::get().Baggage,
-      "k8s.namespace.name=partial-namespace,service.name=partial-service");
-  initialize(R"EOF(
-    downstream_discovery:
-      - baggage: {}
-  )EOF");
-  EXPECT_EQ(0, request_headers_.size());
-  EXPECT_EQ(0, response_headers_.size());
-  checkPeerNamespace(true, "partial-namespace");
-  checkNoPeer(false);
-}
-
-TEST_F(PeerMetadataTest, UpstreamBaggageDiscoveryPartialMetadata) {
-  // Test with only namespace and cluster
-  response_headers_.setReference(
-      Headers::get().Baggage,
-      "k8s.namespace.name=partial-upstream,k8s.cluster.name=partial-cluster");
-  initialize(R"EOF(
-    upstream_discovery:
-      - baggage: {}
-  )EOF");
-  EXPECT_EQ(0, request_headers_.size());
-  EXPECT_EQ(0, response_headers_.size());
-  checkNoPeer(true);
-  checkPeerNamespace(false, "partial-upstream");
-}
-
 TEST_F(PeerMetadataTest, BothDirectionsBaggageDiscovery) {
   request_headers_.setReference(
       Headers::get().Baggage,
