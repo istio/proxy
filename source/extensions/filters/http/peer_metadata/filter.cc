@@ -228,8 +228,8 @@ BaggagePropagationMethod::BaggagePropagationMethod(
 
 std::string BaggagePropagationMethod::computeBaggageValue(
     Server::Configuration::ServerFactoryContext& factory_context) const {
-  const auto obj =
-      Istio::Common::convertStructToWorkloadMetadata(factory_context.localInfo().node().metadata());
+  const auto obj = Istio::Common::convertStructToWorkloadMetadata(
+      factory_context.localInfo().node().metadata(), {}, factory_context.localInfo().node().locality());
   return obj->baggage();
 }
 

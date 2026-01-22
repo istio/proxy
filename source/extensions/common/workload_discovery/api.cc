@@ -69,7 +69,8 @@ Istio::Common::WorkloadMetadataObject convert(const istio::workload::Workload& w
   return Istio::Common::WorkloadMetadataObject(
       workload.name(), workload.cluster_id(), ns, workload.workload_name(),
       workload.canonical_name(), workload.canonical_revision(), workload.canonical_name(),
-      workload.canonical_revision(), workload_type, identity);
+      workload.canonical_revision(), workload_type, identity, workload.locality().region(),
+      workload.locality().zone());
 }
 } // namespace
 
@@ -249,7 +250,7 @@ public:
         });
   }
 
-  void onWorkerThreadInitialized() override{};
+  void onWorkerThreadInitialized() override {};
 
 private:
   Server::Configuration::ServerFactoryContext& factory_context_;
