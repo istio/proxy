@@ -258,8 +258,13 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
       break;
     case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::
         kUpstreamFilterState:
-      methods.push_back(
-          std::make_unique<UpstreamFilterStateMethod>(method.upstream_filter_state()));
+      if (!downstream) {
+        methods.push_back(
+            std::make_unique<UpstreamFilterStateMethod>(method.upstream_filter_state()));
+      } else {
+        ENVOY_LOG(warn, "UpstreamFilterState peer metadata discovery option is only available for "
+                        "upstream peer discovery");
+      }
       break;
     default:
       break;
