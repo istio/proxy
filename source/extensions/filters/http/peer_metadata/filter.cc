@@ -216,6 +216,27 @@ void BaggagePropagationMethod::inject(const StreamInfo::StreamInfo&, Http::Heade
   headers.setReference(Headers::get().Baggage, value_);
 }
 
+BaggageDiscoveryMethod::BaggageDiscoveryMethod(bool /*downstream*/,
+           Server::Configuration::ServerFactoryContext& /*factory_context*/) {
+}
+
+absl::optional<PeerInfo> BaggageDiscoveryMethod::derivePeerInfo(const StreamInfo::StreamInfo&,
+                                                                 Http::HeaderMap& headers,
+                                                                 Context&) const {
+  const auto baggage_header = headers.get(Headers::get().Baggage);
+  if (baggage_header.empty()) {
+    ENVOY_LOG(info, "there's no baggage header");
+    return {};
+  }
+  ENVOY_LOG(info, "baggage header found");
+  absl::string_view baggage_value = baggage_header[0]->value().getStringView();
+  const auto workload = Istio::Common::convertBaggageToWorkloadMetadata(baggage_value);
+  if (workload) {
+    return *workload;
+  }
+  return {};
+}
+
 FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
                            Server::Configuration::FactoryContext& factory_context)
     : shared_with_upstream_(config.shared_with_upstream()),
@@ -250,6 +271,9 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
         kIstioHeaders:
       methods.push_back(std::make_unique<MXMethod>(downstream, additional_labels,
                                                    factory_context.serverFactoryContext()));
+      break;
+    case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::kBaggage:
+      methods.push_back(std::make_unique<BaggageDiscoveryMethod>(downstream, factory_context.serverFactoryContext()));
       break;
     default:
       break;
@@ -340,6 +364,7 @@ void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
     auto pb = value.serializeAsProto();
     auto peer_info = std::make_unique<CelState>(FilterConfig::peerInfoPrototype());
     peer_info->setValue(absl::string_view(pb->SerializeAsString()));
+    ENVOY_LOG(info, "setting peer_info: {} = {}", key, pb->SerializeAsString());
     info.filterState()->setData(
         key, std::move(peer_info), StreamInfo::FilterState::StateType::Mutable,
         StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());
