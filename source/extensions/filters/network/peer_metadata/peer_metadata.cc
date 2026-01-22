@@ -87,6 +87,7 @@
 #include "envoy/server/filter_config.h"
 #include "extensions/common/metadata_object.h"
 #include "source/common/common/logger.h"
+#include "source/common/router/string_accessor_impl.h"
 #include "source/common/singleton/const_singleton.h"
 #include "source/common/stream_info/bool_accessor_impl.h"
 #include "source/common/tcp_proxy/tcp_proxy.h"
@@ -126,6 +127,12 @@ enum class PeerMetadataState {
   PassThrough,
 };
 
+std::string baggageValue(const Server::Configuration::ServerFactoryContext& context) {
+  const auto obj =
+      ::Istio::Common::convertStructToWorkloadMetadata(context.localInfo().node().metadata());
+  return obj->baggage();
+}
+
 /**
  * This is a regular network filter that will be installed in the
  * connect_originate or inner_connect_originate filter chains. It will take
@@ -134,9 +141,25 @@ enum class PeerMetadataState {
  * the upstream peer principle, encode those details into a sequence of bytes
  * and will inject it dowstream.
  */
-class Filter : public Network::WriteFilter, Logger::Loggable<Logger::Id::filter> {
+class Filter : public Network::Filter, Logger::Loggable<Logger::Id::filter> {
 public:
-  Filter(const Config& config) : config_(config) {}
+  Filter(const Config& config, Server::Configuration::ServerFactoryContext& context)
+      : config_(config), baggage_(baggageValue(context)) {}
+
+  // Network::ReadFilter
+  Network::FilterStatus onData(Buffer::Instance&, bool) override {
+    return Network::FilterStatus::Continue;
+  }
+
+  Network::FilterStatus onNewConnection() override {
+    ENVOY_LOG(trace, "New connection from downstream");
+    populateBaggage();
+    return Network::FilterStatus::Continue;
+  }
+
+  void initializeReadFilterCallbacks(Network::ReadFilterCallbacks& callbacks) override {
+    read_callbacks_ = &callbacks;
+  }
 
   // Network::WriteFilter
   Network::FilterStatus onWrite(Buffer::Instance& buffer, bool) override {
@@ -163,10 +186,25 @@ public:
   }
 
   void initializeWriteFilterCallbacks(Network::WriteFilterCallbacks& callbacks) override {
-    callbacks_ = &callbacks;
+    write_callbacks_ = &callbacks;
   }
 
 private:
+  void populateBaggage() {
+    if (config_.baggage_key().empty()) {
+      ENVOY_LOG(trace, "Not populating baggage filter state because baggage key is not set");
+      return;
+    }
+
+    ENVOY_LOG(trace, "Populating baggage value {} in the filter state with key {}", baggage_,
+              config_.baggage_key());
+    ASSERT(read_callbacks_);
+    read_callbacks_->connection().streamInfo().filterState()->setData(
+        config_.baggage_key(), std::make_shared<Router::StringAccessorImpl>(baggage_),
+        StreamInfo::FilterState::StateType::ReadOnly,
+        StreamInfo::FilterState::LifeSpan::FilterChain);
+  }
+
   // discoveryPeerMetadata is called to check if the baggage HTTP2 CONNECT
   // response headers have been populated already in the filter state.
   //
@@ -174,9 +212,9 @@ private:
   // will not do anything if the filter is not in the right state.
   std::optional<google::protobuf::Any> discoverPeerMetadata() {
     ENVOY_LOG(trace, "Trying to discovery peer metadata from filter state set by TCP Proxy");
-    ASSERT(callbacks_);
+    ASSERT(write_callbacks_);
 
-    const Network::Connection& conn = callbacks_->connection();
+    const Network::Connection& conn = write_callbacks_->connection();
     const StreamInfo::StreamInfo& stream = conn.streamInfo();
     const TcpProxy::TunnelResponseHeaders* state =
         stream.filterState().getDataReadOnly<TcpProxy::TunnelResponseHeaders>(
@@ -199,7 +237,7 @@ private:
               "Successfully discovered peer metadata from the baggage header saved by TCP Proxy");
 
     std::string identity{};
-    const auto upstream = callbacks_->connection().streamInfo().upstreamInfo();
+    const auto upstream = write_callbacks_->connection().streamInfo().upstreamInfo();
     if (upstream) {
       const auto conn = upstream->upstreamSslConnection();
       if (conn) {
@@ -209,7 +247,8 @@ private:
     }
 
     std::unique_ptr<::Istio::Common::WorkloadMetadataObject> metadata =
-        ::Istio::Common::convertBaggageToWorkloadMetadata(baggage[0]->value().getStringView(), identity);
+        ::Istio::Common::convertBaggageToWorkloadMetadata(baggage[0]->value().getStringView(),
+                                                          identity);
 
     google::protobuf::Struct data = convertWorkloadMetadataToStruct(*metadata);
     google::protobuf::Any wrapped;
@@ -219,7 +258,7 @@ private:
 
   void propagatePeerMetadata(const google::protobuf::Any& peer_metadata) {
     ENVOY_LOG(trace, "Sending peer metadata downstream with the data stream");
-    ASSERT(callbacks_);
+    ASSERT(write_callbacks_);
 
     if (state_ != PeerMetadataState::WaitingForData) {
       // It's only safe and correct to send the peer metadata downstream with
@@ -235,29 +274,24 @@ private:
     Buffer::OwnedImpl buffer{
         std::string_view(reinterpret_cast<const char*>(&header), sizeof(header))};
     buffer.add(data);
-    // TODO: I went with communicating over the data stream because it appears
-    // simpler than alternatives, but maybe I haven't thought of a good
-    // alternative yet?
-    //
-    // The biggest downside of the current method is that we are fiddling with
-    // the data stream, maybe we can think of a simple way to communicate what
-    // we want over TLS instead?
-    callbacks_->injectWriteDataToFilterChain(buffer, false);
+    write_callbacks_->injectWriteDataToFilterChain(buffer, false);
   }
 
   void propagateNoPeerMetadata() {
     ENVOY_LOG(trace, "Sending no peer metadata downstream with the data");
-    ASSERT(callbacks_);
+    ASSERT(write_callbacks_);
 
     PeerMetadataHeader header{PeerMetadataHeader::magic_number, 0};
     Buffer::OwnedImpl buffer{
         std::string_view(reinterpret_cast<const char*>(&header), sizeof(header))};
-    callbacks_->injectWriteDataToFilterChain(buffer, false);
+    write_callbacks_->injectWriteDataToFilterChain(buffer, false);
   }
 
   PeerMetadataState state_ = PeerMetadataState::WaitingForData;
-  Network::WriteFilterCallbacks* callbacks_{};
-  Config config_;
+  Network::WriteFilterCallbacks* write_callbacks_{};
+  Network::ReadFilterCallbacks* read_callbacks_{};
+  const Config& config_;
+  std::string baggage_;
 };
 
 /**
@@ -278,7 +312,7 @@ private:
  */
 class UpstreamFilter : public Network::ReadFilter, Logger::Loggable<Logger::Id::filter> {
 public:
-  UpstreamFilter(const UpstreamConfig& config) : config_(config) {}
+  UpstreamFilter() {}
 
   // Network::ReadFilter
   Network::FilterStatus onData(Buffer::Instance& buffer, bool end_stream) override {
@@ -286,6 +320,10 @@ public:
 
     switch (state_) {
     case PeerMetadataState::WaitingForData:
+      if (!isUpstreamHBONE()) {
+        state_ = PeerMetadataState::PassThrough;
+        break;
+      }
       if (consumePeerMetadata(buffer, end_stream)) {
         state_ = PeerMetadataState::PassThrough;
       } else {
@@ -309,6 +347,47 @@ public:
   }
 
 private:
+  // TODO: This is a rather shallow check - it only verifies that the upstream is an internal
+  // listener and therefore could have peer metadata filter that will send peer metadata with
+  // the data stream.
+  //
+  // We can be more explicit than that and check the name of the internal listener to only
+  // trigger the logic when we talk to connect_originate or inner_connect_originate listeners.
+  // A more clean approach would be to add endpoint metadata that will let this filter know
+  // that it should not trigger for the connection (or should trigger on the connection).
+  //
+  // Another potential benefit here is that we can trigger baggage-based peer metadata
+  // discovery only for double-HBONE connections, if we let this filter skip all regular
+  // endpoints that don't communicate with the E/W gateway.
+  //
+  // We could also consider dropping this check alltogether, because we only need this filter
+  // in waypoints and all waypoint clusters contain either HBONE or double-HBONE endpoints.
+  bool isUpstreamHBONE() const {
+    ASSERT(callbacks_);
+
+    const auto upstream = callbacks_->connection().streamInfo().upstreamInfo();
+    if (!upstream) {
+      ENVOY_LOG(trace, "No upstream information, cannot confirm that upstream uses HBONE");
+      return false;
+    }
+
+    const auto host = upstream->upstreamHost();
+    if (!host) {
+      ENVOY_LOG(trace, "No upstream host, cannot confirm that upstream host uses HBONE");
+      return false;
+    }
+
+    if (host->address()->type() != Network::Address::Type::EnvoyInternal) {
+      ENVOY_LOG(trace,
+                "Upstream host is not an internal listener - upstream host does not use HBONE");
+      return false;
+    }
+
+    ENVOY_LOG(trace,
+              "Upstream host is an internal listener - concluding that upstream host uses HBONE");
+    return true;
+  }
+
   bool consumePeerMetadata(Buffer::Instance& buffer, bool end_stream) {
     ENVOY_LOG(trace, "Trying to consume peer metadata from the data stream");
     using namespace ::Istio::Common;
@@ -420,7 +499,6 @@ private:
 
   PeerMetadataState state_ = PeerMetadataState::WaitingForData;
   Network::ReadFilterCallbacks* callbacks_{};
-  UpstreamConfig config_;
 };
 
 /**
@@ -439,9 +517,9 @@ public:
 private:
   absl::StatusOr<Network::FilterFactoryCb>
   createFilterFactoryFromProtoTyped(const Config& config,
-                                    Server::Configuration::FactoryContext&) override {
-    return [config](Network::FilterManager& filter_manager) -> void {
-      filter_manager.addWriteFilter(std::make_shared<Filter>(config));
+                                    Server::Configuration::FactoryContext& context) override {
+    return [config, &context](Network::FilterManager& filter_manager) -> void {
+      filter_manager.addFilter(std::make_shared<Filter>(config, context.serverFactoryContext()));
     };
   }
 };
@@ -478,9 +556,9 @@ public:
   }
 
 private:
-  Network::FilterFactoryCb createFilterFactory(const UpstreamConfig& config) {
-    return [config](Network::FilterManager& filter_manager) -> void {
-      filter_manager.addReadFilter(std::make_shared<UpstreamFilter>(config));
+  Network::FilterFactoryCb createFilterFactory(const UpstreamConfig&) {
+    return [](Network::FilterManager& filter_manager) -> void {
+      filter_manager.addReadFilter(std::make_shared<UpstreamFilter>());
     };
   }
 };

@@ -18,6 +18,26 @@ syntax = "proto3";
 package envoy.extensions.network_filters.peer_metadata.proto;
 
 message Config {
+  // What filter state to use to save the baggage value that encodes the proxy
+  // workload.
+  //
+  // The upstream filter that will populate the baggage header in the HBONE
+  // request should be configured to use the same key.
+  //
+  // Why share baggage value via filter state instead of configruing upstream
+  // filter to use the baggage key value directly?
+  //
+  // ztunnel and waypoint have to be aware of the baggage header format,
+  // because they should be able to parse baggage headers to extract the
+  // metadata and report the metrics. However, pilot does not need to be aware
+  // of the baggage encoding yet.
+  //
+  // If instead of using custom filter to generate baggage header value we just
+  // let pilot generate it, it would spread the logic for generating baggage to
+  // the pilot as well. While not a big deal, if there is no clear reason to do
+  // it, let's not duplicate the implementation of baggage logic in pilot and
+  // just re-use the logic we already have in Envoy.
+  string baggage_key = 1;
 }
 
 message UpstreamConfig {

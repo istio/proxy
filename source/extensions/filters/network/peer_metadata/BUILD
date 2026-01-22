@@ -38,6 +38,7 @@ envoy_cc_library(
         "@envoy//envoy/network:filter_interface",
         "@envoy//envoy/server:filter_config_interface",
         "@envoy//source/common/common:minimal_logger_lib",
+        "@envoy//source/common/router:string_accessor_lib",
         "@envoy//source/common/singleton:const_singleton",
         "@envoy//source/common/stream_info:bool_accessor_lib",
         "@envoy//source/common/tcp_proxy",

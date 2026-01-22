@@ -110,6 +110,7 @@ public:
   FieldType getField(absl::string_view) const override;
   void setLabels(std::vector<std::pair<std::string, std::string>> labels) { labels_ = labels; }
   std::vector<std::pair<std::string, std::string>> getLabels() const { return labels_; }
+  std::string baggage() const;
 
   const std::string instance_name_;
   const std::string cluster_name_;
@@ -153,8 +154,8 @@ std::string serializeToStringDeterministic(const google::protobuf::Struct& metad
 
 // Convert from baggage encoding.
 std::unique_ptr<WorkloadMetadataObject> convertBaggageToWorkloadMetadata(absl::string_view baggage);
-std::unique_ptr<WorkloadMetadataObject> convertBaggageToWorkloadMetadata(absl::string_view baggage,
-                                                                         absl::string_view identity);
+std::unique_ptr<WorkloadMetadataObject>
+convertBaggageToWorkloadMetadata(absl::string_view baggage, absl::string_view identity);
 
 } // namespace Common
 } // namespace Istio
