@@ -294,7 +294,8 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata) {
 }
 
 std::unique_ptr<WorkloadMetadataObject>
-convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata, const absl::flat_hash_set<std::string>& additional_labels) {
+convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
+                                const absl::flat_hash_set<std::string>& additional_labels) {
   return convertStructToWorkloadMetadata(metadata, additional_labels, {});
 }
 
@@ -348,10 +349,9 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
       locality_zone = locality->zone();
     }
   }
-  auto obj = std::make_unique<WorkloadMetadataObject>(instance, cluster, namespace_name, workload,
-                                                      canonical_name, canonical_revision, app_name,
-                                                      app_version, parseOwner(owner, workload), "",
-                                                      locality_region, locality_zone);
+  auto obj = std::make_unique<WorkloadMetadataObject>(
+      instance, cluster, namespace_name, workload, canonical_name, canonical_revision, app_name,
+      app_version, parseOwner(owner, workload), "", locality_region, locality_zone);
   obj->setLabels(labels);
   return obj;
 }
@@ -363,7 +363,8 @@ convertEndpointMetadata(const std::string& endpoint_encoding) {
     return {};
   }
   return absl::make_optional<WorkloadMetadataObject>("", parts[4], parts[1], parts[0], parts[2],
-                                                     parts[3], "", "", WorkloadType::Unknown, "", "", "");
+                                                     parts[3], "", "", WorkloadType::Unknown, "",
+                                                     "", "");
 }
 
 std::string serializeToStringDeterministic(const google::protobuf::Struct& metadata) {
