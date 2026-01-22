@@ -24,7 +24,8 @@ namespace Istio {
 namespace Common {
 
 namespace {
-static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_BAGGAGE_TOKENS = {
+// TODO: find a propper name for this mapping
+static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_METADATA_FIELDS = {
     {NamespaceNameToken, BaggageToken::NamespaceName},
     {ClusterNameToken, BaggageToken::ClusterName},
     {ServiceNameToken, BaggageToken::ServiceName},
@@ -34,6 +35,20 @@ static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_BAGGAGE_TOKENS =
     {WorkloadNameToken, BaggageToken::WorkloadName},
     {WorkloadTypeToken, BaggageToken::WorkloadType},
     {InstanceNameToken, BaggageToken::InstanceName},
+};
+
+static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_BAGGAGE_TOKENS = {
+    {NamespaceNameBaggageToken, BaggageToken::NamespaceName},
+    {ClusterNameBaggageToken, BaggageToken::ClusterName},
+    {ServiceNameBaggageToken, BaggageToken::ServiceName},
+    {ServiceVersionBaggageToken, BaggageToken::ServiceVersion},
+    {AppNameBaggageToken, BaggageToken::AppName},
+    {AppVersionBaggageToken, BaggageToken::AppVersion},
+    {DeploymentNameBaggageToken, BaggageToken::WorkloadName},
+    {PodNameBaggageToken, BaggageToken::WorkloadName},
+    {CronjobNameBaggageToken, BaggageToken::WorkloadName},
+    {JobNameBaggageToken, BaggageToken::WorkloadName},
+    {InstanceNameBaggageToken, BaggageToken::InstanceName},
 };
 
 static absl::flat_hash_map<absl::string_view, WorkloadType> ALL_WORKLOAD_TOKENS = {
@@ -292,8 +307,8 @@ std::string serializeToStringDeterministic(const google::protobuf::Struct& metad
 
 WorkloadMetadataObject::FieldType
 WorkloadMetadataObject::getField(absl::string_view field_name) const {
-  const auto it = ALL_BAGGAGE_TOKENS.find(field_name);
-  if (it != ALL_BAGGAGE_TOKENS.end()) {
+  const auto it = ALL_METADATA_FIELDS.find(field_name);
+  if (it != ALL_METADATA_FIELDS.end()) {
     switch (it->second) {
     case BaggageToken::NamespaceName:
       return namespace_name_;
@@ -355,14 +370,18 @@ std::unique_ptr<WorkloadMetadataObject> convertBaggageToWorkloadMetadata(absl::s
       case BaggageToken::AppVersion:
         app_version = parts.second;
         break;
-      case BaggageToken::WorkloadName:
-        workload = parts.second;
-        break;
-      case BaggageToken::WorkloadType:
-        workload_type = fromSuffix(parts.second);
-        break;
+      case BaggageToken::WorkloadName: {
+          workload = parts.second;
+          std::vector<absl::string_view> splitWorkloadKey = absl::StrSplit(parts.first, ".");
+          if (splitWorkloadKey.size() >= 2 && splitWorkloadKey[0] == "k8s") {
+            workload_type = fromSuffix(splitWorkloadKey[1]);
+          }
+          break;
+        }
       case BaggageToken::InstanceName:
         instance = parts.second;
+        break;
+      default:
         break;
       }
     }

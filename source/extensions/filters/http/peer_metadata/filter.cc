@@ -225,11 +225,9 @@ absl::optional<PeerInfo> BaggageDiscoveryMethod::derivePeerInfo(const StreamInfo
                                                                  Context&) const {
   const auto baggage_header = headers.get(Headers::get().Baggage);
   if (baggage_header.empty()) {
-    ENVOY_LOG(info, "there's no baggage header");
     return {};
   }
-  ENVOY_LOG(info, "baggage header found");
-  absl::string_view baggage_value = baggage_header[0]->value().getStringView();
+  const auto baggage_value = baggage_header[0]->value().getStringView();
   const auto workload = Istio::Common::convertBaggageToWorkloadMetadata(baggage_value);
   if (workload) {
     return *workload;

@@ -751,14 +751,14 @@ TEST_F(PeerMetadataTest, DownstreamBaggageDiscovery) {
   request_headers_.setReference(
       Headers::get().Baggage,
       "k8s.namespace.name=test-namespace,k8s.cluster.name=test-cluster,"
-      "service.name=test-service,service.version=v1,k8s.workload.name=test-workload,"
+      "service.name=test-service,service.version=v1,k8s.deployment.name=test-workload,"
       "k8s.workload.type=deployment,k8s.instance.name=test-instance-123,"
       "app.name=test-app,app.version=v2.0");
   initialize(R"EOF(
     downstream_discovery:
       - baggage: {}
   )EOF");
-  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(1, request_headers_.size());
   EXPECT_EQ(0, response_headers_.size());
   checkPeerNamespace(true, "test-namespace");
   checkNoPeer(false);
@@ -777,7 +777,7 @@ TEST_F(PeerMetadataTest, UpstreamBaggageDiscovery) {
       - baggage: {}
   )EOF");
   EXPECT_EQ(0, request_headers_.size());
-  EXPECT_EQ(0, response_headers_.size());
+  EXPECT_EQ(1, response_headers_.size());
   checkNoPeer(true);
   checkPeerNamespace(false, "upstream-namespace");
 }
@@ -795,8 +795,8 @@ TEST_F(PeerMetadataTest, BothDirectionsBaggageDiscovery) {
     upstream_discovery:
       - baggage: {}
   )EOF");
-  EXPECT_EQ(0, request_headers_.size());
-  EXPECT_EQ(0, response_headers_.size());
+  EXPECT_EQ(1, request_headers_.size());
+  EXPECT_EQ(1, response_headers_.size());
   checkPeerNamespace(true, "downstream-ns");
   checkPeerNamespace(false, "upstream-ns");
 }
@@ -812,7 +812,7 @@ TEST_F(PeerMetadataTest, DownstreamBaggageFallbackFirst) {
       - baggage: {}
       - workload_discovery: {}
   )EOF");
-  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(1, request_headers_.size());
   EXPECT_EQ(0, response_headers_.size());
   checkPeerNamespace(true, "baggage-namespace");
   checkNoPeer(false);
@@ -854,7 +854,7 @@ TEST_F(PeerMetadataTest, UpstreamBaggageFallbackFirst) {
       - workload_discovery: {}
   )EOF");
   EXPECT_EQ(0, request_headers_.size());
-  EXPECT_EQ(0, response_headers_.size());
+  EXPECT_EQ(1, response_headers_.size());
   checkNoPeer(true);
   checkPeerNamespace(false, "baggage-upstream");
 }
@@ -895,7 +895,7 @@ TEST_F(PeerMetadataTest, DownstreamBaggageWithMXFallback) {
       - baggage: {}
       - istio_headers: {}
   )EOF");
-  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(1, request_headers_.size());
   EXPECT_EQ(0, response_headers_.size());
   checkPeerNamespace(true, "baggage-ns");
   checkNoPeer(false);
@@ -913,7 +913,7 @@ TEST_F(PeerMetadataTest, DownstreamMXWithBaggageFallback) {
       - istio_headers: {}
       - baggage: {}
   )EOF");
-  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(1, request_headers_.size());
   EXPECT_EQ(0, response_headers_.size());
   // MX header has namespace "default" from SampleIstioHeader
   checkPeerNamespace(true, "default");
@@ -957,7 +957,7 @@ TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoFromBaggage) {
       Headers::get().Baggage,
       "k8s.namespace.name=unit-test-namespace,k8s.cluster.name=unit-test-cluster,"
       "service.name=unit-test-service,service.version=v1.0,"
-      "k8s.workload.name=unit-test-workload,k8s.workload.type=deployment,"
+      "k8s.deployment.name=unit-test-workload,k8s.workload.type=deployment,"
       "k8s.instance.name=unit-test-instance,app.name=unit-test-app,app.version=v2.0");
   Context ctx;
 
@@ -1013,7 +1013,7 @@ TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoAllWorkloadTypes) {
   {
     Http::TestRequestHeaderMapImpl headers;
     headers.setReference(Headers::get().Baggage,
-                         "k8s.namespace.name=test-ns,k8s.workload.type=pod");
+                         "k8s.namespace.name=test-ns,k8s.pod.name=pod-name");
     const auto result = method.derivePeerInfo(stream_info_, headers, ctx);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(Istio::Common::WorkloadType::Pod, result->workload_type_);
@@ -1023,7 +1023,7 @@ TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoAllWorkloadTypes) {
   {
     Http::TestRequestHeaderMapImpl headers;
     headers.setReference(Headers::get().Baggage,
-                         "k8s.namespace.name=test-ns,k8s.workload.type=deployment");
+                         "k8s.namespace.name=test-ns,k8s.deployment.name=deployment-name");
     const auto result = method.derivePeerInfo(stream_info_, headers, ctx);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(Istio::Common::WorkloadType::Deployment, result->workload_type_);
@@ -1033,7 +1033,7 @@ TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoAllWorkloadTypes) {
   {
     Http::TestRequestHeaderMapImpl headers;
     headers.setReference(Headers::get().Baggage,
-                         "k8s.namespace.name=test-ns,k8s.workload.type=job");
+                         "k8s.namespace.name=test-ns,k8s.job.name=job-name");
     const auto result = method.derivePeerInfo(stream_info_, headers, ctx);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(Istio::Common::WorkloadType::Job, result->workload_type_);
@@ -1043,7 +1043,7 @@ TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoAllWorkloadTypes) {
   {
     Http::TestRequestHeaderMapImpl headers;
     headers.setReference(Headers::get().Baggage,
-                         "k8s.namespace.name=test-ns,k8s.workload.type=cronjob");
+                         "k8s.namespace.name=test-ns,k8s.cronjob.name=cronjob-name");
     const auto result = method.derivePeerInfo(stream_info_, headers, ctx);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(Istio::Common::WorkloadType::CronJob, result->workload_type_);
