@@ -60,7 +60,7 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
     auto local_network = it != local_metadata.fields().end() ? it->second.string_value() : "";
     if (!origin_network_header.empty() &&
         origin_network_header[0]->value().getStringView() != local_network) {
-      ENVOY_LOG_MISC(info,
+      ENVOY_LOG_MISC(debug,
                      "Origin network header present: {}; skipping downstream workload discovery",
                      origin_network_header[0]->value().getStringView());
       peer_address = {};
@@ -85,7 +85,7 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
               // This is an E/W gateway endpoint, so we should explicitly not use workload discovery
               if (double_hbone_it != istio_it->second.fields().end()) {
                 ENVOY_LOG_MISC(
-                    info,
+                    debug,
                     "Skipping upstream workload discovery for an endpoint on a remote network");
                 peer_address = nullptr;
                 break;
