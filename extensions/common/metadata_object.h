@@ -67,6 +67,7 @@ enum class BaggageToken {
   InstanceName,
 };
 
+// Field names accessible from WorkloadMetadataObject.
 constexpr absl::string_view NamespaceNameToken = "namespace";
 constexpr absl::string_view ClusterNameToken = "cluster";
 constexpr absl::string_view ServiceNameToken = "service";
@@ -79,6 +80,8 @@ constexpr absl::string_view InstanceNameToken = "name";
 constexpr absl::string_view LabelsToken = "labels";
 constexpr absl::string_view IdentityToken = "identity";
 
+// Field names used to translate baggage content into
+// WorkloadMetadataObject information.
 constexpr absl::string_view NamespaceNameBaggageToken = "k8s.namespace.name";
 constexpr absl::string_view ClusterNameBaggageToken = "k8s.cluster.name";
 constexpr absl::string_view ServiceNameBaggageToken = "service.name";

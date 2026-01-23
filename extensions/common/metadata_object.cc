@@ -25,6 +25,8 @@ namespace Common {
 
 namespace {
 
+// This maps field names into baggage tokens. We use it to decode field names
+// when WorkloadMetadataObject content is accessed through the Envoy API.
 static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_METADATA_FIELDS = {
     {NamespaceNameToken, BaggageToken::NamespaceName},
     {ClusterNameToken, BaggageToken::ClusterName},
@@ -37,6 +39,8 @@ static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_METADATA_FIELDS 
     {InstanceNameToken, BaggageToken::InstanceName},
 };
 
+// This maps baggage keys into baggage tokens. We use it to decode baggage keys
+// coming over the wire when building WorkloadMetadataObject.
 static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_BAGGAGE_TOKENS = {
     {NamespaceNameBaggageToken, BaggageToken::NamespaceName},
     {ClusterNameBaggageToken, BaggageToken::ClusterName},
@@ -84,13 +88,13 @@ std::string WorkloadMetadataObject::baggage() const {
   }
   // Map the workload metadata fields to baggage tokens
   const std::vector<std::pair<absl::string_view, absl::string_view>> field_to_baggage = {
-      {Istio::Common::NamespaceNameToken, "k8s.namespace.name"},
-      {Istio::Common::ClusterNameToken, "k8s.cluster.name"},
-      {Istio::Common::ServiceNameToken, "service.name"},
-      {Istio::Common::ServiceVersionToken, "service.version"},
-      {Istio::Common::AppNameToken, "app.name"},
-      {Istio::Common::AppVersionToken, "app.version"},
-      {Istio::Common::InstanceNameToken, "k8s.instance.name"},
+      {Istio::Common::NamespaceNameToken, Istio::Common::NamespaceNameBaggageToken},
+      {Istio::Common::ClusterNameToken, Istio::Common::ClusterNameBaggageToken},
+      {Istio::Common::ServiceNameToken, Istio::Common::ServiceNameBaggageToken},
+      {Istio::Common::ServiceVersionToken, Istio::Common::ServiceVersionBaggageToken},
+      {Istio::Common::AppNameToken, Istio::Common::AppNameBaggageToken},
+      {Istio::Common::AppVersionToken, Istio::Common::AppVersionBaggageToken},
+      {Istio::Common::InstanceNameToken, Istio::Common::InstanceNameBaggageToken},
   };
 
   for (const auto& [field_name, baggage_key] : field_to_baggage) {
