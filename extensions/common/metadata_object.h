@@ -98,6 +98,8 @@ constexpr absl::string_view PodNameBaggageToken = "k8s.pod.name";
 constexpr absl::string_view CronjobNameBaggageToken = "k8s.cronjob.name";
 constexpr absl::string_view JobNameBaggageToken = "k8s.job.name";
 constexpr absl::string_view InstanceNameBaggageToken = "k8s.instance.name";
+constexpr absl::string_view LocalityRegionBaggageToken = "cloud.region";
+constexpr absl::string_view LocalityZoneBaggageToken = "cloud.availability_zone";
 
 constexpr absl::string_view InstanceMetadataField = "NAME";
 constexpr absl::string_view NamespaceMetadataField = "NAMESPACE";
@@ -106,7 +108,7 @@ constexpr absl::string_view OwnerMetadataField = "OWNER";
 constexpr absl::string_view WorkloadMetadataField = "WORKLOAD_NAME";
 constexpr absl::string_view LabelsMetadataField = "LABELS";
 constexpr absl::string_view RegionMetadataField = "REGION";
-constexpr absl::string_view ZoneMetadataField = "ZONE";
+constexpr absl::string_view ZoneMetadataField = "AVAILABILITY_ZONE";
 
 class WorkloadMetadataObject : public Envoy::StreamInfo::FilterState::Object,
                                public Envoy::Hashable {

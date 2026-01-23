@@ -56,6 +56,7 @@ static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_BAGGAGE_TOKENS =
     {CronjobNameBaggageToken, BaggageToken::WorkloadName},
     {JobNameBaggageToken, BaggageToken::WorkloadName},
     {InstanceNameBaggageToken, BaggageToken::InstanceName},
+
 };
 
 static absl::flat_hash_map<absl::string_view, WorkloadType> ALL_WORKLOAD_TOKENS = {
@@ -98,6 +99,8 @@ std::string WorkloadMetadataObject::baggage() const {
       {Istio::Common::AppNameToken, Istio::Common::AppNameBaggageToken},
       {Istio::Common::AppVersionToken, Istio::Common::AppVersionBaggageToken},
       {Istio::Common::InstanceNameToken, Istio::Common::InstanceNameBaggageToken},
+      {Istio::Common::RegionToken, Istio::Common::LocalityRegionBaggageToken},
+      {Istio::Common::ZoneToken, Istio::Common::LocalityZoneBaggageToken},
   };
 
   for (const auto& [field_name, baggage_key] : field_to_baggage) {
@@ -317,10 +320,6 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
       workload = it.second.string_value();
     } else if (it.first == ClusterMetadataField) {
       cluster = it.second.string_value();
-    } else if (it.first == RegionMetadataField) {
-      region = it.second.string_value();
-    } else if (it.first == ZoneMetadataField) {
-      zone = it.second.string_value();
     } else if (it.first == LabelsMetadataField) {
       for (const auto& labels_it : it.second.struct_value().fields()) {
         if (labels_it.first == CanonicalNameLabel) {
@@ -479,9 +478,9 @@ convertBaggageToWorkloadMetadata(absl::string_view data, absl::string_view ident
       }
     }
   }
-  return std::make_unique<WorkloadMetadataObject>(instance, cluster, namespace_name, workload,
-                                                  canonical_name, canonical_revision, app_name,
-                                                  app_version, workload_type, identity, region, zone);
+  return std::make_unique<WorkloadMetadataObject>(
+      instance, cluster, namespace_name, workload, canonical_name, canonical_revision, app_name,
+      app_version, workload_type, identity, region, zone);
 }
 
 } // namespace Common

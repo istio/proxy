@@ -627,7 +627,7 @@ TEST_F(BaggagePropagationMethodTest, DownstreamBaggageInjection) {
       absl::StrContains(baggage_value, "k8s.pod.name=sample-workload")); // workload type is pod
   EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.instance.name=sample-instance"));
   EXPECT_TRUE(absl::StrContains(baggage_value, "cloud.region=us-east4"));
-  EXPECT_TRUE(absl::StrContains(baggage_value, "cloud.zone=us-east4-b"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "cloud.availability_zone=us-east4-b"));
 }
 
 TEST_F(BaggagePropagationMethodTest, UpstreamBaggageInjection) {
@@ -830,7 +830,7 @@ TEST_F(PeerMetadataTest, DownstreamBaggageFallbackSecond) {
   // No baggage header, so XDS should be called as fallback
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "xds-namespace", "foo",
                                    "foo-service", "v1alpha3", "", "",
-                                   Istio::Common::WorkloadType::Pod, "");
+                                   Istio::Common::WorkloadType::Pod, "", "us-east4", "us-east4-b");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -858,7 +858,7 @@ TEST_F(PeerMetadataTest, UpstreamBaggageFallbackFirst) {
   // WDS information is also present, and this is the one tha tshould be used.
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "xds-upstream", "foo",
                                    "foo-service", "v1alpha3", "", "",
-                                   Istio::Common::WorkloadType::Pod, "");
+                                   Istio::Common::WorkloadType::Pod, "", "us-east4", "us-east4-b");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -883,7 +883,7 @@ TEST_F(PeerMetadataTest, UpstreamBaggageFallbackSecond) {
   // but workload discovery should pick up the details.
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "xds-upstream", "foo",
                                    "foo-service", "v1alpha3", "", "",
-                                   Istio::Common::WorkloadType::Pod, "");
+                                   Istio::Common::WorkloadType::Pod, "", "us-east4", "us-east4-b");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
