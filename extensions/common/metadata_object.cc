@@ -349,7 +349,13 @@ WorkloadMetadataObject::getField(absl::string_view field_name) const {
   return {};
 }
 
-std::unique_ptr<WorkloadMetadataObject> convertBaggageToWorkloadMetadata(absl::string_view data) {
+std::unique_ptr<WorkloadMetadataObject>
+convertBaggageToWorkloadMetadata(absl::string_view baggage) {
+  return convertBaggageToWorkloadMetadata(baggage, "");
+}
+
+std::unique_ptr<WorkloadMetadataObject>
+convertBaggageToWorkloadMetadata(absl::string_view data, absl::string_view identity) {
   absl::string_view instance;
   absl::string_view cluster;
   absl::string_view workload;
@@ -397,7 +403,7 @@ std::unique_ptr<WorkloadMetadataObject> convertBaggageToWorkloadMetadata(absl::s
   }
   return std::make_unique<WorkloadMetadataObject>(instance, cluster, namespace_name, workload,
                                                   canonical_name, canonical_revision, app_name,
-                                                  app_version, workload_type, "");
+                                                  app_version, workload_type, identity);
 }
 
 } // namespace Common

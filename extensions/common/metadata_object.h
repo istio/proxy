@@ -153,7 +153,9 @@ convertEndpointMetadata(const std::string& endpoint_encoding);
 std::string serializeToStringDeterministic(const google::protobuf::Struct& metadata);
 
 // Convert from baggage encoding.
-std::unique_ptr<WorkloadMetadataObject> convertBaggageToWorkloadMetadata(absl::string_view data);
+std::unique_ptr<WorkloadMetadataObject> convertBaggageToWorkloadMetadata(absl::string_view baggage);
+std::unique_ptr<WorkloadMetadataObject>
+convertBaggageToWorkloadMetadata(absl::string_view baggage, absl::string_view identity);
 
 } // namespace Common
 } // namespace Istio
