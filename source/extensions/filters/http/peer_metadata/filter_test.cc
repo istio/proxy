@@ -732,8 +732,8 @@ TEST_F(PeerMetadataTest, DownstreamBaggageDiscoveryEmpty) {
 }
 
 TEST_F(PeerMetadataTest, UpstreamBaggageDiscoveryEmpty) {
-  // The baggage discovery filter should only be used for downstream 
-  // peer metadata detection. 
+  // The baggage discovery filter should only be used for downstream
+  // peer metadata detection.
   initialize(R"EOF(
     upstream_discovery:
       - baggage: {}

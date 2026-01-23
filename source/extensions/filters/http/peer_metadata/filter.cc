@@ -249,7 +249,8 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
       if (downstream) {
         methods.push_back(std::make_unique<BaggageDiscoveryMethod>());
       } else {
-        ENVOY_LOG(warn, "Baggage discovery configuration found for upstream, this is not supported!");
+        ENVOY_LOG(warn,
+                  "Baggage discovery configuration found for upstream, this is not supported!");
       }
       break;
     default:
