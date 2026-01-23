@@ -32,6 +32,7 @@ using ::Envoy::Extensions::Filters::Common::Expr::CelStateType;
 struct HeaderValues {
   const Http::LowerCaseString ExchangeMetadataHeader{"x-envoy-peer-metadata"};
   const Http::LowerCaseString ExchangeMetadataHeaderId{"x-envoy-peer-metadata-id"};
+  const Http::LowerCaseString ExchangeMetadataOriginNetwork{"x-istio-origin-network"};
 };
 
 using Headers = ConstSingleton<HeaderValues>;
