@@ -264,7 +264,7 @@ private:
       // It's only safe and correct to send the peer metadata downstream with
       // the data if we haven't done that already, otherwise the downstream
       // could be very confused by the data they received.
-      ENVOY_LOG(trace, "Filter has already sent the peer metadat downstream");
+      ENVOY_LOG(trace, "Filter has already sent the peer metadata downstream");
       return;
     }
 
