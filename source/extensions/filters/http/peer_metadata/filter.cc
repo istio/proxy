@@ -35,23 +35,38 @@ class XDSMethod : public DiscoveryMethod {
 public:
   XDSMethod(bool downstream, Server::Configuration::ServerFactoryContext& factory_context)
       : downstream_(downstream),
-        metadata_provider_(Extensions::Common::WorkloadDiscovery::GetProvider(factory_context)) {}
+        metadata_provider_(Extensions::Common::WorkloadDiscovery::GetProvider(factory_context)),
+        local_info_(factory_context.localInfo()) {}
   absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
                                           Context&) const override;
 
 private:
   const bool downstream_;
   Extensions::Common::WorkloadDiscovery::WorkloadMetadataProviderSharedPtr metadata_provider_;
+  const LocalInfo::LocalInfo& local_info_;
 };
 
 absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo& info,
-                                                   Http::HeaderMap&, Context&) const {
+                                                   Http::HeaderMap& headers, Context&) const {
   if (!metadata_provider_) {
     return {};
   }
   Network::Address::InstanceConstSharedPtr peer_address;
   if (downstream_) {
-    peer_address = info.downstreamAddressProvider().remoteAddress();
+    const auto origin_network_header = headers.get(Headers::get().ExchangeMetadataOriginNetwork);
+    const auto& local_metadata = local_info_.node().metadata();
+    const auto& it = local_metadata.fields().find("NETWORK");
+    // We might not have a local network configured in the single cluster case, so default to empty.
+    auto local_network = it != local_metadata.fields().end() ? it->second.string_value() : "";
+    if (!origin_network_header.empty() &&
+        origin_network_header[0]->value().getStringView() != local_network) {
+      ENVOY_LOG_MISC(debug,
+                     "Origin network header present: {}; skipping downstream workload discovery",
+                     origin_network_header[0]->value().getStringView());
+      peer_address = {};
+    } else {
+      peer_address = info.downstreamAddressProvider().remoteAddress();
+    }
   } else {
     if (info.upstreamInfo().has_value()) {
       auto upstream_host = info.upstreamInfo().value().get().upstreamHost();
@@ -64,6 +79,20 @@ absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo&
         case Network::Address::Type::EnvoyInternal:
           if (upstream_host->metadata()) {
             const auto& filter_metadata = upstream_host->metadata()->filter_metadata();
+            const auto& istio_it = filter_metadata.find("istio");
+            if (istio_it != filter_metadata.end()) {
+              const auto& double_hbone_it = istio_it->second.fields().find("double_hbone");
+              // This is an E/W gateway endpoint, so we should explicitly not use workload discovery
+              if (double_hbone_it != istio_it->second.fields().end()) {
+                ENVOY_LOG_MISC(
+                    debug,
+                    "Skipping upstream workload discovery for an endpoint on a remote network");
+                peer_address = nullptr;
+                break;
+              }
+            } else {
+              ENVOY_LOG_MISC(debug, "No istio metadata found on upstream host.");
+            }
             const auto& it = filter_metadata.find("envoy.filters.listener.original_dst");
             if (it != filter_metadata.end()) {
               const auto& destination_it = it->second.fields().find("local");
