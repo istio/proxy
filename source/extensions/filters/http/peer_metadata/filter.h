@@ -114,8 +114,7 @@ private:
 
 class BaggageDiscoveryMethod : public DiscoveryMethod, public Logger::Loggable<Logger::Id::filter> {
 public:
-  BaggageDiscoveryMethod(bool downstream,
-                         Server::Configuration::ServerFactoryContext& factory_context);
+  BaggageDiscoveryMethod();
   absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
                                           Context&) const override;
 };

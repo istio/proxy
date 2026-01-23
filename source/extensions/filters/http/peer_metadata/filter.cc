@@ -193,8 +193,7 @@ void BaggagePropagationMethod::inject(const StreamInfo::StreamInfo&, Http::Heade
   headers.setReference(Headers::get().Baggage, value_);
 }
 
-BaggageDiscoveryMethod::BaggageDiscoveryMethod(
-    bool /*downstream*/, Server::Configuration::ServerFactoryContext& /*factory_context*/) {}
+BaggageDiscoveryMethod::BaggageDiscoveryMethod() {}
 
 absl::optional<PeerInfo> BaggageDiscoveryMethod::derivePeerInfo(const StreamInfo::StreamInfo&,
                                                                 Http::HeaderMap& headers,
@@ -247,8 +246,11 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
                                                    factory_context.serverFactoryContext()));
       break;
     case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::kBaggage:
-      methods.push_back(std::make_unique<BaggageDiscoveryMethod>(
-          downstream, factory_context.serverFactoryContext()));
+      if (downstream) {
+        methods.push_back(std::make_unique<BaggageDiscoveryMethod>());
+      } else {
+        ENVOY_LOG(warn, "Baggage discovery configuration found for upstream, this is not supported!");
+      }
       break;
     default:
       break;
@@ -339,7 +341,6 @@ void FilterConfig::setFilterState(StreamInfo::StreamInfo& info, bool downstream,
     auto pb = value.serializeAsProto();
     auto peer_info = std::make_unique<CelState>(FilterConfig::peerInfoPrototype());
     peer_info->setValue(absl::string_view(pb->SerializeAsString()));
-    ENVOY_LOG(info, "setting peer_info: {} = {}", key, pb->SerializeAsString());
     info.filterState()->setData(
         key, std::move(peer_info), StreamInfo::FilterState::StateType::Mutable,
         StreamInfo::FilterState::LifeSpan::FilterChain, sharedWithUpstream());

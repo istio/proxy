@@ -732,6 +732,8 @@ TEST_F(PeerMetadataTest, DownstreamBaggageDiscoveryEmpty) {
 }
 
 TEST_F(PeerMetadataTest, UpstreamBaggageDiscoveryEmpty) {
+  // The baggage discovery filter should only be used for downstream 
+  // peer metadata detection. 
   initialize(R"EOF(
     upstream_discovery:
       - baggage: {}
@@ -774,7 +776,8 @@ TEST_F(PeerMetadataTest, UpstreamBaggageDiscovery) {
   EXPECT_EQ(0, request_headers_.size());
   EXPECT_EQ(1, response_headers_.size());
   checkNoPeer(true);
-  checkPeerNamespace(false, "upstream-namespace");
+  // Baggage discovery should ignore upstream.
+  checkNoPeer(false);
 }
 
 TEST_F(PeerMetadataTest, BothDirectionsBaggageDiscovery) {
@@ -791,7 +794,8 @@ TEST_F(PeerMetadataTest, BothDirectionsBaggageDiscovery) {
   EXPECT_EQ(1, request_headers_.size());
   EXPECT_EQ(1, response_headers_.size());
   checkPeerNamespace(true, "downstream-ns");
-  checkPeerNamespace(false, "upstream-ns");
+  // Baggage discovery should ignore upstream
+  checkNoPeer(false);
 }
 
 TEST_F(PeerMetadataTest, DownstreamBaggageFallbackFirst) {
@@ -835,11 +839,22 @@ TEST_F(PeerMetadataTest, DownstreamBaggageFallbackSecond) {
 }
 
 TEST_F(PeerMetadataTest, UpstreamBaggageFallbackFirst) {
-  // Baggage is present, so XDS should not be called
+  // Baggage is present, but ignored as it's coming from upstream.
   response_headers_.setReference(
       Headers::get().Baggage,
       "k8s.namespace.name=baggage-upstream,service.name=baggage-upstream-service");
-  EXPECT_CALL(*metadata_provider_, GetMetadata(_)).Times(0);
+  // WDS information is also present, and this is the one tha tshould be used.
+  const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "xds-upstream", "foo",
+                                   "foo-service", "v1alpha3", "", "",
+                                   Istio::Common::WorkloadType::Pod, "");
+  EXPECT_CALL(*metadata_provider_, GetMetadata(_))
+      .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
+                                 -> std::optional<WorkloadMetadataObject> {
+        if (absl::StartsWith(address->asStringView(), "10.0.0.1")) {
+          return {pod};
+        }
+        return {};
+      }));
   initialize(R"EOF(
     upstream_discovery:
       - baggage: {}
@@ -848,11 +863,12 @@ TEST_F(PeerMetadataTest, UpstreamBaggageFallbackFirst) {
   EXPECT_EQ(0, request_headers_.size());
   EXPECT_EQ(1, response_headers_.size());
   checkNoPeer(true);
-  checkPeerNamespace(false, "baggage-upstream");
+  checkPeerNamespace(false, "xds-upstream");
 }
 
 TEST_F(PeerMetadataTest, UpstreamBaggageFallbackSecond) {
-  // No baggage header, so XDS should be called as fallback
+  // No baggage header, baggage is ignored as it's coming from upstream,
+  // but workload discovery should pick up the details.
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "xds-upstream", "foo",
                                    "foo-service", "v1alpha3", "", "",
                                    Istio::Common::WorkloadType::Pod, "");
@@ -939,7 +955,7 @@ protected:
 };
 
 TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoFromBaggage) {
-  BaggageDiscoveryMethod method(true, context_.server_factory_context_);
+  BaggageDiscoveryMethod method;
 
   Http::TestRequestHeaderMapImpl headers;
   headers.setReference(
@@ -965,7 +981,7 @@ TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoFromBaggage) {
 }
 
 TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoEmptyBaggage) {
-  BaggageDiscoveryMethod method(true, context_.server_factory_context_);
+  BaggageDiscoveryMethod method;
 
   Http::TestRequestHeaderMapImpl headers;
   Context ctx;
@@ -976,7 +992,7 @@ TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoEmptyBaggage) {
 }
 
 TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoPartialBaggage) {
-  BaggageDiscoveryMethod method(false, context_.server_factory_context_);
+  BaggageDiscoveryMethod method;
 
   Http::TestResponseHeaderMapImpl headers;
   headers.setReference(Headers::get().Baggage,
@@ -994,7 +1010,7 @@ TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoPartialBaggage) {
 }
 
 TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoAllWorkloadTypes) {
-  BaggageDiscoveryMethod method(true, context_.server_factory_context_);
+  BaggageDiscoveryMethod method;
   Context ctx;
 
   // Test Pod workload type
