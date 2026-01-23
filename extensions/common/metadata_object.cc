@@ -24,7 +24,10 @@ namespace Istio {
 namespace Common {
 
 namespace {
-static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_BAGGAGE_TOKENS = {
+
+// This maps field names into baggage tokens. We use it to decode field names
+// when WorkloadMetadataObject content is accessed through the Envoy API.
+static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_METADATA_FIELDS = {
     {NamespaceNameToken, BaggageToken::NamespaceName},
     {ClusterNameToken, BaggageToken::ClusterName},
     {ServiceNameToken, BaggageToken::ServiceName},
@@ -34,6 +37,22 @@ static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_BAGGAGE_TOKENS =
     {WorkloadNameToken, BaggageToken::WorkloadName},
     {WorkloadTypeToken, BaggageToken::WorkloadType},
     {InstanceNameToken, BaggageToken::InstanceName},
+};
+
+// This maps baggage keys into baggage tokens. We use it to decode baggage keys
+// coming over the wire when building WorkloadMetadataObject.
+static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_BAGGAGE_TOKENS = {
+    {NamespaceNameBaggageToken, BaggageToken::NamespaceName},
+    {ClusterNameBaggageToken, BaggageToken::ClusterName},
+    {ServiceNameBaggageToken, BaggageToken::ServiceName},
+    {ServiceVersionBaggageToken, BaggageToken::ServiceVersion},
+    {AppNameBaggageToken, BaggageToken::AppName},
+    {AppVersionBaggageToken, BaggageToken::AppVersion},
+    {DeploymentNameBaggageToken, BaggageToken::WorkloadName},
+    {PodNameBaggageToken, BaggageToken::WorkloadName},
+    {CronjobNameBaggageToken, BaggageToken::WorkloadName},
+    {JobNameBaggageToken, BaggageToken::WorkloadName},
+    {InstanceNameBaggageToken, BaggageToken::InstanceName},
 };
 
 static absl::flat_hash_map<absl::string_view, WorkloadType> ALL_WORKLOAD_TOKENS = {
@@ -69,13 +88,13 @@ std::string WorkloadMetadataObject::baggage() const {
   }
   // Map the workload metadata fields to baggage tokens
   const std::vector<std::pair<absl::string_view, absl::string_view>> field_to_baggage = {
-      {Istio::Common::NamespaceNameToken, "k8s.namespace.name"},
-      {Istio::Common::ClusterNameToken, "k8s.cluster.name"},
-      {Istio::Common::ServiceNameToken, "service.name"},
-      {Istio::Common::ServiceVersionToken, "service.version"},
-      {Istio::Common::AppNameToken, "app.name"},
-      {Istio::Common::AppVersionToken, "app.version"},
-      {Istio::Common::InstanceNameToken, "k8s.instance.name"},
+      {Istio::Common::NamespaceNameToken, Istio::Common::NamespaceNameBaggageToken},
+      {Istio::Common::ClusterNameToken, Istio::Common::ClusterNameBaggageToken},
+      {Istio::Common::ServiceNameToken, Istio::Common::ServiceNameBaggageToken},
+      {Istio::Common::ServiceVersionToken, Istio::Common::ServiceVersionBaggageToken},
+      {Istio::Common::AppNameToken, Istio::Common::AppNameBaggageToken},
+      {Istio::Common::AppVersionToken, Istio::Common::AppVersionBaggageToken},
+      {Istio::Common::InstanceNameToken, Istio::Common::InstanceNameBaggageToken},
   };
 
   for (const auto& [field_name, baggage_key] : field_to_baggage) {
@@ -320,8 +339,8 @@ std::string serializeToStringDeterministic(const google::protobuf::Struct& metad
 
 WorkloadMetadataObject::FieldType
 WorkloadMetadataObject::getField(absl::string_view field_name) const {
-  const auto it = ALL_BAGGAGE_TOKENS.find(field_name);
-  if (it != ALL_BAGGAGE_TOKENS.end()) {
+  const auto it = ALL_METADATA_FIELDS.find(field_name);
+  if (it != ALL_METADATA_FIELDS.end()) {
     switch (it->second) {
     case BaggageToken::NamespaceName:
       return namespace_name_;
@@ -389,14 +408,18 @@ convertBaggageToWorkloadMetadata(absl::string_view data, absl::string_view ident
       case BaggageToken::AppVersion:
         app_version = parts.second;
         break;
-      case BaggageToken::WorkloadName:
+      case BaggageToken::WorkloadName: {
         workload = parts.second;
+        std::vector<absl::string_view> splitWorkloadKey = absl::StrSplit(parts.first, ".");
+        if (splitWorkloadKey.size() >= 2 && splitWorkloadKey[0] == "k8s") {
+          workload_type = fromSuffix(splitWorkloadKey[1]);
+        }
         break;
-      case BaggageToken::WorkloadType:
-        workload_type = fromSuffix(parts.second);
-        break;
+      }
       case BaggageToken::InstanceName:
         instance = parts.second;
+        break;
+      default:
         break;
       }
     }

@@ -238,6 +238,23 @@ void BaggagePropagationMethod::inject(const StreamInfo::StreamInfo&, Http::Heade
   headers.setReference(Headers::get().Baggage, value_);
 }
 
+BaggageDiscoveryMethod::BaggageDiscoveryMethod() {}
+
+absl::optional<PeerInfo> BaggageDiscoveryMethod::derivePeerInfo(const StreamInfo::StreamInfo&,
+                                                                Http::HeaderMap& headers,
+                                                                Context&) const {
+  const auto baggage_header = headers.get(Headers::get().Baggage);
+  if (baggage_header.empty()) {
+    return {};
+  }
+  const auto baggage_value = baggage_header[0]->value().getStringView();
+  const auto workload = Istio::Common::convertBaggageToWorkloadMetadata(baggage_value);
+  if (workload) {
+    return *workload;
+  }
+  return {};
+}
+
 FilterConfig::FilterConfig(const io::istio::http::peer_metadata::Config& config,
                            Server::Configuration::FactoryContext& factory_context)
     : shared_with_upstream_(config.shared_with_upstream()),
@@ -273,6 +290,13 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
       methods.push_back(std::make_unique<MXMethod>(downstream, additional_labels,
                                                    factory_context.serverFactoryContext()));
       break;
+    case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::kBaggage:
+      if (downstream) {
+        methods.push_back(std::make_unique<BaggageDiscoveryMethod>());
+      } else {
+        ENVOY_LOG(warn, "BaggageDiscovery peer metadata discovery option is only available for "
+                        "downstream peer discovery");
+      }
     case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::
         kUpstreamFilterState:
       if (!downstream) {
