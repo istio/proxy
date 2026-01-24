@@ -188,8 +188,9 @@ void MetadataExchangeFilter::writeNodeMetadata() {
   }
   ENVOY_LOG(trace, "Writing metadata to the connection.");
   Protobuf::Struct data;
-  const auto obj = Istio::Common::convertStructToWorkloadMetadata(local_info_.node().metadata(),
-                                                                  config_->additional_labels_);
+  const auto obj = Istio::Common::convertStructToWorkloadMetadata(
+      local_info_.node().metadata(), config_->additional_labels_, local_info_.node().locality());
+
   *(*data.mutable_fields())[ExchangeMetadataHeader].mutable_struct_value() =
       Istio::Common::convertWorkloadMetadataToStruct(*obj);
   std::string metadata_id = getMetadataId();

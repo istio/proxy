@@ -130,7 +130,8 @@ TEST_F(PeerMetadataTest, DownstreamXDSNone) {
 
 TEST_F(PeerMetadataTest, DownstreamXDS) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -152,7 +153,8 @@ TEST_F(PeerMetadataTest, DownstreamXDS) {
 
 TEST_F(PeerMetadataTest, UpstreamXDS) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -188,7 +190,8 @@ TEST_F(PeerMetadataTest, UpstreamXDSInternal) {
                             *host_metadata);
 
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -257,7 +260,8 @@ TEST_F(PeerMetadataTest, DownstreamFallbackFirst) {
 
 TEST_F(PeerMetadataTest, DownstreamFallbackSecond) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -340,7 +344,8 @@ TEST_F(PeerMetadataTest, UpstreamFallbackFirst) {
 
 TEST_F(PeerMetadataTest, UpstreamFallbackSecond) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -362,7 +367,8 @@ TEST_F(PeerMetadataTest, UpstreamFallbackSecond) {
 
 TEST_F(PeerMetadataTest, UpstreamFallbackFirstXDS) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -655,6 +661,9 @@ protected:
           version: v2.1
           service.istio.io/canonical-name: sample-service
           service.istio.io/canonical-revision: stable
+      locality:
+        zone: us-east4-b
+        region: us-east4
     )EOF",
                               context_.server_factory_context_.local_info_.node_);
   }
@@ -685,8 +694,11 @@ TEST_F(BaggagePropagationMethodTest, DownstreamBaggageInjection) {
   EXPECT_TRUE(absl::StrContains(baggage_value, "service.version=stable"));
   EXPECT_TRUE(absl::StrContains(baggage_value, "app.name=sample-app"));
   EXPECT_TRUE(absl::StrContains(baggage_value, "app.version=v2.1"));
-  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.pod.name=sample-workload"));
+  EXPECT_TRUE(
+      absl::StrContains(baggage_value, "k8s.pod.name=sample-workload")); // workload type is pod
   EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.instance.name=sample-instance"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "cloud.region=us-east4"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "cloud.availability_zone=us-east4-b"));
 }
 
 TEST_F(BaggagePropagationMethodTest, UpstreamBaggageInjection) {
@@ -889,7 +901,7 @@ TEST_F(PeerMetadataTest, DownstreamBaggageFallbackSecond) {
   // No baggage header, so XDS should be called as fallback
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "xds-namespace", "foo",
                                    "foo-service", "v1alpha3", "", "",
-                                   Istio::Common::WorkloadType::Pod, "");
+                                   Istio::Common::WorkloadType::Pod, "", "us-east4", "us-east4-b");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -917,7 +929,7 @@ TEST_F(PeerMetadataTest, UpstreamBaggageFallbackFirst) {
   // WDS information is also present, and this is the one tha tshould be used.
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "xds-upstream", "foo",
                                    "foo-service", "v1alpha3", "", "",
-                                   Istio::Common::WorkloadType::Pod, "");
+                                   Istio::Common::WorkloadType::Pod, "", "us-east4", "us-east4-b");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -942,7 +954,7 @@ TEST_F(PeerMetadataTest, UpstreamBaggageFallbackSecond) {
   // but workload discovery should pick up the details.
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "xds-upstream", "foo",
                                    "foo-service", "v1alpha3", "", "",
-                                   Istio::Common::WorkloadType::Pod, "");
+                                   Istio::Common::WorkloadType::Pod, "", "us-east4", "us-east4-b");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {

@@ -14,6 +14,7 @@
 
 #include "extensions/common/metadata_object.h"
 
+#include "envoy/config/core/v3/base.pb.h"
 #include "envoy/registry/registry.h"
 #include "source/common/common/hash.h"
 #include "source/common/protobuf/utility.h"
@@ -37,6 +38,8 @@ static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_METADATA_FIELDS 
     {WorkloadNameToken, BaggageToken::WorkloadName},
     {WorkloadTypeToken, BaggageToken::WorkloadType},
     {InstanceNameToken, BaggageToken::InstanceName},
+    {RegionToken, BaggageToken::LocalityRegion},
+    {ZoneToken, BaggageToken::LocalityZone},
 };
 
 // This maps baggage keys into baggage tokens. We use it to decode baggage keys
@@ -53,6 +56,7 @@ static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_BAGGAGE_TOKENS =
     {CronjobNameBaggageToken, BaggageToken::WorkloadName},
     {JobNameBaggageToken, BaggageToken::WorkloadName},
     {InstanceNameBaggageToken, BaggageToken::InstanceName},
+
 };
 
 static absl::flat_hash_map<absl::string_view, WorkloadType> ALL_WORKLOAD_TOKENS = {
@@ -95,6 +99,8 @@ std::string WorkloadMetadataObject::baggage() const {
       {Istio::Common::AppNameToken, Istio::Common::AppNameBaggageToken},
       {Istio::Common::AppVersionToken, Istio::Common::AppVersionBaggageToken},
       {Istio::Common::InstanceNameToken, Istio::Common::InstanceNameBaggageToken},
+      {Istio::Common::RegionToken, Istio::Common::LocalityRegionBaggageToken},
+      {Istio::Common::ZoneToken, Istio::Common::LocalityZoneBaggageToken},
   };
 
   for (const auto& [field_name, baggage_key] : field_to_baggage) {
@@ -141,6 +147,12 @@ Envoy::ProtobufTypes::MessagePtr WorkloadMetadataObject::serializeAsProto() cons
   if (!identity_.empty()) {
     (*message->mutable_fields())[IdentityToken].set_string_value(identity_);
   }
+  if (!locality_region_.empty()) {
+    (*message->mutable_fields())[RegionToken].set_string_value(locality_region_);
+  }
+  if (!locality_zone_.empty()) {
+    (*message->mutable_fields())[ZoneToken].set_string_value(locality_zone_);
+  }
 
   if (!labels_.empty()) {
     auto* labels = (*message->mutable_fields())[LabelsToken].mutable_struct_value();
@@ -182,6 +194,12 @@ WorkloadMetadataObject::serializeAsPairs() const {
   }
   if (!app_version_.empty()) {
     parts.push_back({AppVersionToken, app_version_});
+  }
+  if (!locality_region_.empty()) {
+    parts.push_back({RegionToken, locality_region_});
+  }
+  if (!locality_zone_.empty()) {
+    parts.push_back({ZoneToken, locality_zone_});
   }
   if (!labels_.empty()) {
     for (const auto& l : labels_) {
@@ -263,6 +281,12 @@ google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataO
   if (const auto owner = obj.owner(); owner.has_value()) {
     (*metadata.mutable_fields())[OwnerMetadataField].set_string_value(*owner);
   }
+  if (!obj.locality_region_.empty()) {
+    (*metadata.mutable_fields())[RegionMetadataField].set_string_value(obj.locality_region_);
+  }
+  if (!obj.locality_zone_.empty()) {
+    (*metadata.mutable_fields())[ZoneMetadataField].set_string_value(obj.locality_zone_);
+  }
   return metadata;
 }
 
@@ -275,8 +299,15 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata) {
 std::unique_ptr<WorkloadMetadataObject>
 convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
                                 const absl::flat_hash_set<std::string>& additional_labels) {
+  return convertStructToWorkloadMetadata(metadata, additional_labels, {});
+}
+
+std::unique_ptr<WorkloadMetadataObject>
+convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
+                                const absl::flat_hash_set<std::string>& additional_labels,
+                                const absl::optional<envoy::config::core::v3::Locality> locality) {
   absl::string_view instance, namespace_name, owner, workload, cluster, canonical_name,
-      canonical_revision, app_name, app_version;
+      canonical_revision, app_name, app_version, region, zone;
   std::vector<std::pair<std::string, std::string>> labels;
   for (const auto& it : metadata.fields()) {
     if (it.first == InstanceMetadataField) {
@@ -307,9 +338,19 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
       }
     }
   }
-  auto obj = std::make_unique<WorkloadMetadataObject>(instance, cluster, namespace_name, workload,
-                                                      canonical_name, canonical_revision, app_name,
-                                                      app_version, parseOwner(owner, workload), "");
+  std::string locality_region = std::string(region);
+  std::string locality_zone = std::string(zone);
+  if (locality.has_value()) {
+    if (!locality->region().empty() && locality_region.empty()) {
+      locality_region = locality->region();
+    }
+    if (!locality->zone().empty() && locality_zone.empty()) {
+      locality_zone = locality->zone();
+    }
+  }
+  auto obj = std::make_unique<WorkloadMetadataObject>(
+      instance, cluster, namespace_name, workload, canonical_name, canonical_revision, app_name,
+      app_version, parseOwner(owner, workload), "", locality_region, locality_zone);
   obj->setLabels(labels);
   return obj;
 }
@@ -321,7 +362,8 @@ convertEndpointMetadata(const std::string& endpoint_encoding) {
     return {};
   }
   return absl::make_optional<WorkloadMetadataObject>("", parts[4], parts[1], parts[0], parts[2],
-                                                     parts[3], "", "", WorkloadType::Unknown, "");
+                                                     parts[3], "", "", WorkloadType::Unknown, "",
+                                                     "", "");
 }
 
 std::string serializeToStringDeterministic(const google::protobuf::Struct& metadata) {
@@ -363,6 +405,10 @@ WorkloadMetadataObject::getField(absl::string_view field_name) const {
       return "unknown";
     case BaggageToken::InstanceName:
       return instance_name_;
+    case BaggageToken::LocalityRegion:
+      return locality_region_;
+    case BaggageToken::LocalityZone:
+      return locality_zone_;
     }
   }
   return {};
@@ -383,6 +429,8 @@ convertBaggageToWorkloadMetadata(absl::string_view data, absl::string_view ident
   absl::string_view canonical_revision;
   absl::string_view app_name;
   absl::string_view app_version;
+  absl::string_view region;
+  absl::string_view zone;
   WorkloadType workload_type = WorkloadType::Unknown;
   std::vector<absl::string_view> properties = absl::StrSplit(data, ',');
   for (absl::string_view property : properties) {
@@ -419,14 +467,20 @@ convertBaggageToWorkloadMetadata(absl::string_view data, absl::string_view ident
       case BaggageToken::InstanceName:
         instance = parts.second;
         break;
+      case BaggageToken::LocalityRegion:
+        region = parts.second;
+        break;
+      case BaggageToken::LocalityZone:
+        zone = parts.second;
+        break;
       default:
         break;
       }
     }
   }
-  return std::make_unique<WorkloadMetadataObject>(instance, cluster, namespace_name, workload,
-                                                  canonical_name, canonical_revision, app_name,
-                                                  app_version, workload_type, identity);
+  return std::make_unique<WorkloadMetadataObject>(
+      instance, cluster, namespace_name, workload, canonical_name, canonical_revision, app_name,
+      app_version, workload_type, identity, region, zone);
 }
 
 } // namespace Common

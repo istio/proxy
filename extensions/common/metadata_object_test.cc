@@ -27,16 +27,16 @@ using ::testing::NiceMock;
 
 TEST(WorkloadMetadataObjectTest, Baggage) {
   WorkloadMetadataObject deploy("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                                "v1alpha3", "", "", WorkloadType::Deployment, "");
+                                "v1alpha3", "", "", WorkloadType::Deployment, "", "", "");
 
   WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                             "v1alpha3", "", "", WorkloadType::Pod, "");
+                             "v1alpha3", "", "", WorkloadType::Pod, "", "", "");
 
   WorkloadMetadataObject cronjob("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                                 "v1alpha3", "foo-app", "v1", WorkloadType::CronJob, "");
+                                 "v1alpha3", "foo-app", "v1", WorkloadType::CronJob, "", "", "");
 
   WorkloadMetadataObject job("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                             "v1alpha3", "", "", WorkloadType::Job, "");
+                             "v1alpha3", "", "", WorkloadType::Job, "", "", "");
 
   EXPECT_EQ(deploy.serializeAsString(),
             absl::StrCat("type=deployment,workload=foo,name=pod-foo-1234,cluster=my-cluster,",
@@ -67,7 +67,7 @@ void checkStructConversion(const Envoy::StreamInfo::FilterState::Object& data) {
 
 TEST(WorkloadMetadataObjectTest, ConversionWithLabels) {
   WorkloadMetadataObject deploy("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                                "v1alpha3", "", "", WorkloadType::Deployment, "");
+                                "v1alpha3", "", "", WorkloadType::Deployment, "", "", "");
   deploy.setLabels({{"label1", "value1"}, {"label2", "value2"}});
   auto pb = convertWorkloadMetadataToStruct(deploy);
   auto obj1 = convertStructToWorkloadMetadata(pb, {"label1", "label2"});
