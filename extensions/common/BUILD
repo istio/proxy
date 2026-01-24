@@ -34,6 +34,7 @@ envoy_cc_library(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
         "@envoy//envoy/common:hashable_interface",
+        "@envoy//envoy/local_info:local_info_interface",
         "@envoy//envoy/registry",
         "@envoy//envoy/stream_info:filter_state_interface",
         "@envoy//source/common/common:hash_lib",
