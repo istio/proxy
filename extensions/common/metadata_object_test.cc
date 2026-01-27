@@ -114,8 +114,8 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("name")), "foo-instance-435");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("namespace")), "test");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("cluster")), "my-cluster");
-    EXPECT_EQ(absl::get<absl::string_view>(r->getField("app")), "");
-    EXPECT_EQ(absl::get<absl::string_view>(r->getField("version")), "");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("app")), "foo-service");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("version")), "v1beta2");
     checkStructConversion(*r);
   }
 
@@ -130,6 +130,8 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("name")), "foo-instance-435");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("namespace")), "test");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("cluster")), "my-cluster");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("app")), "foo-service");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("version")), "v1beta4");
     checkStructConversion(*r);
   }
 
@@ -144,6 +146,8 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("name")), "");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("namespace")), "test");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("cluster")), "my-cluster");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("app")), "foo-service");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("version")), "v1beta4");
     checkStructConversion(*r);
   }
 
@@ -157,6 +161,8 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("workload")), "foo");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("namespace")), "default");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("cluster")), "");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("app")), "foo-service");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("version")), "v1alpha3");
     checkStructConversion(*r);
   }
 

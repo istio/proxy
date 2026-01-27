@@ -49,6 +49,8 @@ static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_BAGGAGE_TOKENS =
     {ClusterNameBaggageToken, BaggageToken::ClusterName},
     {ServiceNameBaggageToken, BaggageToken::ServiceName},
     {ServiceVersionBaggageToken, BaggageToken::ServiceVersion},
+    {AppNameBaggageToken, BaggageToken::AppName},
+    {AppVersionBaggageToken, BaggageToken::AppVersion},
     {DeploymentNameBaggageToken, BaggageToken::WorkloadName},
     {PodNameBaggageToken, BaggageToken::WorkloadName},
     {CronjobNameBaggageToken, BaggageToken::WorkloadName},
@@ -94,6 +96,8 @@ std::string WorkloadMetadataObject::baggage() const {
       {Istio::Common::ClusterNameToken, Istio::Common::ClusterNameBaggageToken},
       {Istio::Common::ServiceNameToken, Istio::Common::ServiceNameBaggageToken},
       {Istio::Common::ServiceVersionToken, Istio::Common::ServiceVersionBaggageToken},
+      {Istio::Common::AppNameToken, Istio::Common::AppNameBaggageToken},
+      {Istio::Common::AppVersionToken, Istio::Common::AppVersionBaggageToken},
       {Istio::Common::InstanceNameToken, Istio::Common::InstanceNameBaggageToken},
       {Istio::Common::RegionToken, Istio::Common::LocalityRegionBaggageToken},
       {Istio::Common::ZoneToken, Istio::Common::LocalityZoneBaggageToken},
@@ -454,8 +458,13 @@ convertBaggageToWorkloadMetadata(absl::string_view data, absl::string_view ident
         break;
       case BaggageToken::ServiceVersion:
         // canonical revision and app version are always the same
-        canonical_name = parts.second;
         canonical_revision = parts.second;
+        app_version = parts.second;
+        break;
+      case BaggageToken::AppName:
+        app_name = parts.second;
+        break;
+      case BaggageToken::AppVersion:
         app_version = parts.second;
         break;
       case BaggageToken::WorkloadName: {
