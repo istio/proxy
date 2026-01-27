@@ -90,6 +90,36 @@ func TestHTTPExchange(t *testing.T) {
 	}
 }
 
+func TestHTTPExchangeBaggage(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerHTTPFilters"] = params.LoadTestData("testdata/filters/mx_native_inbound_baggage.yaml.tmpl")
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{driver.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.HTTPCall{
+				IP:   "127.0.0.2",
+				Port: params.Ports.ServerPort,
+				Body: "hello, world!",
+				RequestHeaders: map[string]string{
+					"baggage": "service.name=canonical-name,k8s.deployment.name=test-deployment,k8s.namespace.name=test-namespace,service.version=v1,k8s.cluster.name=test-cluster,cloud.region=test-region,cloud.availability_zone=test-zone",
+				},
+				ResponseHeaders: map[string]string{
+					"baggage": "k8s.deployment.name=ratings-v1,k8s.namespace.name=default,k8s.cluster.name=server-cluster,service.name=ratings,service.version=version-1,app.name=ratings,app.version=v1,k8s.instance.name=ratings-v1-84975bc778-pxz2w",
+				},
+			},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				"istio_requests_total": &driver.PartialStat{Metric: "testdata/metric/waypoint_downstream_baggage_request.yaml"},
+			}},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestNativeHTTPExchange(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{}, envoye2e.ProxyE2ETests)
 	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
