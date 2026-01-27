@@ -154,7 +154,8 @@ TEST_F(PeerMetadataTest, DownstreamXDS) {
 TEST_F(PeerMetadataTest, DownstreamXDSCrossNetwork) {
   request_headers_.setReference(Headers::get().ExchangeMetadataOriginNetwork, "remote-network");
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
