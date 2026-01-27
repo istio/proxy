@@ -105,10 +105,25 @@ func TestHTTPExchangeBaggage(t *testing.T) {
 				Port: params.Ports.ServerPort,
 				Body: "hello, world!",
 				RequestHeaders: map[string]string{
-					"baggage": "service.name=canonical-name,k8s.deployment.name=test-deployment,k8s.namespace.name=test-namespace,service.version=v1,k8s.cluster.name=test-cluster,cloud.region=test-region,cloud.availability_zone=test-zone",
+					"baggage": "app.version=test-app-v1," +
+						"app.name=test-app," +
+						"service.name=canonical-name," +
+						"k8s.deployment.name=test-deployment," +
+						"k8s.namespace.name=test-namespace," +
+						"service.version=v1," +
+						"k8s.cluster.name=test-cluster," +
+						"cloud.region=test-region," +
+						"cloud.availability_zone=test-zone",
 				},
 				ResponseHeaders: map[string]string{
-					"baggage": "k8s.deployment.name=ratings-v1,k8s.namespace.name=default,k8s.cluster.name=server-cluster,service.name=ratings,service.version=version-1,app.name=ratings,app.version=v1,k8s.instance.name=ratings-v1-84975bc778-pxz2w",
+					"baggage": "k8s.deployment.name=ratings-v1," +
+						"k8s.namespace.name=default," +
+						"k8s.cluster.name=server-cluster," +
+						"service.name=ratings," +
+						"service.version=version-1," +
+						"app.name=ratings," +
+						"app.version=v1," +
+						"k8s.instance.name=ratings-v1-84975bc778-pxz2w",
 				},
 			},
 			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
