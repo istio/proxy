@@ -226,6 +226,8 @@ absl::optional<std::string> WorkloadMetadataObject::owner() const {
   return {};
 }
 
+std::string WorkloadMetadataObject::identity() const { return identity_; }
+
 WorkloadType fromSuffix(absl::string_view suffix) {
   const auto it = ALL_WORKLOAD_TOKENS.find(suffix);
   if (it != ALL_WORKLOAD_TOKENS.end()) {
@@ -259,6 +261,9 @@ google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataO
   }
   if (!obj.cluster_name_.empty()) {
     (*metadata.mutable_fields())[ClusterMetadataField].set_string_value(obj.cluster_name_);
+  }
+  if (!obj.identity_.empty()) {
+    (*metadata.mutable_fields())[IdentityMetadataField].set_string_value(obj.identity_);
   }
   auto* labels = (*metadata.mutable_fields())[LabelsMetadataField].mutable_struct_value();
   if (!obj.canonical_name_.empty()) {
@@ -306,7 +311,7 @@ std::unique_ptr<WorkloadMetadataObject>
 convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
                                 const absl::flat_hash_set<std::string>& additional_labels,
                                 const absl::optional<envoy::config::core::v3::Locality> locality) {
-  absl::string_view instance, namespace_name, owner, workload, cluster, canonical_name,
+  absl::string_view instance, namespace_name, owner, workload, cluster, identity, canonical_name,
       canonical_revision, app_name, app_version, region, zone;
   std::vector<std::pair<std::string, std::string>> labels;
   for (const auto& it : metadata.fields()) {
@@ -320,6 +325,8 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
       workload = it.second.string_value();
     } else if (it.first == ClusterMetadataField) {
       cluster = it.second.string_value();
+    } else if (it.first == IdentityMetadataField) {
+      identity = it.second.string_value();
     } else if (it.first == LabelsMetadataField) {
       for (const auto& labels_it : it.second.struct_value().fields()) {
         if (labels_it.first == CanonicalNameLabel) {
@@ -350,7 +357,7 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
   }
   auto obj = std::make_unique<WorkloadMetadataObject>(
       instance, cluster, namespace_name, workload, canonical_name, canonical_revision, app_name,
-      app_version, parseOwner(owner, workload), "", locality_region, locality_zone);
+      app_version, parseOwner(owner, workload), identity, locality_region, locality_zone);
   obj->setLabels(labels);
   return obj;
 }
@@ -445,10 +452,14 @@ convertBaggageToWorkloadMetadata(absl::string_view data, absl::string_view ident
         cluster = parts.second;
         break;
       case BaggageToken::ServiceName:
+        // canonical name and app name are always the same
         canonical_name = parts.second;
+        app_name = parts.second;
         break;
       case BaggageToken::ServiceVersion:
+        // canonical revision and app version are always the same
         canonical_revision = parts.second;
+        app_version = parts.second;
         break;
       case BaggageToken::AppName:
         app_name = parts.second;
