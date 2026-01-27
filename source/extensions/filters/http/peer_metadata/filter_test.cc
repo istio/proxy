@@ -177,8 +177,8 @@ TEST_F(PeerMetadataTest, DownstreamXDSCrossNetwork) {
 
 TEST_F(PeerMetadataTest, UpstreamXDS) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
-                                   "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "", "",
+                                   "", "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -254,7 +254,8 @@ TEST_F(PeerMetadataTest, UpstreamXDSInternalCrossNetwork) {
                             *host_metadata);
 
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
