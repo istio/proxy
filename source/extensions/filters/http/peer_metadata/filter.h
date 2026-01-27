@@ -34,6 +34,7 @@ struct HeaderValues {
   const Http::LowerCaseString Baggage{"baggage"};
   const Http::LowerCaseString ExchangeMetadataHeader{"x-envoy-peer-metadata"};
   const Http::LowerCaseString ExchangeMetadataHeaderId{"x-envoy-peer-metadata-id"};
+  const Http::LowerCaseString ExchangeMetadataOriginNetwork{"x-forwarded-network"};
 };
 
 using Headers = ConstSingleton<HeaderValues>;
