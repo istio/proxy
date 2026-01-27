@@ -17,9 +17,9 @@ metric:
   - name: source_principal
     value: unknown
   - name: source_app
-    value: unknown
+    value: test-app
   - name: source_version
-    value: unknown
+    value: test-app-v1
   - name: source_cluster
     value: test-cluster
   - name: destination_workload
