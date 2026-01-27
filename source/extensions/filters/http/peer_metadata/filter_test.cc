@@ -493,7 +493,8 @@ TEST_F(PeerMetadataTest, UpstreamMXPropagationSkipPassthrough) {
 
 TEST_F(PeerMetadataTest, FieldAccessorSupport) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                                   "v1alpha3", "myapp", "v1", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "myapp", "v1", Istio::Common::WorkloadType::Pod, "",
+                                   "", "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -529,7 +530,7 @@ TEST_F(PeerMetadataTest, FieldAccessorSupport) {
 TEST_F(PeerMetadataTest, CelExpressionCompatibility) {
   const WorkloadMetadataObject pod("pod-bar-5678", "test-cluster", "production", "bar",
                                    "bar-service", "v2", "barapp", "v2",
-                                   Istio::Common::WorkloadType::Pod, "");
+                                   Istio::Common::WorkloadType::Pod, "", "", "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
