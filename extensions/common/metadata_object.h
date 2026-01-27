@@ -91,8 +91,6 @@ constexpr absl::string_view NamespaceNameBaggageToken = "k8s.namespace.name";
 constexpr absl::string_view ClusterNameBaggageToken = "k8s.cluster.name";
 constexpr absl::string_view ServiceNameBaggageToken = "service.name";
 constexpr absl::string_view ServiceVersionBaggageToken = "service.version";
-constexpr absl::string_view AppNameBaggageToken = "app.name";
-constexpr absl::string_view AppVersionBaggageToken = "app.version";
 constexpr absl::string_view DeploymentNameBaggageToken = "k8s.deployment.name";
 constexpr absl::string_view PodNameBaggageToken = "k8s.pod.name";
 constexpr absl::string_view CronjobNameBaggageToken = "k8s.cronjob.name";
@@ -104,6 +102,7 @@ constexpr absl::string_view LocalityZoneBaggageToken = "cloud.availability_zone"
 constexpr absl::string_view InstanceMetadataField = "NAME";
 constexpr absl::string_view NamespaceMetadataField = "NAMESPACE";
 constexpr absl::string_view ClusterMetadataField = "CLUSTER_ID";
+constexpr absl::string_view IdentityMetadataField = "IDENTITY";
 constexpr absl::string_view OwnerMetadataField = "OWNER";
 constexpr absl::string_view WorkloadMetadataField = "WORKLOAD_NAME";
 constexpr absl::string_view LabelsMetadataField = "LABELS";
@@ -131,6 +130,7 @@ public:
   std::vector<std::pair<absl::string_view, absl::string_view>> serializeAsPairs() const;
   absl::optional<std::string> serializeAsString() const override;
   absl::optional<std::string> owner() const;
+  std::string identity() const;
   bool hasFieldSupport() const override { return true; }
   using Envoy::StreamInfo::FilterState::Object::FieldType;
   FieldType getField(absl::string_view) const override;
