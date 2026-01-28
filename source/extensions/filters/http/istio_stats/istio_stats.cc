@@ -164,7 +164,8 @@ peerInfo(Reporter reporter, const StreamInfo::FilterState& filter_state) {
       extractString(obj, Istio::Common::AppNameToken),
       extractString(obj, Istio::Common::AppVersionToken),
       Istio::Common::fromSuffix(extractString(obj, Istio::Common::WorkloadTypeToken)),
-      extractString(obj, Istio::Common::IdentityToken));
+      extractString(obj, Istio::Common::IdentityToken),
+      extractString(obj, Istio::Common::RegionToken), extractString(obj, Istio::Common::ZoneToken));
 
   // Extract labels from the "labels" field
   const auto& labels_it = obj.fields().find(Istio::Common::LabelsToken);
