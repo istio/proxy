@@ -43,7 +43,9 @@ constexpr absl::string_view NoPeer = "peer_not_found";
 // Special labels used in the peer metadata.
 constexpr absl::string_view CanonicalNameLabel = "service.istio.io/canonical-name";
 constexpr absl::string_view CanonicalRevisionLabel = "service.istio.io/canonical-revision";
+constexpr absl::string_view AppNameQualifiedLabel = "app.kubernetes.io/name";
 constexpr absl::string_view AppNameLabel = "app";
+constexpr absl::string_view AppVersionQualifiedLabel = "app.kubernetes.io/version";
 constexpr absl::string_view AppVersionLabel = "version";
 
 enum class WorkloadType {
@@ -141,6 +143,7 @@ public:
   bool hasFieldSupport() const override { return true; }
   using Envoy::StreamInfo::FilterState::Object::FieldType;
   FieldType getField(absl::string_view) const override;
+  absl::optional<absl::string_view> field(absl::string_view field_name) const;
   void setLabels(std::vector<std::pair<std::string, std::string>> labels) { labels_ = labels; }
   std::vector<std::pair<std::string, std::string>> getLabels() const { return labels_; }
   std::string baggage() const;

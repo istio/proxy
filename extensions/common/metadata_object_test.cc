@@ -25,7 +25,7 @@ namespace Common {
 using Envoy::Protobuf::util::MessageDifferencer;
 using ::testing::NiceMock;
 
-TEST(WorkloadMetadataObjectTest, Baggage) {
+TEST(WorkloadMetadataObjectTest, SerializeAsString) {
   constexpr absl::string_view identity = "spiffe://cluster.local/ns/default/sa/default";
   WorkloadMetadataObject deploy("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
                                 "v1alpha3", "", "", WorkloadType::Deployment, identity, "", "");
@@ -163,6 +163,35 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("cluster")), "");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("app")), "foo-service");
     EXPECT_EQ(absl::get<absl::string_view>(r->getField("version")), "v1alpha3");
+    checkStructConversion(*r);
+  }
+
+  {
+    const auto r =
+        convertBaggageToWorkloadMetadata("service.name=foo-service,service.version=v1alpha3");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("service")), "foo-service");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("revision")), "v1alpha3");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("app")), "foo-service");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("version")), "v1alpha3");
+    checkStructConversion(*r);
+  }
+
+  {
+    const auto r = convertBaggageToWorkloadMetadata("app.name=foo-app,app.version=latest");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("service")), "foo-app");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("revision")), "latest");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("app")), "foo-app");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("version")), "latest");
+    checkStructConversion(*r);
+  }
+
+  {
+    const auto r = convertBaggageToWorkloadMetadata(
+        "service.name=foo-service,service.version=v1alpha3,app.name=foo-app,app.version=latest");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("service")), "foo-service");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("revision")), "v1alpha3");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("app")), "foo-app");
+    EXPECT_EQ(absl::get<absl::string_view>(r->getField("version")), "latest");
     checkStructConversion(*r);
   }
 

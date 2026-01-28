@@ -1,0 +1,12 @@
+- name: waypoint_peer_metadata
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/io.istio.http.peer_metadata.Config
+    value:
+      downstream_discovery:
+      - baggage: {}
+      downstream_propagation:
+      - baggage: {}
+      upstream_discovery:
+      - upstream_filter_state:
+          peer_metadata_key: upstream_peer

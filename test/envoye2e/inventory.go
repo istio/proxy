@@ -61,5 +61,6 @@ func init() {
 		"TestAdditionalLabels",
 		"TestTCPMXAdditionalLabels",
 		"TestStatsClientSidecarCONNECT",
+		"TestStatsWithBaggageWaypointProxy",
 	}...)
 }
