@@ -662,6 +662,106 @@ func TestStatsServerWaypointProxy(t *testing.T) {
 	}
 }
 
+// TestStatsWithBaggageWaypointProxy verifies that baggage-based metadata discovery works correctly.
+//
+// The test setup is somewhat simplified version of the configuration that pilot generates. The major differences
+// relevant to understanding the test below are as follows:
+//
+//  1. We use just 2 Envoys - client and server, that's what most of the tests here use and we just build
+//     on top of that
+//     - server plays a role of a destination workload ztunnel - it terminates HBONE connection
+//     - client plays a role of a waypoint
+//  2. For connection from the test to the client we don't use HBONE:
+//     - downstream peer metadata discovery works with or without HBONE as long as baggage is provided
+//     - for connection from client to server we have to use HBONE, because upstream metadata discovery
+//     relies on network filters in the upstream internal listener.
+func TestStatsWithBaggageWaypointProxy(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{
+		// We are testing baggage-based metadata discovery, so no need for xDS-based metadata discovery
+		"EnableMetadataDiscovery": "false",
+		"RequestCount":            "10",
+		// This makes internal_outbound cluster populate endpoint metadata with original destination details
+		"EnableTunnelEndpointMetadata": "true",
+		// This overrides the server port from ServerPort to ServerTunnelPort, and the listener that can
+		// terminate HBONE listens on the ServerTunnelPort, so that's what we need.
+		"EnableOriginalDstPortOverride": "true",
+	}, envoye2e.ProxyE2ETests)
+
+	params.Vars["ClientMetadata"] = driver.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = driver.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerClusterName"] = "internal_outbound"
+	params.Vars["ServerInternalAddress"] = "internal_inbound"
+	params.Vars["StatsFilterClientConfig"] = "disable_host_header_fallback: true\nreporter: SERVER_GATEWAY"
+	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/baggage_peer_metadata.yaml.tmpl") + "\n" + driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
+	// This filter is what modifies the default framework HTTP response to include the baggage field from
+	// the request as one of the headers in the response
+	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/respond_with_baggage.yaml.tmpl")
+	params.Vars["UpstreamNetworkFilters"] = driver.LoadTestData("testdata/filters/upstream_peer_metadata.yaml.tmpl")
+
+	clientBaggage := "k8s.deployment.name=productpage-v1,service.name=productpage-v1,app.name=productpage,service.version=version-1,app.version=v1,k8s.namespace.name=default,k8s.cluster.name=client-cluster,k8s.instance.name=productpage-v1-84975bc778-pxz2w"
+	testBaggage := "k8s.deployment.name=curl,service.name=curl,service.version=v1,k8s.namespace.name=default,k8s.cluster.name=curl-cluster,k8s.instance.name=curl-xxxxxxxxxx-xxxxx"
+
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			&driver.Update{
+				Node: "client", Version: "0",
+				Clusters: []string{
+					params.LoadTestData("testdata/cluster/internal_outbound.yaml.tmpl"),
+					params.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
+				},
+				Listeners: []string{
+					params.LoadTestData("testdata/listener/client.yaml.tmpl"),
+					params.LoadTestData("testdata/listener/baggage_peer_metadata.yaml.tmpl"),
+				},
+				Secrets: []string{
+					params.LoadTestData("testdata/secret/client.yaml.tmpl"),
+				},
+			},
+			&driver.Update{
+				Node: "server", Version: "0",
+				Clusters: []string{
+					params.LoadTestData("testdata/cluster/internal_inbound.yaml.tmpl"),
+				},
+				Listeners: []string{
+					params.LoadTestData("testdata/listener/terminate_connect.yaml.tmpl"),
+					params.LoadTestData("testdata/listener/server.yaml.tmpl"),
+				},
+				Secrets: []string{
+					params.LoadTestData("testdata/secret/server.yaml.tmpl"),
+				},
+			},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.Repeat{
+				N: 10,
+				Step: &driver.HTTPCall{
+					Port: params.Ports.ClientPort,
+					RequestHeaders: map[string]string{
+						"baggage": testBaggage,
+					},
+					ResponseCode: 200,
+					ResponseHeaders: map[string]string{
+						// This is what we got from the client
+						"baggage": clientBaggage,
+						// This is what the server got from the client
+						"request-baggage": clientBaggage,
+					},
+				},
+			},
+			&driver.Stats{
+				AdminPort: params.Ports.ClientAdmin,
+				Matchers: map[string]driver.StatMatcher{
+					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/client_request_total_baggage.yaml.tmpl"},
+				},
+			},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStatsClientSidecarCONNECT(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"RequestCount":            "10",

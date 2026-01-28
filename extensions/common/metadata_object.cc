@@ -90,25 +90,42 @@ std::string WorkloadMetadataObject::baggage() const {
   if (!workload_name_.empty()) {
     parts.push_back("k8s." + std::string(workload_type) + ".name=" + std::string(workload_name_));
   }
+
+  const auto appName = field(Istio::Common::AppNameToken).value_or("");
+  const auto serviceName = field(Istio::Common::ServiceNameToken).value_or(appName);
+
+  if (!serviceName.empty()) {
+    parts.push_back(absl::StrCat(Istio::Common::ServiceNameBaggageToken, "=", serviceName));
+  }
+
+  if (!appName.empty() && appName != serviceName) {
+    parts.push_back(absl::StrCat(Istio::Common::AppNameBaggageToken, "=", appName));
+  }
+
+  const auto appVersion = field(Istio::Common::AppVersionToken).value_or("");
+  const auto serviceVersion = field(Istio::Common::ServiceVersionToken).value_or(appVersion);
+
+  if (!serviceVersion.empty()) {
+    parts.push_back(absl::StrCat(Istio::Common::ServiceVersionBaggageToken, "=", serviceVersion));
+  }
+
+  if (!appVersion.empty() && appVersion != serviceVersion) {
+    parts.push_back(absl::StrCat(Istio::Common::AppVersionBaggageToken, "=", appVersion));
+  }
+
   // Map the workload metadata fields to baggage tokens
   const std::vector<std::pair<absl::string_view, absl::string_view>> field_to_baggage = {
       {Istio::Common::NamespaceNameToken, Istio::Common::NamespaceNameBaggageToken},
       {Istio::Common::ClusterNameToken, Istio::Common::ClusterNameBaggageToken},
-      {Istio::Common::ServiceNameToken, Istio::Common::ServiceNameBaggageToken},
-      {Istio::Common::ServiceVersionToken, Istio::Common::ServiceVersionBaggageToken},
-      {Istio::Common::AppNameToken, Istio::Common::AppNameBaggageToken},
-      {Istio::Common::AppVersionToken, Istio::Common::AppVersionBaggageToken},
       {Istio::Common::InstanceNameToken, Istio::Common::InstanceNameBaggageToken},
       {Istio::Common::RegionToken, Istio::Common::LocalityRegionBaggageToken},
       {Istio::Common::ZoneToken, Istio::Common::LocalityZoneBaggageToken},
   };
 
   for (const auto& [field_name, baggage_key] : field_to_baggage) {
-    const auto field_result = getField(field_name);
-    if (auto field_value = std::get_if<absl::string_view>(&field_result)) {
-      if (!field_value->empty()) {
-        parts.push_back(absl::StrCat(baggage_key, "=", *field_value));
-      }
+    const auto value = field(field_name);
+    if (value && !value->empty()) {
+      parts.push_back(absl::StrCat(baggage_key, "=", *value));
     }
   }
   return absl::StrJoin(parts, ",");
@@ -333,9 +350,13 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
           canonical_name = labels_it.second.string_value();
         } else if (labels_it.first == CanonicalRevisionLabel) {
           canonical_revision = labels_it.second.string_value();
-        } else if (labels_it.first == AppNameLabel) {
+        } else if (labels_it.first == AppNameQualifiedLabel) {
           app_name = labels_it.second.string_value();
-        } else if (labels_it.first == AppVersionLabel) {
+        } else if (labels_it.first == AppNameLabel && app_name.empty()) {
+          app_name = labels_it.second.string_value();
+        } else if (labels_it.first == AppVersionQualifiedLabel) {
+          app_version = labels_it.second.string_value();
+        } else if (labels_it.first == AppVersionLabel && app_version.empty()) {
           app_version = labels_it.second.string_value();
         } else if (!additional_labels.empty() &&
                    additional_labels.contains(std::string(labels_it.first))) {
@@ -386,8 +407,8 @@ std::string serializeToStringDeterministic(const google::protobuf::Struct& metad
   return out;
 }
 
-WorkloadMetadataObject::FieldType
-WorkloadMetadataObject::getField(absl::string_view field_name) const {
+absl::optional<absl::string_view>
+WorkloadMetadataObject::field(absl::string_view field_name) const {
   const auto it = ALL_METADATA_FIELDS.find(field_name);
   if (it != ALL_METADATA_FIELDS.end()) {
     switch (it->second) {
@@ -417,6 +438,15 @@ WorkloadMetadataObject::getField(absl::string_view field_name) const {
     case BaggageToken::LocalityZone:
       return locality_zone_;
     }
+  }
+  return absl::nullopt;
+}
+
+WorkloadMetadataObject::FieldType
+WorkloadMetadataObject::getField(absl::string_view field_name) const {
+  const auto value = field(field_name);
+  if (value) {
+    return *value;
   }
   return {};
 }
@@ -452,20 +482,28 @@ convertBaggageToWorkloadMetadata(absl::string_view data, absl::string_view ident
         cluster = parts.second;
         break;
       case BaggageToken::ServiceName:
-        // canonical name and app name are always the same
         canonical_name = parts.second;
-        app_name = parts.second;
+        if (app_name.empty()) {
+          app_name = parts.second;
+        }
         break;
       case BaggageToken::ServiceVersion:
-        // canonical revision and app version are always the same
         canonical_revision = parts.second;
-        app_version = parts.second;
+        if (app_version.empty()) {
+          app_version = parts.second;
+        }
         break;
       case BaggageToken::AppName:
         app_name = parts.second;
+        if (canonical_name.empty()) {
+          canonical_name = parts.second;
+        }
         break;
       case BaggageToken::AppVersion:
         app_version = parts.second;
+        if (canonical_revision.empty()) {
+          canonical_revision = parts.second;
+        }
         break;
       case BaggageToken::WorkloadName: {
         workload = parts.second;
@@ -489,6 +527,7 @@ convertBaggageToWorkloadMetadata(absl::string_view data, absl::string_view ident
       }
     }
   }
+
   return std::make_unique<WorkloadMetadataObject>(
       instance, cluster, namespace_name, workload, canonical_name, canonical_revision, app_name,
       app_version, workload_type, identity, region, zone);
