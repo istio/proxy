@@ -130,7 +130,8 @@ TEST_F(PeerMetadataTest, DownstreamXDSNone) {
 
 TEST_F(PeerMetadataTest, DownstreamXDS) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -153,7 +154,8 @@ TEST_F(PeerMetadataTest, DownstreamXDS) {
 TEST_F(PeerMetadataTest, DownstreamXDSCrossNetwork) {
   request_headers_.setReference(Headers::get().ExchangeMetadataOriginNetwork, "remote-network");
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -176,7 +178,8 @@ TEST_F(PeerMetadataTest, DownstreamXDSCrossNetwork) {
 
 TEST_F(PeerMetadataTest, UpstreamXDS) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -212,7 +215,8 @@ TEST_F(PeerMetadataTest, UpstreamXDSInternal) {
                             *host_metadata);
 
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -251,7 +255,8 @@ TEST_F(PeerMetadataTest, UpstreamXDSInternalCrossNetwork) {
                             *host_metadata);
 
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -320,7 +325,8 @@ TEST_F(PeerMetadataTest, DownstreamFallbackFirst) {
 
 TEST_F(PeerMetadataTest, DownstreamFallbackSecond) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -403,7 +409,8 @@ TEST_F(PeerMetadataTest, UpstreamFallbackFirst) {
 
 TEST_F(PeerMetadataTest, UpstreamFallbackSecond) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -425,7 +432,8 @@ TEST_F(PeerMetadataTest, UpstreamFallbackSecond) {
 
 TEST_F(PeerMetadataTest, UpstreamFallbackFirstXDS) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "foo", "foo", "foo-service",
-                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "", "", Istio::Common::WorkloadType::Pod, "", "",
+                                   "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -550,7 +558,8 @@ TEST_F(PeerMetadataTest, UpstreamMXPropagationSkipPassthrough) {
 
 TEST_F(PeerMetadataTest, FieldAccessorSupport) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
-                                   "v1alpha3", "myapp", "v1", Istio::Common::WorkloadType::Pod, "");
+                                   "v1alpha3", "myapp", "v1", Istio::Common::WorkloadType::Pod, "",
+                                   "", "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -586,7 +595,7 @@ TEST_F(PeerMetadataTest, FieldAccessorSupport) {
 TEST_F(PeerMetadataTest, CelExpressionCompatibility) {
   const WorkloadMetadataObject pod("pod-bar-5678", "test-cluster", "production", "bar",
                                    "bar-service", "v2", "barapp", "v2",
-                                   Istio::Common::WorkloadType::Pod, "");
+                                   Istio::Common::WorkloadType::Pod, "", "", "");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -621,6 +630,577 @@ TEST_F(PeerMetadataTest, CelExpressionCompatibility) {
   EXPECT_EQ("production", extractString(*struct_proto, "namespace"));
   EXPECT_EQ("bar", extractString(*struct_proto, "workload"));
   EXPECT_EQ("test-cluster", extractString(*struct_proto, "cluster"));
+}
+TEST_F(PeerMetadataTest, DownstreamBaggagePropagation) {
+  initialize(R"EOF(
+    downstream_propagation:
+      - baggage: {}
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(1, response_headers_.size());
+  EXPECT_TRUE(response_headers_.has(Headers::get().Baggage));
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, UpstreamBaggagePropagation) {
+  initialize(R"EOF(
+    upstream_propagation:
+      - baggage: {}
+  )EOF");
+  EXPECT_EQ(1, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  EXPECT_TRUE(request_headers_.has(Headers::get().Baggage));
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, BothDirectionsBaggagePropagation) {
+  initialize(R"EOF(
+    downstream_propagation:
+      - baggage: {}
+    upstream_propagation:
+      - baggage: {}
+  )EOF");
+  EXPECT_EQ(1, request_headers_.size());
+  EXPECT_EQ(1, response_headers_.size());
+  EXPECT_TRUE(request_headers_.has(Headers::get().Baggage));
+  EXPECT_TRUE(response_headers_.has(Headers::get().Baggage));
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, BaggagePropagationWithNodeMetadata) {
+  // Setup node metadata that would be converted to baggage
+  auto& node = context_.server_factory_context_.local_info_.node_;
+  TestUtility::loadFromYaml(R"EOF(
+    metadata:
+      NAMESPACE: production
+      CLUSTER_ID: test-cluster
+      WORKLOAD_NAME: test-workload
+      NAME: test-instance
+      LABELS:
+        app: test-app
+        version: v1.0
+        service.istio.io/canonical-name: test-service
+        service.istio.io/canonical-revision: main
+  )EOF",
+                            node);
+
+  initialize(R"EOF(
+    downstream_propagation:
+      - baggage: {}
+  )EOF");
+
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(1, response_headers_.size());
+
+  const auto baggage_header = response_headers_.get(Headers::get().Baggage);
+  ASSERT_FALSE(baggage_header.empty());
+
+  std::string baggage_value = std::string(baggage_header[0]->value().getStringView());
+  // Verify baggage contains expected key-value pairs
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.namespace.name=production"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.cluster.name=test-cluster"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "app.name=test-app"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "app.version=v1.0"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "service.name=test-service"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "service.version=main"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.pod.name=test-workload"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.instance.name=test-instance"));
+}
+
+// Test class specifically for BaggagePropagationMethod unit tests
+class BaggagePropagationMethodTest : public testing::Test {
+protected:
+  BaggagePropagationMethodTest() = default;
+
+  void SetUp() override {
+    TestUtility::loadFromYaml(R"EOF(
+      metadata:
+        NAMESPACE: test-namespace
+        CLUSTER_ID: sample-cluster
+        WORKLOAD_NAME: sample-workload
+        NAME: sample-instance
+        LABELS:
+          app: sample-app
+          version: v2.1
+          service.istio.io/canonical-name: sample-service
+          service.istio.io/canonical-revision: stable
+      locality:
+        zone: us-east4-b
+        region: us-east4
+    )EOF",
+                              context_.server_factory_context_.local_info_.node_);
+  }
+
+  NiceMock<Server::Configuration::MockFactoryContext> context_;
+  NiceMock<StreamInfo::MockStreamInfo> stream_info_;
+};
+
+TEST_F(BaggagePropagationMethodTest, DownstreamBaggageInjection) {
+  io::istio::http::peer_metadata::Config_Baggage baggage_config;
+  BaggagePropagationMethod method(context_.server_factory_context_, baggage_config);
+
+  Http::TestResponseHeaderMapImpl headers;
+  Context ctx;
+
+  method.inject(stream_info_, headers, ctx);
+
+  EXPECT_EQ(1, headers.size());
+  const auto baggage_header = headers.get(Headers::get().Baggage);
+  ASSERT_FALSE(baggage_header.empty());
+
+  std::string baggage_value = std::string(baggage_header[0]->value().getStringView());
+
+  // Verify all expected tokens are present
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.namespace.name=test-namespace"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.cluster.name=sample-cluster"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "service.name=sample-service"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "service.version=stable"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "app.name=sample-app"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "app.version=v2.1"));
+  EXPECT_TRUE(
+      absl::StrContains(baggage_value, "k8s.pod.name=sample-workload")); // workload type is pod
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.instance.name=sample-instance"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "cloud.region=us-east4"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "cloud.availability_zone=us-east4-b"));
+}
+
+TEST_F(BaggagePropagationMethodTest, UpstreamBaggageInjection) {
+  io::istio::http::peer_metadata::Config_Baggage baggage_config;
+  BaggagePropagationMethod method(context_.server_factory_context_, baggage_config);
+
+  Http::TestRequestHeaderMapImpl headers;
+  Context ctx;
+
+  method.inject(stream_info_, headers, ctx);
+
+  EXPECT_EQ(1, headers.size());
+  const auto baggage_header = headers.get(Headers::get().Baggage);
+  ASSERT_FALSE(baggage_header.empty());
+
+  std::string baggage_value = std::string(baggage_header[0]->value().getStringView());
+
+  // Verify tokens are properly formatted
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.namespace.name=test-namespace"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.cluster.name=sample-cluster"));
+
+  // Check that values are comma-separated
+  std::vector<absl::string_view> parts = absl::StrSplit(baggage_value, ',');
+  EXPECT_GT(parts.size(), 1);
+}
+
+TEST_F(BaggagePropagationMethodTest, EmptyMetadataBaggage) {
+  // Reset node metadata to empty
+  context_.server_factory_context_.local_info_.node_.Clear();
+
+  io::istio::http::peer_metadata::Config_Baggage baggage_config;
+  BaggagePropagationMethod method(context_.server_factory_context_, baggage_config);
+
+  Http::TestResponseHeaderMapImpl headers;
+  Context ctx;
+
+  method.inject(stream_info_, headers, ctx);
+
+  EXPECT_EQ(1, headers.size());
+  const auto baggage_header = headers.get(Headers::get().Baggage);
+  ASSERT_FALSE(baggage_header.empty());
+
+  // With empty metadata, there should be no baggage
+  std::string baggage_value = std::string(baggage_header[0]->value().getStringView());
+  EXPECT_EQ("", baggage_value);
+}
+
+TEST_F(BaggagePropagationMethodTest, PartialMetadataBaggage) {
+  // Setup node metadata with only some fields
+  TestUtility::loadFromYaml(R"EOF(
+    metadata:
+      NAMESPACE: partial-namespace
+      LABELS:
+        app: partial-app
+        # Missing other fields like version, cluster, etc.
+  )EOF",
+                            context_.server_factory_context_.local_info_.node_);
+
+  io::istio::http::peer_metadata::Config_Baggage baggage_config;
+  BaggagePropagationMethod method(context_.server_factory_context_, baggage_config);
+
+  Http::TestRequestHeaderMapImpl headers;
+  Context ctx;
+
+  method.inject(stream_info_, headers, ctx);
+
+  EXPECT_EQ(1, headers.size());
+  const auto baggage_header = headers.get(Headers::get().Baggage);
+  ASSERT_FALSE(baggage_header.empty());
+
+  std::string baggage_value = std::string(baggage_header[0]->value().getStringView());
+
+  // Should contain only the fields that were present
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.namespace.name=partial-namespace"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "app.name=partial-app"));
+
+  // Should not contain fields that were not present
+  EXPECT_FALSE(absl::StrContains(baggage_value, "app.version="));
+  EXPECT_FALSE(absl::StrContains(baggage_value, "k8s.cluster.name="));
+}
+
+TEST_F(PeerMetadataTest, BaggagePropagationWithMixedConfig) {
+  initialize(R"EOF(
+    downstream_propagation:
+      - baggage: {}
+      - istio_headers: {}
+    upstream_propagation:
+      - baggage: {}
+      - istio_headers: {}
+  )EOF");
+
+  // Baggage should always be propagated, Istio headers are also propagated for upstream only
+  EXPECT_EQ(3, request_headers_.size());  // baggage + istio headers (id + metadata)
+  EXPECT_EQ(1, response_headers_.size()); // baggage only (no discovery, so no MX downstream)
+
+  EXPECT_TRUE(request_headers_.has(Headers::get().Baggage));
+  EXPECT_TRUE(request_headers_.has(Headers::get().ExchangeMetadataHeaderId));
+  EXPECT_TRUE(request_headers_.has(Headers::get().ExchangeMetadataHeader));
+
+  EXPECT_TRUE(response_headers_.has(Headers::get().Baggage));
+}
+
+// Baggage Discovery Tests
+
+TEST_F(PeerMetadataTest, DownstreamBaggageDiscoveryEmpty) {
+  initialize(R"EOF(
+    downstream_discovery:
+      - baggage: {}
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, UpstreamBaggageDiscoveryEmpty) {
+  // The baggage discovery filter should only be used for downstream
+  // peer metadata detection.
+  initialize(R"EOF(
+    upstream_discovery:
+      - baggage: {}
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, DownstreamBaggageDiscovery) {
+  request_headers_.setReference(
+      Headers::get().Baggage,
+      "k8s.namespace.name=test-namespace,k8s.cluster.name=test-cluster,"
+      "service.name=test-service,service.version=v1,k8s.deployment.name=test-workload,"
+      "k8s.workload.type=deployment,k8s.instance.name=test-instance-123,"
+      "app.name=test-app,app.version=v2.0");
+  initialize(R"EOF(
+    downstream_discovery:
+      - baggage: {}
+  )EOF");
+  EXPECT_EQ(1, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  checkPeerNamespace(true, "test-namespace");
+  checkNoPeer(false);
+  checkShared(false);
+}
+
+TEST_F(PeerMetadataTest, UpstreamBaggageDiscovery) {
+  response_headers_.setReference(
+      Headers::get().Baggage,
+      "k8s.namespace.name=upstream-namespace,k8s.cluster.name=upstream-cluster,"
+      "service.name=upstream-service,service.version=v2,k8s.workload.name=upstream-workload,"
+      "k8s.workload.type=pod,k8s.instance.name=upstream-instance-456,"
+      "app.name=upstream-app,app.version=v3.0");
+  initialize(R"EOF(
+    upstream_discovery:
+      - baggage: {}
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(1, response_headers_.size());
+  checkNoPeer(true);
+  // Baggage discovery should ignore upstream.
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, BothDirectionsBaggageDiscovery) {
+  request_headers_.setReference(Headers::get().Baggage,
+                                "k8s.namespace.name=downstream-ns,service.name=downstream-svc");
+  response_headers_.setReference(Headers::get().Baggage,
+                                 "k8s.namespace.name=upstream-ns,service.name=upstream-svc");
+  initialize(R"EOF(
+    downstream_discovery:
+      - baggage: {}
+    upstream_discovery:
+      - baggage: {}
+  )EOF");
+  EXPECT_EQ(1, request_headers_.size());
+  EXPECT_EQ(1, response_headers_.size());
+  checkPeerNamespace(true, "downstream-ns");
+  // Baggage discovery should ignore upstream
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, DownstreamBaggageFallbackFirst) {
+  // Baggage is present, so XDS should not be called
+  request_headers_.setReference(
+      Headers::get().Baggage, "k8s.namespace.name=baggage-namespace,service.name=baggage-service");
+  EXPECT_CALL(*metadata_provider_, GetMetadata(_)).Times(0);
+  initialize(R"EOF(
+    downstream_discovery:
+      - baggage: {}
+      - workload_discovery: {}
+  )EOF");
+  EXPECT_EQ(1, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  checkPeerNamespace(true, "baggage-namespace");
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, DownstreamBaggageFallbackSecond) {
+  // No baggage header, so XDS should be called as fallback
+  const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "xds-namespace", "foo",
+                                   "foo-service", "v1alpha3", "", "",
+                                   Istio::Common::WorkloadType::Pod, "", "us-east4", "us-east4-b");
+  EXPECT_CALL(*metadata_provider_, GetMetadata(_))
+      .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
+                                 -> std::optional<WorkloadMetadataObject> {
+        if (absl::StartsWith(address->asStringView(), "127.0.0.1")) {
+          return {pod};
+        }
+        return {};
+      }));
+  initialize(R"EOF(
+    downstream_discovery:
+      - baggage: {}
+      - workload_discovery: {}
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  checkPeerNamespace(true, "xds-namespace");
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, UpstreamBaggageFallbackFirst) {
+  // Baggage is present, but ignored as it's coming from upstream.
+  response_headers_.setReference(
+      Headers::get().Baggage,
+      "k8s.namespace.name=baggage-upstream,service.name=baggage-upstream-service");
+  // WDS information is also present, and this is the one tha tshould be used.
+  const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "xds-upstream", "foo",
+                                   "foo-service", "v1alpha3", "", "",
+                                   Istio::Common::WorkloadType::Pod, "", "us-east4", "us-east4-b");
+  EXPECT_CALL(*metadata_provider_, GetMetadata(_))
+      .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
+                                 -> std::optional<WorkloadMetadataObject> {
+        if (absl::StartsWith(address->asStringView(), "10.0.0.1")) {
+          return {pod};
+        }
+        return {};
+      }));
+  initialize(R"EOF(
+    upstream_discovery:
+      - baggage: {}
+      - workload_discovery: {}
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(1, response_headers_.size());
+  checkNoPeer(true);
+  checkPeerNamespace(false, "xds-upstream");
+}
+
+TEST_F(PeerMetadataTest, UpstreamBaggageFallbackSecond) {
+  // No baggage header, baggage is ignored as it's coming from upstream,
+  // but workload discovery should pick up the details.
+  const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "xds-upstream", "foo",
+                                   "foo-service", "v1alpha3", "", "",
+                                   Istio::Common::WorkloadType::Pod, "", "us-east4", "us-east4-b");
+  EXPECT_CALL(*metadata_provider_, GetMetadata(_))
+      .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
+                                 -> std::optional<WorkloadMetadataObject> {
+        if (absl::StartsWith(address->asStringView(), "10.0.0.1")) {
+          return {pod};
+        }
+        return {};
+      }));
+  initialize(R"EOF(
+    upstream_discovery:
+      - baggage: {}
+      - workload_discovery: {}
+  )EOF");
+  EXPECT_EQ(0, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  checkNoPeer(true);
+  checkPeerNamespace(false, "xds-upstream");
+}
+
+TEST_F(PeerMetadataTest, DownstreamBaggageWithMXFallback) {
+  // Baggage is present, so MX should not be used
+  request_headers_.setReference(Headers::get().Baggage,
+                                "k8s.namespace.name=baggage-ns,service.name=baggage-svc");
+  request_headers_.setReference(Headers::get().ExchangeMetadataHeaderId, "test-pod");
+  request_headers_.setReference(Headers::get().ExchangeMetadataHeader, SampleIstioHeader);
+  initialize(R"EOF(
+    downstream_discovery:
+      - baggage: {}
+      - istio_headers: {}
+  )EOF");
+  EXPECT_EQ(1, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  checkPeerNamespace(true, "baggage-ns");
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, DownstreamMXWithBaggageFallback) {
+  // MX is first, so it should be used even if baggage is present
+  request_headers_.setReference(Headers::get().Baggage,
+                                "k8s.namespace.name=baggage-ns,service.name=baggage-svc");
+  request_headers_.setReference(Headers::get().ExchangeMetadataHeaderId, "test-pod");
+  request_headers_.setReference(Headers::get().ExchangeMetadataHeader, SampleIstioHeader);
+  initialize(R"EOF(
+    downstream_discovery:
+      - istio_headers: {}
+      - baggage: {}
+  )EOF");
+  EXPECT_EQ(1, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+  // MX header has namespace "default" from SampleIstioHeader
+  checkPeerNamespace(true, "default");
+  checkNoPeer(false);
+}
+
+TEST_F(PeerMetadataTest, BaggageDiscoveryWithPropagation) {
+  request_headers_.setReference(Headers::get().Baggage,
+                                "k8s.namespace.name=discovered-ns,service.name=discovered-svc");
+  initialize(R"EOF(
+    downstream_discovery:
+      - baggage: {}
+    downstream_propagation:
+      - baggage: {}
+    upstream_propagation:
+      - baggage: {}
+  )EOF");
+  EXPECT_EQ(1, request_headers_.size());  // upstream baggage propagation
+  EXPECT_EQ(1, response_headers_.size()); // downstream baggage propagation
+  EXPECT_TRUE(request_headers_.has(Headers::get().Baggage));
+  EXPECT_TRUE(response_headers_.has(Headers::get().Baggage));
+  checkPeerNamespace(true, "discovered-ns");
+  checkNoPeer(false);
+}
+
+// Test class specifically for BaggageDiscoveryMethod unit tests
+class BaggageDiscoveryMethodTest : public testing::Test {
+protected:
+  BaggageDiscoveryMethodTest() = default;
+
+  NiceMock<Server::Configuration::MockFactoryContext> context_;
+  NiceMock<StreamInfo::MockStreamInfo> stream_info_;
+};
+
+TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoFromBaggage) {
+  BaggageDiscoveryMethod method;
+
+  Http::TestRequestHeaderMapImpl headers;
+  headers.setReference(
+      Headers::get().Baggage,
+      "k8s.namespace.name=unit-test-namespace,k8s.cluster.name=unit-test-cluster,"
+      "service.name=unit-test-service,service.version=v1.0,"
+      "k8s.deployment.name=unit-test-workload,k8s.workload.type=deployment,"
+      "k8s.instance.name=unit-test-instance,app.name=unit-test-app,app.version=v2.0");
+  Context ctx;
+
+  const auto result = method.derivePeerInfo(stream_info_, headers, ctx);
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ("unit-test-namespace", result->namespace_name_);
+  EXPECT_EQ("unit-test-cluster", result->cluster_name_);
+  EXPECT_EQ("unit-test-service", result->canonical_name_);
+  EXPECT_EQ("v1.0", result->canonical_revision_);
+  EXPECT_EQ("unit-test-workload", result->workload_name_);
+  EXPECT_EQ("unit-test-instance", result->instance_name_);
+  EXPECT_EQ("unit-test-app", result->app_name_);
+  EXPECT_EQ("v2.0", result->app_version_);
+  EXPECT_EQ(Istio::Common::WorkloadType::Deployment, result->workload_type_);
+}
+
+TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoEmptyBaggage) {
+  BaggageDiscoveryMethod method;
+
+  Http::TestRequestHeaderMapImpl headers;
+  Context ctx;
+
+  const auto result = method.derivePeerInfo(stream_info_, headers, ctx);
+
+  EXPECT_FALSE(result.has_value());
+}
+
+TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoPartialBaggage) {
+  BaggageDiscoveryMethod method;
+
+  Http::TestResponseHeaderMapImpl headers;
+  headers.setReference(Headers::get().Baggage,
+                       "k8s.namespace.name=partial-ns,service.name=partial-svc");
+  Context ctx;
+
+  const auto result = method.derivePeerInfo(stream_info_, headers, ctx);
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ("partial-ns", result->namespace_name_);
+  EXPECT_EQ("partial-svc", result->canonical_name_);
+  // Other fields should be empty or default
+  EXPECT_TRUE(result->cluster_name_.empty());
+  EXPECT_TRUE(result->workload_name_.empty());
+}
+
+TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoAllWorkloadTypes) {
+  BaggageDiscoveryMethod method;
+  Context ctx;
+
+  // Test Pod workload type
+  {
+    Http::TestRequestHeaderMapImpl headers;
+    headers.setReference(Headers::get().Baggage,
+                         "k8s.namespace.name=test-ns,k8s.pod.name=pod-name");
+    const auto result = method.derivePeerInfo(stream_info_, headers, ctx);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(Istio::Common::WorkloadType::Pod, result->workload_type_);
+  }
+
+  // Test Deployment workload type
+  {
+    Http::TestRequestHeaderMapImpl headers;
+    headers.setReference(Headers::get().Baggage,
+                         "k8s.namespace.name=test-ns,k8s.deployment.name=deployment-name");
+    const auto result = method.derivePeerInfo(stream_info_, headers, ctx);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(Istio::Common::WorkloadType::Deployment, result->workload_type_);
+  }
+
+  // Test Job workload type
+  {
+    Http::TestRequestHeaderMapImpl headers;
+    headers.setReference(Headers::get().Baggage,
+                         "k8s.namespace.name=test-ns,k8s.job.name=job-name");
+    const auto result = method.derivePeerInfo(stream_info_, headers, ctx);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(Istio::Common::WorkloadType::Job, result->workload_type_);
+  }
+
+  // Test CronJob workload type
+  {
+    Http::TestRequestHeaderMapImpl headers;
+    headers.setReference(Headers::get().Baggage,
+                         "k8s.namespace.name=test-ns,k8s.cronjob.name=cronjob-name");
+    const auto result = method.derivePeerInfo(stream_info_, headers, ctx);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(Istio::Common::WorkloadType::CronJob, result->workload_type_);
+  }
 }
 
 } // namespace
