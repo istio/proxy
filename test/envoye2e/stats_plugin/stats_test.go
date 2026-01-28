@@ -692,14 +692,18 @@ func TestStatsWithBaggageWaypointProxy(t *testing.T) {
 	params.Vars["ServerClusterName"] = "internal_outbound"
 	params.Vars["ServerInternalAddress"] = "internal_inbound"
 	params.Vars["StatsFilterClientConfig"] = "disable_host_header_fallback: true\nreporter: SERVER_GATEWAY"
-	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/baggage_peer_metadata.yaml.tmpl") + "\n" + driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
+	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/baggage_peer_metadata.yaml.tmpl") +
+		"\n" + driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
 	// This filter is what modifies the default framework HTTP response to include the baggage field from
 	// the request as one of the headers in the response
 	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/respond_with_baggage.yaml.tmpl")
 	params.Vars["UpstreamNetworkFilters"] = driver.LoadTestData("testdata/filters/upstream_peer_metadata.yaml.tmpl")
 
-	clientBaggage := "k8s.deployment.name=productpage-v1,service.name=productpage-v1,app.name=productpage,service.version=version-1,app.version=v1,k8s.namespace.name=default,k8s.cluster.name=client-cluster,k8s.instance.name=productpage-v1-84975bc778-pxz2w"
-	testBaggage := "k8s.deployment.name=curl,service.name=curl,service.version=v1,k8s.namespace.name=default,k8s.cluster.name=curl-cluster,k8s.instance.name=curl-xxxxxxxxxx-xxxxx"
+	clientBaggage := "k8s.deployment.name=productpage-v1,service.name=productpage-v1,app.name=productpage," +
+		"service.version=version-1,app.version=v1,k8s.namespace.name=default,k8s.cluster.name=client-cluster," +
+		"k8s.instance.name=productpage-v1-84975bc778-pxz2w"
+	testBaggage := "k8s.deployment.name=curl,service.name=curl,service.version=v1,k8s.namespace.name=default," +
+		"k8s.cluster.name=curl-cluster,k8s.instance.name=curl-xxxxxxxxxx-xxxxx"
 
 	if err := (&driver.Scenario{
 		Steps: []driver.Step{
