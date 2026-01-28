@@ -482,12 +482,14 @@ convertBaggageToWorkloadMetadata(absl::string_view data, absl::string_view ident
         cluster = parts.second;
         break;
       case BaggageToken::ServiceName:
+        // canonical name and app name are always the same
         canonical_name = parts.second;
         if (app_name.empty()) {
           app_name = parts.second;
         }
         break;
       case BaggageToken::ServiceVersion:
+        // canonical revision and app version are always the same
         canonical_revision = parts.second;
         if (app_version.empty()) {
           app_version = parts.second;
@@ -527,7 +529,6 @@ convertBaggageToWorkloadMetadata(absl::string_view data, absl::string_view ident
       }
     }
   }
-
   return std::make_unique<WorkloadMetadataObject>(
       instance, cluster, namespace_name, workload, canonical_name, canonical_revision, app_name,
       app_version, workload_type, identity, region, zone);
