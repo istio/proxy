@@ -1,0 +1,29 @@
+name: internal_outbound
+use_original_dst: false
+internal_listener: {}
+listener_filters:
+- name: set_dst_address
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/envoy.extensions.filters.listener.original_dst.v3.OriginalDst
+filter_chains:
+- filters:
+  - name: envoy.filters.network.peer_metadata
+    typed_config:
+      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: type.googleapis.com/envoy.extensions.network_filters.peer_metadata.Config
+      value:
+        baggage_key: "io.istio.baggage"
+  - name: connect_originate
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+      stat_prefix: connect_originate
+      cluster: original_dst
+      tunneling_config:
+        hostname: "%DOWNSTREAM_LOCAL_ADDRESS%"
+        propagate_response_headers: true
+        headers_to_add:
+        - header:
+            key: "baggage"
+            value: "%FILTER_STATE(io.istio.baggage:PLAIN)%"
+          append_action: OVERWRITE_IF_EXISTS_OR_ADD
