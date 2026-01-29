@@ -1,1 +1,0 @@
-/work/go.mod

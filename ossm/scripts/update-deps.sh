@@ -54,6 +54,7 @@ function init(){
         "python3_12_ppc"
         "python3_12_s390x"
         "python3_12_aarch64"
+        "antlr4-cpp-runtime"
   )
 }
 
@@ -85,7 +86,7 @@ function copy_files() {
       fi
 
       cp_flags="-rL"
-      if [ "${repo_name}" == "emscripten_toolchain" ] || [ "${repo_name}" == "antlr4-cpp-runtime" ]; then
+      if [ "${repo_name}" == "emscripten_toolchain" ] ; then
         cp_flags="-r"
       fi
       cp "${cp_flags}" "${f}" "${VENDOR_DIR}" || echo "Copy of ${f} failed. Ignoring..."

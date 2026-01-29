@@ -22,6 +22,7 @@ jobs:
           - release/v1.32
           - release/v1.34
           - release/v1.35
+          - release/v1.36
     steps:
     - id: appauth
       uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.3.23

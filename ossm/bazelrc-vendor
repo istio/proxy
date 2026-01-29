@@ -1,4 +1,3 @@
-build --override_repository=antlr4-cpp-runtime=/work/ossm/vendor/antlr4-cpp-runtime
 build --override_repository=antlr4_jar=/work/ossm/vendor/antlr4_jar
 build --override_repository=antlr4_runtimes=/work/ossm/vendor/antlr4_runtimes
 build --override_repository=aspect_bazel_lib=/work/ossm/vendor/aspect_bazel_lib

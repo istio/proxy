@@ -1,1 +1,1 @@
-workspace(name = "rules_buf")
+# Marker for the root of a Bazel workspace.
