@@ -35,6 +35,7 @@ func init() {
 		"TestHTTPExchange",
 		"TestNativeHTTPExchange",
 		"TestHTTPExchangeAdditionalLabels",
+		"TestHTTPExchangeBaggage",
 		"TestStats403Failure/#00",
 		"TestStatsECDS/#00",
 		"TestStatsEndpointLabels/#00",
