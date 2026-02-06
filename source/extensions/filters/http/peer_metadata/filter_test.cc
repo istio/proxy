@@ -24,8 +24,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-using Istio::Common::WorkloadMetadataObject;
 using ::Envoy::Base64;
+using Istio::Common::WorkloadMetadataObject;
 using testing::HasSubstr;
 using testing::Invoke;
 using testing::Return;
@@ -541,7 +541,8 @@ TEST_F(PeerMetadataTest, UpstreamMXPropagationWithNodeLocality) {
     locality:
       region: asia-southeast1
       zone: asia-southeast1-a
-  )EOF", node);
+  )EOF",
+                            node);
 
   initialize(R"EOF(
     upstream_propagation:
@@ -1291,7 +1292,8 @@ TEST_F(PeerMetadataTest, BaggagePropagationWithNodeLocality) {
     locality:
       region: asia-southeast1
       zone: asia-southeast1-a
-  )EOF", node);
+  )EOF",
+                            node);
 
   initialize(R"EOF(
     upstream_propagation:
@@ -1312,10 +1314,14 @@ TEST_F(PeerMetadataTest, BaggagePropagationWithNodeLocality) {
 TEST_F(PeerMetadataTest, MXDiscoveryPreservesLocality) {
   // Create test MX header with locality
   google::protobuf::Struct test_metadata;
-  (*test_metadata.mutable_fields())[Istio::Common::NamespaceMetadataField].set_string_value("mx-locality-ns");
-  (*test_metadata.mutable_fields())[Istio::Common::ClusterMetadataField].set_string_value("mx-locality-cluster");
-  (*test_metadata.mutable_fields())[Istio::Common::RegionMetadataField].set_string_value("us-central1");
-  (*test_metadata.mutable_fields())[Istio::Common::ZoneMetadataField].set_string_value("us-central1-f");
+  (*test_metadata.mutable_fields())[Istio::Common::NamespaceMetadataField].set_string_value(
+      "mx-locality-ns");
+  (*test_metadata.mutable_fields())[Istio::Common::ClusterMetadataField].set_string_value(
+      "mx-locality-cluster");
+  (*test_metadata.mutable_fields())[Istio::Common::RegionMetadataField].set_string_value(
+      "us-central1");
+  (*test_metadata.mutable_fields())[Istio::Common::ZoneMetadataField].set_string_value(
+      "us-central1-f");
 
   const std::string metadata_bytes = Istio::Common::serializeToStringDeterministic(test_metadata);
   const std::string encoded_metadata = Base64::encode(metadata_bytes.data(), metadata_bytes.size());
@@ -1339,9 +1345,9 @@ TEST_F(PeerMetadataTest, LocalityAbsenceDoesNotBreakFunctionality) {
   auto& node = context_.server_factory_context_.local_info_.node_;
   node.mutable_locality()->Clear(); // Clear locality to simulate absence
   // Test with WorkloadMetadataObject with empty locality
-  const WorkloadMetadataObject pod_no_locality("pod-no-locality", "cluster-no-locality", "ns-no-locality",
-                                                "workload-no-locality", "service-no-locality", "v1",
-                                                "", "", Istio::Common::WorkloadType::Pod, "", "", "");
+  const WorkloadMetadataObject pod_no_locality(
+      "pod-no-locality", "cluster-no-locality", "ns-no-locality", "workload-no-locality",
+      "service-no-locality", "v1", "", "", Istio::Common::WorkloadType::Pod, "", "", "");
 
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
@@ -1353,8 +1359,9 @@ TEST_F(PeerMetadataTest, LocalityAbsenceDoesNotBreakFunctionality) {
       }));
 
   // Also test with baggage without locality
-  request_headers_.setReference(Headers::get().Baggage,
-                                "k8s.namespace.name=baggage-no-locality,service.name=baggage-no-locality-svc");
+  request_headers_.setReference(
+      Headers::get().Baggage,
+      "k8s.namespace.name=baggage-no-locality,service.name=baggage-no-locality-svc");
 
   initialize(R"EOF(
     downstream_discovery:
@@ -1370,7 +1377,8 @@ TEST_F(PeerMetadataTest, LocalityAbsenceDoesNotBreakFunctionality) {
   checkPeerNamespace(true, "baggage-no-locality");
 
   // Verify empty locality doesn't break anything
-  const auto* peer_info = stream_info_.filterState()->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeerObj);
+  const auto* peer_info =
+      stream_info_.filterState()->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeerObj);
   ASSERT_NE(peer_info, nullptr);
   EXPECT_EQ("", peer_info->locality_region_);
   EXPECT_EQ("", peer_info->locality_zone_);
