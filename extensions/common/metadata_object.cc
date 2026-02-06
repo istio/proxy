@@ -56,6 +56,8 @@ static absl::flat_hash_map<absl::string_view, BaggageToken> ALL_BAGGAGE_TOKENS =
     {CronjobNameBaggageToken, BaggageToken::WorkloadName},
     {JobNameBaggageToken, BaggageToken::WorkloadName},
     {InstanceNameBaggageToken, BaggageToken::InstanceName},
+    {LocalityRegionBaggageToken, BaggageToken::LocalityRegion},
+    {LocalityZoneBaggageToken, BaggageToken::LocalityZone},
 
 };
 
@@ -344,6 +346,14 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
       cluster = it.second.string_value();
     } else if (it.first == IdentityMetadataField) {
       identity = it.second.string_value();
+    } else if (it.first == RegionMetadataField) {
+      // This (and zone below) are for the case where locality is propagated
+      // via a downstream MX header. For propagation, the locality is passed
+      // via the locality argument and these fields shouldn't be used, but
+      // we have no way to distinguish locality when we just get a header.
+      region = it.second.string_value();
+    } else if (it.first == ZoneMetadataField) {
+      zone = it.second.string_value();
     } else if (it.first == LabelsMetadataField) {
       for (const auto& labels_it : it.second.struct_value().fields()) {
         if (labels_it.first == CanonicalNameLabel) {
