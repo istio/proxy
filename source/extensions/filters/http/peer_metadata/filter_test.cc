@@ -15,6 +15,7 @@
 #include "source/extensions/filters/http/peer_metadata/filter.h"
 
 #include "source/common/network/address_impl.h"
+#include "source/common/common/base64.h"
 #include "test/common/stream_info/test_util.h"
 #include "test/mocks/stream_info/mocks.h"
 #include "test/mocks/server/factory_context.h"
@@ -23,6 +24,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+using ::Envoy::Base64;
 using Istio::Common::WorkloadMetadataObject;
 using testing::HasSubstr;
 using testing::Invoke;
@@ -83,6 +85,14 @@ protected:
         downstream ? Istio::Common::DownstreamPeerObj : Istio::Common::UpstreamPeerObj);
     ASSERT_NE(peer_info, nullptr);
     EXPECT_EQ(expected, peer_info->namespace_name_);
+  }
+  void checkPeerLocality(bool downstream, const std::string& expected_region,
+                         const std::string& expected_zone) {
+    const auto* peer_info = stream_info_.filterState()->getDataReadOnly<PeerInfo>(
+        downstream ? Istio::Common::DownstreamPeerObj : Istio::Common::UpstreamPeerObj);
+    ASSERT_NE(peer_info, nullptr);
+    EXPECT_EQ(expected_region, peer_info->locality_region_);
+    EXPECT_EQ(expected_zone, peer_info->locality_zone_);
   }
 
   absl::string_view extractString(const Protobuf::Struct& metadata, absl::string_view key) {
@@ -519,6 +529,50 @@ TEST_F(PeerMetadataTest, UpstreamMXPropagationSkipNoMatch) {
   checkNoPeer(false);
 }
 
+// Test MX propagation includes locality from node configuration
+TEST_F(PeerMetadataTest, UpstreamMXPropagationWithNodeLocality) {
+  // Setup node with locality
+  auto& node = context_.server_factory_context_.local_info_.node_;
+  TestUtility::loadFromYaml(R"EOF(
+    metadata:
+      NAMESPACE: mx-prop-ns
+      CLUSTER_ID: mx-prop-cluster
+      WORKLOAD_NAME: mx-prop-workload
+    locality:
+      region: asia-southeast1
+      zone: asia-southeast1-a
+  )EOF",
+                            node);
+
+  initialize(R"EOF(
+    upstream_propagation:
+      - istio_headers:
+          skip_external_clusters: false
+  )EOF");
+
+  EXPECT_EQ(2, request_headers_.size());
+  EXPECT_EQ(0, response_headers_.size());
+
+  // Verify the MX header contains locality information
+  const auto mx_header = request_headers_.get(Headers::get().ExchangeMetadataHeader);
+  ASSERT_FALSE(mx_header.empty());
+
+  // Decode and verify the metadata contains locality
+  const std::string encoded_metadata = std::string(mx_header[0]->value().getStringView());
+  const std::string metadata_bytes = Base64::decode(encoded_metadata);
+
+  google::protobuf::Struct metadata;
+  ASSERT_TRUE(metadata.ParseFromString(metadata_bytes));
+  // Check that locality fields are present
+  ASSERT_TRUE(metadata.fields().contains("REGION"));
+  EXPECT_EQ("asia-southeast1", metadata.fields().at("REGION").string_value());
+  ASSERT_TRUE(metadata.fields().contains("AVAILABILITY_ZONE"));
+  EXPECT_EQ("asia-southeast1-a", metadata.fields().at("AVAILABILITY_ZONE").string_value());
+
+  checkNoPeer(true);
+  checkNoPeer(false);
+}
+
 TEST_F(PeerMetadataTest, UpstreamMXPropagationSkip) {
   std::shared_ptr<Upstream::MockClusterInfo> cluster_info_{
       std::make_shared<NiceMock<Upstream::MockClusterInfo>>()};
@@ -559,7 +613,7 @@ TEST_F(PeerMetadataTest, UpstreamMXPropagationSkipPassthrough) {
 TEST_F(PeerMetadataTest, FieldAccessorSupport) {
   const WorkloadMetadataObject pod("pod-foo-1234", "my-cluster", "default", "foo", "foo-service",
                                    "v1alpha3", "myapp", "v1", Istio::Common::WorkloadType::Pod, "",
-                                   "", "");
+                                   "test-region", "test-zone-a");
   EXPECT_CALL(*metadata_provider_, GetMetadata(_))
       .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
                                  -> std::optional<WorkloadMetadataObject> {
@@ -580,7 +634,7 @@ TEST_F(PeerMetadataTest, FieldAccessorSupport) {
   // Test hasFieldSupport
   EXPECT_TRUE(peer_info->hasFieldSupport());
 
-  // Test getField() for all 9 fields
+  // Test getField() for all fields including locality
   EXPECT_EQ("foo", std::get<absl::string_view>(peer_info->getField("workload")));
   EXPECT_EQ("default", std::get<absl::string_view>(peer_info->getField("namespace")));
   EXPECT_EQ("my-cluster", std::get<absl::string_view>(peer_info->getField("cluster")));
@@ -590,6 +644,9 @@ TEST_F(PeerMetadataTest, FieldAccessorSupport) {
   EXPECT_EQ("v1", std::get<absl::string_view>(peer_info->getField("version")));
   EXPECT_EQ("pod", std::get<absl::string_view>(peer_info->getField("type")));
   EXPECT_EQ("pod-foo-1234", std::get<absl::string_view>(peer_info->getField("name")));
+  // Test locality field access
+  EXPECT_EQ("test-region", std::get<absl::string_view>(peer_info->getField("region")));
+  EXPECT_EQ("test-zone-a", std::get<absl::string_view>(peer_info->getField("availability_zone")));
 }
 
 TEST_F(PeerMetadataTest, CelExpressionCompatibility) {
@@ -982,6 +1039,7 @@ TEST_F(PeerMetadataTest, DownstreamBaggageFallbackSecond) {
   EXPECT_EQ(0, request_headers_.size());
   EXPECT_EQ(0, response_headers_.size());
   checkPeerNamespace(true, "xds-namespace");
+  checkPeerLocality(true, "us-east4", "us-east4-b");
   checkNoPeer(false);
 }
 
@@ -1199,6 +1257,138 @@ TEST_F(BaggageDiscoveryMethodTest, DerivePeerInfoAllWorkloadTypes) {
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(Istio::Common::WorkloadType::CronJob, result->workload_type_);
   }
+}
+
+// Additional Locality Tests
+
+// Test baggage discovery with locality information
+TEST_F(PeerMetadataTest, BaggageDiscoveryWithLocalityInformation) {
+  request_headers_.setReference(
+      Headers::get().Baggage,
+      "k8s.namespace.name=locality-test-ns,k8s.cluster.name=locality-test-cluster,"
+      "service.name=locality-test-service,service.version=v1,"
+      "cloud.region=europe-west1,cloud.availability_zone=europe-west1-c");
+
+  initialize(R"EOF(
+    downstream_discovery:
+      - baggage: {}
+  )EOF");
+
+  EXPECT_EQ(1, request_headers_.size());
+  checkPeerNamespace(true, "locality-test-ns");
+  checkPeerLocality(true, "europe-west1", "europe-west1-c");
+  checkNoPeer(false);
+}
+
+// Test baggage propagation includes locality from node configuration
+TEST_F(PeerMetadataTest, BaggagePropagationWithNodeLocality) {
+  // Setup node with locality
+  auto& node = context_.server_factory_context_.local_info_.node_;
+  TestUtility::loadFromYaml(R"EOF(
+    metadata:
+      NAMESPACE: locality-prop-ns
+      CLUSTER_ID: locality-prop-cluster
+      WORKLOAD_NAME: locality-prop-workload
+    locality:
+      region: asia-southeast1
+      zone: asia-southeast1-a
+  )EOF",
+                            node);
+
+  initialize(R"EOF(
+    upstream_propagation:
+      - baggage: {}
+  )EOF");
+
+  EXPECT_EQ(1, request_headers_.size());
+  const auto baggage_header = request_headers_.get(Headers::get().Baggage);
+  ASSERT_FALSE(baggage_header.empty());
+
+  std::string baggage_value = std::string(baggage_header[0]->value().getStringView());
+  EXPECT_TRUE(absl::StrContains(baggage_value, "cloud.region=asia-southeast1"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "cloud.availability_zone=asia-southeast1-a"));
+  EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.namespace.name=locality-prop-ns"));
+}
+
+// Test MX discovery preserves locality from incoming headers
+TEST_F(PeerMetadataTest, MXDiscoveryPreservesLocality) {
+  // Create test MX header with locality
+  google::protobuf::Struct test_metadata;
+  (*test_metadata.mutable_fields())[Istio::Common::NamespaceMetadataField].set_string_value(
+      "mx-locality-ns");
+  (*test_metadata.mutable_fields())[Istio::Common::ClusterMetadataField].set_string_value(
+      "mx-locality-cluster");
+  (*test_metadata.mutable_fields())[Istio::Common::RegionMetadataField].set_string_value(
+      "us-central1");
+  (*test_metadata.mutable_fields())[Istio::Common::ZoneMetadataField].set_string_value(
+      "us-central1-f");
+
+  const std::string metadata_bytes = Istio::Common::serializeToStringDeterministic(test_metadata);
+  const std::string encoded_metadata = Base64::encode(metadata_bytes.data(), metadata_bytes.size());
+
+  request_headers_.setReference(Headers::get().ExchangeMetadataHeaderId, "test-mx-locality");
+  request_headers_.setReference(Headers::get().ExchangeMetadataHeader, encoded_metadata);
+
+  initialize(R"EOF(
+    downstream_discovery:
+      - istio_headers: {}
+  )EOF");
+
+  EXPECT_EQ(0, request_headers_.size()); // Headers removed after discovery
+  checkPeerNamespace(true, "mx-locality-ns");
+  checkPeerLocality(true, "us-central1", "us-central1-f");
+}
+
+// Test locality absence doesn't break functionality
+TEST_F(PeerMetadataTest, LocalityAbsenceDoesNotBreakFunctionality) {
+  // Setup node WITHOUT locality (the Envoy serverFactory mock sets zone to "zone_name" by default)
+  auto& node = context_.server_factory_context_.local_info_.node_;
+  node.mutable_locality()->Clear(); // Clear locality to simulate absence
+  // Test with WorkloadMetadataObject with empty locality
+  const WorkloadMetadataObject pod_no_locality(
+      "pod-no-locality", "cluster-no-locality", "ns-no-locality", "workload-no-locality",
+      "service-no-locality", "v1", "", "", Istio::Common::WorkloadType::Pod, "", "", "");
+
+  EXPECT_CALL(*metadata_provider_, GetMetadata(_))
+      .WillRepeatedly(Invoke([&](const Network::Address::InstanceConstSharedPtr& address)
+                                 -> std::optional<WorkloadMetadataObject> {
+        if (absl::StartsWith(address->asStringView(), "127.0.0.1")) {
+          return {pod_no_locality};
+        }
+        return {};
+      }));
+
+  // Also test with baggage without locality
+  request_headers_.setReference(
+      Headers::get().Baggage,
+      "k8s.namespace.name=baggage-no-locality,service.name=baggage-no-locality-svc");
+
+  initialize(R"EOF(
+    downstream_discovery:
+      - baggage: {}
+      - workload_discovery: {}
+    upstream_propagation:
+      - baggage: {}
+  )EOF");
+
+  EXPECT_EQ(1, request_headers_.size()); // baggage propagation
+
+  // Verify discovery still works without locality
+  checkPeerNamespace(true, "baggage-no-locality");
+
+  // Verify empty locality doesn't break anything
+  const auto* peer_info =
+      stream_info_.filterState()->getDataReadOnly<PeerInfo>(Istio::Common::DownstreamPeerObj);
+  ASSERT_NE(peer_info, nullptr);
+  EXPECT_EQ("", peer_info->locality_region_);
+  EXPECT_EQ("", peer_info->locality_zone_);
+
+  // Verify propagated baggage doesn't contain locality tokens when not available
+  const auto propagated_baggage = request_headers_.get(Headers::get().Baggage);
+  ASSERT_FALSE(propagated_baggage.empty());
+  std::string propagated_value = std::string(propagated_baggage[0]->value().getStringView());
+  EXPECT_FALSE(absl::StrContains(propagated_value, "cloud.region="));
+  EXPECT_FALSE(absl::StrContains(propagated_value, "cloud.availability_zone="));
 }
 
 } // namespace

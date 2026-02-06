@@ -231,7 +231,8 @@ std::string MXPropagationMethod::computeValue(
     const absl::flat_hash_set<std::string>& additional_labels,
     Server::Configuration::ServerFactoryContext& factory_context) const {
   const auto obj = Istio::Common::convertStructToWorkloadMetadata(
-      factory_context.localInfo().node().metadata(), additional_labels);
+      factory_context.localInfo().node().metadata(), additional_labels,
+      factory_context.localInfo().node().locality());
   const google::protobuf::Struct metadata = Istio::Common::convertWorkloadMetadataToStruct(*obj);
   const std::string metadata_bytes = Istio::Common::serializeToStringDeterministic(metadata);
   return Base64::encode(metadata_bytes.data(), metadata_bytes.size());
