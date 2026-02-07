@@ -31,8 +31,8 @@ envoy_cc_library(
     hdrs = ["metadata_object.h"],
     repository = "@envoy",
     deps = [
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:optional",
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/types:optional",
         "@envoy//envoy/common:hashable_interface",
         "@envoy//envoy/local_info:local_info_interface",
         "@envoy//envoy/registry",
