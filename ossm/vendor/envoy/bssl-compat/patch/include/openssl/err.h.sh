@@ -28,4 +28,4 @@ uncomment.sh "$1" --comment -h \
   --uncomment-macro OPENSSL_PUT_ERROR \
   --uncomment-func-decl ERR_put_error \
   --uncomment-macro-redef ERR_NUM_ERRORS \
-  --sed '/#define ERR_PACK/i#define ERR_PACK(lib, reason) ossl_ERR_PACK(lib, 0, reason)'
+  --sed '/#define ERR_PACK/i#define ERR_PACK(lib, reason) (lib == ossl_ERR_LIB_SYS) ? (ossl_ERR_SYSTEM_FLAG | reason) : ossl_ERR_PACK(lib, 0, reason)'

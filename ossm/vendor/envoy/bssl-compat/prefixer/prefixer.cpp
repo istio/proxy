@@ -774,10 +774,17 @@ int main(int argc, const char **argv) {
         str << "#include \"" << opt::prefix << "/" << hdr << "\"" << std::endl;
       }
     }
-    std::system((std::string("sed -i ") + subts.str() + files.str()).c_str());
+    std::string cmd {"sed -i " + subts.str() + files.str()};
+    int ret = std::system(cmd.c_str());
+    if (ret != 0) {
+      llvm::errs() << "Failed to execute the following command:\n"
+                   << cmd << "\n" << strerror(errno) << "\n";
+      exit(-1);
+    }
   }
 
-  clang::tooling::ClangTool tool(CompilationDatabase(), { tmpfile });
+  CompilationDatabase compilationDB;
+  clang::tooling::ClangTool tool(compilationDB, { tmpfile });
   int ret = tool.run(clang::tooling::newFrontendActionFactory<MyFrontendAction>().get());
 
   std::filesystem::remove(tmpfile);

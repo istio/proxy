@@ -12,7 +12,7 @@
 #include "src/objects/js-array-buffer-inl.h"
 #include "src/objects/objects-inl.h"
 #include "src/objects/simd.h"
-#include "third_party/simdutf/simdutf.h"
+#include "simdutf.h"
 
 namespace v8 {
 namespace internal {

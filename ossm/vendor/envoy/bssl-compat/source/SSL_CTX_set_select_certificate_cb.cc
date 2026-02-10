@@ -15,9 +15,9 @@ typedef enum ssl_select_cert_result_t (*select_certificate_cb_t)(const SSL_CLIEN
  * in_select_certificate_cb(ssl) function to query whether or not we are
  * executing within a SSL_CTX_set_select_certificate_cb() callback for that SSL
  * object, or not.
- * 
- * This mechanism is used by the SSL_get_servername() function to provide a
- * different implementation depending on it's invocation context.
+ *
+ * This mechanism is used by SSL_get_servername() & SSL_set_ocsp_response()
+ * to provide different behavior depending on invocation context.
  */
 class ActiveSelectCertificateCb {
   public:
@@ -27,14 +27,14 @@ class ActiveSelectCertificateCb {
     ~ActiveSelectCertificateCb() {
       SSL_set_ex_data(ssl_, index(), nullptr);
     }
-    static int index() {
-      static int index = SSL_get_ex_new_index(0, nullptr, nullptr, nullptr,
-                              +[](void *, void *ptr, CRYPTO_EX_DATA *, int, long, void*) {
-                                if (ptr) ossl_OPENSSL_free(ptr);
-                              });
-      return index;
+    static bool isActive(const SSL *ssl) {
+      return SSL_get_ex_data(ssl, index()) != nullptr;
     }
   private:
+    static int index() {
+      static int index = SSL_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+      return index;
+    }
     SSL *ssl_;
 };
 
@@ -43,7 +43,7 @@ class ActiveSelectCertificateCb {
  * callback invocation for the specified SSL object.
  */
 bool in_select_certificate_cb(const SSL *ssl) {
-  return SSL_get_ex_data(ssl, ActiveSelectCertificateCb::index()) != nullptr;
+  return ActiveSelectCertificateCb::isActive(ssl);
 }
 
 
@@ -101,14 +101,18 @@ static int ssl_ctx_client_hello_cb(SSL *ssl, int *alert, void *arg) {
     return ossl_SSL_CLIENT_HELLO_ERROR;
   }
 
+  // Ensure extensions are freed even if the callback throws
+  std::unique_ptr<uint8_t, decltype(&OPENSSL_free)> cleanup(
+    const_cast<uint8_t*>(client_hello.extensions), 
+    OPENSSL_free
+  );
+
   enum ssl_select_cert_result_t result;
 
   {
     ActiveSelectCertificateCb active(ssl);
     result = callback(&client_hello);
   }
-
-  OPENSSL_free((void*)client_hello.extensions);
 
   switch (result) {
     case ssl_select_cert_success: return ossl_SSL_CLIENT_HELLO_SUCCESS;

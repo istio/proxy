@@ -69,7 +69,7 @@ add_library(bssl-compat STATIC
   source/ECDSA_verify.cc
   source/EC_KEY_check_fips.cc
   source/EC_KEY_parse_private_key.cc
-  source/EC_KEY_set_public_key_affine_coordinate.cc
+  source/EC_KEY_set_public_key_affine_coordinates.cc
   source/ED25519_verify.cc
   source/err.cc
   source/EVP_DecodeBase64.c

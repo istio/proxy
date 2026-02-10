@@ -1463,6 +1463,59 @@ TEST(SSLTest, test_SSL_get_servername_inside_select_certificate_cb) {
 }
 
 
+/**
+ * @brief This test exercises a leak in SSL_get_servername()
+ *
+ * If SSL_get_servername() was invoked multiple times from the same certificate
+ * selection callback, it was leaking the string value that was returned from
+ * the previous invocation(s).
+ *
+ * Note that the string returned by the _last_ SSL_get_servername() invocation,
+ * inside a certificate selection callback, does _not_ leak i.e. if
+ * SSL_get_servername() is only called once during a callback, there is no leak.
+ * It only leaks when SSL_get_servername() is called more than once during the
+ * same callback.
+ */
+TEST(SSLTest, test_SSL_get_servername_leak_inside_select_certificate_cb) {
+  static const char SERVERNAME[] { "www.example.com" };
+
+  TempFile server_2_key_pem        { server_2_key_pem_str };
+  TempFile server_2_cert_chain_pem { server_2_cert_chain_pem_str };
+
+  int sockets[2];
+  ASSERT_EQ(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, sockets));
+  SocketCloser close[] { sockets[0], sockets[1] };
+
+  bssl::UniquePtr<SSL_CTX> server_ctx(SSL_CTX_new(TLS_server_method()));
+  bssl::UniquePtr<SSL_CTX> client_ctx(SSL_CTX_new(TLS_client_method()));
+
+  // Set up a certificate selection callback which calls SSL_get_servername() 5 times.
+  // This will result in 4 leaks if the SSL_get_servername() fix is not in place.
+  SSL_CTX_set_select_certificate_cb(server_ctx.get(), [](const SSL_CLIENT_HELLO *client_hello) -> ssl_select_cert_result_t {
+    SSL_get_servername(client_hello->ssl, TLSEXT_NAMETYPE_host_name);
+    SSL_get_servername(client_hello->ssl, TLSEXT_NAMETYPE_host_name);
+    SSL_get_servername(client_hello->ssl, TLSEXT_NAMETYPE_host_name);
+    SSL_get_servername(client_hello->ssl, TLSEXT_NAMETYPE_host_name);
+    SSL_get_servername(client_hello->ssl, TLSEXT_NAMETYPE_host_name);
+    return ssl_select_cert_success;
+  });
+  ASSERT_TRUE(SSL_CTX_use_certificate_chain_file(server_ctx.get(), server_2_cert_chain_pem.path()));
+  ASSERT_TRUE(SSL_CTX_use_PrivateKey_file(server_ctx.get(), server_2_key_pem.path(), SSL_FILETYPE_PEM));
+  bssl::UniquePtr<SSL> server_ssl(SSL_new(server_ctx.get()));
+  ASSERT_TRUE(SSL_set_fd(server_ssl.get(), sockets[0]));
+  SSL_set_accept_state(server_ssl.get());
+
+  // Set up client
+  SSL_CTX_set_verify(client_ctx.get(), SSL_VERIFY_NONE, nullptr);
+  bssl::UniquePtr<SSL> client_ssl(SSL_new(client_ctx.get()));
+  ASSERT_TRUE(SSL_set_fd(client_ssl.get(), sockets[1]));
+  ASSERT_TRUE(SSL_set_tlsext_host_name(client_ssl.get(), SERVERNAME));
+  SSL_set_connect_state(client_ssl.get());
+
+  ASSERT_TRUE(CompleteHandshakes(client_ssl.get(), server_ssl.get()));
+}
+
+
 TEST(SSLTest, test_SSL_get_servername_null_inside_select_certificate_cb) {
   TempFile server_2_key_pem        { server_2_key_pem_str };
   TempFile server_2_cert_chain_pem { server_2_cert_chain_pem_str };
@@ -1556,6 +1609,171 @@ TEST(SSLTest, test_SSL_set_ocsp_response_inside_select_certificate_cb) {
   ASSERT_EQ(sizeof(OCSP_RESPONSE), ocsp_resp_len);
   ASSERT_EQ(0, memcmp(OCSP_RESPONSE, ocsp_resp_data, ocsp_resp_len));
 }
+
+/**
+ * @brief This test exercises a leak in SSL_CTX_set_select_certificate_cb() when
+ * the certificate selection callback throws an exception.
+ *
+ * Without a fix for the leak, running this test under valgrind or similar
+ * memory checker tool will report the memory leak.
+ */
+TEST(SSLTest, test_SSL_CTX_set_select_certificate_cb_leak_from_callback_exception) {
+  TempFile server_2_key_pem        { server_2_key_pem_str };
+  TempFile server_2_cert_chain_pem { server_2_cert_chain_pem_str };
+
+  int sockets[2];
+  ASSERT_EQ(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, sockets));
+  SocketCloser close[] { sockets[0], sockets[1] };
+
+  bssl::UniquePtr<SSL_CTX> server_ctx(SSL_CTX_new(TLS_server_method()));
+  bssl::UniquePtr<SSL_CTX> client_ctx(SSL_CTX_new(TLS_client_method()));
+
+  // Set up server with a select certificate callback that raises an exception
+  SSL_CTX_set_select_certificate_cb(server_ctx.get(), [](const SSL_CLIENT_HELLO *client_hello) -> ssl_select_cert_result_t {
+    throw std::runtime_error("Intentional exception to test for memory leaks");
+  });
+
+  ASSERT_TRUE(SSL_CTX_use_certificate_chain_file(server_ctx.get(), server_2_cert_chain_pem.path()));
+  ASSERT_TRUE(SSL_CTX_use_PrivateKey_file(server_ctx.get(), server_2_key_pem.path(), SSL_FILETYPE_PEM));
+  bssl::UniquePtr<SSL> server_ssl(SSL_new(server_ctx.get()));
+  ASSERT_TRUE(SSL_set_fd(server_ssl.get(), sockets[0]));
+  SSL_set_accept_state(server_ssl.get());
+
+  // Set up client
+  SSL_CTX_set_verify(client_ctx.get(), SSL_VERIFY_NONE, nullptr);
+  bssl::UniquePtr<SSL> client_ssl(SSL_new(client_ctx.get()));
+  ASSERT_TRUE(SSL_set_fd(client_ssl.get(), sockets[1]));
+  SSL_set_connect_state(client_ssl.get());
+
+  // Handshake will fail because of the exception in the callback
+  EXPECT_THROW(
+    CompleteHandshakes(client_ssl.get(), server_ssl.get()),
+    std::runtime_error
+  );
+}
+
+
+/**
+ * @brief This test exercises a leak in SSL_set_ocsp_response()
+ *
+ * This test exercises a leak in SSL_set_ocsp_response() that occurs when it is
+ * invoked multiple times from within the same certificate selection callback
+ * i.e. without the fix, running this test under valgrind or similar memory
+ * checker tool will report the memory leak.
+ *
+ * Note that the leak does _not_ occur if SSL_set_ocsp_response() is only called
+ * _once_ from within the same certificate selection callback. It is only the
+ * additional calls that leak.
+ */
+TEST(SSLTest, test_SSL_set_ocsp_response_leak_inside_select_certificate_cb) {
+  TempFile server_2_key_pem        { server_2_key_pem_str };
+  TempFile server_2_cert_chain_pem { server_2_cert_chain_pem_str };
+
+  static const uint8_t OCSP_RESPONSE[] { 1, 2, 3, 4, 5 };
+
+  int sockets[2];
+  ASSERT_EQ(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, sockets));
+  SocketCloser close[] { sockets[0], sockets[1] };
+
+  bssl::UniquePtr<SSL_CTX> server_ctx(SSL_CTX_new(TLS_server_method()));
+  bssl::UniquePtr<SSL_CTX> client_ctx(SSL_CTX_new(TLS_client_method()));
+
+  // Set up server with a select certificate callback that calls
+  // SSL_set_ocsp_response() 5 times. This will result in 4 leaks if the
+  // SSL_set_ocsp_response() fix is not in place.
+  SSL_CTX_set_select_certificate_cb(server_ctx.get(), [](const SSL_CLIENT_HELLO *client_hello) -> ssl_select_cert_result_t {
+    SSL_set_ocsp_response(client_hello->ssl, OCSP_RESPONSE, sizeof(OCSP_RESPONSE));
+    SSL_set_ocsp_response(client_hello->ssl, OCSP_RESPONSE, sizeof(OCSP_RESPONSE));
+    SSL_set_ocsp_response(client_hello->ssl, OCSP_RESPONSE, sizeof(OCSP_RESPONSE));
+    SSL_set_ocsp_response(client_hello->ssl, OCSP_RESPONSE, sizeof(OCSP_RESPONSE));
+    SSL_set_ocsp_response(client_hello->ssl, OCSP_RESPONSE, sizeof(OCSP_RESPONSE));
+    return ssl_select_cert_success;
+  });
+  ASSERT_TRUE(SSL_CTX_use_certificate_chain_file(server_ctx.get(), server_2_cert_chain_pem.path()));
+  ASSERT_TRUE(SSL_CTX_use_PrivateKey_file(server_ctx.get(), server_2_key_pem.path(), SSL_FILETYPE_PEM));
+  bssl::UniquePtr<SSL> server_ssl(SSL_new(server_ctx.get()));
+  ASSERT_TRUE(SSL_set_fd(server_ssl.get(), sockets[0]));
+  SSL_set_accept_state(server_ssl.get());
+
+  // Set up client with ocsp stapling enabled
+  SSL_CTX_set_verify(client_ctx.get(), SSL_VERIFY_NONE, nullptr);
+  bssl::UniquePtr<SSL> client_ssl(SSL_new(client_ctx.get()));
+  ASSERT_TRUE(SSL_set_fd(client_ssl.get(), sockets[1]));
+  SSL_set_connect_state(client_ssl.get());
+  SSL_enable_ocsp_stapling(client_ssl.get());
+
+  ASSERT_TRUE(CompleteHandshakes(client_ssl.get(), server_ssl.get()));
+
+  // Check that the client received the OCSP response ok
+  const uint8_t *ocsp_resp_data{};
+  size_t ocsp_resp_len{};
+  SSL_get0_ocsp_response(client_ssl.get(), &ocsp_resp_data, &ocsp_resp_len);
+  ASSERT_EQ(sizeof(OCSP_RESPONSE), ocsp_resp_len);
+  ASSERT_EQ(0, memcmp(OCSP_RESPONSE, ocsp_resp_data, ocsp_resp_len));
+}
+
+
+#ifdef BSSL_COMPAT
+/**
+ * @brief This test exercises a leak that occurs in SSL_set_ocsp_response() if
+ * it returns early due to an error, when it is called from within a certificate
+ * selection callback.
+ *
+ * Without a fix for the leak, running this test under valgrind or similar
+ * memory checker tool will report the memory leak.
+ *
+ * Note that because this test uses knowledge of the internals of the
+ * SSL_set_ocsp_response() implementation, in bssl-compat, in order to provoke
+ * the leak, it will not work the same on BoringSSL proper.
+ */
+TEST(SSLTest, test_SSL_set_ocsp_response_early_return_leak_inside_select_certificate_cb) {
+  TempFile server_2_key_pem        { server_2_key_pem_str };
+  TempFile server_2_cert_chain_pem { server_2_cert_chain_pem_str };
+
+  static const uint8_t OCSP_RESPONSE[] { 1, 2, 3, 4, 5 };
+
+  int sockets[2];
+  ASSERT_EQ(0, socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, sockets));
+  SocketCloser close[] { sockets[0], sockets[1] };
+
+  bssl::UniquePtr<SSL_CTX> server_ctx(SSL_CTX_new(TLS_server_method()));
+  bssl::UniquePtr<SSL_CTX> client_ctx(SSL_CTX_new(TLS_client_method()));
+
+  // Register a dummy tlsext status callback. This will provoke the
+  // SSL_set_ocsp_response() call, inside the certificate selection callback, to
+  // fail and return early. This in turn will cause the leak to occur if the fix
+  // is not in place.
+  SSL_CTX_set_tlsext_status_cb(server_ctx.get(), [](SSL *ssl, void *arg) -> int {return 0;});
+
+  // Set up server with a select certificate callback that calls
+  // SSL_set_ocsp_response() - which will return early and leak because of the
+  // dummy status callback we installed above.
+  SSL_CTX_set_select_certificate_cb(server_ctx.get(), [](const SSL_CLIENT_HELLO *client_hello) -> ssl_select_cert_result_t {
+    if (SSL_set_ocsp_response(client_hello->ssl, OCSP_RESPONSE, sizeof(OCSP_RESPONSE)) == 1) {
+      return ssl_select_cert_success;
+    }
+    return ssl_select_cert_error;
+  });
+  ASSERT_TRUE(SSL_CTX_use_certificate_chain_file(server_ctx.get(), server_2_cert_chain_pem.path()));
+  ASSERT_TRUE(SSL_CTX_use_PrivateKey_file(server_ctx.get(), server_2_key_pem.path(), SSL_FILETYPE_PEM));
+  bssl::UniquePtr<SSL> server_ssl(SSL_new(server_ctx.get()));
+  ASSERT_TRUE(SSL_set_fd(server_ssl.get(), sockets[0]));
+  SSL_set_accept_state(server_ssl.get());
+
+  // Set up client with ocsp stapling enabled
+  SSL_CTX_set_verify(client_ctx.get(), SSL_VERIFY_NONE, nullptr);
+  bssl::UniquePtr<SSL> client_ssl(SSL_new(client_ctx.get()));
+  ASSERT_TRUE(SSL_set_fd(client_ssl.get(), sockets[1]));
+  SSL_set_connect_state(client_ssl.get());
+  SSL_enable_ocsp_stapling(client_ssl.get());
+
+  // We expect this to fail because the SSL_set_ocsp_response() call inside the
+  // certificate selection callback above will return early with an error,
+  // causing the certificate selection callback to fail, which in turn will
+  // cause the handshake to fail.
+  ASSERT_FALSE(CompleteHandshakes(client_ssl.get(), server_ssl.get()));
+}
+#endif // BSSL_COMPAT
 
 
 /**

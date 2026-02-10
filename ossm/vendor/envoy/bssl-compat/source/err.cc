@@ -2,6 +2,7 @@
 #include <ossl.h>
 #include <map>
 #include <string>
+#include <cstring>
 
 
 uint64_t o2b(uint64_t e) {
@@ -71,6 +72,12 @@ extern "C" uint32_t ERR_get_error(void) {
 
 
 extern "C" const char *ERR_lib_error_string(uint32_t packed_error) {
+  // Handle system library errors like BoringSSL does
+  // OpenSSL 3.x returns NULL for system errors, but BoringSSL returns "system library"
+  if (ossl_ERR_SYSTEM_ERROR(packed_error)) {
+    return "system library";
+  }
+
   const char *ret = ossl.ossl_ERR_lib_error_string(b2o(packed_error));
   return (ret ? ret : "unknown library");
 }
@@ -92,6 +99,21 @@ extern "C" uint32_t ERR_peek_last_error(void) {
 
 
 extern "C" const char *ERR_reason_error_string(uint32_t packed_error) {
+  // Handle system library errors like BoringSSL does
+  // For system errors, return strerror(errno) like BoringSSL does
+  if (ossl_ERR_SYSTEM_ERROR(packed_error)) {
+    uint32_t reason = ossl_ERR_GET_REASON(packed_error);
+    // For some reason BoringSSL only calls strerror() for errno < 127, and just
+    // returns the string "unknown error" for errno >= 127. This excludes some
+    // valid errno values (on Linux at least). We delibrately differ from
+    // BoringSSL here, and up the limit to 256 to ensure we don't hide any valid
+    // error strings.
+    if (reason > 0 && reason < 256) {
+      return strerror(reason);
+    }
+    return "unknown error";
+  }
+
   /**
    * This is not an exhaustive list of errors; rather it is just the ones that
    * need to be translated for the Envoy tests to pass (yes some of the tests do

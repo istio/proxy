@@ -53,11 +53,17 @@ const char *SSL_get_servername(const SSL *ssl, const int type) {
     size_t len;
 
     // Extract the bytes from the client hello SNI extension, if present.
-    if (ossl_SSL_client_hello_get0_ext(const_cast<SSL*>(ssl), TLSEXT_TYPE_server_name, &p, &len)) {
+    if (ossl_SSL_client_hello_get0_ext(const_cast<SSL*>(ssl), type, &p, &len)) {
         if ((p = extract_ext_str_value(p, len, type)) != nullptr) {
         // The string pointed to by p is len bytes long but NOT null-terminated.
         // Therefore, we have to make a null-terminated copy of it for returning.
         char *copy {ossl_OPENSSL_strndup(reinterpret_cast<const char*>(p), len)};
+
+        // The free func (registered with SSL_get_ex_new_index() above) is only
+        // called when the SSL object is finally freed. Therefore, we need to
+        // explicitly free any ex data value that may in the slot from previous
+        // calls on the same SSL object.
+        ossl_OPENSSL_free(SSL_get_ex_data(ssl, index));
 
         // Squirel away the copy in the SSL object's ext data so it won't leak.
         if (SSL_set_ex_data(const_cast<SSL*>(ssl), index, copy) == 0) {
