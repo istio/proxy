@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        branch: [release-1.24, release-1.26, release-1.27]
+        branch: [release-1.24, release-1.26, release-1.27, release-1.28]
 
     steps:
     - uses: actions/checkout@v4
