@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 -- LuaJIT compiler dump module.
 --
--- Copyright (C) 2005-2021 Mike Pall. All rights reserved.
+-- Copyright (C) 2005-2025 Mike Pall. All rights reserved.
 -- Released under the MIT license. See Copyright Notice in luajit.h
 ----------------------------------------------------------------------------
 --
@@ -55,7 +55,6 @@
 
 -- Cache some library functions and objects.
 local jit = require("jit")
-assert(jit.version_num == 20100, "LuaJIT core/library version mismatch")
 local jutil = require("jit.util")
 local vmdef = require("jit.vmdef")
 local funcinfo, funcbc = jutil.funcinfo, jutil.funcbc
@@ -553,7 +552,12 @@ local recdepth = 0
 local function fmterr(err, info)
   if type(err) == "number" then
     if type(info) == "function" then info = fmtfunc(info) end
-    err = format(vmdef.traceerr[err], info)
+    local fmt = vmdef.traceerr[err]
+    if fmt == "NYI: bytecode %s" then
+      local oidx = 6 * info
+      info = sub(vmdef.bcnames, oidx+1, oidx+6)
+    end
+    err = format(fmt, info)
   end
   return err
 end

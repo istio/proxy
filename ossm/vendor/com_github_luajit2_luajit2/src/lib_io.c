@@ -1,6 +1,6 @@
 /*
 ** I/O library.
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 **
 ** Major portions taken verbatim or adapted from the Lua interpreter.
 ** Copyright (C) 1994-2011 Lua.org, PUC-Rio. See Copyright Notice in lua.h
@@ -25,6 +25,7 @@
 #include "lj_strfmt.h"
 #include "lj_ff.h"
 #include "lj_lib.h"
+#include "lj_strscan.h"
 
 /* Userdata payload for I/O file. */
 typedef struct IOFileUD {
@@ -323,13 +324,14 @@ LJLIB_CF(io_method_seek)
   FILE *fp = io_tofile(L)->fp;
   int opt = lj_lib_checkopt(L, 2, 1, "\3set\3cur\3end");
   int64_t ofs = 0;
-  cTValue *o;
+  TValue *o;
   int res;
   if (opt == 0) opt = SEEK_SET;
   else if (opt == 1) opt = SEEK_CUR;
   else if (opt == 2) opt = SEEK_END;
   o = L->base+2;
   if (o < L->top) {
+    if (tvisstr(o)) lj_strscan_num(strV(o), o);
     if (tvisint(o))
       ofs = (int64_t)intV(o);
     else if (tvisnum(o))
@@ -439,7 +441,7 @@ LJLIB_CF(io_popen)
 LJLIB_CF(io_tmpfile)
 {
   IOFileUD *iof = io_file_new(L);
-#if LJ_TARGET_PS3 || LJ_TARGET_PS4 || LJ_TARGET_PSVITA
+#if LJ_TARGET_PS3 || LJ_TARGET_PS4 || LJ_TARGET_PS5 || LJ_TARGET_PSVITA || LJ_TARGET_NX
   iof->fp = NULL; errno = ENOSYS;
 #else
   iof->fp = tmpfile();

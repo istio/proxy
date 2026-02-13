@@ -1,6 +1,6 @@
 /*
 ** C data arithmetic.
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #include "lj_obj.h"
@@ -44,9 +44,13 @@ static int carith_checkarg(lua_State *L, CTState *cts, CDArith *ca)
 	p = (uint8_t *)cdata_getptr(p, ct->size);
 	if (ctype_isref(ct->info)) ct = ctype_rawchild(cts, ct);
       } else if (ctype_isfunc(ct->info)) {
+	CTypeID id0 = i ? ctype_typeid(cts, ca->ct[0]) : 0;
 	p = (uint8_t *)*(void **)p;
 	ct = ctype_get(cts,
 	  lj_ctype_intern(cts, CTINFO(CT_PTR, CTALIGN_PTR|id), CTSIZE_PTR));
+	if (i) {  /* cts->tab may have been reallocated. */
+	  ca->ct[0] = ctype_get(cts, id0);
+	}
       }
       if (ctype_isenum(ct->info)) ct = ctype_child(cts, ct);
       ca->ct[i] = ct;
@@ -207,7 +211,7 @@ static int carith_int64(lua_State *L, CTState *cts, CDArith *ca, MMS mm)
       else
 	*up = lj_carith_powu64(u0, u1);
       break;
-    case MM_unm: *up = (uint64_t)-(int64_t)u0; break;
+    case MM_unm: *up = ~u0+1u; break;
     default:
       lj_assertL(0, "bad metamethod %d", mm);
       break;
@@ -345,9 +349,7 @@ uint64_t lj_carith_check64(lua_State *L, int narg, CTypeID *id)
   if (LJ_LIKELY(tvisint(o))) {
     return (uint32_t)intV(o);
   } else {
-    int32_t i = lj_num2bit(numV(o));
-    if (LJ_DUALNUM) setintV(o, i);
-    return (uint32_t)i;
+    return (uint32_t)lj_num2bit(numV(o));
   }
 }
 

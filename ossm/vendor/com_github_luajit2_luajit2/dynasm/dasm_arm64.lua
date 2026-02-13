@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------------
 -- DynASM ARM64 module.
 --
--- Copyright (C) 2005-2021 Mike Pall. All rights reserved.
+-- Copyright (C) 2005-2025 Mike Pall. All rights reserved.
 -- See dynasm.lua for full copyright notice.
 ------------------------------------------------------------------------------
 
@@ -248,7 +248,7 @@ local map_cond = {
 
 local parse_reg_type
 
-local function parse_reg(expr, shift)
+local function parse_reg(expr, shift, no_vreg)
   if not expr then werror("expected register name") end
   local tname, ovreg = match(expr, "^([%w_]+):(@?%l%d+)$")
   if not tname then
@@ -281,7 +281,7 @@ local function parse_reg(expr, shift)
     elseif parse_reg_type ~= vrt then
       werror("register size mismatch")
     end
-    if shift then waction("VREG", shift, vreg) end
+    if not no_vreg then waction("VREG", shift, vreg) end
     return 0
   end
   werror("bad register name `"..expr.."'")
@@ -549,7 +549,7 @@ end
 local function parse_load_pair(params, nparams, n, op)
   if params[n+2] then werror("too many operands") end
   local pn, p2 = params[n], params[n+1]
-  local scale = shr(op, 30) == 0 and 2 or 3
+  local scale = 2 + shr(op, 31 - band(shr(op, 26), 1))
   local p1, wb = match(pn, "^%[%s*(.-)%s*%](!?)$")
   if not p1 then
     if not p2 then
@@ -638,7 +638,7 @@ local function alias_bfx(p)
 end
 
 local function alias_bfiz(p)
-  parse_reg(p[1], 0)
+  parse_reg(p[1], 0, true)
   if parse_reg_type == "w" then
     p[3] = "#(32-("..p[3]:sub(2).."))%32"
     p[4] = "#("..p[4]:sub(2)..")-1"
@@ -649,7 +649,7 @@ local function alias_bfiz(p)
 end
 
 local alias_lslimm = op_alias("ubfm_4", function(p)
-  parse_reg(p[1], 0)
+  parse_reg(p[1], 0, true)
   local sh = p[3]:sub(2)
   if parse_reg_type == "w" then
     p[3] = "#(32-("..sh.."))%32"
@@ -806,8 +806,8 @@ map_op = {
   ["ldrsw_*"] = "98000000DxB|b8800000DxL",
   -- NOTE: ldur etc. are handled by ldr et al.
 
-  ["stp_*"]   = "28000000DAwP|a8000000DAxP|2c000000DAsP|6c000000DAdP",
-  ["ldp_*"]   = "28400000DAwP|a8400000DAxP|2c400000DAsP|6c400000DAdP",
+  ["stp_*"]   = "28000000DAwP|a8000000DAxP|2c000000DAsP|6c000000DAdP|ac000000DAqP",
+  ["ldp_*"]   = "28400000DAwP|a8400000DAxP|2c400000DAsP|6c400000DAdP|ac400000DAqP",
   ["ldpsw_*"] = "68400000DAxP",
 
   -- Branches.
@@ -822,6 +822,13 @@ map_op = {
   cbnz_2 = "35000000DBg",
   tbz_3  = "36000000DTBw|36000000DTBx",
   tbnz_3 = "37000000DTBw|37000000DTBx",
+
+  -- ARM64e: Pointer authentication codes (PAC).
+  blraaz_1  = "d63f081fNx",
+  braa_2    = "d71f0800NDx",
+  braaz_1   = "d61f081fNx",
+  pacibsp_0 = "d503237f",
+  retab_0   = "d65f0fff",
 
   -- Miscellaneous instructions.
   -- TODO: hlt, hvc, smc, svc, eret, dcps[123], drps, mrs, msr
@@ -935,7 +942,7 @@ local function parse_template(params, template, nparams, pos)
 	werror("bad register type")
       end
       parse_reg_type = false
-    elseif p == "x" or p == "w" or p == "d" or p == "s" then
+    elseif p == "x" or p == "w" or p == "d" or p == "s" or p == "q" then
       if parse_reg_type ~= p then
 	werror("register size mismatch")
       end

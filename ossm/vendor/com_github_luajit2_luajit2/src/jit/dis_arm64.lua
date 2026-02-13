@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 -- LuaJIT ARM64 disassembler module.
 --
--- Copyright (C) 2005-2021 Mike Pall. All rights reserved.
+-- Copyright (C) 2005-2025 Mike Pall. All rights reserved.
 -- Released under the MIT license. See Copyright Notice in luajit.h
 --
 -- Contributed by Djordje Kovacevic and Stefan Pejic from RT-RK.com.
@@ -107,24 +107,20 @@ local map_logsr = { -- Logical, shifted register.
     [0] = {
       shift = 29, mask = 3,
       [0] = {
-	shift = 21, mask = 7,
-	[0] = "andDNMSg", "bicDNMSg", "andDNMSg", "bicDNMSg",
-	"andDNMSg", "bicDNMSg", "andDNMg", "bicDNMg"
+	shift = 21, mask = 1,
+	[0] = "andDNMSg", "bicDNMSg"
       },
       {
-	shift = 21, mask = 7,
-	[0] ="orr|movDN0MSg", "orn|mvnDN0MSg", "orr|movDN0MSg", "orn|mvnDN0MSg",
-	     "orr|movDN0MSg", "orn|mvnDN0MSg", "orr|movDN0Mg", "orn|mvnDN0Mg"
+	shift = 21, mask = 1,
+	[0] = "orr|movDN0MSg", "orn|mvnDN0MSg"
       },
       {
-	shift = 21, mask = 7,
-	[0] = "eorDNMSg", "eonDNMSg", "eorDNMSg", "eonDNMSg",
-	"eorDNMSg", "eonDNMSg", "eorDNMg", "eonDNMg"
+	shift = 21, mask = 1,
+	[0] = "eorDNMSg", "eonDNMSg"
       },
       {
-	shift = 21, mask = 7,
-	[0] = "ands|tstD0NMSg", "bicsDNMSg", "ands|tstD0NMSg", "bicsDNMSg",
-	"ands|tstD0NMSg", "bicsDNMSg", "ands|tstD0NMg", "bicsDNMg"
+	shift = 21, mask = 1,
+	[0] = "ands|tstD0NMSg", "bicsDNMSg"
       }
     },
     false -- unallocated
@@ -132,24 +128,20 @@ local map_logsr = { -- Logical, shifted register.
   {
     shift = 29, mask = 3,
     [0] = {
-      shift = 21, mask = 7,
-      [0] = "andDNMSg", "bicDNMSg", "andDNMSg", "bicDNMSg",
-      "andDNMSg", "bicDNMSg", "andDNMg", "bicDNMg"
+      shift = 21, mask = 1,
+      [0] = "andDNMSg", "bicDNMSg"
     },
     {
-      shift = 21, mask = 7,
-      [0] = "orr|movDN0MSg", "orn|mvnDN0MSg", "orr|movDN0MSg", "orn|mvnDN0MSg",
-      "orr|movDN0MSg", "orn|mvnDN0MSg", "orr|movDN0Mg", "orn|mvnDN0Mg"
+      shift = 21, mask = 1,
+      [0] = "orr|movDN0MSg", "orn|mvnDN0MSg"
     },
     {
-      shift = 21, mask = 7,
-      [0] = "eorDNMSg", "eonDNMSg", "eorDNMSg", "eonDNMSg",
-      "eorDNMSg", "eonDNMSg", "eorDNMg", "eonDNMg"
+      shift = 21, mask = 1,
+      [0] = "eorDNMSg", "eonDNMSg"
     },
     {
-      shift = 21, mask = 7,
-      [0] = "ands|tstD0NMSg", "bicsDNMSg", "ands|tstD0NMSg", "bicsDNMSg",
-      "ands|tstD0NMSg", "bicsDNMSg", "ands|tstD0NMg", "bicsDNMg"
+      shift = 21, mask = 1,
+      [0] = "ands|tstD0NMSg", "bicsDNMSg"
     }
   }
 }
@@ -666,6 +658,10 @@ local map_datafp = { -- Data processing, SIMD and FP.
 	}
       }
     }
+  },
+  { -- 010
+    shift = 0, mask = 0x81f8fc00,
+    [0x100e400] = "moviDdG"
   }
 }
 
@@ -735,7 +731,7 @@ local map_cond = {
   "hi", "ls", "ge", "lt", "gt", "le", "al",
 }
 
-local map_shift = { [0] = "lsl", "lsr", "asr", }
+local map_shift = { [0] = "lsl", "lsr", "asr", "ror"}
 
 local map_extend = {
   [0] = "uxtb", "uxth", "uxtw", "uxtx", "sxtb", "sxth", "sxtw", "sxtx",
@@ -838,6 +834,20 @@ local function parse_fpimm8(op)
   local exp = bxor(rshift(arshift(lshift(op, 12), 5), 24), 0x80) - 131
   local frac = 16+band(rshift(op, 13), 15)
   return sign * frac * 2^exp
+end
+
+local function decode_fpmovi(op)
+  local lo = rshift(op, 5)
+  local hi = rshift(op, 9)
+  lo = bor(band(lo, 1) * 0xff, band(lo, 2) * 0x7f80, band(lo, 4) * 0x3fc000,
+	   band(lo, 8) * 0x1fe00000)
+  hi = bor(band(hi, 1) * 0xff, band(hi, 0x80) * 0x1fe,
+	   band(hi, 0x100) * 0xff00, band(hi, 0x200) * 0x7f8000)
+  if hi ~= 0 then
+    return fmt_hex32(hi)..tohex(lo)
+  else
+    return fmt_hex32(lo)
+  end
 end
 
 local function prefer_bfx(sf, uns, imms, immr)
@@ -956,7 +966,7 @@ local function disass_ins(ctx)
     elseif p == "U" then
       local rn = map_regs.x[band(rshift(op, 5), 31)]
       local sz = band(rshift(op, 30), 3)
-      local imm12 = lshift(arshift(lshift(op, 10), 20), sz)
+      local imm12 = lshift(rshift(lshift(op, 10), 20), sz)
       if imm12 ~= 0 then
 	x = "["..rn..", #"..imm12.."]"
       else
@@ -993,8 +1003,7 @@ local function disass_ins(ctx)
 	x = x.."]"
       end
     elseif p == "P" then
-      local opcv, sh = rshift(op, 26), 2
-      if opcv >= 0x2a then sh = 4 elseif opcv >= 0x1b then sh = 3 end
+      local sh = 2 + rshift(op, 31 - band(rshift(op, 26), 1))
       local imm7 = lshift(arshift(lshift(op, 10), 25), sh)
       local rn = map_regs.x[band(rshift(op, 5), 31)]
       local ind = band(rshift(op, 23), 3)
@@ -1140,6 +1149,8 @@ local function disass_ins(ctx)
       x = 0
     elseif p == "F" then
       x = parse_fpimm8(op)
+    elseif p == "G" then
+      x = "#0x"..decode_fpmovi(op)
     elseif p == "g" or p == "f" or p == "x" or p == "w" or
 	   p == "d" or p == "s" then
       -- These are handled in D/N/M/A.

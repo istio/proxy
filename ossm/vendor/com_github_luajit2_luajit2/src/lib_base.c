@@ -1,6 +1,6 @@
 /*
 ** Base and coroutine library.
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 **
 ** Major portions taken verbatim or adapted from the Lua interpreter.
 ** Copyright (C) 1994-2011 Lua.org, PUC-Rio. See Copyright Notice in lua.h
@@ -147,6 +147,8 @@ LJLIB_CF(getfenv)		LJLIB_REC(.)
   cTValue *o = L->base;
   if (!(o < L->top && tvisfunc(o))) {
     int level = lj_lib_optint(L, 1, 1);
+    if (level < 0)
+      lj_err_arg(L, 1, LJ_ERR_INVLVL);
     o = lj_debug_frame(L, level, &level);
     if (o == NULL)
       lj_err_arg(L, 1, LJ_ERR_INVLVL);
@@ -169,6 +171,8 @@ LJLIB_CF(setfenv)
       setgcref(L->env, obj2gco(t));
       return 0;
     }
+    if (level < 0)
+      lj_err_arg(L, 1, LJ_ERR_INVLVL);
     o = lj_debug_frame(L, level, &level);
     if (o == NULL)
       lj_err_arg(L, 1, LJ_ERR_INVLVL);
@@ -304,7 +308,7 @@ LJLIB_ASM(tonumber)		LJLIB_REC(.)
 	while (lj_char_isspace((unsigned char)(*ep))) ep++;
 	if (*ep == '\0') {
 	  if (LJ_DUALNUM && LJ_LIKELY(ul < 0x80000000u+neg)) {
-	    if (neg) ul = (unsigned long)-(long)ul;
+	    if (neg) ul = ~ul+1u;
 	    setintV(L->base-1-LJ_FR2, (int32_t)ul);
 	  } else {
 	    lua_Number n = (lua_Number)ul;
@@ -361,7 +365,11 @@ LJLIB_ASM_(xpcall)		LJLIB_REC(.)
 static int load_aux(lua_State *L, int status, int envarg)
 {
   if (status == LUA_OK) {
-    if (tvistab(L->base+envarg-1)) {
+    /*
+    ** Set environment table for top-level function.
+    ** Don't do this for non-native bytecode, which returns a prototype.
+    */
+    if (tvistab(L->base+envarg-1) && tvisfunc(L->top-1)) {
       GCfunc *fn = funcV(L->top-1);
       GCtab *t = tabV(L->base+envarg-1);
       setgcref(fn->c.env, obj2gco(t));
@@ -617,7 +625,10 @@ static int ffh_resume(lua_State *L, lua_State *co, int wrap)
     setstrV(L, L->base-LJ_FR2, lj_err_str(L, em));
     return FFH_RES(2);
   }
-  lj_state_growstack(co, (MSize)(L->top - L->base));
+  if (lj_state_cpgrowstack(co, (MSize)(L->top - L->base)) != LUA_OK) {
+    cTValue *msg = --co->top;
+    lj_err_callermsg(L, strVdata(msg));
+  }
   return FFH_RETRY;
 }
 

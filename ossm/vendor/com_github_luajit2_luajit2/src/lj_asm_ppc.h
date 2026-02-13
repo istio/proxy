@@ -1,6 +1,6 @@
 /*
 ** PPC IR assembler (SSA IR -> machine code).
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 /* -- Register allocator extensions --------------------------------------- */
@@ -235,7 +235,8 @@ static int asm_fusemadd(ASMState *as, IRIns *ir, PPCIns pi, PPCIns pir)
 {
   IRRef lref = ir->op1, rref = ir->op2;
   IRIns *irm;
-  if (lref != rref &&
+  if ((as->flags & JIT_F_OPT_FMA) &&
+      lref != rref &&
       ((mayfuse(as, lref) && (irm = IR(lref), irm->o == IR_MUL) &&
 	ra_noreg(irm->r)) ||
        (mayfuse(as, rref) && (irm = IR(rref), irm->o == IR_MUL) &&
@@ -839,23 +840,30 @@ static void asm_hrefk(ASMState *as, IRIns *ir)
 static void asm_uref(ASMState *as, IRIns *ir)
 {
   Reg dest = ra_dest(as, ir, RSET_GPR);
-  if (irref_isk(ir->op1)) {
+  int guarded = (irt_t(ir->t) & (IRT_GUARD|IRT_TYPE)) == (IRT_GUARD|IRT_PGC);
+  if (irref_isk(ir->op1) && !guarded) {
     GCfunc *fn = ir_kfunc(IR(ir->op1));
     MRef *v = &gcref(fn->l.uvptr[(ir->op2 >> 8)])->uv.v;
     emit_lsptr(as, PPCI_LWZ, dest, v, RSET_GPR);
   } else {
-    Reg uv = ra_scratch(as, RSET_GPR);
-    Reg func = ra_alloc1(as, ir->op1, RSET_GPR);
-    if (ir->o == IR_UREFC) {
-      asm_guardcc(as, CC_NE);
+    if (guarded) {
+      asm_guardcc(as, ir->o == IR_UREFC ? CC_NE : CC_EQ);
       emit_ai(as, PPCI_CMPWI, RID_TMP, 1);
-      emit_tai(as, PPCI_ADDI, dest, uv, (int32_t)offsetof(GCupval, tv));
-      emit_tai(as, PPCI_LBZ, RID_TMP, uv, (int32_t)offsetof(GCupval, closed));
-    } else {
-      emit_tai(as, PPCI_LWZ, dest, uv, (int32_t)offsetof(GCupval, v));
     }
-    emit_tai(as, PPCI_LWZ, uv, func,
-	     (int32_t)offsetof(GCfuncL, uvptr) + 4*(int32_t)(ir->op2 >> 8));
+    if (ir->o == IR_UREFC)
+      emit_tai(as, PPCI_ADDI, dest, dest, (int32_t)offsetof(GCupval, tv));
+    else
+      emit_tai(as, PPCI_LWZ, dest, dest, (int32_t)offsetof(GCupval, v));
+    if (guarded)
+      emit_tai(as, PPCI_LBZ, RID_TMP, dest, (int32_t)offsetof(GCupval, closed));
+    if (irref_isk(ir->op1)) {
+      GCfunc *fn = ir_kfunc(IR(ir->op1));
+      int32_t k = (int32_t)gcrefu(fn->l.uvptr[(ir->op2 >> 8)]);
+      emit_loadi(as, dest, k);
+    } else {
+      emit_tai(as, PPCI_LWZ, dest, ra_alloc1(as, ir->op1, RSET_GPR),
+	       (int32_t)offsetof(GCfuncL, uvptr) + 4*(int32_t)(ir->op2 >> 8));
+    }
   }
 }
 
@@ -1169,7 +1177,12 @@ dotypecheck:
   } else {
     if ((ir->op2 & IRSLOAD_TYPECHECK)) {
       asm_guardcc(as, CC_NE);
-      emit_ai(as, PPCI_CMPWI, RID_TMP, irt_toitype(t));
+      if ((ir->op2 & IRSLOAD_KEYINDEX)) {
+	emit_ai(as, PPCI_CMPWI, RID_TMP, (LJ_KEYINDEX & 0xffff));
+	emit_asi(as, PPCI_XORIS, RID_TMP, RID_TMP, (LJ_KEYINDEX >> 16));
+      } else {
+	emit_ai(as, PPCI_CMPWI, RID_TMP, irt_toitype(t));
+      }
       type = RID_TMP;
     }
     if (ra_hasreg(dest)) emit_tai(as, PPCI_LWZ, dest, base, ofs);
@@ -2180,7 +2193,7 @@ static void asm_head_root_base(ASMState *as)
 }
 
 /* Coalesce BASE register for a side trace. */
-static RegSet asm_head_side_base(ASMState *as, IRIns *irp, RegSet allow)
+static Reg asm_head_side_base(ASMState *as, IRIns *irp)
 {
   IRIns *ir = IR(REF_BASE);
   Reg r = ir->r;
@@ -2189,15 +2202,15 @@ static RegSet asm_head_side_base(ASMState *as, IRIns *irp, RegSet allow)
     if (rset_test(as->modset, r) || irt_ismarked(ir->t))
       ir->r = RID_INIT;  /* No inheritance for modified BASE register. */
     if (irp->r == r) {
-      rset_clear(allow, r);  /* Mark same BASE register as coalesced. */
+      return r;  /* Same BASE register already coalesced. */
     } else if (ra_hasreg(irp->r) && rset_test(as->freeset, irp->r)) {
-      rset_clear(allow, irp->r);
       emit_mr(as, r, irp->r);  /* Move from coalesced parent reg. */
+      return irp->r;
     } else {
       emit_getgl(as, r, jit_base);  /* Otherwise reload BASE. */
     }
   }
-  return allow;
+  return RID_NONE;
 }
 
 /* -- Tail of trace ------------------------------------------------------- */

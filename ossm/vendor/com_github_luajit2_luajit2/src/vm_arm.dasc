@@ -1,6 +1,6 @@
 |// Low-level VM code for ARM CPUs.
 |// Bytecode interpreter, fast functions and helper functions.
-|// Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+|// Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 |
 |.arch arm
 |.section code_op, code_sub
@@ -1195,8 +1195,11 @@ static void build_subroutines(BuildCtx *ctx)
   |//-- Base library: catch errors ----------------------------------------
   |
   |.ffunc pcall
+  |   ldr RB, L->maxstack
+  |   add INS, BASE, NARGS8:RC
   |  ldrb RA, [DISPATCH, #DISPATCH_GL(hookmask)]
   |   cmp NARGS8:RC, #8
+  |   cmphs RB, INS
   |   blo ->fff_fallback
   |  tst RA, #HOOK_ACTIVE		// Remember active hook before pcall.
   |   mov RB, BASE
@@ -1207,7 +1210,11 @@ static void build_subroutines(BuildCtx *ctx)
   |  b ->vm_call_dispatch
   |
   |.ffunc_2 xpcall
+  |   ldr RB, L->maxstack
+  |   add INS, BASE, NARGS8:RC
   |  ldrb RA, [DISPATCH, #DISPATCH_GL(hookmask)]
+  |   cmp RB, INS
+  |   blo ->fff_fallback
   |  checkfunc CARG4, ->fff_fallback	// Traceback must be a function.
   |   mov RB, BASE
   |  strd CARG12, [BASE, #8]		// Swap function and traceback.
@@ -1710,8 +1717,8 @@ static void build_subroutines(BuildCtx *ctx)
   |.endif
   |.endmacro
   |
-  |  math_minmax math_min, gt, pl
-  |  math_minmax math_max, lt, le
+  |  math_minmax math_min, gt, hs
+  |  math_minmax math_max, lt, ls
   |
   |//-- String library -----------------------------------------------------
   |
@@ -1816,9 +1823,19 @@ static void build_subroutines(BuildCtx *ctx)
   |
   |//-- Bit library --------------------------------------------------------
   |
-  |// FP number to bit conversion for soft-float. Clobbers r0-r3.
   |->vm_tobit_fb:
   |  bhi ->fff_fallback
+  |.if FPU
+  |// FP number to bit conversion for hard-float. Clobbers r0, d0-d1.
+  |  vldr d1, >9
+  |  vmov d0, CARG1, CARG2
+  |  vadd.f64 d0, d0, d1
+  |  vmov CARG1, s0
+  |  bx lr
+  |9:
+  |  .long 0, 0x43380000		// (double)(2^52 + 2^51).
+  |.else
+  |// FP number to bit conversion for soft-float. Clobbers r0-r3.
   |->vm_tobit:
   |  lsl RB, CARG2, #1
   |  adds RB, RB, #0x00200000
@@ -1843,6 +1860,7 @@ static void build_subroutines(BuildCtx *ctx)
   |  orr CARG1, CARG4, CARG1, lsl RB
   |   rsblt CARG1, CARG1, #0
   |  bx lr
+  |.endif
   |
   |.macro .ffunc_bit, name
   |  .ffunc_1 bit_..name
@@ -2196,8 +2214,8 @@ static void build_subroutines(BuildCtx *ctx)
   |.if JIT
   |  ldr L, SAVE_L
   |1:
-  |  cmp CARG1, #0
-  |  blt >9				// Check for error from exit.
+  |  cmn CARG1, #LUA_ERRERR
+  |  bhs >9				// Check for error from exit.
   |   lsl RC, CARG1, #3
   |  ldr LFUNC:CARG2, [BASE, FRAME_FUNC]
   |   str RC, SAVE_MULTRES
@@ -2213,6 +2231,8 @@ static void build_subroutines(BuildCtx *ctx)
   |   ldr INS, [PC], #4
   |     lsl MASKR8, MASKR8, #3		// MASKR8 = 255*8.
   |    st_vmstate CARG4
+  |  cmn CARG1, #17			// Static dispatch?
+  |  beq >5
   |  cmp OP, #BC_FUNCC+2		// Fast function?
   |  bhs >4
   |2:
@@ -2237,6 +2257,17 @@ static void build_subroutines(BuildCtx *ctx)
   |  ldr CARG3, LFUNC:CARG3->field_pc
   |  ldr KBASE, [CARG3, #PC2PROTO(k)]
   |  b <2
+  |
+  |5:  // Dispatch to static entry of original ins replaced by BC_JLOOP.
+  |  ldr CARG1, [DISPATCH, #DISPATCH_J(trace)]
+  |  decode_RD RC, INS
+  |  ldr TRACE:CARG1, [CARG1, RC, lsl #2]
+  |  ldr INS, TRACE:CARG1->startins
+  |  decode_OP OP, INS
+  |   decode_RA8 RA, INS
+  |  add OP, DISPATCH, OP, lsl #2
+  |   decode_RD RC, INS
+  |  ldr pc, [OP, #GG_DISP2STATIC]
   |
   |9:  // Rethrow error from the right C frame.
   |  rsb CARG2, CARG1, #0
@@ -2558,16 +2589,16 @@ static void build_subroutines(BuildCtx *ctx)
   |.endif
   |  mov r11, sp
   |  sub sp, sp, CARG1			// Readjust stack.
-  |   subs CARG2, CARG2, #1
+  |   subs CARG2, CARG2, #4
   |.if HFABI
   |  vldm RB, {d0-d7}
   |.endif
   |    ldr RB, CCSTATE->func
   |   bmi >2
   |1:  // Copy stack slots.
-  |  ldr CARG4, [CARG3, CARG2, lsl #2]
-  |  str CARG4, [sp, CARG2, lsl #2]
-  |  subs CARG2, CARG2, #1
+  |  ldr CARG4, [CARG3, CARG2]
+  |  str CARG4, [sp, CARG2]
+  |  subs CARG2, CARG2, #4
   |  bpl <1
   |2:
   |  ldrd CARG12, CCSTATE->gpr[0]

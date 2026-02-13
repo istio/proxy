@@ -1,6 +1,6 @@
 /*
 ** Machine code management.
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #define lj_mcode_c
@@ -29,6 +29,11 @@
 #include <valgrind/valgrind.h>
 #endif
 
+#if LJ_TARGET_WINDOWS
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
 #if LJ_TARGET_IOS
 void sys_icache_invalidate(void *start, size_t len);
 #endif
@@ -41,6 +46,8 @@ void lj_mcode_sync(void *start, void *end)
 #endif
 #if LJ_TARGET_X86ORX64
   UNUSED(start); UNUSED(end);
+#elif LJ_TARGET_WINDOWS
+  FlushInstructionCache(GetCurrentProcess(), start, (char *)end-(char *)start);
 #elif LJ_TARGET_IOS
   sys_icache_invalidate(start, (char *)end-(char *)start);
 #elif LJ_TARGET_PPC
@@ -57,9 +64,6 @@ void lj_mcode_sync(void *start, void *end)
 #if LJ_HASJIT
 
 #if LJ_TARGET_WINDOWS
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 
 #define MCPROT_RW	PAGE_READWRITE
 #define MCPROT_RX	PAGE_EXECUTE_READ
@@ -94,21 +98,35 @@ static int mcode_setprot(void *p, size_t sz, DWORD prot)
 #define MAP_ANONYMOUS	MAP_ANON
 #endif
 
+/* Check for macOS hardened runtime. */
+#if defined(LUAJIT_ENABLE_OSX_HRT) && LUAJIT_SECURITY_MCODE != 0 && defined(MAP_JIT) && __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 110000
+#include <pthread.h>
+#define MCMAP_CREATE	MAP_JIT
+#else
+#define MCMAP_CREATE	0
+#endif
+
 #define MCPROT_RW	(PROT_READ|PROT_WRITE)
 #define MCPROT_RX	(PROT_READ|PROT_EXEC)
 #define MCPROT_RWX	(PROT_READ|PROT_WRITE|PROT_EXEC)
 #ifdef PROT_MPROTECT
 #define MCPROT_CREATE	(PROT_MPROTECT(MCPROT_RWX))
+#elif MCMAP_CREATE
+#define MCPROT_CREATE	PROT_EXEC
 #else
 #define MCPROT_CREATE	0
 #endif
 
 static void *mcode_alloc_at(jit_State *J, uintptr_t hint, size_t sz, int prot)
 {
-  void *p = mmap((void *)hint, sz, prot|MCPROT_CREATE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  void *p = mmap((void *)hint, sz, prot|MCPROT_CREATE, MAP_PRIVATE|MAP_ANONYMOUS|MCMAP_CREATE, -1, 0);
   if (p == MAP_FAILED) {
     if (!hint) lj_trace_err(J, LJ_TRERR_MCODEAL);
     p = NULL;
+#if MCMAP_CREATE
+  } else {
+    pthread_jit_write_protect_np(0);
+#endif
   }
   return p;
 }
@@ -121,7 +139,12 @@ static void mcode_free(jit_State *J, void *p, size_t sz)
 
 static int mcode_setprot(void *p, size_t sz, int prot)
 {
+#if MCMAP_CREATE
+  pthread_jit_write_protect_np((prot & PROT_EXEC));
+  return 0;
+#else
   return mprotect(p, sz, prot);
+#endif
 }
 
 #else
@@ -168,7 +191,7 @@ static void mcode_protect(jit_State *J, int prot)
 #define MCPROT_RUN	MCPROT_RX
 
 /* Protection twiddling failed. Probably due to kernel security. */
-static LJ_NOINLINE void mcode_protfail(jit_State *J)
+static LJ_NORET LJ_NOINLINE void mcode_protfail(jit_State *J)
 {
   lua_CFunction panic = J2G(J)->panic;
   if (panic) {
@@ -176,6 +199,7 @@ static LJ_NOINLINE void mcode_protfail(jit_State *J)
     setstrV(L, L->top++, lj_err_str(L, LJ_ERR_JITPROT));
     panic(L);
   }
+  exit(EXIT_FAILURE);
 }
 
 /* Change protection of MCode area. */
@@ -362,7 +386,7 @@ void lj_mcode_limiterr(jit_State *J, size_t need)
   sizemcode = (size_t)J->param[JIT_P_sizemcode] << 10;
   sizemcode = (sizemcode + LJ_PAGESIZE-1) & ~(size_t)(LJ_PAGESIZE - 1);
   maxmcode = (size_t)J->param[JIT_P_maxmcode] << 10;
-  if ((size_t)need > sizemcode)
+  if (need * sizeof(MCode) > sizemcode)
     lj_trace_err(J, LJ_TRERR_MCODEOV);  /* Too long for any area. */
   if (J->szallmcarea + sizemcode > maxmcode)
     lj_trace_err(J, LJ_TRERR_MCODEAL);

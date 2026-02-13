@@ -1,6 +1,6 @@
 |// Low-level VM code for x86 CPUs.
 |// Bytecode interpreter, fast functions and helper functions.
-|// Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+|// Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 |
 |.if P64
 |.arch x64
@@ -463,9 +463,6 @@
 |.endmacro
 |.macro sseconst_1, reg, tmp		// Synthesize 1.0.
 |  sseconst_hi reg, tmp, 3ff00000
-|.endmacro
-|.macro sseconst_m1, reg, tmp		// Synthesize -1.0.
-|  sseconst_hi reg, tmp, bff00000
 |.endmacro
 |.macro sseconst_2p52, reg, tmp		// Synthesize 2^52.
 |  sseconst_hi reg, tmp, 43300000
@@ -1372,7 +1369,7 @@ static void build_subroutines(BuildCtx *ctx)
   |  mov LFUNC:RB, [RA-8]
   |  add NARGS:RD, 1
   |  // This is fragile. L->base must not move, KBASE must always be defined.
-  |.if x64
+  |.if X64
   |  cmp KBASEa, rdx			// Continue with CALLT if flag set.
   |.else
   |  cmp KBASE, BASE			// Continue with CALLT if flag set.
@@ -1796,6 +1793,9 @@ static void build_subroutines(BuildCtx *ctx)
   |//-- Base library: catch errors ----------------------------------------
   |
   |.ffunc_1 pcall
+  |  mov L:RB, SAVE_L
+  |  lea RA, [BASE+NARGS:RD*8]
+  |  cmp RA, L:RB->maxstack; ja ->fff_fallback
   |  lea RA, [BASE+8]
   |  sub NARGS:RD, 1
   |  mov PC, 8+FRAME_PCALL
@@ -1807,6 +1807,9 @@ static void build_subroutines(BuildCtx *ctx)
   |  jmp ->vm_call_dispatch
   |
   |.ffunc_2 xpcall
+  |  mov L:RB, SAVE_L
+  |  lea RA, [BASE+NARGS:RD*8]
+  |  cmp RA, L:RB->maxstack; ja ->fff_fallback
   |  cmp dword [BASE+12], LJ_TFUNC;  jne ->fff_fallback
   |  mov RB, [BASE+4]			// Swap function and traceback.
   |  mov [BASE+12], RB
@@ -2920,7 +2923,7 @@ static void build_subroutines(BuildCtx *ctx)
   |  mov BASE, L:RB->base
   |.endif
 #endif
-  |  test RD, RD; js >9			// Check for error from exit.
+  |  cmp RD, -LUA_ERRERR; jae >9	// Check for error from exit.
   |  mov L:RB, SAVE_L
   |  mov MULTRES, RD
   |  mov LFUNC:KBASE, [BASE-8]
@@ -2935,6 +2938,8 @@ static void build_subroutines(BuildCtx *ctx)
   |  movzx OP, RCL
   |  add PC, 4
   |  shr RC, 16
+  |  cmp MULTRES, -17			// Static dispatch?
+  |  je >5
   |  cmp OP, BC_FUNCF			// Function header?
   |  jb >3
   |  cmp OP, BC_FUNCC+2			// Fast function?
@@ -2959,6 +2964,19 @@ static void build_subroutines(BuildCtx *ctx)
   |  mov KBASE, LFUNC:KBASE->pc
   |  mov KBASE, [KBASE+PC2PROTO(k)]
   |  jmp <2
+  |
+  |5:  // Dispatch to static entry of original ins replaced by BC_JLOOP.
+  |  mov RA, [DISPATCH+DISPATCH_J(trace)]
+  |  mov TRACE:RA, [RA+RD*4]
+  |  mov RC, TRACE:RA->startins
+  |  movzx RA, RCH
+  |  movzx OP, RCL
+  |  shr RC, 16
+  |.if X64
+  |  jmp aword [DISPATCH+OP*8+GG_DISP2STATIC]
+  |.else
+  |  jmp aword [DISPATCH+OP*4+GG_DISP2STATIC]
+  |.endif
   |
   |9:  // Rethrow error from the right C frame.
   |  mov FCARG2, RD
@@ -3004,15 +3022,17 @@ static void build_subroutines(BuildCtx *ctx)
   |  addsd xmm1, xmm3			// (|x| + 2^52) - 2^52
   |  subsd xmm1, xmm3
   |  orpd xmm1, xmm2			// Merge sign bit back in.
+  |  sseconst_1 xmm3, RDa
   |  .if mode == 1		// ceil(x)?
-  |    sseconst_m1 xmm2, RDa		// Must subtract -1 to preserve -0.
   |    cmpsd xmm0, xmm1, 6		// x > result?
+  |    andpd xmm0, xmm3
+  |    addsd xmm1, xmm0			// If yes, add 1.
+  |    orpd xmm1, xmm2			// Merge sign bit back in (again).
   |  .else			// floor(x)?
-  |    sseconst_1 xmm2, RDa
   |    cmpsd xmm0, xmm1, 1		// x < result?
+  |    andpd xmm0, xmm3
+  |    subsd xmm1, xmm0			// If yes, subtract 1.
   |  .endif
-  |  andpd xmm0, xmm2
-  |  subsd xmm1, xmm0			// If yes, subtract +-1.
   |.endif
   |  movaps xmm0, xmm1
   |1:
@@ -3051,41 +3071,6 @@ static void build_subroutines(BuildCtx *ctx)
   |  mulsd xmm1, xmm0
   |  movaps xmm0, xmm5
   |  subsd xmm0, xmm1
-  |  ret
-  |
-  |// Args in xmm0/eax. Ret in xmm0. xmm0-xmm1 and eax modified.
-  |->vm_powi_sse:
-  |  cmp eax, 1; jle >6			// i<=1?
-  |  // Now 1 < (unsigned)i <= 0x80000000.
-  |1:  // Handle leading zeros.
-  |  test eax, 1; jnz >2
-  |  mulsd xmm0, xmm0
-  |  shr eax, 1
-  |  jmp <1
-  |2:
-  |  shr eax, 1; jz >5
-  |  movaps xmm1, xmm0
-  |3:  // Handle trailing bits.
-  |  mulsd xmm0, xmm0
-  |  shr eax, 1; jz >4
-  |  jnc <3
-  |  mulsd xmm1, xmm0
-  |  jmp <3
-  |4:
-  |  mulsd xmm0, xmm1
-  |5:
-  |  ret
-  |6:
-  |  je <5				// x^1 ==> x
-  |  jb >7				// x^0 ==> 1
-  |  neg eax
-  |  call <1
-  |  sseconst_1 xmm1, RDa
-  |  divsd xmm1, xmm0
-  |  movaps xmm0, xmm1
-  |  ret
-  |7:
-  |  sseconst_1 xmm0, RDa
   |  ret
   |
   |//-----------------------------------------------------------------------
@@ -3350,19 +3335,25 @@ static void build_subroutines(BuildCtx *ctx)
   |
   |  // Copy stack slots.
   |  movzx ecx, byte CCSTATE->nsp
-  |  sub ecx, 1
+  |.if X64
+  |  sub ecx, 8
   |  js >2
   |1:
-  |.if X64
-  |  mov rax, [CCSTATE+rcx*8+offsetof(CCallState, stack)]
-  |  mov [rsp+rcx*8+CCALL_SPS_EXTRA*8], rax
-  |.else
-  |  mov eax, [CCSTATE+ecx*4+offsetof(CCallState, stack)]
-  |  mov [esp+ecx*4], eax
-  |.endif
-  |  sub ecx, 1
+  |  mov rax, [CCSTATE+rcx+offsetof(CCallState, stack)]
+  |  mov [rsp+rcx+CCALL_SPS_EXTRA*8], rax
+  |  sub ecx, 8
   |  jns <1
   |2:
+  |.else
+  |  sub ecx, 4
+  |  js >2
+  |1:
+  |  mov eax, [CCSTATE+ecx+offsetof(CCallState, stack)]
+  |  mov [esp+ecx], eax
+  |  sub ecx, 4
+  |  jns <1
+  |2:
+  |.endif
   |
   |.if X64
   |  movzx eax, byte CCSTATE->nfpr
@@ -5878,7 +5869,6 @@ static void emit_asm_debug(BuildCtx *ctx)
 	  fprintf(ctx->fp, "L_%s$stub:\n\t.indirect_symbol _%s\n\t.ascii \"\\364\\364\\364\\364\\364\"\n", *xn, *xn);
     }
 #endif
-    fprintf(ctx->fp, ".subsections_via_symbols\n");
     }
     break;
 #endif

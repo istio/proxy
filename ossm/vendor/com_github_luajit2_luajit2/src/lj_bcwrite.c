@@ -1,6 +1,6 @@
 /*
 ** Bytecode writer.
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #define lj_bcwrite_c
@@ -27,7 +27,9 @@ typedef struct BCWriteCtx {
   GCproto *pt;			/* Root prototype. */
   lua_Writer wfunc;		/* Writer callback. */
   void *wdata;			/* Writer callback data. */
-  int strip;			/* Strip debug info. */
+  TValue **heap;		/* Heap used for deterministic sorting. */
+  uint32_t heapsz;		/* Size of heap. */
+  uint32_t flags;		/* BCDUMP_F_* flags. */
   int status;			/* Status from writer callback. */
 #ifdef LUA_USE_ASSERT
   global_State *g;
@@ -69,11 +71,82 @@ static void bcwrite_ktabk(BCWriteCtx *ctx, cTValue *o, int narrow)
     *p++ = BCDUMP_KTAB_NUM;
     p = lj_strfmt_wuleb128(p, o->u32.lo);
     p = lj_strfmt_wuleb128(p, o->u32.hi);
+  } else if (tvistab(o)) { /* Write the nil value marker as a nil. */
+    *p++ = BCDUMP_KTAB_NIL;
   } else {
     lj_assertBCW(tvispri(o), "unhandled type %d", itype(o));
     *p++ = BCDUMP_KTAB_NIL+~itype(o);
   }
   ctx->sb.w = p;
+}
+
+/* Compare two template table keys. */
+static LJ_AINLINE int bcwrite_ktabk_lt(TValue *a, TValue *b)
+{
+  uint32_t at = itype(a), bt = itype(b);
+  if (at != bt) {  /* This also handles false and true keys. */
+    return at < bt;
+  } else if (at == LJ_TSTR) {
+    return lj_str_cmp(strV(a), strV(b)) < 0;
+  } else {
+    return a->u64 < b->u64;  /* This works for numbers and integers. */
+  }
+}
+
+/* Insert key into a sorted heap. */
+static void bcwrite_ktabk_heap_insert(TValue **heap, MSize idx, MSize end,
+				      TValue *key)
+{
+  MSize child;
+  while ((child = idx * 2 + 1) < end) {
+    /* Find lower of the two children. */
+    TValue *c0 = heap[child];
+    if (child + 1 < end) {
+      TValue *c1 = heap[child + 1];
+      if (bcwrite_ktabk_lt(c1, c0)) {
+	c0 = c1;
+	child++;
+      }
+    }
+    if (bcwrite_ktabk_lt(key, c0)) break;  /* Key lower? Found our position. */
+    heap[idx] = c0;  /* Move lower child up. */
+    idx = child;  /* Descend. */
+  }
+  heap[idx] = key;  /* Insert key here. */
+}
+
+/* Resize heap, dropping content. */
+static void bcwrite_heap_resize(BCWriteCtx *ctx, uint32_t nsz)
+{
+  lua_State *L = sbufL(&ctx->sb);
+  if (ctx->heapsz) {
+    lj_mem_freevec(G(L), ctx->heap, ctx->heapsz, TValue *);
+    ctx->heapsz = 0;
+  }
+  if (nsz) {
+    ctx->heap = lj_mem_newvec(L, nsz, TValue *);
+    ctx->heapsz = nsz;
+  }
+}
+
+/* Write hash part of template table in sorted order. */
+static void bcwrite_ktab_sorted_hash(BCWriteCtx *ctx, Node *node, MSize nhash)
+{
+  TValue **heap = ctx->heap;
+  MSize i = nhash;
+  for (;; node--) {  /* Build heap. */
+    if (!tvisnil(&node->val)) {
+      bcwrite_ktabk_heap_insert(heap, --i, nhash, &node->key);
+      if (i == 0) break;
+    }
+  }
+  do {  /* Drain heap. */
+    TValue *key = heap[0];  /* Output lowest key from top. */
+    bcwrite_ktabk(ctx, key, 0);
+    bcwrite_ktabk(ctx, (TValue *)((char *)key - offsetof(Node, key)), 1);
+    key = heap[--nhash];  /* Remove last key. */
+    bcwrite_ktabk_heap_insert(heap, 0, nhash, key);  /* Re-insert. */
+  } while (nhash);
 }
 
 /* Write a template table. */
@@ -105,14 +178,20 @@ static void bcwrite_ktab(BCWriteCtx *ctx, char *p, const GCtab *t)
       bcwrite_ktabk(ctx, o, 1);
   }
   if (nhash) {  /* Write hash entries. */
-    MSize i = nhash;
     Node *node = noderef(t->node) + t->hmask;
-    for (;; node--)
-      if (!tvisnil(&node->val)) {
-	bcwrite_ktabk(ctx, &node->key, 0);
-	bcwrite_ktabk(ctx, &node->val, 1);
-	if (--i == 0) break;
-      }
+    if ((ctx->flags & BCDUMP_F_DETERMINISTIC) && nhash > 1) {
+      if (ctx->heapsz < nhash)
+	bcwrite_heap_resize(ctx, t->hmask + 1);
+      bcwrite_ktab_sorted_hash(ctx, node, nhash);
+    } else {
+      MSize i = nhash;
+      for (;; node--)
+	if (!tvisnil(&node->val)) {
+	  bcwrite_ktabk(ctx, &node->key, 0);
+	  bcwrite_ktabk(ctx, &node->val, 1);
+	  if (--i == 0) break;
+	}
+    }
   }
 }
 
@@ -189,7 +268,8 @@ static void bcwrite_knum(BCWriteCtx *ctx, GCproto *pt)
       goto save_int;
     } else {
       /* Write a 33 bit ULEB128 for the int (lsb=0) or loword (lsb=1). */
-      if (!LJ_DUALNUM) {  /* Narrow number constants to integers. */
+      if (!LJ_DUALNUM && o->u32.hi != LJ_KEYINDEX) {
+	/* Narrow number constants to integers. */
 	lua_Number num = numV(o);
 	k = lj_num2int(num);
 	if (num == (lua_Number)k) {  /* -0 is never a constant. */
@@ -268,7 +348,7 @@ static void bcwrite_proto(BCWriteCtx *ctx, GCproto *pt)
   p = lj_strfmt_wuleb128(p, pt->sizekgc);
   p = lj_strfmt_wuleb128(p, pt->sizekn);
   p = lj_strfmt_wuleb128(p, pt->sizebc-1);
-  if (!ctx->strip) {
+  if (!(ctx->flags & BCDUMP_F_STRIP)) {
     if (proto_lineinfo(pt))
       sizedbg = pt->sizept - (MSize)((char *)proto_lineinfo(pt) - (char *)pt);
     p = lj_strfmt_wuleb128(p, sizedbg);
@@ -316,11 +396,10 @@ static void bcwrite_header(BCWriteCtx *ctx)
   *p++ = BCDUMP_HEAD2;
   *p++ = BCDUMP_HEAD3;
   *p++ = BCDUMP_VERSION;
-  *p++ = (ctx->strip ? BCDUMP_F_STRIP : 0) +
+  *p++ = (ctx->flags & (BCDUMP_F_STRIP | BCDUMP_F_FR2)) +
 	 LJ_BE*BCDUMP_F_BE +
-	 ((ctx->pt->flags & PROTO_FFI) ? BCDUMP_F_FFI : 0) +
-	 LJ_FR2*BCDUMP_F_FR2;
-  if (!ctx->strip) {
+	 ((ctx->pt->flags & PROTO_FFI) ? BCDUMP_F_FFI : 0);
+  if (!(ctx->flags & BCDUMP_F_STRIP)) {
     p = lj_strfmt_wuleb128(p, len);
     p = lj_buf_wmem(p, name, len);
   }
@@ -351,14 +430,16 @@ static TValue *cpwriter(lua_State *L, lua_CFunction dummy, void *ud)
 
 /* Write bytecode for a prototype. */
 int lj_bcwrite(lua_State *L, GCproto *pt, lua_Writer writer, void *data,
-	      int strip)
+	      uint32_t flags)
 {
   BCWriteCtx ctx;
   int status;
   ctx.pt = pt;
   ctx.wfunc = writer;
   ctx.wdata = data;
-  ctx.strip = strip;
+  ctx.heapsz = 0;
+  if ((bc_op(proto_bc(pt)[0]) != BC_NOT) == LJ_FR2) flags |= BCDUMP_F_FR2;
+  ctx.flags = flags;
   ctx.status = 0;
 #ifdef LUA_USE_ASSERT
   ctx.g = G(L);
@@ -367,6 +448,7 @@ int lj_bcwrite(lua_State *L, GCproto *pt, lua_Writer writer, void *data,
   status = lj_vm_cpcall(L, NULL, &ctx, cpwriter);
   if (status == 0) status = ctx.status;
   lj_buf_free(G(sbufL(&ctx.sb)), &ctx.sb);
+  bcwrite_heap_resize(&ctx, 0);
   return status;
 }
 

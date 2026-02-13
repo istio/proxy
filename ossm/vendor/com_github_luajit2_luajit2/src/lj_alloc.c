@@ -330,7 +330,7 @@ static void *mmap_plain(size_t size)
 #define CALL_MMAP(prng, size)	mmap_plain(size)
 #endif
 
-#if LJ_64 && !LJ_GC64 && ((defined(__FreeBSD__) && __FreeBSD__ < 10) || defined(__FreeBSD_kernel__)) && !LJ_TARGET_PS4
+#if LJ_64 && !LJ_GC64 && ((defined(__FreeBSD__) && __FreeBSD__ < 10) || defined(__FreeBSD_kernel__)) && !LJ_TARGET_PS4 && !LJ_TARGET_PS5
 
 #include <sys/resource.h>
 
@@ -1057,7 +1057,7 @@ static size_t release_unused_segments(mstate m)
       mchunkptr p = align_as_chunk(base);
       size_t psize = chunksize(p);
       /* Can unmap if first chunk holds entire segment and not pinned */
-      if (!cinuse(p) && (char *)p + psize >= base + size - TOP_FOOT_SIZE) {
+      if (!cinuse(p) && (char *)p + psize == (char *)mem2chunk(sp)) {
 	tchunkptr tp = (tchunkptr)p;
 	if (p == m->dv) {
 	  m->dv = 0;

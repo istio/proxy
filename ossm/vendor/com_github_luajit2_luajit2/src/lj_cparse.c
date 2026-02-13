@@ -1,6 +1,6 @@
 /*
 ** C declaration parser.
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #include "lj_obj.h"
@@ -468,7 +468,7 @@ static void cp_expr_sizeof(CPState *cp, CPValue *k, int wantsz)
   } else {
     cp_expr_unary(cp, k);
   }
-  info = lj_ctype_info(cp->cts, k->id, &sz);
+  info = lj_ctype_info_raw(cp->cts, k->id, &sz);
   if (wantsz) {
     if (sz != CTSIZE_INVALID)
       k->u32 = sz;
@@ -488,7 +488,7 @@ static void cp_expr_prefix(CPState *cp, CPValue *k)
   } else if (cp_opt(cp, '+')) {
     cp_expr_unary(cp, k);  /* Nothing to do (well, integer promotion). */
   } else if (cp_opt(cp, '-')) {
-    cp_expr_unary(cp, k); k->i32 = -k->i32;
+    cp_expr_unary(cp, k); k->i32 = (int32_t)(~(uint32_t)k->i32+1);
   } else if (cp_opt(cp, '~')) {
     cp_expr_unary(cp, k); k->i32 = ~k->i32;
   } else if (cp_opt(cp, '!')) {
@@ -1766,9 +1766,11 @@ static void cp_pragma(CPState *cp, BCLine pragmaline)
     cp_check(cp, '(');
     if (cp->tok == CTOK_IDENT) {
       if (cp_str_is(cp->str, "push")) {
-	if (cp->curpack < CPARSE_MAX_PACKSTACK) {
+	if (cp->curpack < CPARSE_MAX_PACKSTACK-1) {
 	  cp->packstack[cp->curpack+1] = cp->packstack[cp->curpack];
 	  cp->curpack++;
+	} else {
+	  cp_errmsg(cp, cp->tok, LJ_ERR_XLEVELS);
 	}
       } else if (cp_str_is(cp->str, "pop")) {
 	if (cp->curpack > 0) cp->curpack--;

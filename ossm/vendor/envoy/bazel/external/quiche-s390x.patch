@@ -116,10 +116,10 @@ index bf49f596d..6be993b34 100644
    }
  
 diff --git a/quiche/common/quiche_endian.h b/quiche/common/quiche_endian.h
-index 2aaa47831..9ab3eecf7 100644
+index ee5999fb2..6c437b4ae 100644
 --- a/quiche/common/quiche_endian.h
 +++ b/quiche/common/quiche_endian.h
-@@ -18,28 +18,65 @@ enum Endianness {
+@@ -19,28 +19,65 @@ enum Endianness {
    HOST_BYTE_ORDER      // little endian
  };
  
@@ -434,7 +434,7 @@ index 5f79f640b..2eef69ee4 100644
  
  TEST(CryptoFramerTest, ProcessInputTagsOutOfOrder) {
 diff --git a/quiche/quic/core/crypto/crypto_protocol.h b/quiche/quic/core/crypto/crypto_protocol.h
-index c1bf0dbc4..0f88c02ef 100644
+index d956d3290..d9089ae73 100644
 --- a/quiche/quic/core/crypto/crypto_protocol.h
 +++ b/quiche/quic/core/crypto/crypto_protocol.h
 @@ -30,8 +30,14 @@ namespace internal {
@@ -678,10 +678,10 @@ index 40262d0d9..0b0e9520e 100644
      EXPECT_EQ(i - 1, encoded1);
      // Check roundtrip.
 diff --git a/quiche/quic/core/quic_framer.cc b/quiche/quic/core/quic_framer.cc
-index a727cada5..563fdc848 100644
+index 2b34775ff..82cf0f79a 100644
 --- a/quiche/quic/core/quic_framer.cc
 +++ b/quiche/quic/core/quic_framer.cc
-@@ -56,6 +56,7 @@
+@@ -57,6 +57,7 @@
  #include "quiche/quic/platform/api/quic_flags.h"
  #include "quiche/quic/platform/api/quic_ip_address_family.h"
  #include "quiche/quic/platform/api/quic_logging.h"
@@ -689,7 +689,7 @@ index a727cada5..563fdc848 100644
  #include "quiche/common/quiche_text_utils.h"
  #include "quiche/common/wire_serialization.h"
  
-@@ -1243,7 +1244,7 @@ std::unique_ptr<QuicEncryptedPacket> QuicFramer::BuildPublicResetPacket(
+@@ -1250,7 +1251,7 @@ std::unique_ptr<QuicEncryptedPacket> QuicFramer::BuildPublicResetPacket(
      const QuicPublicResetPacket& packet) {
    CryptoHandshakeMessage reset;
    reset.set_tag(kPRST);
@@ -708,6 +708,38 @@ index a727cada5..563fdc848 100644
        return false;
      }
    }
+diff --git a/quiche/quic/core/quic_inlined_string_view.h b/quiche/quic/core/quic_inlined_string_view.h
+index d3e2a92c8..e1c228546 100644
+--- a/quiche/quic/core/quic_inlined_string_view.h
++++ b/quiche/quic/core/quic_inlined_string_view.h
+@@ -54,7 +54,7 @@ class QUICHE_NO_EXPORT QuicInlinedStringView {
+     if (source.size() > kMaxInlinedSize) {
+       ViewRep rep;
+       rep.data = source.data();
+-      rep.size = source.size();
++      rep.size = absl::endian::native == absl::endian::little ? source.size() : source.size() << 8;
+       memcpy(&data_, &rep, sizeof(rep));
+       set_last_byte(kNotInlinedMarker);
+       return;
+@@ -113,7 +113,8 @@ class QUICHE_NO_EXPORT QuicInlinedStringView {
+     size_t size;
+   };
+   static_assert(sizeof(ViewRep) <= kSize);
+-  static_assert(absl::endian::native == absl::endian::little);
++  static_assert(absl::endian::native == absl::endian::little
++    || (absl::endian::native == absl::endian::big && sizeof(size_t) > 4));
+ 
+   // Accessors for ViewRep; necessary to work around C++ strict aliasing
+   // limitations.  Clang will turn this into direct field access at `-O1`.
+@@ -125,7 +126,7 @@ class QUICHE_NO_EXPORT QuicInlinedStringView {
+   size_t view_rep_size() const {
+     ViewRep rep;
+     memcpy(&rep, data_, sizeof(rep));
+-    return rep.size;
++    return absl::endian::native == absl::endian::little ? rep.size : rep.size >> 8;
+   }
+   // Those casts should be valid as long as uint8_t is unsigned char.
+   const uint8_t& last_byte() const {
 diff --git a/quiche/quic/core/quic_socket_address_coder.cc b/quiche/quic/core/quic_socket_address_coder.cc
 index 9bf85b2ea..c98021df2 100644
 --- a/quiche/quic/core/quic_socket_address_coder.cc
@@ -882,7 +914,7 @@ index 2736aac8a..aa3be6c94 100644
  
  // MakeQuicTag returns a value given the four bytes. For example:
 diff --git a/quiche/quic/core/quic_utils.cc b/quiche/quic/core/quic_utils.cc
-index 1bdf10834..9fab7a2e3 100644
+index ed04bc09a..1aec453b5 100644
 --- a/quiche/quic/core/quic_utils.cc
 +++ b/quiche/quic/core/quic_utils.cc
 @@ -137,8 +137,8 @@ absl::uint128 QuicUtils::FNV1a_128_Hash_Three(absl::string_view data1,
@@ -897,7 +929,7 @@ index 1bdf10834..9fab7a2e3 100644
    memcpy(out, &lo, sizeof(lo));
    memcpy(out + sizeof(lo), &hi, sizeof(hi) / 2);
 diff --git a/quiche/quic/core/quic_versions.cc b/quiche/quic/core/quic_versions.cc
-index f40cc334a..9f3a12b92 100644
+index 84aaabaa8..5e6b4ef52 100644
 --- a/quiche/quic/core/quic_versions.cc
 +++ b/quiche/quic/core/quic_versions.cc
 @@ -196,7 +196,11 @@ std::ostream& operator<<(std::ostream& os,
@@ -914,7 +946,7 @@ index f40cc334a..9f3a12b92 100644
  
  std::ostream& operator<<(std::ostream& os,
 diff --git a/quiche/quic/test_tools/crypto_test_utils.cc b/quiche/quic/test_tools/crypto_test_utils.cc
-index f062ef200..7307f2e73 100644
+index be20b6838..9d7c5dfc4 100644
 --- a/quiche/quic/test_tools/crypto_test_utils.cc
 +++ b/quiche/quic/test_tools/crypto_test_utils.cc
 @@ -46,6 +46,7 @@
@@ -925,7 +957,7 @@ index f062ef200..7307f2e73 100644
  #include "quiche/common/quiche_callbacks.h"
  #include "quiche/common/test_tools/quiche_test_utils.h"
  
-@@ -786,6 +787,7 @@ QuicTag ParseTag(const char* tagstr) {
+@@ -783,6 +784,7 @@ QuicTag ParseTag(const char* tagstr) {
        tag |= static_cast<uint32_t>(tagstr[i]) << 24;
      }
    }
@@ -934,7 +966,7 @@ index f062ef200..7307f2e73 100644
    return tag;
  }
 diff --git a/quiche/quic/test_tools/quic_test_utils.cc b/quiche/quic/test_tools/quic_test_utils.cc
-index 2b49ce27a..6c4e8566a 100644
+index 30a46728c..283ea158d 100644
 --- a/quiche/quic/test_tools/quic_test_utils.cc
 +++ b/quiche/quic/test_tools/quic_test_utils.cc
 @@ -218,7 +218,7 @@ bool ClearControlFrameWithTransmissionType(const QuicFrame& frame,

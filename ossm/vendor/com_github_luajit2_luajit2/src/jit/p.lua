@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 -- LuaJIT profiler.
 --
--- Copyright (C) 2005-2021 Mike Pall. All rights reserved.
+-- Copyright (C) 2005-2025 Mike Pall. All rights reserved.
 -- Released under the MIT license. See Copyright Notice in luajit.h
 ----------------------------------------------------------------------------
 --
@@ -41,7 +41,6 @@
 
 -- Cache some library functions and objects.
 local jit = require("jit")
-assert(jit.version_num == 20100, "LuaJIT core/library version mismatch")
 local profile = require("jit.profile")
 local vmdef = require("jit.vmdef")
 local math = math
@@ -228,9 +227,7 @@ local function prof_finish()
     local samples = prof_samples
     if samples == 0 then
       if prof_raw ~= true then out:write("[No samples collected]\n") end
-      return
-    end
-    if prof_ann then
+    elseif prof_ann then
       prof_annotate(prof_count1, samples)
     else
       prof_top(prof_count1, prof_count2, samples, "")

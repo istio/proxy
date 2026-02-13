@@ -1,6 +1,6 @@
 /*
 ** IR assembler (SSA IR -> machine code).
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #define lj_asm_c
@@ -29,6 +29,7 @@
 #include "lj_dispatch.h"
 #include "lj_vm.h"
 #include "lj_target.h"
+#include "lj_prng.h"
 
 #ifdef LUA_USE_ASSERT
 #include <stdio.h>
@@ -92,6 +93,12 @@ typedef struct ASMState {
   MCode *invmcp;	/* Points to invertible loop branch (or NULL). */
   MCode *flagmcp;	/* Pending opportunity to merge flag setting ins. */
   MCode *realign;	/* Realign loop if not NULL. */
+
+#ifdef LUAJIT_RANDOM_RA
+  /* Randomize register allocation. OK for fuzz testing, not for production. */
+  uint64_t prngbits;
+  PRNGState prngstate;
+#endif
 
 #ifdef RID_NUM_KREF
   intptr_t krefk[RID_NUM_KREF];
@@ -172,6 +179,41 @@ IRFLDEF(FLOFS)
 #undef FLOFS
   0
 };
+
+#ifdef LUAJIT_RANDOM_RA
+/* Return a fixed number of random bits from the local PRNG state. */
+static uint32_t ra_random_bits(ASMState *as, uint32_t nbits) {
+  uint64_t b = as->prngbits;
+  uint32_t res = (1u << nbits) - 1u;
+  if (b <= res) b = lj_prng_u64(&as->prngstate) | (1ull << 63);
+  res &= (uint32_t)b;
+  as->prngbits = b >> nbits;
+  return res;
+}
+
+/* Pick a random register from a register set. */
+static Reg rset_pickrandom(ASMState *as, RegSet rs)
+{
+  Reg r = rset_pickbot_(rs);
+  rs >>= r;
+  if (rs > 1) {  /* More than one bit set? */
+    while (1) {
+      /* We need to sample max. the GPR or FPR half of the set. */
+      uint32_t d = ra_random_bits(as, RSET_BITS-1);
+      if ((rs >> d) & 1) {
+	r += d;
+	break;
+      }
+    }
+  }
+  return r;
+}
+#define rset_picktop(rs)	rset_pickrandom(as, rs)
+#define rset_pickbot(rs)	rset_pickrandom(as, rs)
+#else
+#define rset_picktop(rs)	rset_picktop_(rs)
+#define rset_pickbot(rs)	rset_pickbot_(rs)
+#endif
 
 /* -- Target-specific instruction emitter --------------------------------- */
 
@@ -564,7 +606,11 @@ static Reg ra_allock(ASMState *as, intptr_t k, RegSet allow)
 	IRIns *ir = IR(ref);
 	if ((ir->o == IR_KINT64 && k == (int64_t)ir_kint64(ir)->u64) ||
 #if LJ_GC64
+#if LJ_TARGET_ARM64
+	    (ir->o == IR_KINT && (uint64_t)k == (uint32_t)ir->i) ||
+#else
 	    (ir->o == IR_KINT && k == ir->i) ||
+#endif
 	    (ir->o == IR_KGC && k == (intptr_t)ir_kgc(ir)) ||
 	    ((ir->o == IR_KPTR || ir->o == IR_KKPTR) &&
 	     k == (intptr_t)ir_kptr(ir))
@@ -847,7 +893,8 @@ static void ra_destpair(ASMState *as, IRIns *ir)
   if (destlo == RID_RETHI) {
     if (desthi == RID_RETLO) {
 #if LJ_TARGET_X86ORX64
-      *--as->mcp = REX_64IR(irx, XI_XCHGa + RID_RETHI);
+      *--as->mcp = XI_XCHGa + RID_RETHI;
+      if (LJ_64 && irt_is64(irx->t)) *--as->mcp = 0x48;
 #else
       emit_movrr(as, irx, RID_RETHI, RID_TMP);
       emit_movrr(as, irx, RID_RETLO, RID_RETHI);
@@ -902,11 +949,11 @@ static int asm_sunk_store(ASMState *as, IRIns *ira, IRIns *irs)
 static void asm_snap_alloc1(ASMState *as, IRRef ref)
 {
   IRIns *ir = IR(ref);
-  if (!irref_isk(ref) && ir->r != RID_SUNK) {
+  if (!irref_isk(ref)) {
     bloomset(as->snapfilt1, ref);
     bloomset(as->snapfilt2, hashrot(ref, ref + HASH_BIAS));
     if (ra_used(ir)) return;
-    if (ir->r == RID_SINK) {
+    if (ir->r == RID_SINK || ir->r == RID_SUNK) {
       ir->r = RID_SUNK;
 #if LJ_HASFFI
       if (ir->o == IR_CNEWI) {  /* Allocate CNEWI value. */
@@ -1672,7 +1719,6 @@ static void asm_loop(ASMState *as)
 #if !LJ_SOFTFP32
 #if !LJ_TARGET_X86ORX64
 #define asm_ldexp(as, ir)	asm_callid(as, ir, IRCALL_ldexp)
-#define asm_fppowi(as, ir)	asm_callid(as, ir, IRCALL_lj_vm_powi)
 #endif
 
 static void asm_pow(ASMState *as, IRIns *ir)
@@ -1683,10 +1729,7 @@ static void asm_pow(ASMState *as, IRIns *ir)
 					  IRCALL_lj_carith_powu64);
   else
 #endif
-  if (irt_isnum(IR(ir->op2)->t))
-    asm_callid(as, ir, IRCALL_pow);
-  else
-    asm_fppowi(as, ir);
+  asm_callid(as, ir, IRCALL_pow);
 }
 
 static void asm_div(ASMState *as, IRIns *ir)
@@ -1893,6 +1936,8 @@ static void asm_head_side(ASMState *as)
   IRRef1 sloadins[RID_MAX];
   RegSet allow = RSET_ALL;  /* Inverse of all coalesced registers. */
   RegSet live = RSET_EMPTY;  /* Live parent registers. */
+  RegSet pallow = RSET_GPR;  /* Registers needed by the parent stack check. */
+  Reg pbase;
   IRIns *irp = &as->parent->ir[REF_BASE];  /* Parent base. */
   int32_t spadj, spdelta;
   int pass2 = 0;
@@ -1903,7 +1948,11 @@ static void asm_head_side(ASMState *as)
     /* Force snap #0 alloc to prevent register overwrite in stack check. */
     asm_snap_alloc(as, 0);
   }
-  allow = asm_head_side_base(as, irp, allow);
+  pbase = asm_head_side_base(as, irp);
+  if (pbase != RID_NONE) {
+    rset_clear(allow, pbase);
+    rset_clear(pallow, pbase);
+  }
 
   /* Scan all parent SLOADs and collect register dependencies. */
   for (i = as->stopins; i > REF_BASE; i--) {
@@ -1933,6 +1982,7 @@ static void asm_head_side(ASMState *as)
       sloadins[rs] = (IRRef1)i;
       rset_set(live, rs);  /* Block live parent register. */
     }
+    if (!ra_hasspill(regsp_spill(rs))) rset_clear(pallow, regsp_reg(rs));
   }
 
   /* Calculate stack frame adjustment. */
@@ -2049,7 +2099,7 @@ static void asm_head_side(ASMState *as)
     ExitNo exitno = as->J->exitno;
 #endif
     as->T->topslot = (uint8_t)as->topslot;  /* Remember for child traces. */
-    asm_stack_check(as, as->topslot, irp, allow & RSET_GPR, exitno);
+    asm_stack_check(as, as->topslot, irp, pallow, exitno);
   }
 }
 
@@ -2440,6 +2490,9 @@ void lj_asm_trace(jit_State *J, GCtrace *T)
   as->realign = NULL;
   as->loopinv = 0;
   as->parent = J->parent ? traceref(J, J->parent) : NULL;
+#ifdef LUAJIT_RANDOM_RA
+  (void)lj_prng_u64(&J2G(J)->prng);  /* Ensure PRNG step between traces. */
+#endif
 
   /* Reserve MCode memory. */
   as->mctop = as->mctoporig = lj_mcode_reserve(J, &as->mcbot);
@@ -2481,6 +2534,10 @@ void lj_asm_trace(jit_State *J, GCtrace *T)
 #endif
     as->ir = J->curfinal->ir;  /* Use the copied IR. */
     as->curins = J->cur.nins = as->orignins;
+#ifdef LUAJIT_RANDOM_RA
+    as->prngstate = J2G(J)->prng;  /* Must (re)start from identical state. */
+    as->prngbits = 0;
+#endif
 
     RA_DBG_START();
     RA_DBGX((as, "===== STOP ====="));

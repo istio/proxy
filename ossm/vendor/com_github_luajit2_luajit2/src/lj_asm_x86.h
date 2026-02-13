@@ -1,6 +1,6 @@
 /*
 ** x86/x64 IR assembler (SSA IR -> machine code).
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 /* -- Guard handling ------------------------------------------------------ */
@@ -109,7 +109,7 @@ static int asm_isk32(ASMState *as, IRRef ref, int32_t *k)
 /* Check if there's no conflicting instruction between curins and ref.
 ** Also avoid fusing loads if there are multiple references.
 */
-static int noconflict(ASMState *as, IRRef ref, IROp conflict, int noload)
+static int noconflict(ASMState *as, IRRef ref, IROp conflict, int check)
 {
   IRIns *ir = as->ir;
   IRRef i = as->curins;
@@ -118,7 +118,9 @@ static int noconflict(ASMState *as, IRRef ref, IROp conflict, int noload)
   while (--i > ref) {
     if (ir[i].o == conflict)
       return 0;  /* Conflict found. */
-    else if (!noload && (ir[i].op1 == ref || ir[i].op2 == ref))
+    else if ((check & 1) && (ir[i].o == IR_NEWREF || ir[i].o == IR_CALLS))
+      return 0;
+    else if ((check & 2) && (ir[i].op1 == ref || ir[i].op2 == ref))
       return 0;
   }
   return 1;  /* Ok, no conflict. */
@@ -134,13 +136,14 @@ static IRRef asm_fuseabase(ASMState *as, IRRef ref)
     lj_assertA(irb->op2 == IRFL_TAB_ARRAY, "expected FLOAD TAB_ARRAY");
     /* We can avoid the FLOAD of t->array for colocated arrays. */
     if (ira->o == IR_TNEW && ira->op1 <= LJ_MAX_COLOSIZE &&
-	!neverfuse(as) && noconflict(as, irb->op1, IR_NEWREF, 1)) {
+	!neverfuse(as) && noconflict(as, irb->op1, IR_NEWREF, 0)) {
       as->mrm.ofs = (int32_t)sizeof(GCtab);  /* Ofs to colocated array. */
       return irb->op1;  /* Table obj. */
     }
   } else if (irb->o == IR_ADD && irref_isk(irb->op2)) {
     /* Fuse base offset (vararg load). */
-    as->mrm.ofs = IR(irb->op2)->i;
+    IRIns *irk = IR(irb->op2);
+    as->mrm.ofs = irk->o == IR_KINT ? irk->i : (int32_t)ir_kint64(irk)->u64;
     return irb->op1;
   }
   return ref;  /* Otherwise use the given array base. */
@@ -455,7 +458,7 @@ static Reg asm_fuseload(ASMState *as, IRRef ref, RegSet allow)
     RegSet xallow = (allow & RSET_GPR) ? allow : RSET_GPR;
     if (ir->o == IR_SLOAD) {
       if (!(ir->op2 & (IRSLOAD_PARENT|IRSLOAD_CONVERT)) &&
-	  noconflict(as, ref, IR_RETF, 0) &&
+	  noconflict(as, ref, IR_RETF, 2) &&
 	  !(LJ_GC64 && irt_isaddr(ir->t))) {
 	as->mrm.base = (uint8_t)ra_alloc1(as, REF_BASE, xallow);
 	as->mrm.ofs = 8*((int32_t)ir->op1-1-LJ_FR2) +
@@ -466,12 +469,12 @@ static Reg asm_fuseload(ASMState *as, IRRef ref, RegSet allow)
     } else if (ir->o == IR_FLOAD) {
       /* Generic fusion is only ok for 32 bit operand (but see asm_comp). */
       if ((irt_isint(ir->t) || irt_isu32(ir->t) || irt_isaddr(ir->t)) &&
-	  noconflict(as, ref, IR_FSTORE, 0)) {
+	  noconflict(as, ref, IR_FSTORE, 2)) {
 	asm_fusefref(as, ir, xallow);
 	return RID_MRM;
       }
     } else if (ir->o == IR_ALOAD || ir->o == IR_HLOAD || ir->o == IR_ULOAD) {
-      if (noconflict(as, ref, ir->o + IRDELTA_L2S, 0) &&
+      if (noconflict(as, ref, ir->o + IRDELTA_L2S, 2+(ir->o != IR_ULOAD)) &&
 	  !(LJ_GC64 && irt_isaddr(ir->t))) {
 	asm_fuseahuref(as, ir->op1, xallow);
 	return RID_MRM;
@@ -481,11 +484,12 @@ static Reg asm_fuseload(ASMState *as, IRRef ref, RegSet allow)
       ** Fusing unaligned memory operands is ok on x86 (except for SIMD types).
       */
       if ((!irt_typerange(ir->t, IRT_I8, IRT_U16)) &&
-	  noconflict(as, ref, IR_XSTORE, 0)) {
+	  noconflict(as, ref, IR_XSTORE, 2)) {
 	asm_fusexref(as, ir->op1, xallow);
 	return RID_MRM;
       }
-    } else if (ir->o == IR_VLOAD && !(LJ_GC64 && irt_isaddr(ir->t))) {
+    } else if (ir->o == IR_VLOAD && IR(ir->op1)->o == IR_AREF &&
+	       !(LJ_GC64 && irt_isaddr(ir->t))) {
       asm_fuseahuref(as, ir->op1, xallow);
       as->mrm.ofs += 8 * ir->op2;
       return RID_MRM;
@@ -813,6 +817,7 @@ static void asm_tointg(ASMState *as, IRIns *ir, Reg left)
   emit_rr(as, XO_UCOMISD, left, tmp);
   emit_rr(as, XO_CVTSI2SD, tmp, dest);
   emit_rr(as, XO_XORPS, tmp, tmp);  /* Avoid partial register stall. */
+  checkmclim(as);
   emit_rr(as, XO_CVTTSD2SI, dest, left);
   /* Can't fuse since left is needed twice. */
 }
@@ -855,6 +860,7 @@ static void asm_conv(ASMState *as, IRIns *ir)
       emit_rr(as, XO_SUBSD, dest, bias);  /* Subtract 2^52+2^51 bias. */
       emit_rr(as, XO_XORPS, dest, bias);  /* Merge bias and integer. */
       emit_rma(as, XO_MOVSD, bias, k);
+      checkmclim(as);
       emit_mrm(as, XO_MOVD, dest, asm_fuseload(as, lref, RSET_GPR));
       return;
     } else {  /* Integer to FP conversion. */
@@ -1171,6 +1177,7 @@ static void asm_href(ASMState *as, IRIns *ir, IROp merge)
     asm_guardcc(as, CC_E);
   else
     emit_sjcc(as, CC_E, l_end);
+  checkmclim(as);
   if (irt_isnum(kt)) {
     if (isk) {
       /* Assumes -0.0 is already canonicalized to +0.0. */
@@ -1230,7 +1237,6 @@ static void asm_href(ASMState *as, IRIns *ir, IROp merge)
 #endif
   }
   emit_sfixup(as, l_loop);
-  checkmclim(as);
 #if LJ_GC64
   if (!isk && irt_isaddr(kt)) {
     emit_rr(as, XO_OR, tmp|REX_64, key);
@@ -1257,6 +1263,7 @@ static void asm_href(ASMState *as, IRIns *ir, IROp merge)
       emit_rr(as, XO_ARITH(XOg_SUB), dest, tmp);
       emit_shifti(as, XOg_ROL, tmp, HASH_ROT3);
       emit_rr(as, XO_ARITH(XOg_XOR), dest, tmp);
+      checkmclim(as);
       emit_shifti(as, XOg_ROL, dest, HASH_ROT2);
       emit_rr(as, XO_ARITH(XOg_SUB), tmp, dest);
       emit_shifti(as, XOg_ROL, dest, HASH_ROT1);
@@ -1274,7 +1281,6 @@ static void asm_href(ASMState *as, IRIns *ir, IROp merge)
       } else {
 	emit_rr(as, XO_MOV, tmp, key);
 #if LJ_GC64
-	checkmclim(as);
 	emit_gri(as, XG_ARITHi(XOg_XOR), dest, irt_toitype(kt) << 15);
 	if ((as->flags & JIT_F_BMI2)) {
 	  emit_i8(as, 32);
@@ -1371,24 +1377,31 @@ static void asm_hrefk(ASMState *as, IRIns *ir)
 static void asm_uref(ASMState *as, IRIns *ir)
 {
   Reg dest = ra_dest(as, ir, RSET_GPR);
-  if (irref_isk(ir->op1)) {
+  int guarded = (irt_t(ir->t) & (IRT_GUARD|IRT_TYPE)) == (IRT_GUARD|IRT_PGC);
+  if (irref_isk(ir->op1) && !guarded) {
     GCfunc *fn = ir_kfunc(IR(ir->op1));
     MRef *v = &gcref(fn->l.uvptr[(ir->op2 >> 8)])->uv.v;
     emit_rma(as, XO_MOV, dest|REX_GC64, v);
   } else {
     Reg uv = ra_scratch(as, RSET_GPR);
-    Reg func = ra_alloc1(as, ir->op1, RSET_GPR);
-    if (ir->o == IR_UREFC) {
+    if (ir->o == IR_UREFC)
       emit_rmro(as, XO_LEA, dest|REX_GC64, uv, offsetof(GCupval, tv));
-      asm_guardcc(as, CC_NE);
-      emit_i8(as, 1);
-      emit_rmro(as, XO_ARITHib, XOg_CMP, uv, offsetof(GCupval, closed));
-    } else {
+    else
       emit_rmro(as, XO_MOV, dest|REX_GC64, uv, offsetof(GCupval, v));
+    if (guarded) {
+      asm_guardcc(as, ir->o == IR_UREFC ? CC_E : CC_NE);
+      emit_i8(as, 0);
+      emit_rmro(as, XO_ARITHib, XOg_CMP, uv, offsetof(GCupval, closed));
     }
-    emit_rmro(as, XO_MOV, uv|REX_GC64, func,
-	      (int32_t)offsetof(GCfuncL, uvptr) +
-	      (int32_t)sizeof(MRef) * (int32_t)(ir->op2 >> 8));
+    if (irref_isk(ir->op1)) {
+      GCfunc *fn = ir_kfunc(IR(ir->op1));
+      GCobj *o = gcref(fn->l.uvptr[(ir->op2 >> 8)]);
+      emit_loada(as, uv, o);
+    } else {
+      emit_rmro(as, XO_MOV, uv|REX_GC64, ra_alloc1(as, ir->op1, RSET_GPR),
+	        (int32_t)offsetof(GCfuncL, uvptr) +
+	        (int32_t)sizeof(MRef) * (int32_t)(ir->op2 >> 8));
+    }
   }
 }
 
@@ -1545,6 +1558,7 @@ static void asm_ahuvload(ASMState *as, IRIns *ir)
   if (irt_islightud(ir->t)) {
     Reg dest = asm_load_lightud64(as, ir, 1);
     if (ra_hasreg(dest)) {
+      checkmclim(as);
       asm_fuseahuref(as, ir->op1, RSET_GPR);
       if (ir->o == IR_VLOAD) as->mrm.ofs += 8 * ir->op2;
       emit_mrm(as, XO_MOV, dest|REX_64, RID_MRM);
@@ -1592,6 +1606,7 @@ static void asm_ahuvload(ASMState *as, IRIns *ir)
   if (LJ_64 && irt_type(ir->t) >= IRT_NUM) {
     lj_assertA(irt_isinteger(ir->t) || irt_isnum(ir->t),
 	       "bad load type %d", irt_type(ir->t));
+    checkmclim(as);
 #if LJ_GC64
     emit_u32(as, LJ_TISNUM << 15);
 #else
@@ -1768,14 +1783,11 @@ static void asm_sload(ASMState *as, IRIns *ir)
   if ((ir->op2 & IRSLOAD_TYPECHECK)) {
     /* Need type check, even if the load result is unused. */
     asm_guardcc(as, irt_isnum(t) ? CC_AE : CC_NE);
-    if (LJ_64 && irt_type(t) >= IRT_NUM) {
+    if ((LJ_64 && irt_type(t) >= IRT_NUM) || (ir->op2 & IRSLOAD_KEYINDEX)) {
       lj_assertA(irt_isinteger(t) || irt_isnum(t),
 		 "bad SLOAD type %d", irt_type(t));
-#if LJ_GC64
-      emit_u32(as, LJ_TISNUM << 15);
-#else
-      emit_u32(as, LJ_TISNUM);
-#endif
+      emit_u32(as, (ir->op2 & IRSLOAD_KEYINDEX) ? LJ_KEYINDEX :
+		   LJ_GC64 ? (LJ_TISNUM << 15) : LJ_TISNUM);
       emit_rmro(as, XO_ARITHi, XOg_CMP, base, ofs+4);
 #if LJ_GC64
     } else if (irt_isnil(t)) {
@@ -2017,19 +2029,6 @@ static void asm_ldexp(ASMState *as, IRIns *ir)
   asm_x87load(as, ir->op2);
 }
 
-static void asm_fppowi(ASMState *as, IRIns *ir)
-{
-  /* The modified regs must match with the *.dasc implementation. */
-  RegSet drop = RSET_RANGE(RID_XMM0, RID_XMM1+1)|RID2RSET(RID_EAX);
-  if (ra_hasreg(ir->r))
-    rset_clear(drop, ir->r);  /* Dest reg handled below. */
-  ra_evictset(as, drop);
-  ra_destreg(as, ir, RID_XMM0);
-  emit_call(as, lj_vm_powi_sse);
-  ra_left(as, RID_XMM0, ir->op1);
-  ra_left(as, RID_EAX, ir->op2);
-}
-
 static int asm_swapops(ASMState *as, IRIns *ir)
 {
   IRIns *irl = IR(ir->op1);
@@ -2085,7 +2084,8 @@ static void asm_intarith(ASMState *as, IRIns *ir, x86Arith xa)
   RegSet allow = RSET_GPR;
   Reg dest, right;
   int32_t k = 0;
-  if (as->flagmcp == as->mcp) {  /* Drop test r,r instruction. */
+  if (as->flagmcp == as->mcp && xa != XOg_X_IMUL) {
+    /* Drop test r,r instruction. */
     MCode *p = as->mcp + ((LJ_64 && *as->mcp < XI_TESTb) ? 3 : 2);
     MCode *q = p[0] == 0x0f ? p+1 : p;
     if ((*q & 15) < 14) {
@@ -2892,7 +2892,7 @@ static void asm_head_root_base(ASMState *as)
 }
 
 /* Coalesce or reload BASE register for a side trace. */
-static RegSet asm_head_side_base(ASMState *as, IRIns *irp, RegSet allow)
+static Reg asm_head_side_base(ASMState *as, IRIns *irp)
 {
   IRIns *ir = IR(REF_BASE);
   Reg r = ir->r;
@@ -2901,16 +2901,16 @@ static RegSet asm_head_side_base(ASMState *as, IRIns *irp, RegSet allow)
     if (rset_test(as->modset, r) || irt_ismarked(ir->t))
       ir->r = RID_INIT;  /* No inheritance for modified BASE register. */
     if (irp->r == r) {
-      rset_clear(allow, r);  /* Mark same BASE register as coalesced. */
+      return r;  /* Same BASE register already coalesced. */
     } else if (ra_hasreg(irp->r) && rset_test(as->freeset, irp->r)) {
       /* Move from coalesced parent reg. */
-      rset_clear(allow, irp->r);
       emit_rr(as, XO_MOV, r|REX_GC64, irp->r);
+      return irp->r;
     } else {
       emit_getgl(as, r, jit_base);  /* Otherwise reload BASE. */
     }
   }
-  return allow;
+  return RID_NONE;
 }
 
 /* -- Tail of trace ------------------------------------------------------- */

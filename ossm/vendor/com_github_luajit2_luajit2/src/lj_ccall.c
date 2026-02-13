@@ -1,6 +1,6 @@
 /*
 ** FFI C call handling.
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #include "lj_obj.h"
@@ -20,12 +20,15 @@
 #if LJ_TARGET_X86
 /* -- x86 calling conventions --------------------------------------------- */
 
+#define CCALL_PUSH(arg) \
+  *(GPRArg *)((uint8_t *)cc->stack + nsp) = (GPRArg)(arg), nsp += CTSIZE_PTR
+
 #if LJ_ABI_WIN
 
 #define CCALL_HANDLE_STRUCTRET \
   /* Return structs bigger than 8 by reference (on stack only). */ \
   cc->retref = (sz > 8); \
-  if (cc->retref) cc->stack[nsp++] = (GPRArg)dp;
+  if (cc->retref) CCALL_PUSH(dp);
 
 #define CCALL_HANDLE_COMPLEXRET CCALL_HANDLE_STRUCTRET
 
@@ -40,7 +43,7 @@
     if (ngpr < maxgpr) \
       cc->gpr[ngpr++] = (GPRArg)dp; \
     else \
-      cc->stack[nsp++] = (GPRArg)dp; \
+      CCALL_PUSH(dp); \
   } else {  /* Struct with single FP field ends up in FPR. */ \
     cc->resx87 = ccall_classify_struct(cts, ctr); \
   }
@@ -56,7 +59,7 @@
   if (ngpr < maxgpr) \
     cc->gpr[ngpr++] = (GPRArg)dp; \
   else \
-    cc->stack[nsp++] = (GPRArg)dp;
+    CCALL_PUSH(dp);
 
 #endif
 
@@ -67,7 +70,7 @@
     if (ngpr < maxgpr) \
       cc->gpr[ngpr++] = (GPRArg)dp; \
     else \
-      cc->stack[nsp++] = (GPRArg)dp; \
+      CCALL_PUSH(dp); \
   }
 
 #endif
@@ -278,8 +281,8 @@
   if (ngpr < maxgpr) { \
     dp = &cc->gpr[ngpr]; \
     if (ngpr + n > maxgpr) { \
-      nsp += ngpr + n - maxgpr;  /* Assumes contiguous gpr/stack fields. */ \
-      if (nsp > CCALL_MAXSTACK) goto err_nyi;  /* Too many arguments. */ \
+      nsp += (ngpr + n - maxgpr) * CTSIZE_PTR;  /* Assumes contiguous gpr/stack fields. */ \
+      if (nsp > CCALL_SIZE_STACK) goto err_nyi;  /* Too many arguments. */ \
       ngpr = maxgpr; \
     } else { \
       ngpr += n; \
@@ -345,7 +348,6 @@
       goto done; \
     } else { \
       nfpr = CCALL_NARG_FPR;  /* Prevent reordering. */ \
-      if (LJ_TARGET_OSX && d->size < 8) goto err_nyi; \
     } \
   } else {  /* Try to pass argument in GPRs. */ \
     if (!LJ_TARGET_OSX && (d->info & CTF_ALIGN) > CTALIGN_PTR) \
@@ -356,7 +358,6 @@
       goto done; \
     } else { \
       ngpr = maxgpr;  /* Prevent reordering. */ \
-      if (LJ_TARGET_OSX && d->size < 8) goto err_nyi; \
     } \
   }
 
@@ -549,8 +550,8 @@
   if (ngpr < maxgpr) { \
     dp = &cc->gpr[ngpr]; \
     if (ngpr + n > maxgpr) { \
-     nsp += ngpr + n - maxgpr;  /* Assumes contiguous gpr/stack fields. */ \
-     if (nsp > CCALL_MAXSTACK) goto err_nyi;  /* Too many arguments. */ \
+     nsp += (ngpr + n - maxgpr) * CTSIZE_PTR;  /* Assumes contiguous gpr/stack fields. */ \
+     if (nsp > CCALL_SIZE_STACK) goto err_nyi;  /* Too many arguments. */ \
      ngpr = maxgpr; \
     } else { \
      ngpr += n; \
@@ -643,8 +644,8 @@
   if (ngpr < maxgpr) { \
     dp = &cc->gpr[ngpr]; \
     if (ngpr + n > maxgpr) { \
-      nsp += ngpr + n - maxgpr;  /* Assumes contiguous gpr/stack fields. */ \
-      if (nsp > CCALL_MAXSTACK) goto err_nyi;  /* Too many arguments. */ \
+      nsp += (ngpr + n - maxgpr) * CTSIZE_PTR;  /* Assumes contiguous gpr/stack fields. */ \
+      if (nsp > CCALL_SIZE_STACK) goto err_nyi;  /* Too many arguments. */ \
       ngpr = maxgpr; \
     } else { \
       ngpr += n; \
@@ -810,10 +811,11 @@ static int ccall_struct_arg(CCallState *cc, CTState *cts, CType *d, int *rcl,
   lj_cconv_ct_tv(cts, d, (uint8_t *)dp, o, CCF_ARG(narg));
   if (ccall_struct_reg(cc, cts, dp, rcl)) {
     /* Register overflow? Pass on stack. */
-    MSize nsp = cc->nsp, n = rcl[1] ? 2 : 1;
-    if (nsp + n > CCALL_MAXSTACK) return 1;  /* Too many arguments. */
-    cc->nsp = nsp + n;
-    memcpy(&cc->stack[nsp], dp, n*CTSIZE_PTR);
+    MSize nsp = cc->nsp, sz = rcl[1] ? 2*CTSIZE_PTR : CTSIZE_PTR;
+    if (nsp + sz > CCALL_SIZE_STACK)
+      return 1;  /* Too many arguments. */
+    cc->nsp = nsp + sz;
+    memcpy((uint8_t *)cc->stack + nsp, dp, sz);
   }
   return 0;  /* Ok. */
 }
@@ -891,17 +893,24 @@ static unsigned int ccall_classify_struct(CTState *cts, CType *ct)
 {
   CTSize sz = ct->size;
   unsigned int r = 0, n = 0, isu = (ct->info & CTF_UNION);
-  while (ct->sib) {
+  while (ct->sib && n <= 4) {
+    unsigned int m = 1;
     CType *sct;
     ct = ctype_get(cts, ct->sib);
     if (ctype_isfield(ct->info)) {
       sct = ctype_rawchild(cts, ct);
+      if (ctype_isarray(sct->info)) {
+	CType *cct = ctype_rawchild(cts, sct);
+	if (!cct->size) continue;
+	m = sct->size / cct->size;
+	sct = cct;
+      }
       if (ctype_isfp(sct->info)) {
 	r |= sct->size;
-	if (!isu) n++; else if (n == 0) n = 1;
+	if (!isu) n += m; else if (n < m) n = m;
       } else if (ctype_iscomplex(sct->info)) {
 	r |= (sct->size >> 1);
-	if (!isu) n += 2; else if (n < 2) n = 2;
+	if (!isu) n += 2*m; else if (n < 2*m) n = 2*m;
       } else if (ctype_isstruct(sct->info)) {
 	goto substruct;
       } else {
@@ -913,10 +922,11 @@ static unsigned int ccall_classify_struct(CTState *cts, CType *ct)
       sct = ctype_rawchild(cts, ct);
     substruct:
       if (sct->size > 0) {
-	unsigned int s = ccall_classify_struct(cts, sct);
+	unsigned int s = ccall_classify_struct(cts, sct), sn;
 	if (s <= 1) goto noth;
 	r |= (s & 255);
-	if (!isu) n += (s >> 8); else if (n < (s >>8)) n = (s >> 8);
+	sn = (s >> 8) * m;
+	if (!isu) n += sn; else if (n < sn) n = sn;
       }
     }
   }
@@ -1047,7 +1057,9 @@ static void ccall_copy_struct(CCallState *cc, CType *ctr, void *dp, void *sp,
 
 /* -- Common C call handling ---------------------------------------------- */
 
-/* Infer the destination CTypeID for a vararg argument. */
+/* Infer the destination CTypeID for a vararg argument.
+** Note: may reallocate cts->tab and invalidate CType pointers.
+*/
 CTypeID lj_ccall_ctid_vararg(CTState *cts, cTValue *o)
 {
   if (tvisnumber(o)) {
@@ -1075,13 +1087,16 @@ CTypeID lj_ccall_ctid_vararg(CTState *cts, cTValue *o)
   }
 }
 
-/* Setup arguments for C call. */
+/* Setup arguments for C call.
+** Note: may reallocate cts->tab and invalidate CType pointers.
+*/
 static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
 			  CCallState *cc)
 {
   int gcsteps = 0;
   TValue *o, *top = L->top;
   CTypeID fid;
+  CTInfo info = ct->info;  /* lj_ccall_ctid_vararg may invalidate ct pointer. */
   CType *ctr;
   MSize maxgpr, ngpr = 0, nsp = 0, narg;
 #if CCALL_NARG_FPR
@@ -1100,7 +1115,7 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
 #if LJ_TARGET_X86
   /* x86 has several different calling conventions. */
   cc->resx87 = 0;
-  switch (ctype_cconv(ct->info)) {
+  switch (ctype_cconv(info)) {
   case CTCC_FASTCALL: maxgpr = 2; break;
   case CTCC_THISCALL: maxgpr = 1; break;
   default: maxgpr = 0; break;
@@ -1117,7 +1132,7 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
   } else if (ctype_iscomplex(ctr->info) || ctype_isstruct(ctr->info)) {
     /* Preallocate cdata object and anchor it after arguments. */
     CTSize sz = ctr->size;
-    GCcdata *cd = lj_cdata_new(cts, ctype_cid(ct->info), sz);
+    GCcdata *cd = lj_cdata_new(cts, ctype_cid(info), sz);
     void *dp = cdataptr(cd);
     setcdataV(L, L->top++, cd);
     if (ctype_isstruct(ctr->info)) {
@@ -1138,6 +1153,14 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
     if (!ctype_isattrib(ctf->info)) break;
     fid = ctf->sib;
   }
+
+#if LJ_TARGET_ARM64 && LJ_ABI_WIN
+  if ((info & CTF_VARARG)) {
+    nsp -= maxgpr * CTSIZE_PTR;  /* May end up with negative nsp. */
+    ngpr = maxgpr;
+    nfpr = CCALL_NARG_FPR;
+  }
+#endif
 
   /* Walk through all passed arguments. */
   for (o = L->base+1, narg = 1; o < top; o++, narg++) {
@@ -1160,7 +1183,7 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
       lj_assertL(ctype_isfield(ctf->info), "field expected");
       did = ctype_cid(ctf->info);
     } else {
-      if (!(ct->info & CTF_VARARG))
+      if (!(info & CTF_VARARG))
 	lj_err_caller(L, LJ_ERR_FFI_NUMARG);  /* Too many arguments. */
       did = lj_ccall_ctid_vararg(cts, o);  /* Infer vararg type. */
       isva = 1;
@@ -1182,11 +1205,10 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
       CCALL_HANDLE_STRUCTARG
     } else if (ctype_iscomplex(d->info)) {
       CCALL_HANDLE_COMPLEXARG
-    } else {
+    } else if (!(CCALL_PACK_STACKARG && ctype_isenum(d->info))) {
       sz = CTSIZE_PTR;
     }
-    sz = (sz + CTSIZE_PTR-1) & ~(CTSIZE_PTR-1);
-    n = sz / CTSIZE_PTR;  /* Number of GPRs or stack slots needed. */
+    n = (sz + CTSIZE_PTR-1) / CTSIZE_PTR;  /* Number of GPRs or stack slots needed. */
 
     CCALL_HANDLE_REGARG  /* Handle register arguments. */
 
@@ -1194,16 +1216,23 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
 #if LJ_TARGET_S390X
     onstack = 1;
 #endif
-    if (CCALL_ALIGN_STACKARG && !rp && (d->info & CTF_ALIGN) > CTALIGN_PTR) {
-      MSize align = (1u << ctype_align(d->info-CTALIGN_PTR)) -1;
-      nsp = (nsp + align) & ~align;  /* Align argument on stack. */
+    if (CCALL_ALIGN_STACKARG) {  /* Align argument on stack. */
+      MSize align = (1u << ctype_align(d->info)) - 1;
+      if (rp || (CCALL_PACK_STACKARG && isva && align < CTSIZE_PTR-1))
+	align = CTSIZE_PTR-1;
+      nsp = (nsp + align) & ~align;
     }
-    if (nsp + n > CCALL_MAXSTACK) {  /* Too many arguments. */
+#if LJ_TARGET_ARM64 && LJ_ABI_WIN
+    /* A negative nsp points into cc->gpr. Blame MS for their messy ABI. */
+    dp = ((uint8_t *)cc->stack) + (int32_t)nsp;
+#else
+    dp = ((uint8_t *)cc->stack) + nsp;
+#endif
+    nsp += CCALL_PACK_STACKARG ? sz : n * CTSIZE_PTR;
+    if ((int32_t)nsp > CCALL_SIZE_STACK) {  /* Too many arguments. */
     err_nyi:
       lj_err_caller(L, LJ_ERR_FFI_NYICALL);
     }
-    dp = &cc->stack[nsp];
-    nsp += n;
     isva = 0;
 
   done:
@@ -1244,7 +1273,8 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
     }
 #endif
     /* Extend passed integers to 32 bits at least. */
-    if (ctype_isinteger_or_bool(d->info) && d->size < 4) {
+    if (ctype_isinteger_or_bool(d->info) && d->size < 4 &&
+	(!CCALL_PACK_STACKARG || !((uintptr_t)dp & 3))) {  /* Assumes LJ_LE. */
       if (d->info & CTF_UNSIGNED)
 	*(uint32_t *)dp = d->size == 1 ? (uint32_t)*(uint8_t *)dp :
 					 (uint32_t)*(uint16_t *)dp;
@@ -1310,14 +1340,17 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
 #endif
   }
   if (fid) lj_err_caller(L, LJ_ERR_FFI_NUMARG);  /* Too few arguments. */
+#if LJ_TARGET_ARM64 && LJ_ABI_WIN
+  if ((int32_t)nsp < 0) nsp = 0;
+#endif
 
 #if LJ_TARGET_X64 || (LJ_TARGET_PPC && !LJ_ABI_SOFTFP)
   cc->nfpr = nfpr;  /* Required for vararg functions. */
 #endif
-  cc->nsp = nsp;
-  cc->spadj = (CCALL_SPS_FREE + CCALL_SPS_EXTRA)*CTSIZE_PTR;
-  if (nsp > CCALL_SPS_FREE)
-    cc->spadj += (((nsp-CCALL_SPS_FREE)*CTSIZE_PTR + 15u) & ~15u);
+  cc->nsp = (nsp + CTSIZE_PTR-1) & ~(CTSIZE_PTR-1);
+  cc->spadj = (CCALL_SPS_FREE + CCALL_SPS_EXTRA) * CTSIZE_PTR;
+  if (cc->nsp > CCALL_SPS_FREE * CTSIZE_PTR)
+    cc->spadj += (((cc->nsp - CCALL_SPS_FREE * CTSIZE_PTR) + 15u) & ~15u);
   return gcsteps;
 }
 
@@ -1373,11 +1406,11 @@ int lj_ccall_func(lua_State *L, GCcdata *cd)
     ct = ctype_rawchild(cts, ct);
   }
   if (ctype_isfunc(ct->info)) {
+    CTypeID id = ctype_typeid(cts, ct);
     CCallState cc;
     int gcsteps, ret;
     cc.func = (void (*)(void))cdata_getptr(cdataptr(cd), sz);
     gcsteps = ccall_set_args(L, cts, ct, &cc);
-    ct = (CType *)((intptr_t)ct-(intptr_t)cts->tab);
     cts->cb.slot = ~0u;
     lj_vm_ffi_call(&cc);
     if (cts->cb.slot != ~0u) {  /* Blacklist function that called a callback. */
@@ -1385,7 +1418,7 @@ int lj_ccall_func(lua_State *L, GCcdata *cd)
       tv.u64 = ((uintptr_t)(void *)cc.func >> 2) | U64x(800000000, 00000000);
       setboolV(lj_tab_set(L, cts->miscmap, &tv), 1);
     }
-    ct = (CType *)((intptr_t)ct+(intptr_t)cts->tab);  /* May be reallocated. */
+    ct = ctype_get(cts, id);  /* Table may have been reallocated. */
     gcsteps += ccall_get_results(L, cts, ct, &cc, &ret);
 #if LJ_TARGET_X86 && LJ_ABI_WIN
     /* Automatically detect __stdcall and fix up C function declaration. */

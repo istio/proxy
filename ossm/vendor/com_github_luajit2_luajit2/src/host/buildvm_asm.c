@@ -1,6 +1,6 @@
 /*
 ** LuaJIT VM builder: Assembler source code emitter.
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #include "buildvm.h"
@@ -298,6 +298,12 @@ void emit_asm(BuildCtx *ctx)
   fprintf(ctx->fp, "\t.abiversion 2\n");
 #endif
   fprintf(ctx->fp, "\t.text\n");
+#if LJ_TARGET_MIPS32 && !LJ_ABI_SOFTFP
+  fprintf(ctx->fp, "\t.module fp=32\n");
+#endif
+#if LJ_TARGET_MIPS
+  fprintf(ctx->fp, "\t.set nomips16\n\t.abicalls\n\t.set noreorder\n\t.set nomacro\n");
+#endif
   emit_asm_align(ctx, 4);
 
 #if LJ_TARGET_PS3
@@ -323,9 +329,6 @@ void emit_asm(BuildCtx *ctx)
 	  ".save {r4, r5, r6, r7, r8, r9, r10, r11, lr}\n"
 	  ".pad #28\n");
 #endif
-#endif
-#if LJ_TARGET_MIPS
-  fprintf(ctx->fp, ".set nomips16\n.abicalls\n.set noreorder\n.set nomacro\n");
 #endif
 
   for (i = rel = 0; i < ctx->nsym; i++) {
@@ -396,6 +399,10 @@ void emit_asm(BuildCtx *ctx)
     fprintf(ctx->fp, "\t.ident \"%s\"\n", ctx->dasm_ident);
     break;
   case BUILD_machasm:
+#if defined(__apple_build_version__) && __apple_build_version__ >= 15000000 && __apple_build_version__ < 15000300
+    /* Workaround for XCode 15.0 - 15.2. */
+    fprintf(ctx->fp, "\t.subsections_via_symbols\n");
+#endif
     fprintf(ctx->fp,
       "\t.cstring\n"
       "\t.ascii \"%s\\0\"\n", ctx->dasm_ident);

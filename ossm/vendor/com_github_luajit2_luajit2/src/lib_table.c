@@ -1,6 +1,6 @@
 /*
 ** Table library.
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 **
 ** Major portions taken verbatim or adapted from the Lua interpreter.
 ** Copyright (C) 1994-2008 Lua.org, PUC-Rio. See Copyright Notice in lua.h
@@ -172,7 +172,7 @@ LJLIB_CF(table_concat)		LJLIB_REC(.)
 LJLIB_NOREG LJLIB_CF(table_clone) LJLIB_REC(.)
 {
   GCtab *src = lj_lib_checktab(L, 1);
-  GCtab *dup = lj_tab_dup(L, src);
+  GCtab *dup = lj_tab_dup_helper(L, src, 1);
 
   settabV(L, L->base, dup);
   L->top = L->base+1;

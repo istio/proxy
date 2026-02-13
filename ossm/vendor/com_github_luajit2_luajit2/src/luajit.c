@@ -1,6 +1,6 @@
 /*
 ** LuaJIT frontend. Runs commands, scripts, read-eval-print (REPL) etc.
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 **
 ** Major portions taken verbatim or adapted from the Lua interpreter.
 ** Copyright (C) 1994-2008 Lua.org, PUC-Rio. See Copyright Notice in lua.h
@@ -35,10 +35,26 @@
 
 #if !LJ_TARGET_CONSOLE
 #include <signal.h>
+
+#if LJ_TARGET_POSIX
+/* Improve signal handling on POSIX. Try CTRL-C on: luajit -e 'io.read()' */
+static void signal_set(int sig, void (*h)(int))
+{
+  struct sigaction sa;
+  memset(&sa, 0, sizeof(sa));
+  sa.sa_handler = h;
+  sigemptyset(&sa.sa_mask);
+  sigaction(sig, &sa, NULL);
+}
+#else
+#define signal_set	signal
+#endif
+
 #endif
 
 static lua_State *globalL = NULL;
 static const char *progname = LUA_PROGNAME;
+static char *empty_argv[2] = { NULL, NULL };
 
 #if !LJ_TARGET_CONSOLE
 static void lstop(lua_State *L, lua_Debug *ar)
@@ -53,8 +69,8 @@ static void lstop(lua_State *L, lua_Debug *ar)
 
 static void laction(int i)
 {
-  signal(i, SIG_DFL); /* if another SIGINT happens before lstop,
-			 terminate process (default action) */
+  /* Terminate process if another SIGINT happens (double CTRL-C). */
+  signal_set(i, SIG_DFL);
   lua_sethook(globalL, lstop, LUA_MASKCALL | LUA_MASKRET | LUA_MASKCOUNT, 1);
 }
 #endif
@@ -78,9 +94,9 @@ static void print_usage(void)
   fflush(stderr);
 }
 
-static void l_message(const char *pname, const char *msg)
+static void l_message(const char *msg)
 {
-  if (pname) { fputs(pname, stderr); fputc(':', stderr); fputc(' ', stderr); }
+  if (progname) { fputs(progname, stderr); fputc(':', stderr); fputc(' ', stderr); }
   fputs(msg, stderr); fputc('\n', stderr);
   fflush(stderr);
 }
@@ -90,7 +106,7 @@ static int report(lua_State *L, int status)
   if (status && !lua_isnil(L, -1)) {
     const char *msg = lua_tostring(L, -1);
     if (msg == NULL) msg = "(error object is not a string)";
-    l_message(progname, msg);
+    l_message(msg);
     lua_pop(L, 1);
   }
   return status;
@@ -116,11 +132,11 @@ static int docall(lua_State *L, int narg, int clear)
   lua_pushcfunction(L, traceback);  /* push traceback function */
   lua_insert(L, base);  /* put it under chunk and args */
 #if !LJ_TARGET_CONSOLE
-  signal(SIGINT, laction);
+  signal_set(SIGINT, laction);
 #endif
   status = lua_pcall(L, narg, (clear ? 0 : LUA_MULTRET), base);
 #if !LJ_TARGET_CONSOLE
-  signal(SIGINT, SIG_DFL);
+  signal_set(SIGINT, SIG_DFL);
 #endif
   lua_remove(L, base);  /* remove traceback function */
   /* force a complete garbage collection in case of errors */
@@ -256,9 +272,8 @@ static void dotty(lua_State *L)
       lua_getglobal(L, "print");
       lua_insert(L, 1);
       if (lua_pcall(L, lua_gettop(L)-1, 0, 0) != 0)
-	l_message(progname,
-	  lua_pushfstring(L, "error calling " LUA_QL("print") " (%s)",
-			      lua_tostring(L, -1)));
+	l_message(lua_pushfstring(L, "error calling " LUA_QL("print") " (%s)",
+				  lua_tostring(L, -1)));
     }
   }
   lua_settop(L, 0);  /* clear stack */
@@ -310,8 +325,7 @@ static int loadjitmodule(lua_State *L)
   lua_getfield(L, -1, "start");
   if (lua_isnil(L, -1)) {
   nomodule:
-    l_message(progname,
-	      "unknown luaJIT command or jit.* modules not installed");
+    l_message("unknown luaJIT command or jit.* modules not installed");
     return 1;
   }
   lua_remove(L, -2);  /* Drop module table. */
@@ -516,8 +530,6 @@ static int pmain(lua_State *L)
   int argn;
   int flags = 0;
   globalL = L;
-  if (argv[0] && argv[0][0]) progname = argv[0];
-
   LUAJIT_VERSION_SYM();  /* Linker-enforced version check. */
 
   argn = collectargs(argv, &flags);
@@ -572,9 +584,11 @@ static int pmain(lua_State *L)
 int main(int argc, char **argv)
 {
   int status;
-  lua_State *L = lua_open();
+  lua_State *L;
+  if (!argv[0]) argv = empty_argv; else if (argv[0][0]) progname = argv[0];
+  L = lua_open();
   if (L == NULL) {
-    l_message(argv[0], "cannot create state: not enough memory");
+    l_message("cannot create state: not enough memory");
     return EXIT_FAILURE;
   }
   smain.argc = argc;

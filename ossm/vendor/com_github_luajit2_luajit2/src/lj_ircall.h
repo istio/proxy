@@ -1,6 +1,6 @@
 /*
 ** IR CALL* instruction definitions.
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #ifndef _LJ_IRCALL_H
@@ -63,7 +63,7 @@ typedef struct CCallInfo {
 /* Helpers for conditional function definitions. */
 #define IRCALLCOND_ANY(x)		x
 
-#if LJ_TARGET_X86ORX64
+#if LJ_TARGET_X86ORX64 || LJ_TARGET_ARM64
 #define IRCALLCOND_FPMATH(x)		NULL
 #else
 #define IRCALLCOND_FPMATH(x)		x
@@ -221,7 +221,6 @@ typedef struct CCallInfo {
   _(FPMATH,	sqrt,			1,   N, NUM, XA_FP) \
   _(ANY,	log,			1,   N, NUM, XA_FP) \
   _(ANY,	lj_vm_log2,		1,   N, NUM, XA_FP) \
-  _(ANY,	lj_vm_powi,		2,   N, NUM, XA_FP) \
   _(ANY,	pow,			2,   N, NUM, XA2_FP) \
   _(ANY,	atan2,			2,   N, NUM, XA2_FP) \
   _(ANY,	ldexp,			2,   N, NUM, XA_FP) \

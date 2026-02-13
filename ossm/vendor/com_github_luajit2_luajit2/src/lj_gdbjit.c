@@ -1,6 +1,6 @@
 /*
 ** Client for the GDB JIT API.
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #define lj_gdbjit_c
@@ -637,7 +637,7 @@ static void LJ_FASTCALL gdbjit_debugabbrev(GDBJITctx *ctx)
   DUV(DW_AT_low_pc);	DUV(DW_FORM_addr);
   DUV(DW_AT_high_pc);	DUV(DW_FORM_addr);
   DUV(DW_AT_stmt_list);	DUV(DW_FORM_data4);
-  DB(0); DB(0);
+  DB(0); DB(0); DB(0);
 
   ctx->p = p;
 }

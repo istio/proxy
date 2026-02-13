@@ -1,6 +1,6 @@
 /*
 ** Bit manipulation library.
-** Copyright (C) 2005-2021 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2025 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #define lib_bit_c
@@ -98,7 +98,7 @@ LJLIB_ASM(bit_lshift)		LJLIB_REC(bit_shift IR_BSHL)
     x = lj_carith_shift64(x, sh, curr_func(L)->c.ffid - (int)FF_bit_lshift);
     return bit_result64(L, id, x);
   }
-  if (id2) setintV(L->base+1, sh);
+  setintV(L->base+1, sh);
   return FFH_RETRY;
 #else
   lj_lib_checknumber(L, 1);
@@ -155,7 +155,8 @@ LJLIB_CF(bit_tohex)		LJLIB_REC(.)
 #endif
   SBuf *sb = lj_buf_tmp_(L);
   SFormat sf = (STRFMT_UINT|STRFMT_T_HEX);
-  if (n < 0) { n = -n; sf |= STRFMT_F_UPPER; }
+  if (n < 0) { n = (int32_t)(~(uint32_t)n+1u); sf |= STRFMT_F_UPPER; }
+  if ((uint32_t)n > 254) n = 254;
   sf |= ((SFormat)((n+1)&255) << STRFMT_SH_PREC);
 #if LJ_HASFFI
   if (n < 16) b &= ((uint64_t)1 << 4*n)-1;
