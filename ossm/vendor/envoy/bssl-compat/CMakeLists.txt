@@ -160,6 +160,7 @@ add_library(bssl-compat STATIC
   source/SSL_CTX_use_certificate.cc
   source/SSL_CTX_set_compliance_policy.cc
   source/SSL_CTX_use_PrivateKey.cc
+  source/SSL_do_handshake.cc
   source/SSL_early_callback_ctx_extension_get.c
   source/SSL_enable_ocsp_stapling.cc
   source/SSL_error_description.cc
@@ -183,6 +184,7 @@ add_library(bssl-compat STATIC
   source/SSL_get_signature_algorithm_key_type.cc
   source/SSL_get_signature_algorithm_name.c
   source/SSL_is_signature_algorithm_rsa_pss.cc
+  source/SSL_read.cc
   source/SSL_send_fatal_alert.cc
   source/SSL_SESSION_from_bytes.c
   source/SSL_SESSION_get_ticket_lifetime_hint.cc
@@ -197,6 +199,8 @@ add_library(bssl-compat STATIC
   source/SSL_set_renegotiate_mode.cc
   source/SSL_set_info_callback.cc
   source/SSL_set_verify.cc
+  source/SSL_shutdown.cc
+  source/SSL_write.cc
   source/stack.c
   source/TLS_VERSION_to_string.cc
   source/TLS_with_buffers_method.cc
@@ -562,7 +566,6 @@ target_add_bssl_function(bssl-compat
   SSL_CTX_use_certificate_chain_file
   SSL_CTX_use_certificate_file
   SSL_CTX_use_PrivateKey_file
-  SSL_do_handshake
   SSL_free
   SSL_get_certificate
   SSL_get_current_cipher
@@ -581,7 +584,6 @@ target_add_bssl_function(bssl-compat
   SSL_is_server
   SSL_is_init_finished
   SSL_new
-  SSL_read
   SSL_select_next_proto
   SSL_SESSION_free
   SSL_SESSION_get_id
@@ -608,9 +610,7 @@ target_add_bssl_function(bssl-compat
   SSL_set1_curves_list
   SSL_state_string_long
   SSL_state_string
-  SSL_shutdown
   SSL_version
-  SSL_write
   TLS_client_method
   TLS_method
   TLS_server_method

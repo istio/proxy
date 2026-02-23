@@ -1973,3 +1973,72 @@ TEST(SSLTest, test_SSL_get_all_curve_names) {
     // printf("%s\n", names2.get()[i]);
   }
 }
+
+
+struct SSLFunc {
+  const char *name;
+  void (*func)(SSL *ssl);
+};
+
+class SSLTestWithSSLFunc : public testing::TestWithParam<SSLFunc> {};
+
+TEST_P(SSLTestWithSSLFunc, test_func_clears_error_queue) {
+  bssl::UniquePtr<SSL_CTX> ctx(SSL_CTX_new(TLS_method()));
+  bssl::UniquePtr<SSL> ssl(SSL_new(ctx.get()));
+
+  // Push a stale error onto the thread error queue.
+  ERR_put_error(ERR_LIB_SSL, 0, SSL_R_BAD_SIGNATURE, __FILE__, __LINE__);
+  ASSERT_NE(0, ERR_peek_error());
+
+  // The function should clear the error queue before performing its job. We
+  // expect the call itself to fail (because there's no BIO attached to the
+  // SSL), but the stale error must be gone from the queue.
+  GetParam().func(ssl.get());
+
+  // Drain any errors that the function itself may have pushed, and verify that
+  // none of them are our stale SSL_R_BAD_SIGNATURE error.
+  while (unsigned long e = ERR_get_error()) {
+    EXPECT_NE(ERR_GET_REASON(e), SSL_R_BAD_SIGNATURE)
+     << GetParam().name << " did not clear the stale error";
+  }
+}
+
+// Instantiate a test for each SSL function that is knwon to pre-clear the error
+// queue in BoringSSL. Running against the real BoringSSL will confirm that it
+// does actually re-clear the error queue, while running aganst bssl-compat will
+// check that we have implemented the same behaviour.
+//
+// Note that the following functions should be added to this list when
+// bssl-compat implements them:
+// - SSL_peek()
+// - SSL_key_update()
+// - DTLSv1_handle_timeout()
+INSTANTIATE_TEST_SUITE_P(SSLTestWithSSLFunc, SSLTestWithSSLFunc,
+  ::testing::Values(
+    SSLFunc {
+      "SSL_do_handshake()",
+      [](SSL *ssl) { 
+        SSL_do_handshake(ssl);
+      },
+    },
+    SSLFunc {
+      "SSL_read()",
+      [](SSL *ssl) {
+        char buf[1];
+        SSL_read(ssl, buf, sizeof(buf));
+      },
+    },
+    SSLFunc {
+      "SSL_write()",
+      [](SSL *ssl) {
+        char buf[1];
+        SSL_write(ssl, buf, sizeof(buf));
+      }
+    },
+    SSLFunc {
+      "SSL_shutdown()",
+      [](SSL *ssl) {
+        SSL_shutdown(ssl);
+      }
+    }
+));
