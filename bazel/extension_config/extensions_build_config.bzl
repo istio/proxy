@@ -445,6 +445,7 @@ ENVOY_EXTENSIONS = {
     #
 
     "envoy.router.cluster_specifier_plugin.lua": "//source/extensions/router/cluster_specifiers/lua:config",
+    "envoy.router.cluster_specifier_plugin.matcher": "//source/extensions/router/cluster_specifiers/matcher:config",
 
     #
     # Injected credentials
