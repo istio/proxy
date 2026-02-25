@@ -279,6 +279,60 @@ func TestTCPMetadataExchangeWithConnectionTermination(t *testing.T) {
 	}
 }
 
+// Regression test for https://github.com/istio/istio/issues/59183
+// Verifies TCP metrics are emitted during active connection, not just at close.
+// Without the fix, peerInfoRead() returns false for TCP because downstream_peer_obj
+// key wasn't set, causing metrics to only be emitted when end_stream=true.
+func TestTCPMetricsDuringActiveConnection(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{
+		"DisableDirectResponse": "true",
+		"AlpnProtocol":          "mx-protocol",
+		"StatsConfig":           driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+	}, envoye2e.ProxyE2ETests)
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata.json.tmpl")
+	params.Vars["ServerNetworkFilters"] = params.LoadTestData("testdata/filters/server_mx_network_filter.yaml.tmpl") + "\n" +
+		params.LoadTestData("testdata/filters/server_stats_network_filter.yaml.tmpl")
+	params.Vars["ClientUpstreamFilters"] = params.LoadTestData("testdata/filters/client_mx_network_filter.yaml.tmpl")
+	params.Vars["ClientNetworkFilters"] = params.LoadTestData("testdata/filters/client_stats_network_filter.yaml.tmpl")
+	params.Vars["ClientClusterTLSContext"] = params.LoadTestData("testdata/transport_socket/client.yaml.tmpl")
+	params.Vars["ServerListenerTLSContext"] = params.LoadTestData("testdata/transport_socket/server.yaml.tmpl")
+
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			&driver.Update{
+				Node:      "client",
+				Version:   "0",
+				Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_client.yaml.tmpl")},
+				Listeners: []string{params.LoadTestData("testdata/listener/tcp_client.yaml.tmpl")},
+			},
+			&driver.Update{
+				Node:      "server",
+				Version:   "0",
+				Clusters:  []string{params.LoadTestData("testdata/cluster/tcp_server.yaml.tmpl")},
+				Listeners: []string{params.LoadTestData("testdata/listener/tcp_server.yaml.tmpl")},
+			},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.TCPServer{Prefix: "hello"},
+			// TCPLoad keeps connection open and sends pings every second
+			&driver.TCPLoad{},
+			// Wait for data to flow while connection is ACTIVE (not closed)
+			&driver.Sleep{Duration: 3 * time.Second},
+			// Check metrics DURING active connection - this is the regression test
+			// Without the fix, these metrics would not exist or have unknown peer metadata
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				// Verify received bytes metric exists with proper peer metadata during active connection
+				"istio_tcp_received_bytes_total": &driver.ExistStat{Metric: "testdata/metric/tcp_server_received_bytes.yaml.tmpl"},
+			}},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestTCPMetadataNotFoundReporting(t *testing.T) {
 	params := driver.NewTestParams(t, map[string]string{
 		"DisableDirectResponse": "true",
