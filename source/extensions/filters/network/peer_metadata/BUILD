@@ -38,6 +38,9 @@ envoy_cc_library(
     srcs = [
         "peer_metadata.cc",
     ],
+    hdrs = [
+        "peer_metadata.h",
+    ],
     repository = "@envoy",
     deps = [
         ":config_cc_proto",
