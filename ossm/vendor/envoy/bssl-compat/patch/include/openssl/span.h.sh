@@ -21,4 +21,4 @@ uncomment.sh "$1" --comment -h \
   --uncomment-func-impl MakeConstSpan \
   --uncomment-func-impl MakeConstSpan \
   --uncomment-func-impl StringAsBytes \
-  --uncomment-func-impl BytesAsStringView \
+  --uncomment-func-impl BytesAsStringView

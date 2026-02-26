@@ -9,4 +9,4 @@ uncomment.sh "$1" \
   --comment-regex-range '^\s*// BLAKE2b-256 tests' '},\s*$' \
   --comment-gtest-func DigestTest Getters \
   --comment-gtest-func DigestTest ASN1 \
-  --comment-gtest-func DigestTest TransformBlocks \
+  --comment-gtest-func DigestTest TransformBlocks

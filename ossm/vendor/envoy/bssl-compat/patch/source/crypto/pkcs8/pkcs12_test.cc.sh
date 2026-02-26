@@ -16,4 +16,4 @@ uncomment.sh "$1" --comment \
   --uncomment-gtest-func PKCS12Test TestEmptyPassword \
   --uncomment-gtest-func PKCS12Test TestNullPassword \
   --uncomment-gtest-func PKCS12Test TestUnicode \
-  --uncomment-gtest-func PKCS12Test TestWindowsCompat \
+  --uncomment-gtest-func PKCS12Test TestWindowsCompat

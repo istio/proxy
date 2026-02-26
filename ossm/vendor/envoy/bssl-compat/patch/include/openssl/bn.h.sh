@@ -20,4 +20,4 @@ uncomment.sh "$1" --comment -h \
   --uncomment-func-decl BN_cmp_word \
   --uncomment-func-decl BN_ucmp \
   --uncomment-func-decl BN_bin2bn \
-  --uncomment-regex 'BORINGSSL_MAKE_DELETER(BIGNUM' \
+  --uncomment-regex 'BORINGSSL_MAKE_DELETER(BIGNUM'

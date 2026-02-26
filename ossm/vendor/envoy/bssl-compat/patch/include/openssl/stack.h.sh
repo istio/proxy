@@ -53,4 +53,4 @@ uncomment.sh "$1" --comment -h \
   --uncomment-func-decl sk_value \
   --uncomment-func-decl sk_free \
   --uncomment-macro OPENSSL_STACK \
-  --uncomment-macro _STACK \
+  --uncomment-macro _STACK
