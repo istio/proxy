@@ -71,7 +71,9 @@ bool allowedInternalListener(const Network::Address::Instance& address) {
   if (!name) {
     return false;
   }
-  return *name == "connect_originate" || *name == "inner_connect_originate";
+  // internal_outbound is a listener name used in proxy e2e tests, so we allow it here as well.
+  return *name == "connect_originate" || *name == "inner_connect_originate" ||
+         *name == "internal_outbound";
 }
 
 bool discoveryDisabled(const ::envoy::config::core::v3::Metadata& metadata) {
