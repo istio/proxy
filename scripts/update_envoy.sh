@@ -35,13 +35,16 @@ WORKSPACE=${ROOT}/WORKSPACE
 ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
 
+# Get OLD_SHA before updating WORKSPACE
+OLD_SHA="$(grep -Pom1 "^ENVOY_SHA = \"\K[a-f0-9]+" "${WORKSPACE}")"
+
 # get latest commit for specified org/repo
 LATEST_SHA="$(git ls-remote https://github.com/"${ENVOY_ORG}"/"${ENVOY_REPO}" "refs/heads/$UPDATE_BRANCH" | awk '{ print $1}')"
 # use ENVOY_SHA if specified
 if [[ -n "${ENVOY_SHA}" ]]; then
   LATEST_SHA="${ENVOY_SHA}"
 fi
-DATE=$(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/"${ENVOY_ORG}""/""${ENVOY_REPO}"/commits/"${LATEST_SHA}" | jq '.commit.committer.date')
+DATE=$(curl -s -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/"${ENVOY_ORG}"/"${ENVOY_REPO}"/commits/"${LATEST_SHA}" | jq '.commit.committer.date')
 DATE=$(echo "${DATE/\"/}" | cut -d'T' -f1)
 
 # Get ENVOY_SHA256
@@ -58,6 +61,25 @@ sed -i "s/Commit date: .*/Commit date: ${DATE}/" "${WORKSPACE}"
 sed -i 's/ENVOY_SHA = .*/ENVOY_SHA = "'"$LATEST_SHA"'"/' "${WORKSPACE}"
 sed -i 's/ENVOY_SHA256 = .*/ENVOY_SHA256 = "'"$SHA256"'"/' "${WORKSPACE}"
 
-# Update .bazelversion and envoy.bazelrc
+# Update .bazelversion
 curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelversion" > .bazelversion
-curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelrc" > envoy.bazelrc
+
+# Three-way merge envoy.bazelrc to preserve local modifications
+# On conflict, take upstream version (consistent with previous behavior)
+OLD_BAZELRC=$(mktemp)
+NEW_BAZELRC=$(mktemp)
+MERGED_BAZELRC=$(mktemp)
+
+curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${OLD_SHA}/.bazelrc" > "${OLD_BAZELRC}"
+curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelrc" > "${NEW_BAZELRC}"
+
+# Attempt merge; on conflict, use upstream version
+if git merge-file -p envoy.bazelrc "${OLD_BAZELRC}" "${NEW_BAZELRC}" > "${MERGED_BAZELRC}" 2>/dev/null; then
+  mv "${MERGED_BAZELRC}" envoy.bazelrc
+else
+  # Conflicts exist - resolve by taking upstream (theirs)
+  git merge-file -p --theirs envoy.bazelrc "${OLD_BAZELRC}" "${NEW_BAZELRC}" > "${MERGED_BAZELRC}"
+  mv "${MERGED_BAZELRC}" envoy.bazelrc
+fi
+
+rm -f "${OLD_BAZELRC}" "${NEW_BAZELRC}"
