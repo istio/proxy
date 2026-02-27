@@ -328,6 +328,7 @@ std::vector<DiscoveryMethodPtr> FilterConfig::buildDiscoveryMethods(
         ENVOY_LOG(warn, "BaggageDiscovery peer metadata discovery option is only available for "
                         "downstream peer discovery");
       }
+      break;
     case io::istio::http::peer_metadata::Config::DiscoveryMethod::MethodSpecifierCase::
         kUpstreamFilterState:
       if (!downstream) {

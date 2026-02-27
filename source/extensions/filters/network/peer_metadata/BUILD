@@ -18,6 +18,7 @@
 load(
     "@envoy//bazel:envoy_build_system.bzl",
     "envoy_cc_library",
+    "envoy_cc_test",
 )
 load(
     "@envoy//bazel:envoy_library.bzl",
@@ -38,11 +39,15 @@ envoy_cc_library(
     srcs = [
         "peer_metadata.cc",
     ],
+    hdrs = [
+        "peer_metadata.h",
+    ],
     repository = "@envoy",
     deps = [
         ":config_cc_proto",
         "//extensions/common:metadata_object_lib",
         "@envoy//envoy/buffer:buffer_interface",
+        "@envoy//envoy/local_info:local_info_interface",
         "@envoy//envoy/network:address_interface",
         "@envoy//envoy/network:filter_interface",
         "@envoy//envoy/server:filter_config_interface",
@@ -53,5 +58,18 @@ envoy_cc_library(
         "@envoy//source/common/tcp_proxy",
         "@envoy//source/extensions/filters/common/expr:cel_state_lib",
         "@envoy//source/extensions/filters/network/common:factory_base_lib",
+    ],
+)
+
+envoy_cc_test(
+    name = "peer_metadata_test",
+    srcs = ["peer_metadata_test.cc"],
+    repository = "@envoy",
+    deps = [
+        ":peer_metadata",
+        "@abseil-cpp//absl/strings",
+        "@envoy//envoy/router:string_accessor_interface",
+        "@envoy//test/mocks/local_info:local_info_mocks",
+        "@envoy//test/mocks/network:network_mocks",
     ],
 )
