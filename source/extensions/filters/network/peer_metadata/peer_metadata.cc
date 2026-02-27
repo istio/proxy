@@ -18,10 +18,8 @@
 #include <string_view>
 
 #include "source/common/router/string_accessor_impl.h"
-#include "source/common/singleton/const_singleton.h"
 #include "source/common/stream_info/bool_accessor_impl.h"
 #include "source/common/tcp_proxy/tcp_proxy.h"
-#include "source/extensions/filters/network/peer_metadata/config.pb.validate.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -33,28 +31,8 @@ namespace {
 using CelState = ::Envoy::Extensions::Filters::Common::Expr::CelState;
 using CelStateType = ::Envoy::Extensions::Filters::Common::Expr::CelStateType;
 
-PACKED_STRUCT(struct PeerMetadataHeader {
-  uint32_t magic;
-  static const uint32_t magic_number = 0xabcd1234;
-  uint32_t data_size;
-});
-
-struct HeaderValues {
-  const Http::LowerCaseString Baggage{"baggage"};
-};
-
-using Headers = ConstSingleton<HeaderValues>;
-
-struct FilterNameValues {
-  const std::string Name = "istio.peer_metadata";
-  const std::string DisableDiscoveryField = "disable_baggage_discovery";
-};
-
-using FilterNames = ConstSingleton<FilterNameValues>;
-
-std::string baggageValue(const Server::Configuration::ServerFactoryContext& context) {
-  const auto obj =
-      ::Istio::Common::convertStructToWorkloadMetadata(context.localInfo().node().metadata());
+std::string baggageValue(const LocalInfo::LocalInfo& local_info) {
+  const auto obj = ::Istio::Common::convertStructToWorkloadMetadata(local_info.node().metadata());
   return obj->baggage();
 }
 
@@ -77,15 +55,17 @@ bool allowedInternalListener(const Network::Address::Instance& address) {
 }
 
 bool discoveryDisabled(const ::envoy::config::core::v3::Metadata& metadata) {
-  const auto& value = Envoy::Config::Metadata::metadataValue(
+  const auto& value = ::Envoy::Config::Metadata::metadataValue(
       &metadata, FilterNames::get().Name, FilterNames::get().DisableDiscoveryField);
   return value.bool_value();
 }
 
 } // namespace
 
-Filter::Filter(const Config& config, Server::Configuration::ServerFactoryContext& context)
-    : config_(config), baggage_(baggageValue(context)) {}
+const uint32_t PeerMetadataHeader::magic_number = 0xabcd1234;
+
+Filter::Filter(const Config& config, const LocalInfo::LocalInfo& local_info)
+    : config_(config), baggage_(baggageValue(local_info)) {}
 
 Network::FilterStatus Filter::onData(Buffer::Instance&, bool) {
   return Network::FilterStatus::Continue;
@@ -148,7 +128,7 @@ void Filter::populateBaggage() {
 
 bool Filter::disableDiscovery() const {
   ASSERT(read_callbacks_);
-  const auto metadata = read_callbacks_->connection().streamInfo().dynamicMetadata();
+  const auto& metadata = read_callbacks_->connection().streamInfo().dynamicMetadata();
   return discoveryDisabled(metadata);
 }
 
@@ -158,7 +138,7 @@ bool Filter::disableDiscovery() const {
 // NOTE: It's safe to call this function during any step of processing - it
 // will not do anything if the filter is not in the right state.
 std::optional<google::protobuf::Any> Filter::discoverPeerMetadata() {
-  ENVOY_LOG(trace, "Trying to discovery peer metadata from filter state set by TCP Proxy");
+  ENVOY_LOG(trace, "Trying to discover peer metadata from filter state set by TCP Proxy");
   ASSERT(write_callbacks_);
 
   const Network::Connection& conn = write_callbacks_->connection();
@@ -305,7 +285,6 @@ bool UpstreamFilter::disableDiscovery() const {
   }
 
   if (discoveryDisabled(*host->metadata()) || discoveryDisabled(host->cluster().metadata())) {
-
     ENVOY_LOG(trace, "Peer metadata discovery explicitly disabled via metadata");
     return true;
   }
@@ -425,7 +404,8 @@ absl::StatusOr<Network::FilterFactoryCb>
 ConfigFactory::createFilterFactoryFromProtoTyped(const Config& config,
                                                  Server::Configuration::FactoryContext& context) {
   return [config, &context](Network::FilterManager& filter_manager) -> void {
-    filter_manager.addFilter(std::make_shared<Filter>(config, context.serverFactoryContext()));
+    const auto& local_info = context.serverFactoryContext().localInfo();
+    filter_manager.addFilter(std::make_shared<Filter>(config, local_info));
   };
 }
 

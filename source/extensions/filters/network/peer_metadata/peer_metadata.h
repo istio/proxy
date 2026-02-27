@@ -85,13 +85,16 @@
 #include <optional>
 #include <string>
 
+#include "envoy/local_info/local_info.h"
 #include "envoy/network/filter.h"
 #include "envoy/server/filter_config.h"
 #include "extensions/common/metadata_object.h"
 #include "source/common/common/logger.h"
+#include "source/common/singleton/const_singleton.h"
 #include "source/extensions/filters/common/expr/cel_state.h"
 #include "source/extensions/filters/network/common/factory_base.h"
 #include "source/extensions/filters/network/peer_metadata/config.pb.h"
+#include "source/extensions/filters/network/peer_metadata/config.pb.validate.h"
 
 namespace Envoy {
 namespace Extensions {
@@ -102,10 +105,29 @@ using Config = ::envoy::extensions::network_filters::peer_metadata::Config;
 using UpstreamConfig = ::envoy::extensions::network_filters::peer_metadata::UpstreamConfig;
 using CelStatePrototype = ::Envoy::Extensions::Filters::Common::Expr::CelStatePrototype;
 
+struct HeaderValues {
+  const Http::LowerCaseString Baggage{"baggage"};
+};
+
+using Headers = ConstSingleton<HeaderValues>;
+
+struct FilterNameValues {
+  const std::string Name = "istio.peer_metadata";
+  const std::string DisableDiscoveryField = "disable_baggage_discovery";
+};
+
+using FilterNames = ConstSingleton<FilterNameValues>;
+
 enum class PeerMetadataState {
   WaitingForData,
   PassThrough,
 };
+
+PACKED_STRUCT(struct PeerMetadataHeader {
+  uint32_t magic;
+  static const uint32_t magic_number;
+  uint32_t data_size;
+});
 
 /**
  * This is a regular network filter that will be installed in the
@@ -117,7 +139,7 @@ enum class PeerMetadataState {
  */
 class Filter : public Network::Filter, Logger::Loggable<Logger::Id::filter> {
 public:
-  Filter(const Config& config, Server::Configuration::ServerFactoryContext& context);
+  Filter(const Config& config, const LocalInfo::LocalInfo& local_info);
 
   // Network::ReadFilter
   Network::FilterStatus onNewConnection() override;
@@ -138,7 +160,7 @@ private:
   PeerMetadataState state_ = PeerMetadataState::WaitingForData;
   Network::WriteFilterCallbacks* write_callbacks_{};
   Network::ReadFilterCallbacks* read_callbacks_{};
-  const Config& config_;
+  Config config_;
   std::string baggage_;
 };
 
