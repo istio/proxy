@@ -68,18 +68,14 @@ curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST
 # On conflict, take upstream version (consistent with previous behavior)
 OLD_BAZELRC=$(mktemp)
 NEW_BAZELRC=$(mktemp)
-MERGED_BAZELRC=$(mktemp)
 
 curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${OLD_SHA}/.bazelrc" > "${OLD_BAZELRC}"
 curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelrc" > "${NEW_BAZELRC}"
 
 # Attempt merge; on conflict, use upstream version
-if git merge-file -p envoy.bazelrc "${OLD_BAZELRC}" "${NEW_BAZELRC}" > "${MERGED_BAZELRC}" 2>/dev/null; then
-  mv "${MERGED_BAZELRC}" envoy.bazelrc
-else
+if ! git merge-file envoy.bazelrc "${OLD_BAZELRC}" "${NEW_BAZELRC}" 2>/dev/null; then
   # Conflicts exist - resolve by taking upstream (theirs)
-  git merge-file -p --theirs envoy.bazelrc "${OLD_BAZELRC}" "${NEW_BAZELRC}" > "${MERGED_BAZELRC}"
-  mv "${MERGED_BAZELRC}" envoy.bazelrc
+  git merge-file --theirs envoy.bazelrc "${OLD_BAZELRC}" "${NEW_BAZELRC}"
 fi
 
 rm -f "${OLD_BAZELRC}" "${NEW_BAZELRC}"
