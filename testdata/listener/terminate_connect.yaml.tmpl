@@ -60,6 +60,12 @@ filter_chains:
                 text_format_source:
                   inline_string: "%DOWNSTREAM_LOCAL_URI_SAN%"
               shared_with_upstream: ONCE
+            - object_key: io.istio.baggage
+              factory_key: envoy.string
+              format_string:
+                text_format_source:
+                  inline_string: "%REQ(baggage)%"
+              shared_with_upstream: ONCE
       {{ end }}
       - name: peer_metadata
         typed_config:
@@ -68,6 +74,8 @@ filter_chains:
           value:
             downstream_discovery:
             - workload_discovery: {}
+            downstream_propagation:
+            - baggage: {}
             shared_with_upstream: true
       - name: envoy.filters.http.router
         typed_config:

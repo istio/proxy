@@ -22,6 +22,10 @@ load_assignment:
           istio:
             workload: ratings-v1;default;ratings;version-1;server-cluster
 {{- end }}
+{{- if .Vars.UpstreamNetworkFilters }}
+filters:
+{{ .Vars.UpstreamNetworkFilters | fill }}
+{{- end }}
 transport_socket:
   name: envoy.transport_sockets.internal_upstream
   typed_config:

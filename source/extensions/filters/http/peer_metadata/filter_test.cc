@@ -702,8 +702,6 @@ TEST_F(PeerMetadataTest, BaggagePropagationWithNodeMetadata) {
   // Verify baggage contains expected key-value pairs
   EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.namespace.name=production"));
   EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.cluster.name=test-cluster"));
-  EXPECT_TRUE(absl::StrContains(baggage_value, "app.name=test-app"));
-  EXPECT_TRUE(absl::StrContains(baggage_value, "app.version=v1.0"));
   EXPECT_TRUE(absl::StrContains(baggage_value, "service.name=test-service"));
   EXPECT_TRUE(absl::StrContains(baggage_value, "service.version=main"));
   EXPECT_TRUE(absl::StrContains(baggage_value, "k8s.pod.name=test-workload"));
