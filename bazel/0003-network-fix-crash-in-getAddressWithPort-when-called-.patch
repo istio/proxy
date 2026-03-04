@@ -1,10 +1,8 @@
-From 0edc01b32a4625ed8171b6fb2571848701be3e0d Mon Sep 17 00:00:00 2001
+From c410f1ce4684232c15a0faf2ae4b177da0989c11 Mon Sep 17 00:00:00 2001
 From: Rohit Agrawal <rohit.agrawal@databricks.com>
 Date: Mon, 26 Jan 2026 09:33:06 -0800
-Subject: [PATCH 3/5] network: fix crash in getAddressWithPort() when called
+Subject: [PATCH 3/4] network: fix crash in getAddressWithPort() when called
  with a scoped IPv6 address
-
-[CVE-2026-26310](https://github.com/envoyproxy/envoy/security/advisories/GHSA-3cw6-2j68-868p)
 
 Signed-off-by: Rohit Agrawal <rohit.agrawal@databricks.com>
 Signed-off-by: Ryan Northey <ryan@synca.io>
@@ -17,10 +15,10 @@ Signed-off-by: Ryan Northey <ryan@synca.io>
  5 files changed, 95 insertions(+), 5 deletions(-)
 
 diff --git a/changelogs/current.yaml b/changelogs/current.yaml
-index 2d8a3e0d96..cc515f23b3 100644
+index 943943882c..7095f908c6 100644
 --- a/changelogs/current.yaml
 +++ b/changelogs/current.yaml
-@@ -30,6 +30,9 @@ bug_fixes:
+@@ -18,6 +18,9 @@ bug_fixes:
    change: |
      Fixed an off-by-one write in ``JsonEscaper::escapeString()`` that could corrupt the string null terminator
      when the input string ends with a control character.
@@ -31,10 +29,10 @@ index 2d8a3e0d96..cc515f23b3 100644
  removed_config_or_runtime:
  # *Normally occurs at the end of the* :ref:`deprecation period <deprecated>`
 diff --git a/source/common/network/utility.cc b/source/common/network/utility.cc
-index 23e0b00f9e..9b203925d3 100644
+index 9a0ba0d082..800c3247ec 100644
 --- a/source/common/network/utility.cc
 +++ b/source/common/network/utility.cc
-@@ -316,10 +316,18 @@ const std::string& Utility::getIpv6CidrCatchAllAddress() {
+@@ -372,10 +372,18 @@ const std::string& Utility::getIpv6CidrCatchAllAddress() {
  Address::InstanceConstSharedPtr Utility::getAddressWithPort(const Address::Instance& address,
                                                              uint32_t port) {
    switch (address.ip()->version()) {
@@ -58,7 +56,7 @@ index 23e0b00f9e..9b203925d3 100644
    PANIC("not handled");
  }
 diff --git a/test/common/network/utility_test.cc b/test/common/network/utility_test.cc
-index 8a879cca67..e1b4c11abe 100644
+index 06056f2216..1e9b84a767 100644
 --- a/test/common/network/utility_test.cc
 +++ b/test/common/network/utility_test.cc
 @@ -252,6 +252,49 @@ TEST(NetworkUtility, ParseInternetAddressAndPort) {
@@ -111,15 +109,15 @@ index 8a879cca67..e1b4c11abe 100644
  class NetworkUtilityGetLocalAddress : public testing::TestWithParam<Address::IpVersion> {};
  
  INSTANTIATE_TEST_SUITE_P(IpVersions, NetworkUtilityGetLocalAddress,
-@@ -706,7 +749,7 @@ TEST(ResolvedUdpSocketConfig, Warning) {
+@@ -688,7 +731,7 @@ TEST(ResolvedUdpSocketConfig, Warning) {
        ResolvedUdpSocketConfig resolved_config(envoy::config::core::v3::UdpSocketConfig(), true));
  }
  
 -#ifndef WIN32
 +#if defined(__linux__)
  TEST(PacketLoss, LossTest) {
-   class ZeroTimeSource : public TimeSource {
-   public:
+   // Create and bind a UDP socket.
+   auto version = TestEnvironment::getIpVersionsForTest()[0];
 diff --git a/test/extensions/filters/common/original_src/BUILD b/test/extensions/filters/common/original_src/BUILD
 index 87fcb34185..e8cac9cc67 100644
 --- a/test/extensions/filters/common/original_src/BUILD
