@@ -1,4 +1,4 @@
-From 71053f83efb1931fa79b6915b08d76347a5e4452 Mon Sep 17 00:00:00 2001
+From 20c77c84372c5505b5fd2fedf339790da0ad4df7 Mon Sep 17 00:00:00 2001
 From: Boteng Yao <boteng@google.com>
 Date: Mon, 5 Jan 2026 20:31:37 +0000
 Subject: [PATCH 4/5] fix multivalue header bypass in rbac
@@ -20,10 +20,10 @@ Signed-off-by: Ryan Northey <ryan@synca.io>
  9 files changed, 267 insertions(+), 2 deletions(-)
 
 diff --git a/changelogs/current.yaml b/changelogs/current.yaml
-index cc515f23b3..7bc19689a4 100644
+index 7095f908c6..ae741a28ec 100644
 --- a/changelogs/current.yaml
 +++ b/changelogs/current.yaml
-@@ -33,6 +33,11 @@ bug_fixes:
+@@ -21,6 +21,11 @@ bug_fixes:
  - area: network
    change: |
      Fixed a crash in ``Utility::getAddressWithPort`` when called with a scoped IPv6 address (e.g., ``fe80::1%eth0``).
@@ -103,17 +103,17 @@ index 16c4d2a28c..095cb4a191 100644
      // A matcher specific implementation to match the given header_value.
      virtual bool specificMatchesHeaders(absl::string_view header_value) const PURE;
 diff --git a/source/common/runtime/runtime_features.cc b/source/common/runtime/runtime_features.cc
-index fad2d92e6c..6aebd1384b 100644
+index 9d01561757..9b79e1e8f3 100644
 --- a/source/common/runtime/runtime_features.cc
 +++ b/source/common/runtime/runtime_features.cc
-@@ -70,6 +70,7 @@ RUNTIME_GUARD(envoy_reloadable_features_quic_send_server_preferred_address_to_al
+@@ -69,6 +69,7 @@ RUNTIME_GUARD(envoy_reloadable_features_quic_send_server_preferred_address_to_al
  RUNTIME_GUARD(envoy_reloadable_features_quic_signal_headers_only_to_http1_backend);
  RUNTIME_GUARD(envoy_reloadable_features_quic_upstream_reads_fixed_number_packets);
  RUNTIME_GUARD(envoy_reloadable_features_quic_upstream_socket_use_address_cache_for_read);
 +RUNTIME_GUARD(envoy_reloadable_features_rbac_match_headers_individually);
  RUNTIME_GUARD(envoy_reloadable_features_reject_empty_trusted_ca_file);
- RUNTIME_GUARD(envoy_reloadable_features_report_load_when_rq_active_is_non_zero);
- RUNTIME_GUARD(envoy_reloadable_features_reset_ignore_upstream_reason);
+ RUNTIME_GUARD(envoy_reloadable_features_report_load_with_rq_issued);
+ RUNTIME_GUARD(envoy_reloadable_features_router_filter_resetall_on_local_reply);
 diff --git a/source/extensions/filters/common/rbac/matchers.cc b/source/extensions/filters/common/rbac/matchers.cc
 index e849a32f6d..be2d6925f9 100644
 --- a/source/extensions/filters/common/rbac/matchers.cc
@@ -146,7 +146,7 @@ index e849a32f6d..be2d6925f9 100644
  }
  
 diff --git a/source/extensions/filters/common/rbac/matchers.h b/source/extensions/filters/common/rbac/matchers.h
-index 079680d1ed..046091dad9 100644
+index 18c68ebf04..7f54abe068 100644
 --- a/source/extensions/filters/common/rbac/matchers.h
 +++ b/source/extensions/filters/common/rbac/matchers.h
 @@ -103,14 +103,14 @@ private:
@@ -268,10 +268,10 @@ index 5e8672d77d..02135ed3a0 100644
    TestRequestHeaderMapImpl matching_headers_1{{"match-header-A", "1"}, {"match-header-B", "2"}};
    TestRequestHeaderMapImpl matching_headers_2{
 diff --git a/test/extensions/filters/common/rbac/matchers_test.cc b/test/extensions/filters/common/rbac/matchers_test.cc
-index e5468f868d..0dc26758d2 100644
+index fa6fa08fd1..48ef7700d0 100644
 --- a/test/extensions/filters/common/rbac/matchers_test.cc
 +++ b/test/extensions/filters/common/rbac/matchers_test.cc
-@@ -1013,6 +1013,51 @@ TEST(HeaderMatcher, MultipleHeaderValues) {
+@@ -1014,6 +1014,51 @@ TEST(HeaderMatcher, MultipleHeaderValues) {
    checkMatcher(matcher5, true, Envoy::Network::MockConnection(), headers);
  }
  

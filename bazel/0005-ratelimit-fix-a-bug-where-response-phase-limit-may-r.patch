@@ -1,4 +1,4 @@
-From f6a14e5a871640e724678a592302455dfae0dd4b Mon Sep 17 00:00:00 2001
+From bead0ab4943fa2d3467350d157265eca7577702f Mon Sep 17 00:00:00 2001
 From: wbpcode <wbphub@gmail.com>
 Date: Sun, 15 Feb 2026 08:04:29 +0000
 Subject: [PATCH 5/5] ratelimit: fix a bug where response phase limit may
@@ -15,24 +15,24 @@ Signed-off-by: Ryan Northey <ryan@synca.io>
  3 files changed, 36 insertions(+), 1 deletion(-)
 
 diff --git a/changelogs/current.yaml b/changelogs/current.yaml
-index 7bc19689a4..9b18689e56 100644
+index ae741a28ec..624f7c6ce8 100644
 --- a/changelogs/current.yaml
 +++ b/changelogs/current.yaml
-@@ -11,6 +11,12 @@ bug_fixes:
- - area: oauth2
-   change: |
-     Fixed OAuth2 refresh requests so host rewriting no longer overrides the original ``Host`` header value.
+@@ -14,6 +14,12 @@ bug_fixes:
+     destroyed. This could cause use-after-free conditions when filter callbacks were invoked on filters that
+     had already received ``onDestroy()``. The fix ensures that ``decodeHeaders()``, ``decodeData()``,
+     ``decodeTrailers()``, and ``decodeMetadata()`` are blocked after a downstream reset.
 +- area: ratelimit
 +  change: |
 +    Fixed a bug in the gRPC rate limit client where the client could get into a bad state if the
 +    callbacks were not properly released after a request completion, leading to potential use-after-free
 +    issues. The fix ensures that callbacks and request references are cleared after completion, and adds
 +    assertions to enforce correct usage patterns.
- - area: ext_authz
+ - area: json
    change: |
-     Fixed a bug where headers from a denied authorization response (non-200) were not properly propagated
+     Fixed an off-by-one write in ``JsonEscaper::escapeString()`` that could corrupt the string null terminator
 diff --git a/source/extensions/filters/common/ratelimit/ratelimit_impl.cc b/source/extensions/filters/common/ratelimit/ratelimit_impl.cc
-index b46f90b396..25358ca1a1 100644
+index f2db678d00..9de18e289d 100644
 --- a/source/extensions/filters/common/ratelimit/ratelimit_impl.cc
 +++ b/source/extensions/filters/common/ratelimit/ratelimit_impl.cc
 @@ -37,7 +37,6 @@ void GrpcClientImpl::cancel() {
@@ -43,7 +43,7 @@ index b46f90b396..25358ca1a1 100644
    if (request_) {
      request_->detach();
      request_ = nullptr;
-@@ -77,8 +76,11 @@ void GrpcClientImpl::limit(RequestCallbacks& callbacks, const std::string& domai
+@@ -75,8 +74,11 @@ void GrpcClientImpl::limit(RequestCallbacks& callbacks, const std::string& domai
                             const std::vector<Envoy::RateLimit::Descriptor>& descriptors,
                             Tracing::Span& parent_span, const StreamInfo::StreamInfo& stream_info,
                             uint32_t hits_addend) {
@@ -55,7 +55,7 @@ index b46f90b396..25358ca1a1 100644
  
    envoy::service::ratelimit::v3::RateLimitRequest request;
    createRequest(request, domain, descriptors, hits_addend);
-@@ -130,6 +132,7 @@ void GrpcClientImpl::onSuccess(
+@@ -128,6 +130,7 @@ void GrpcClientImpl::onSuccess(
    // callback, so we release the callback here to make the destructor happy.
    auto call_backs = callbacks_;
    callbacks_ = nullptr;
@@ -63,7 +63,7 @@ index b46f90b396..25358ca1a1 100644
    call_backs->complete(status, std::move(descriptor_statuses), std::move(response_headers_to_add),
                         std::move(request_headers_to_add), response->raw_body(),
                         std::move(dynamic_metadata));
-@@ -144,6 +147,7 @@ void GrpcClientImpl::onFailure(Grpc::Status::GrpcStatus status, const std::strin
+@@ -142,6 +145,7 @@ void GrpcClientImpl::onFailure(Grpc::Status::GrpcStatus status, const std::strin
    // callback, so we release the callback here to make the destructor happy.
    auto call_backs = callbacks_;
    callbacks_ = nullptr;

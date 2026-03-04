@@ -22,10 +22,10 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit date: 2026-03-03
-ENVOY_SHA = "7b70098c2b0992fba3ec0a697a1658d68178ad31"
+# Commit for v1.36 security patches (WhiteFalcon)
+ENVOY_SHA = "9b72caf3e20d516a67ec57029d1048637fae0ec1"
 
-ENVOY_SHA256 = "27ccc24d5b5af4b992dcaaa9515343a930b999e4edaa4e1c7627218006ed60ca"
+ENVOY_SHA256 = "96c3375534b122bae81fd2e29f8698d6fe83177f38657cc6ed1c8f95e3d4cd2d"
 
 ENVOY_ORG = "envoyproxy"
 
@@ -35,17 +35,17 @@ ENVOY_REPO = "envoy"
 # persist the option in `user.bazelrc`.
 http_archive(
     name = "envoy",
-    patch_args = ["-p1"],
-    patches = [
-        "@io_istio_proxy//bazel:0001-http-ensure-decode-methods-are-blocked-after-a-downs.patch",
-        "@io_istio_proxy//bazel:0002-json-fixed-an-off-by-one-write-that-could-corrupted-.patch",
-        "@io_istio_proxy//bazel:0003-network-fix-crash-in-getAddressWithPort-when-called-.patch",
-        "@io_istio_proxy//bazel:0004-fix-multivalue-header-bypass-in-rbac.patch",
-        "@io_istio_proxy//bazel:0005-ratelimit-fix-a-bug-where-response-phase-limit-may-r.patch",
-    ],
     sha256 = ENVOY_SHA256,
     strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
     url = "https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz",
+    patches = [
+        "//bazel:0001-http-ensure-decode-methods-are-blocked-after-a-downs.patch",
+        "//bazel:0002-json-fixed-an-off-by-one-write-that-could-corrupted-.patch",
+        "//bazel:0003-network-fix-crash-in-getAddressWithPort-when-called-.patch",
+        "//bazel:0004-fix-multivalue-header-bypass-in-rbac.patch",
+        "//bazel:0005-ratelimit-fix-a-bug-where-response-phase-limit-may-r.patch",
+    ],
+    patch_args = ["-p1"],
 )
 
 load("@envoy//bazel:api_binding.bzl", "envoy_api_binding")

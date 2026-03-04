@@ -1,4 +1,4 @@
-From f589db741efb60f2b25ee57e5de83119b468d87f Mon Sep 17 00:00:00 2001
+From c811a4e617414770c3166c4af0f6b7633af49537 Mon Sep 17 00:00:00 2001
 From: Rohit Agrawal <rohit.agrawal@databricks.com>
 Date: Wed, 21 Jan 2026 07:39:17 -0800
 Subject: [PATCH 1/5] http: ensure decode* methods are blocked after a
@@ -12,17 +12,17 @@ Signed-off-by: Ryan Northey <ryan@synca.io>
  changelogs/current.yaml                 |   6 +
  source/common/http/filter_manager.cc    |  10 ++
  source/common/http/filter_manager.h     |   7 +-
- test/common/http/filter_manager_test.cc | 185 ++++++++++++++++++++++++
- 4 files changed, 207 insertions(+), 1 deletion(-)
+ test/common/http/filter_manager_test.cc | 180 ++++++++++++++++++++++++
+ 4 files changed, 202 insertions(+), 1 deletion(-)
 
 diff --git a/changelogs/current.yaml b/changelogs/current.yaml
-index e4252debc0..52f53a1b4b 100644
+index 9ecf0d6e48..6e7a5af208 100644
 --- a/changelogs/current.yaml
 +++ b/changelogs/current.yaml
-@@ -20,6 +20,12 @@ bug_fixes:
-     Fixed the HTTP ext_authz client to respect ``status_on_error`` configuration when the authorization
-     server returns a 5xx error or when HTTP call failures occur. Previously, these error scenarios always
-     returned 403 Forbidden regardless of the configured error status.
+@@ -8,6 +8,12 @@ minor_behavior_changes:
+ 
+ bug_fixes:
+ # *Changes expected to improve the state of the world and are unlikely to have negative effects*
 +- area: http
 +  change: |
 +    Fixed an issue where filter chain execution could continue on HTTP streams that had been reset but not yet
@@ -33,10 +33,10 @@ index e4252debc0..52f53a1b4b 100644
  removed_config_or_runtime:
  # *Normally occurs at the end of the* :ref:`deprecation period <deprecated>`
 diff --git a/source/common/http/filter_manager.cc b/source/common/http/filter_manager.cc
-index fbf9a72c3e..05e29a8d42 100644
+index 9e124fe23e..9837b96a80 100644
 --- a/source/common/http/filter_manager.cc
 +++ b/source/common/http/filter_manager.cc
-@@ -569,6 +569,11 @@ void FilterManager::maybeContinueDecoding(StreamDecoderFilters::Iterator continu
+@@ -568,6 +568,11 @@ void FilterManager::maybeContinueDecoding(StreamDecoderFilters::Iterator continu
  
  void FilterManager::decodeHeaders(ActiveStreamDecoderFilter* filter, RequestHeaderMap& headers,
                                    bool end_stream) {
@@ -48,7 +48,7 @@ index fbf9a72c3e..05e29a8d42 100644
    // Headers filter iteration should always start with the next filter if available.
    StreamDecoderFilters::Iterator entry =
        commonDecodePrefix(filter, FilterIterationStartState::AlwaysStartFromNext);
-@@ -877,6 +882,11 @@ void FilterManager::decodeMetadata(ActiveStreamDecoderFilter* filter, MetadataMa
+@@ -876,6 +881,11 @@ void FilterManager::decodeMetadata(ActiveStreamDecoderFilter* filter, MetadataMa
    ScopeTrackerScopeState scope(&*this, dispatcher_);
    filter_manager_callbacks_.resetIdleTimer();
  
@@ -61,10 +61,10 @@ index fbf9a72c3e..05e29a8d42 100644
    StreamDecoderFilters::Iterator entry =
        commonDecodePrefix(filter, FilterIterationStartState::CanStartFromCurrent);
 diff --git a/source/common/http/filter_manager.h b/source/common/http/filter_manager.h
-index ab810d635c..5472bf001b 100644
+index 5f1b179e91..4a6ca7cb2a 100644
 --- a/source/common/http/filter_manager.h
 +++ b/source/common/http/filter_manager.h
-@@ -1094,7 +1094,12 @@ private:
+@@ -1088,7 +1088,12 @@ private:
      return request_metadata_map_vector_.get();
    }
  
@@ -79,10 +79,10 @@ index ab810d635c..5472bf001b 100644
    bool stopEncoderFilterChain() { return state_.encoder_filter_chain_aborted_; }
  
 diff --git a/test/common/http/filter_manager_test.cc b/test/common/http/filter_manager_test.cc
-index b5a9b89e34..4fd3615232 100644
+index 8cde313bf6..3fe820d5e5 100644
 --- a/test/common/http/filter_manager_test.cc
 +++ b/test/common/http/filter_manager_test.cc
-@@ -791,6 +791,191 @@ TEST_F(FilterManagerTest, IdleTimerResets) {
+@@ -757,6 +757,186 @@ TEST_F(FilterManagerTest, IdleTimerResets) {
    filter_1->decoder_callbacks_->encodeTrailers(std::move(basic_resp_trailers));
    filter_manager_->destroyFilters();
  }
@@ -94,10 +94,9 @@ index b5a9b89e34..4fd3615232 100644
 +  std::shared_ptr<MockStreamDecoderFilter> filter(new NiceMock<MockStreamDecoderFilter>());
 +
 +  EXPECT_CALL(filter_factory_, createFilterChain(_))
-+      .WillOnce(Invoke([&](FilterChainFactoryCallbacks& callbacks) -> bool {
++      .WillOnce(Invoke([&](FilterChainManager& manager) -> bool {
 +        auto factory = createDecoderFilterFactoryCb(filter);
-+        callbacks.setFilterConfigName("test_filter");
-+        factory(callbacks);
++        manager.applyFilterFactoryCb({}, factory);
 +        return true;
 +      }));
 +  filter_manager_->createDownstreamFilterChain();
@@ -129,10 +128,9 @@ index b5a9b89e34..4fd3615232 100644
 +  std::shared_ptr<MockStreamDecoderFilter> filter(new NiceMock<MockStreamDecoderFilter>());
 +
 +  EXPECT_CALL(filter_factory_, createFilterChain(_))
-+      .WillOnce(Invoke([&](FilterChainFactoryCallbacks& callbacks) -> bool {
++      .WillOnce(Invoke([&](FilterChainManager& manager) -> bool {
 +        auto factory = createDecoderFilterFactoryCb(filter);
-+        callbacks.setFilterConfigName("test_filter");
-+        factory(callbacks);
++        manager.applyFilterFactoryCb({}, factory);
 +        return true;
 +      }));
 +  filter_manager_->createDownstreamFilterChain();
@@ -159,10 +157,9 @@ index b5a9b89e34..4fd3615232 100644
 +  std::shared_ptr<MockStreamDecoderFilter> filter(new NiceMock<MockStreamDecoderFilter>());
 +
 +  EXPECT_CALL(filter_factory_, createFilterChain(_))
-+      .WillOnce(Invoke([&](FilterChainFactoryCallbacks& callbacks) -> bool {
++      .WillOnce(Invoke([&](FilterChainManager& manager) -> bool {
 +        auto factory = createDecoderFilterFactoryCb(filter);
-+        callbacks.setFilterConfigName("test_filter");
-+        factory(callbacks);
++        manager.applyFilterFactoryCb({}, factory);
 +        return true;
 +      }));
 +  filter_manager_->createDownstreamFilterChain();
@@ -197,10 +194,9 @@ index b5a9b89e34..4fd3615232 100644
 +  std::shared_ptr<MockStreamDecoderFilter> filter(new NiceMock<MockStreamDecoderFilter>());
 +
 +  EXPECT_CALL(filter_factory_, createFilterChain(_))
-+      .WillOnce(Invoke([&](FilterChainFactoryCallbacks& callbacks) -> bool {
++      .WillOnce(Invoke([&](FilterChainManager& manager) -> bool {
 +        auto factory = createDecoderFilterFactoryCb(filter);
-+        callbacks.setFilterConfigName("test_filter");
-+        factory(callbacks);
++        manager.applyFilterFactoryCb({}, factory);
 +        return true;
 +      }));
 +  filter_manager_->createDownstreamFilterChain();
@@ -232,10 +228,9 @@ index b5a9b89e34..4fd3615232 100644
 +  std::shared_ptr<MockStreamDecoderFilter> filter(new NiceMock<MockStreamDecoderFilter>());
 +
 +  EXPECT_CALL(filter_factory_, createFilterChain(_))
-+      .WillOnce(Invoke([&](FilterChainFactoryCallbacks& callbacks) -> bool {
++      .WillOnce(Invoke([&](FilterChainManager& manager) -> bool {
 +        auto factory = createDecoderFilterFactoryCb(filter);
-+        callbacks.setFilterConfigName("test_filter");
-+        factory(callbacks);
++        manager.applyFilterFactoryCb({}, factory);
 +        return true;
 +      }));
 +  filter_manager_->createDownstreamFilterChain();
