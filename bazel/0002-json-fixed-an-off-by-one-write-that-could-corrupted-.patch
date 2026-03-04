@@ -1,4 +1,4 @@
-From fe4f154dfafb531524cc1e246f7500fa79861d23 Mon Sep 17 00:00:00 2001
+From b20ebb1a139d9a035c61e62a3145ae7619d25af4 Mon Sep 17 00:00:00 2001
 From: Rohit Agrawal <rohit.agrawal@databricks.com>
 Date: Wed, 17 Dec 2025 18:44:50 +0530
 Subject: [PATCH 2/5] json: fixed an off-by-one write that could corrupted the
@@ -15,10 +15,10 @@ Signed-off-by: Ryan Northey <ryan@synca.io>
  3 files changed, 41 insertions(+), 2 deletions(-)
 
 diff --git a/changelogs/current.yaml b/changelogs/current.yaml
-index 52f53a1b4b..2d8a3e0d96 100644
+index 6e7a5af208..943943882c 100644
 --- a/changelogs/current.yaml
 +++ b/changelogs/current.yaml
-@@ -26,6 +26,10 @@ bug_fixes:
+@@ -14,6 +14,10 @@ bug_fixes:
      destroyed. This could cause use-after-free conditions when filter callbacks were invoked on filters that
      had already received ``onDestroy()``. The fix ensures that ``decodeHeaders()``, ``decodeData()``,
      ``decodeTrailers()``, and ``decodeMetadata()`` are blocked after a downstream reset.
