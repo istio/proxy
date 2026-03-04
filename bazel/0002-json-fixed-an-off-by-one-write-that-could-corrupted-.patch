@@ -1,10 +1,8 @@
-From fe4f154dfafb531524cc1e246f7500fa79861d23 Mon Sep 17 00:00:00 2001
+From 9381060cbbf410327b575c6d53a747379c7b5b06 Mon Sep 17 00:00:00 2001
 From: Rohit Agrawal <rohit.agrawal@databricks.com>
 Date: Wed, 17 Dec 2025 18:44:50 +0530
-Subject: [PATCH 2/5] json: fixed an off-by-one write that could corrupted the
+Subject: [PATCH 2/4] json: fixed an off-by-one write that could corrupted the
  string null terminator
-
-[CVE-2026-26309](https://github.com/envoyproxy/envoy/security/advisories/GHSA-56cj-wgg3-x943)
 
 Signed-off-by: Rohit Agrawal <rohit.agrawal@databricks.com>
 Signed-off-by: Ryan Northey <ryan@synca.io>
@@ -15,10 +13,10 @@ Signed-off-by: Ryan Northey <ryan@synca.io>
  3 files changed, 41 insertions(+), 2 deletions(-)
 
 diff --git a/changelogs/current.yaml b/changelogs/current.yaml
-index 52f53a1b4b..2d8a3e0d96 100644
+index 6e7a5af208..943943882c 100644
 --- a/changelogs/current.yaml
 +++ b/changelogs/current.yaml
-@@ -26,6 +26,10 @@ bug_fixes:
+@@ -14,6 +14,10 @@ bug_fixes:
      destroyed. This could cause use-after-free conditions when filter callbacks were invoked on filters that
      had already received ``onDestroy()``. The fix ensures that ``decodeHeaders()``, ``decodeData()``,
      ``decodeTrailers()``, and ``decodeMetadata()`` are blocked after a downstream reset.
@@ -49,7 +47,7 @@ index 30d2c0684d..08e6c3d740 100644
            // All other characters are added as-is.
            result[position++] = character;
 diff --git a/test/common/common/logger_test.cc b/test/common/common/logger_test.cc
-index 686e1ac0e3..c949b8bd43 100644
+index 050d6bb959..f67819459a 100644
 --- a/test/common/common/logger_test.cc
 +++ b/test/common/common/logger_test.cc
 @@ -1,3 +1,4 @@
