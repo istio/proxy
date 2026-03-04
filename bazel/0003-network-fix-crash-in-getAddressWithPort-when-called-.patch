@@ -1,0 +1,193 @@
+From 0edc01b32a4625ed8171b6fb2571848701be3e0d Mon Sep 17 00:00:00 2001
+From: Rohit Agrawal <rohit.agrawal@databricks.com>
+Date: Mon, 26 Jan 2026 09:33:06 -0800
+Subject: [PATCH 3/5] network: fix crash in getAddressWithPort() when called
+ with a scoped IPv6 address
+
+[CVE-2026-26310](https://github.com/envoyproxy/envoy/security/advisories/GHSA-3cw6-2j68-868p)
+
+Signed-off-by: Rohit Agrawal <rohit.agrawal@databricks.com>
+Signed-off-by: Ryan Northey <ryan@synca.io>
+---
+ changelogs/current.yaml                       |  3 ++
+ source/common/network/utility.cc              | 16 +++++--
+ test/common/network/utility_test.cc           | 45 ++++++++++++++++++-
+ .../filters/common/original_src/BUILD         |  2 +
+ .../original_src_socket_option_test.cc        | 34 ++++++++++++++
+ 5 files changed, 95 insertions(+), 5 deletions(-)
+
+diff --git a/changelogs/current.yaml b/changelogs/current.yaml
+index 2d8a3e0d96..cc515f23b3 100644
+--- a/changelogs/current.yaml
++++ b/changelogs/current.yaml
+@@ -30,6 +30,9 @@ bug_fixes:
+   change: |
+     Fixed an off-by-one write in ``JsonEscaper::escapeString()`` that could corrupt the string null terminator
+     when the input string ends with a control character.
++- area: network
++  change: |
++    Fixed a crash in ``Utility::getAddressWithPort`` when called with a scoped IPv6 address (e.g., ``fe80::1%eth0``).
+ 
+ removed_config_or_runtime:
+ # *Normally occurs at the end of the* :ref:`deprecation period <deprecated>`
+diff --git a/source/common/network/utility.cc b/source/common/network/utility.cc
+index 23e0b00f9e..9b203925d3 100644
+--- a/source/common/network/utility.cc
++++ b/source/common/network/utility.cc
+@@ -316,10 +316,18 @@ const std::string& Utility::getIpv6CidrCatchAllAddress() {
+ Address::InstanceConstSharedPtr Utility::getAddressWithPort(const Address::Instance& address,
+                                                             uint32_t port) {
+   switch (address.ip()->version()) {
+-  case Address::IpVersion::v4:
+-    return std::make_shared<Address::Ipv4Instance>(address.ip()->addressAsString(), port);
+-  case Address::IpVersion::v6:
+-    return std::make_shared<Address::Ipv6Instance>(address.ip()->addressAsString(), port);
++  case Address::IpVersion::v4: {
++    // Copy the sockaddr and update the port to preserve all address properties.
++    sockaddr_in addr = *reinterpret_cast<const sockaddr_in*>(address.sockAddr());
++    addr.sin_port = htons(static_cast<uint16_t>(port));
++    return std::make_shared<Address::Ipv4Instance>(&addr);
++  }
++  case Address::IpVersion::v6: {
++    // Copy the sockaddr and update the port to preserve all address properties including scope ID.
++    sockaddr_in6 addr = *reinterpret_cast<const sockaddr_in6*>(address.sockAddr());
++    addr.sin6_port = htons(static_cast<uint16_t>(port));
++    return std::make_shared<Address::Ipv6Instance>(addr, address.ip()->ipv6()->v6only());
++  }
+   }
+   PANIC("not handled");
+ }
+diff --git a/test/common/network/utility_test.cc b/test/common/network/utility_test.cc
+index 8a879cca67..e1b4c11abe 100644
+--- a/test/common/network/utility_test.cc
++++ b/test/common/network/utility_test.cc
+@@ -252,6 +252,49 @@ TEST(NetworkUtility, ParseInternetAddressAndPort) {
+   EXPECT_EQ("[::1]:0", Utility::parseInternetAddressAndPortNoThrow("[::1]:0")->asString());
+ }
+ 
++TEST(NetworkUtility, GetAddressWithPort) {
++  // Test basic IPv4.
++  auto addr_v4 = std::make_shared<Address::Ipv4Instance>("1.2.3.4", 80);
++  auto addr_v4_new_port = Utility::getAddressWithPort(*addr_v4, 8080);
++  EXPECT_EQ("1.2.3.4:8080", addr_v4_new_port->asString());
++  EXPECT_EQ(Address::IpVersion::v4, addr_v4_new_port->ip()->version());
++
++  // Test basic IPv6.
++  auto addr_v6 = std::make_shared<Address::Ipv6Instance>("::1", 80);
++  auto addr_v6_new_port = Utility::getAddressWithPort(*addr_v6, 8080);
++  EXPECT_EQ("[::1]:8080", addr_v6_new_port->asString());
++  EXPECT_EQ(Address::IpVersion::v6, addr_v6_new_port->ip()->version());
++
++  // Test IPv6 with scope ID.
++  sockaddr_in6 scoped_addr;
++  memset(&scoped_addr, 0, sizeof(scoped_addr));
++  scoped_addr.sin6_family = AF_INET6;
++  EXPECT_EQ(1, inet_pton(AF_INET6, "fe80::1", &scoped_addr.sin6_addr));
++  scoped_addr.sin6_port = htons(80);
++  scoped_addr.sin6_scope_id = 5;
++
++  auto addr_v6_scoped = std::make_shared<Address::Ipv6Instance>(scoped_addr);
++  EXPECT_EQ("[fe80::1%5]:80", addr_v6_scoped->asString());
++  EXPECT_EQ(5u, addr_v6_scoped->ip()->ipv6()->scopeId());
++
++  auto addr_v6_scoped_new_port = Utility::getAddressWithPort(*addr_v6_scoped, 8080);
++  EXPECT_EQ("[fe80::1%5]:8080", addr_v6_scoped_new_port->asString());
++  EXPECT_EQ(Address::IpVersion::v6, addr_v6_scoped_new_port->ip()->version());
++  EXPECT_EQ(5u, addr_v6_scoped_new_port->ip()->ipv6()->scopeId());
++  EXPECT_EQ(8080u, addr_v6_scoped_new_port->ip()->port());
++
++  // Verify v6only is preserved.
++  sockaddr_in6 v6only_addr;
++  memset(&v6only_addr, 0, sizeof(v6only_addr));
++  v6only_addr.sin6_family = AF_INET6;
++  EXPECT_EQ(1, inet_pton(AF_INET6, "::1", &v6only_addr.sin6_addr));
++  v6only_addr.sin6_port = htons(80);
++  auto addr_v6only_false = std::make_shared<Address::Ipv6Instance>(v6only_addr, false);
++  EXPECT_FALSE(addr_v6only_false->ip()->ipv6()->v6only());
++  auto addr_v6only_false_new_port = Utility::getAddressWithPort(*addr_v6only_false, 8080);
++  EXPECT_FALSE(addr_v6only_false_new_port->ip()->ipv6()->v6only());
++}
++
+ class NetworkUtilityGetLocalAddress : public testing::TestWithParam<Address::IpVersion> {};
+ 
+ INSTANTIATE_TEST_SUITE_P(IpVersions, NetworkUtilityGetLocalAddress,
+@@ -706,7 +749,7 @@ TEST(ResolvedUdpSocketConfig, Warning) {
+       ResolvedUdpSocketConfig resolved_config(envoy::config::core::v3::UdpSocketConfig(), true));
+ }
+ 
+-#ifndef WIN32
++#if defined(__linux__)
+ TEST(PacketLoss, LossTest) {
+   class ZeroTimeSource : public TimeSource {
+   public:
+diff --git a/test/extensions/filters/common/original_src/BUILD b/test/extensions/filters/common/original_src/BUILD
+index 87fcb34185..e8cac9cc67 100644
+--- a/test/extensions/filters/common/original_src/BUILD
++++ b/test/extensions/filters/common/original_src/BUILD
+@@ -14,7 +14,9 @@ envoy_cc_test(
+     rbe_pool = "6gig",
+     deps = [
+         "//source/common/network:address_lib",
++        "//source/common/network:utility_lib",
+         "//source/extensions/filters/common/original_src:original_src_socket_option_lib",
++        "//source/extensions/filters/common/original_src:socket_option_factory_lib",
+         "//test/mocks:common_lib",
+         "//test/mocks/network:network_mocks",
+         "//test/test_common:printers_lib",
+diff --git a/test/extensions/filters/common/original_src/original_src_socket_option_test.cc b/test/extensions/filters/common/original_src/original_src_socket_option_test.cc
+index 9db731b03c..096a9598b0 100644
+--- a/test/extensions/filters/common/original_src/original_src_socket_option_test.cc
++++ b/test/extensions/filters/common/original_src/original_src_socket_option_test.cc
+@@ -1,8 +1,10 @@
+ #include "envoy/config/core/v3/base.pb.h"
+ #include "envoy/network/address.h"
+ 
++#include "source/common/network/address_impl.h"
+ #include "source/common/network/utility.h"
+ #include "source/extensions/filters/common/original_src/original_src_socket_option.h"
++#include "source/extensions/filters/common/original_src/socket_option_factory.h"
+ 
+ #include "test/mocks/common.h"
+ #include "test/mocks/network/mocks.h"
+@@ -104,6 +106,38 @@ TEST_F(OriginalSrcSocketOptionTest, TestOptionDetailsNotSupported) {
+   EXPECT_FALSE(details.has_value());
+ }
+ 
++// Test that buildOriginalSrcOptions works with scoped IPv6 addresses.
++TEST(SocketOptionFactoryTest, BuildOriginalSrcOptionsWithScopedIpv6) {
++  // Create a scoped IPv6 address.
++  sockaddr_in6 scoped_addr;
++  memset(&scoped_addr, 0, sizeof(scoped_addr));
++  scoped_addr.sin6_family = AF_INET6;
++  EXPECT_EQ(1, inet_pton(AF_INET6, "fe80::1", &scoped_addr.sin6_addr));
++  scoped_addr.sin6_port = htons(12345);
++  scoped_addr.sin6_scope_id = 3;
++
++  auto source_address = std::make_shared<Network::Address::Ipv6Instance>(scoped_addr);
++  EXPECT_EQ("[fe80::1%3]:12345", source_address->asString());
++  EXPECT_EQ(3u, source_address->ip()->ipv6()->scopeId());
++
++  auto options = buildOriginalSrcOptions(source_address, 0);
++
++  // Verify options were created successfully.
++  EXPECT_NE(nullptr, options);
++  EXPECT_FALSE(options->empty());
++
++  // Verify the address in the socket option has port set to 0 but preserves the scope ID.
++  // The first option should be the OriginalSrcSocketOption.
++  NiceMock<Network::MockConnectionSocket> socket;
++  (*options)[0]->setOption(socket, envoy::config::core::v3::SocketOption::STATE_PREBIND);
++
++  auto local_address = socket.connection_info_provider_->localAddress();
++  EXPECT_EQ(Network::Address::IpVersion::v6, local_address->ip()->version());
++  EXPECT_EQ(0u, local_address->ip()->port());
++  EXPECT_EQ(3u, local_address->ip()->ipv6()->scopeId());
++  EXPECT_EQ("[fe80::1%3]:0", local_address->asString());
++}
++
+ } // namespace
+ } // namespace OriginalSrc
+ } // namespace Common
+-- 
+2.52.0
+

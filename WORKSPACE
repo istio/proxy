@@ -35,6 +35,14 @@ ENVOY_REPO = "envoy"
 # persist the option in `user.bazelrc`.
 http_archive(
     name = "envoy",
+    patch_args = ["-p1"],
+    patches = [
+        "@io_istio_proxy//bazel:0001-http-ensure-decode-methods-are-blocked-after-a-downs.patch",
+        "@io_istio_proxy//bazel:0002-json-fixed-an-off-by-one-write-that-could-corrupted-.patch",
+        "@io_istio_proxy//bazel:0003-network-fix-crash-in-getAddressWithPort-when-called-.patch",
+        "@io_istio_proxy//bazel:0004-fix-multivalue-header-bypass-in-rbac.patch",
+        "@io_istio_proxy//bazel:0005-ratelimit-fix-a-bug-where-response-phase-limit-may-r.patch",
+    ],
     sha256 = ENVOY_SHA256,
     strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
     url = "https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz",
