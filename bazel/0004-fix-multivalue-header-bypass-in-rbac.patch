@@ -1,0 +1,422 @@
+From 71053f83efb1931fa79b6915b08d76347a5e4452 Mon Sep 17 00:00:00 2001
+From: Boteng Yao <boteng@google.com>
+Date: Mon, 5 Jan 2026 20:31:37 +0000
+Subject: [PATCH 4/5] fix multivalue header bypass in rbac
+
+[CVE-2026-26308](https://github.com/envoyproxy/envoy/security/advisories/GHSA-ghc4-35x6-crw5)
+
+Signed-off-by: Boteng Yao <boteng@google.com>
+Signed-off-by: Ryan Northey <ryan@synca.io>
+---
+ changelogs/current.yaml                       |  5 ++
+ envoy/http/header_map.h                       |  5 ++
+ source/common/http/header_utility.h           | 33 +++++++
+ source/common/runtime/runtime_features.cc     |  1 +
+ .../filters/common/rbac/matchers.cc           | 10 +++
+ .../extensions/filters/common/rbac/matchers.h |  4 +-
+ test/common/http/header_utility_test.cc       | 90 +++++++++++++++++++
+ .../filters/common/rbac/matchers_test.cc      | 45 ++++++++++
+ .../http/rbac/rbac_filter_integration_test.cc | 76 ++++++++++++++++
+ 9 files changed, 267 insertions(+), 2 deletions(-)
+
+diff --git a/changelogs/current.yaml b/changelogs/current.yaml
+index cc515f23b3..7bc19689a4 100644
+--- a/changelogs/current.yaml
++++ b/changelogs/current.yaml
+@@ -33,6 +33,11 @@ bug_fixes:
+ - area: network
+   change: |
+     Fixed a crash in ``Utility::getAddressWithPort`` when called with a scoped IPv6 address (e.g., ``fe80::1%eth0``).
++- area: rbac
++  change: |
++    Fixed RBAC header matcher to validate each header value individually instead of concatenating multiple header values
++    into a single string. This prevents potential bypasses when requests contain multiple values for the same header.
++    The new behavior is enabled by the runtime guard ``envoy.reloadable_features.rbac_match_headers_individually``.
+ 
+ removed_config_or_runtime:
+ # *Normally occurs at the end of the* :ref:`deprecation period <deprecated>`
+diff --git a/envoy/http/header_map.h b/envoy/http/header_map.h
+index e9431a7759..331f987dd4 100644
+--- a/envoy/http/header_map.h
++++ b/envoy/http/header_map.h
+@@ -809,6 +809,11 @@ public:
+    * Check whether header matcher matches any headers in a given HeaderMap.
+    */
+   virtual bool matchesHeaders(const HeaderMap& headers) const PURE;
++
++  /**
++   * Matches headers validating each value individually.
++   */
++  virtual bool matchesHeadersIndividually(const HeaderMap& headers) const PURE;
+ };
+ 
+ using HeaderMatcherSharedPtr = std::shared_ptr<HeaderMatcher>;
+diff --git a/source/common/http/header_utility.h b/source/common/http/header_utility.h
+index 16c4d2a28c..095cb4a191 100644
+--- a/source/common/http/header_utility.h
++++ b/source/common/http/header_utility.h
+@@ -92,6 +92,10 @@ public:
+       return present_ != invert_match_;
+     };
+ 
++    bool matchesHeadersIndividually(const HeaderMap& request_headers) const override {
++      return matchesHeaders(request_headers);
++    };
++
+   private:
+     const LowerCaseString name_;
+     const bool invert_match_;
+@@ -125,6 +129,35 @@ public:
+       return specificMatchesHeaders(value) != invert_match_;
+     };
+ 
++    // Matches each header value individually.
++    bool matchesHeadersIndividually(const HeaderMap& request_headers) const override {
++      const auto header_values = request_headers.get(name_);
++
++      if (header_values.empty()) {
++        if (!treat_missing_as_empty_) {
++          return false;
++        }
++        // treat_missing_as_empty_ is true, match against empty string
++        return specificMatchesHeaders(EMPTY_STRING) != invert_match_;
++      }
++
++      // Validate each header value individually
++      for (size_t i = 0; i < header_values.size(); ++i) {
++        absl::string_view value = header_values[i]->value().getStringView();
++        bool matches = specificMatchesHeaders(value);
++        if (!invert_match_ && matches) {
++          return true;
++        }
++        if (invert_match_ && matches) {
++          return false;
++        }
++      }
++
++      // For normal match: no value matched, return false
++      // For invert_match: no value matched the pattern, return true
++      return invert_match_;
++    }
++
+   protected:
+     // A matcher specific implementation to match the given header_value.
+     virtual bool specificMatchesHeaders(absl::string_view header_value) const PURE;
+diff --git a/source/common/runtime/runtime_features.cc b/source/common/runtime/runtime_features.cc
+index fad2d92e6c..6aebd1384b 100644
+--- a/source/common/runtime/runtime_features.cc
++++ b/source/common/runtime/runtime_features.cc
+@@ -70,6 +70,7 @@ RUNTIME_GUARD(envoy_reloadable_features_quic_send_server_preferred_address_to_al
+ RUNTIME_GUARD(envoy_reloadable_features_quic_signal_headers_only_to_http1_backend);
+ RUNTIME_GUARD(envoy_reloadable_features_quic_upstream_reads_fixed_number_packets);
+ RUNTIME_GUARD(envoy_reloadable_features_quic_upstream_socket_use_address_cache_for_read);
++RUNTIME_GUARD(envoy_reloadable_features_rbac_match_headers_individually);
+ RUNTIME_GUARD(envoy_reloadable_features_reject_empty_trusted_ca_file);
+ RUNTIME_GUARD(envoy_reloadable_features_report_load_when_rq_active_is_non_zero);
+ RUNTIME_GUARD(envoy_reloadable_features_reset_ignore_upstream_reason);
+diff --git a/source/extensions/filters/common/rbac/matchers.cc b/source/extensions/filters/common/rbac/matchers.cc
+index e849a32f6d..be2d6925f9 100644
+--- a/source/extensions/filters/common/rbac/matchers.cc
++++ b/source/extensions/filters/common/rbac/matchers.cc
+@@ -5,6 +5,7 @@
+ #include "envoy/upstream/upstream.h"
+ 
+ #include "source/common/config/utility.h"
++#include "source/common/runtime/runtime_features.h"
+ #include "source/extensions/filters/common/rbac/matcher_extension.h"
+ #include "source/extensions/filters/common/rbac/principal_extension.h"
+ 
+@@ -187,9 +188,18 @@ bool NotMatcher::matches(const Network::Connection& connection,
+   return !matcher_->matches(connection, headers, info);
+ }
+ 
++HeaderMatcher::HeaderMatcher(const envoy::config::route::v3::HeaderMatcher& matcher,
++                             Server::Configuration::CommonFactoryContext& context)
++    : header_(Http::HeaderUtility::createHeaderData(matcher, context)),
++      match_headers_individually_(Runtime::runtimeFeatureEnabled(
++          "envoy.reloadable_features.rbac_match_headers_individually")) {}
++
+ bool HeaderMatcher::matches(const Network::Connection&,
+                             const Envoy::Http::RequestHeaderMap& headers,
+                             const StreamInfo::StreamInfo&) const {
++  if (match_headers_individually_) {
++    return header_->matchesHeadersIndividually(headers);
++  }
+   return header_->matchesHeaders(headers);
+ }
+ 
+diff --git a/source/extensions/filters/common/rbac/matchers.h b/source/extensions/filters/common/rbac/matchers.h
+index 079680d1ed..046091dad9 100644
+--- a/source/extensions/filters/common/rbac/matchers.h
++++ b/source/extensions/filters/common/rbac/matchers.h
+@@ -103,14 +103,14 @@ private:
+ class HeaderMatcher : public Matcher {
+ public:
+   HeaderMatcher(const envoy::config::route::v3::HeaderMatcher& matcher,
+-                Server::Configuration::CommonFactoryContext& context)
+-      : header_(Http::HeaderUtility::createHeaderData(matcher, context)) {}
++                Server::Configuration::CommonFactoryContext& context);
+ 
+   bool matches(const Network::Connection& connection, const Envoy::Http::RequestHeaderMap& headers,
+                const StreamInfo::StreamInfo&) const override;
+ 
+ private:
+   const Envoy::Http::HeaderUtility::HeaderDataPtr header_;
++  const bool match_headers_individually_;
+ };
+ 
+ /**
+diff --git a/test/common/http/header_utility_test.cc b/test/common/http/header_utility_test.cc
+index 5e8672d77d..02135ed3a0 100644
+--- a/test/common/http/header_utility_test.cc
++++ b/test/common/http/header_utility_test.cc
+@@ -237,6 +237,96 @@ string_match:
+   EXPECT_TRUE(HeaderUtility::matchHeaders(headers, header_data));
+ }
+ 
++// Tests for matchesHeadersIndividually - validates each header value individually
++TEST_F(MatchHeadersTest, MatchesHeadersIndividuallyExactMatch) {
++  // With old behavior: headers with values "true" and "false" would concatenate to "true,false"
++  // and not match "true". With new behavior, each value is checked individually.
++  TestRequestHeaderMapImpl headers{{"match-header", "true"}, {"match-header", "false"}};
++
++  const std::string yaml = R"EOF(
++name: match-header
++string_match:
++  exact: "true"
++  )EOF";
++
++  auto matcher = HeaderUtility::createHeaderData(parseHeaderMatcherFromYaml(yaml), context_);
++
++  EXPECT_FALSE(matcher->matchesHeaders(headers));
++  EXPECT_TRUE(matcher->matchesHeadersIndividually(headers));
++}
++
++// Test the invert_match case - if ANY value matches, the inverted result is false
++TEST_F(MatchHeadersTest, MatchesHeadersIndividuallyExactMatchInvert) {
++  TestRequestHeaderMapImpl headers{{"match-header", "true"}, {"match-header", "other"}};
++
++  const std::string yaml = R"EOF(
++name: match-header
++string_match:
++  exact: "true"
++invert_match: true
++  )EOF";
++
++  auto matcher = HeaderUtility::createHeaderData(parseHeaderMatcherFromYaml(yaml), context_);
++
++  EXPECT_FALSE(matcher->matchesHeadersIndividually(headers));
++}
++
++// Test no values match
++TEST_F(MatchHeadersTest, MatchesHeadersIndividuallyNoMatch) {
++  TestRequestHeaderMapImpl headers{{"match-header", "foo"}, {"match-header", "bar"}};
++
++  const std::string yaml = R"EOF(
++name: match-header
++string_match:
++  exact: "true"
++  )EOF";
++
++  auto matcher = HeaderUtility::createHeaderData(parseHeaderMatcherFromYaml(yaml), context_);
++
++  EXPECT_FALSE(matcher->matchesHeadersIndividually(headers));
++}
++
++// Test single value matches
++TEST_F(MatchHeadersTest, MatchesHeadersIndividuallySingleValue) {
++  TestRequestHeaderMapImpl headers{{"match-header", "true"}};
++
++  const std::string yaml = R"EOF(
++name: match-header
++string_match:
++  exact: "true"
++  )EOF";
++
++  auto matcher = HeaderUtility::createHeaderData(parseHeaderMatcherFromYaml(yaml), context_);
++
++  EXPECT_TRUE(matcher->matchesHeaders(headers));
++  EXPECT_TRUE(matcher->matchesHeadersIndividually(headers));
++}
++
++// matchesHeadersIndividually on HeaderDataPresentMatch delegates to matchesHeaders.
++TEST_F(MatchHeadersTest, MatchesHeadersIndividuallyPresentMatch) {
++  TestRequestHeaderMapImpl present{{"match-header", "val"}};
++  TestRequestHeaderMapImpl absent{{"other-header", "val"}};
++
++  auto make = [&](const std::string& yaml) {
++    return HeaderUtility::createHeaderData(parseHeaderMatcherFromYaml(yaml), context_);
++  };
++
++  // present_match: true
++  auto matcher = make("name: match-header\npresent_match: true");
++  EXPECT_TRUE(matcher->matchesHeadersIndividually(present));
++  EXPECT_FALSE(matcher->matchesHeadersIndividually(absent));
++
++  // present_match: true, invert_match: true
++  matcher = make("name: match-header\npresent_match: true\ninvert_match: true");
++  EXPECT_FALSE(matcher->matchesHeadersIndividually(present));
++  EXPECT_TRUE(matcher->matchesHeadersIndividually(absent));
++
++  // present_match: true, treat_missing_header_as_empty: true — always matches.
++  matcher = make("name: match-header\npresent_match: true\ntreat_missing_header_as_empty: true");
++  EXPECT_TRUE(matcher->matchesHeadersIndividually(present));
++  EXPECT_TRUE(matcher->matchesHeadersIndividually(absent));
++}
++
+ TEST_F(MatchHeadersTest, MustMatchAllHeaderData) {
+   TestRequestHeaderMapImpl matching_headers_1{{"match-header-A", "1"}, {"match-header-B", "2"}};
+   TestRequestHeaderMapImpl matching_headers_2{
+diff --git a/test/extensions/filters/common/rbac/matchers_test.cc b/test/extensions/filters/common/rbac/matchers_test.cc
+index e5468f868d..0dc26758d2 100644
+--- a/test/extensions/filters/common/rbac/matchers_test.cc
++++ b/test/extensions/filters/common/rbac/matchers_test.cc
+@@ -1013,6 +1013,51 @@ TEST(HeaderMatcher, MultipleHeaderValues) {
+   checkMatcher(matcher5, true, Envoy::Network::MockConnection(), headers);
+ }
+ 
++TEST(HeaderMatcher, TreatMissingAsEmpty) {
++  NiceMock<Server::Configuration::MockServerFactoryContext> factory_context;
++  envoy::config::route::v3::HeaderMatcher config;
++  config.set_name("optional-header");
++  config.set_treat_missing_header_as_empty(true);
++
++  Envoy::Http::TestRequestHeaderMapImpl headers;
++  Envoy::Http::LowerCaseString header_name("optional-header");
++
++  // Missing header with exact empty string match should succeed
++  config.mutable_string_match()->set_exact("");
++  RBAC::HeaderMatcher matcher1(config, factory_context);
++  checkMatcher(matcher1, true, Envoy::Network::MockConnection(), headers);
++
++  // Missing header with non-empty exact match should fail
++  config.mutable_string_match()->set_exact("some-value");
++  RBAC::HeaderMatcher matcher2(config, factory_context);
++  checkMatcher(matcher2, false, Envoy::Network::MockConnection(), headers);
++
++  // Missing header with prefix match on empty prefix should succeed
++  config.mutable_string_match()->set_prefix("");
++  RBAC::HeaderMatcher matcher3(config, factory_context);
++  checkMatcher(matcher3, true, Envoy::Network::MockConnection(), headers);
++
++  // Missing header with non-empty prefix should fail
++  config.mutable_string_match()->set_prefix("pre");
++  RBAC::HeaderMatcher matcher4(config, factory_context);
++  checkMatcher(matcher4, false, Envoy::Network::MockConnection(), headers);
++
++  // Header present with matching value should still work
++  headers.setReference(header_name, "some-value");
++  config.mutable_string_match()->set_exact("some-value");
++  RBAC::HeaderMatcher matcher5(config, factory_context);
++  checkMatcher(matcher5, true, Envoy::Network::MockConnection(), headers);
++
++  // With invert_match=true, missing header treated as empty should match
++  // when the pattern doesn't match empty string
++  headers.remove(header_name);
++  config.set_invert_match(true);
++  config.mutable_string_match()->set_exact("non-empty-value");
++  RBAC::HeaderMatcher matcher6(config, factory_context);
++  // Empty string doesn't match "non-empty-value", and invert_match=true, so should return true
++  checkMatcher(matcher6, true, Envoy::Network::MockConnection(), headers);
++}
++
+ TEST(AuthenticatedMatcher, EmptyCertificateFields) {
+   Envoy::Network::MockConnection conn;
+   auto ssl = std::make_shared<Ssl::MockConnectionInfo>();
+diff --git a/test/extensions/filters/http/rbac/rbac_filter_integration_test.cc b/test/extensions/filters/http/rbac/rbac_filter_integration_test.cc
+index 9cf8df7c3d..cfd238e0a8 100644
+--- a/test/extensions/filters/http/rbac/rbac_filter_integration_test.cc
++++ b/test/extensions/filters/http/rbac/rbac_filter_integration_test.cc
+@@ -42,6 +42,23 @@ typed_config:
+           - any: true
+ )EOF";
+ 
++const std::string RBAC_CONFIG_WITH_CUSTOM_HEADER_DENY = R"EOF(
++name: rbac
++typed_config:
++  "@type": type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBAC
++  rules:
++    action: DENY
++    policies:
++      "deny policy":
++        permissions:
++          - header:
++              name: "x-internal"
++              string_match:
++                exact: "true"
++        principals:
++          - any: true
++)EOF";
++
+ const std::string FILTER_STATE_SETTER_CONFIG = R"EOF(
+ name: test-filter-state-setter
+ typed_config:
+@@ -735,6 +752,65 @@ TEST_P(RBACIntegrationTest, DeniedWithDenyAction) {
+               testing::HasSubstr("rbac_access_denied_matched_policy[deny_policy]"));
+ }
+ 
++// Test that RBAC cannot be bypassed by sending duplicate headers.
++TEST_P(RBACIntegrationTest, MultiValueHeaderBypassPrevented) {
++  useAccessLog("%RESPONSE_CODE_DETAILS%");
++  config_helper_.addRuntimeOverride("envoy.reloadable_features.rbac_match_headers_individually",
++                                    "true");
++  config_helper_.prependFilter(RBAC_CONFIG_WITH_CUSTOM_HEADER_DENY);
++  initialize();
++
++  codec_client_ = makeHttpConnection(lookupPort("http"));
++
++  // Create headers with duplicate x-internal values
++  Http::TestRequestHeaderMapImpl headers{
++      {":method", "GET"},
++      {":path", "/"},
++      {":scheme", "http"},
++      {":authority", "sni.lyft.com"},
++      {"x-forwarded-for", "10.0.0.1"},
++      {"x-internal", "true"},
++  };
++  headers.addCopy(Http::LowerCaseString("x-internal"), "other");
++
++  auto response = codec_client_->makeRequestWithBody(headers, 1024);
++  ASSERT_TRUE(response->waitForEndStream());
++  ASSERT_TRUE(response->complete());
++  // With the fix, one of the values is "true" so request should be denied.
++  EXPECT_EQ("403", response->headers().getStatusValue());
++  EXPECT_THAT(waitForAccessLog(access_log_name_),
++              testing::HasSubstr("rbac_access_denied_matched_policy[deny_policy]"));
++}
++
++// Test that duplicate headers bypass RBAC when individual matching is disabled (old behavior).
++TEST_P(RBACIntegrationTest, MultiValueHeaderConcatenatedMatchAllowsBypass) {
++  config_helper_.addRuntimeOverride("envoy.reloadable_features.rbac_match_headers_individually",
++                                    "false");
++  config_helper_.prependFilter(RBAC_CONFIG_WITH_CUSTOM_HEADER_DENY);
++  initialize();
++
++  codec_client_ = makeHttpConnection(lookupPort("http"));
++
++  // Create headers with duplicate x-internal values
++  Http::TestRequestHeaderMapImpl headers{
++      {":method", "GET"},
++      {":path", "/"},
++      {":scheme", "http"},
++      {":authority", "sni.lyft.com"},
++      {"x-forwarded-for", "10.0.0.1"},
++      {"x-internal", "true"},
++  };
++  headers.addCopy(Http::LowerCaseString("x-internal"), "other");
++
++  auto response = codec_client_->makeRequestWithBody(headers, 1024);
++  waitForNextUpstreamRequest();
++  upstream_request_->encodeHeaders(Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
++
++  ASSERT_TRUE(response->waitForEndStream());
++  ASSERT_TRUE(response->complete());
++  EXPECT_EQ("200", response->headers().getStatusValue());
++}
++
+ TEST_P(RBACIntegrationTest, RouteMetadataMatcherAllow) {
+   config_helper_.prependFilter(RBAC_CONFIG_WITH_SOURCED_METADATA_ROUTE);
+   // Set route metadata
+-- 
+2.52.0
+
