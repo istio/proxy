@@ -22,10 +22,10 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
-# Commit date: 2026-03-02
-ENVOY_SHA = "ee803ff4fd6e90f05348136bdff766fe509d59d3"
+# Commit date: 2026-03-04
+ENVOY_SHA = "819c94cb126f192a3e228ccd2ebca84276db4a93"
 
-ENVOY_SHA256 = "5bf110dcbe91c0ffc6babfe79cf6a20b0fdf2116f9eec9ffcd0af6554e404b13"
+ENVOY_SHA256 = "7d9ebab80d5b65b49715f749dfd4f97bbf04a949a9b33573b2cb918fdb1534a3"
 
 ENVOY_ORG = "envoyproxy"
 
