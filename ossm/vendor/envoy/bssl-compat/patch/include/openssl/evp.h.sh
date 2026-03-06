@@ -29,6 +29,8 @@ uncomment.sh "$1" --comment -h \
   --uncomment-func-decl EVP_PKEY_CTX_set_rsa_mgf1_md \
   --uncomment-regex 'BORINGSSL_MAKE_DELETER(EVP_PKEY,' \
   --uncomment-regex 'BORINGSSL_MAKE_UP_REF(EVP_PKEY,' \
+  --uncomment-func-decl EVP_PKEY_CTX_free \
+  --uncomment-regex 'BORINGSSL_MAKE_DELETER(EVP_PKEY_CTX,' \
   --uncomment-func-decl EVP_PKEY_size \
   --uncomment-func-decl EVP_SignInit_ex \
   --uncomment-func-decl EVP_SignUpdate \
