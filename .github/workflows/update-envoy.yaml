@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         branch: [release-1.24, release-1.26, release-1.27, release-1.28]
 
