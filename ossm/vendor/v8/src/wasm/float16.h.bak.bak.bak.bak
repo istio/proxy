@@ -6,7 +6,7 @@
 #define V8_WASM_FLOAT16_H_
 
 #include "src/base/memory.h"
-#include "fp16.h"
+#include "third_party/fp16/src/include/fp16.h"
 
 namespace v8 {
 namespace internal {

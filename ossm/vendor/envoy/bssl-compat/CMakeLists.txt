@@ -455,6 +455,7 @@ target_add_bssl_function(bssl-compat
   EVP_PKEY_assign_EC_KEY
   EVP_PKEY_assign_RSA
   EVP_PKEY_cmp
+  EVP_PKEY_CTX_free
   EVP_PKEY_CTX_set_rsa_mgf1_md
   EVP_PKEY_CTX_set_rsa_padding
   EVP_PKEY_free
