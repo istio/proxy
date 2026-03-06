@@ -6,6 +6,7 @@
 // bootstrap/server.yaml.tmpl
 // bootstrap/stats.yaml.tmpl
 // bootstrap/stats_expiry.yaml.tmpl
+// listener/baggage_peer_metadata.yaml.tmpl
 // listener/client.yaml.tmpl
 // listener/client_passthrough.yaml.tmpl
 // listener/internal_outbound.yaml.tmpl
@@ -532,6 +533,52 @@ func bootstrapStats_expiryYamlTmpl() (*asset, error) {
 	return a, nil
 }
 
+var _listenerBaggage_peer_metadataYamlTmpl = []byte(`name: internal_outbound
+use_original_dst: false
+internal_listener: {}
+listener_filters:
+- name: set_dst_address
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/envoy.extensions.filters.listener.original_dst.v3.OriginalDst
+filter_chains:
+- filters:
+  - name: envoy.filters.network.peer_metadata
+    typed_config:
+      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+      type_url: type.googleapis.com/envoy.extensions.network_filters.peer_metadata.Config
+      value:
+        baggage_key: "io.istio.baggage"
+  - name: connect_originate
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+      stat_prefix: connect_originate
+      cluster: original_dst
+      tunneling_config:
+        hostname: "%DOWNSTREAM_LOCAL_ADDRESS%"
+        propagate_response_headers: true
+        headers_to_add:
+        - header:
+            key: "baggage"
+            value: "%FILTER_STATE(io.istio.baggage:PLAIN)%"
+          append_action: OVERWRITE_IF_EXISTS_OR_ADD
+`)
+
+func listenerBaggage_peer_metadataYamlTmplBytes() ([]byte, error) {
+	return _listenerBaggage_peer_metadataYamlTmpl, nil
+}
+
+func listenerBaggage_peer_metadataYamlTmpl() (*asset, error) {
+	bytes, err := listenerBaggage_peer_metadataYamlTmplBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "listener/baggage_peer_metadata.yaml.tmpl", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 var _listenerClientYamlTmpl = []byte(`{{- if ne .Vars.ClientListeners "" }}
 {{ .Vars.ClientListeners }}
 {{- else }}
@@ -980,6 +1027,12 @@ filter_chains:
                 text_format_source:
                   inline_string: "%DOWNSTREAM_LOCAL_URI_SAN%"
               shared_with_upstream: ONCE
+            - object_key: io.istio.baggage
+              factory_key: envoy.string
+              format_string:
+                text_format_source:
+                  inline_string: "%REQ(baggage)%"
+              shared_with_upstream: ONCE
       {{ end }}
       - name: peer_metadata
         typed_config:
@@ -988,6 +1041,8 @@ filter_chains:
           value:
             downstream_discovery:
             - workload_discovery: {}
+            downstream_propagation:
+            - baggage: {}
             shared_with_upstream: true
       - name: envoy.filters.http.router
         typed_config:
@@ -1116,6 +1171,7 @@ var _bindata = map[string]func() (*asset, error){
 	"bootstrap/server.yaml.tmpl":                             bootstrapServerYamlTmpl,
 	"bootstrap/stats.yaml.tmpl":                              bootstrapStatsYamlTmpl,
 	"bootstrap/stats_expiry.yaml.tmpl":                       bootstrapStats_expiryYamlTmpl,
+	"listener/baggage_peer_metadata.yaml.tmpl":               listenerBaggage_peer_metadataYamlTmpl,
 	"listener/client.yaml.tmpl":                              listenerClientYamlTmpl,
 	"listener/client_passthrough.yaml.tmpl":                  listenerClient_passthroughYamlTmpl,
 	"listener/internal_outbound.yaml.tmpl":                   listenerInternal_outboundYamlTmpl,
@@ -1177,15 +1233,16 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		"stats_expiry.yaml.tmpl":                       &bintree{bootstrapStats_expiryYamlTmpl, map[string]*bintree{}},
 	}},
 	"listener": &bintree{nil, map[string]*bintree{
-		"client.yaml.tmpl":              &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
-		"client_passthrough.yaml.tmpl":  &bintree{listenerClient_passthroughYamlTmpl, map[string]*bintree{}},
-		"internal_outbound.yaml.tmpl":   &bintree{listenerInternal_outboundYamlTmpl, map[string]*bintree{}},
-		"server.yaml.tmpl":              &bintree{listenerServerYamlTmpl, map[string]*bintree{}},
-		"tcp_client.yaml.tmpl":          &bintree{listenerTcp_clientYamlTmpl, map[string]*bintree{}},
-		"tcp_passthrough.yaml.tmpl":     &bintree{listenerTcp_passthroughYamlTmpl, map[string]*bintree{}},
-		"tcp_server.yaml.tmpl":          &bintree{listenerTcp_serverYamlTmpl, map[string]*bintree{}},
-		"tcp_waypoint_server.yaml.tmpl": &bintree{listenerTcp_waypoint_serverYamlTmpl, map[string]*bintree{}},
-		"terminate_connect.yaml.tmpl":   &bintree{listenerTerminate_connectYamlTmpl, map[string]*bintree{}},
+		"baggage_peer_metadata.yaml.tmpl": &bintree{listenerBaggage_peer_metadataYamlTmpl, map[string]*bintree{}},
+		"client.yaml.tmpl":                &bintree{listenerClientYamlTmpl, map[string]*bintree{}},
+		"client_passthrough.yaml.tmpl":    &bintree{listenerClient_passthroughYamlTmpl, map[string]*bintree{}},
+		"internal_outbound.yaml.tmpl":     &bintree{listenerInternal_outboundYamlTmpl, map[string]*bintree{}},
+		"server.yaml.tmpl":                &bintree{listenerServerYamlTmpl, map[string]*bintree{}},
+		"tcp_client.yaml.tmpl":            &bintree{listenerTcp_clientYamlTmpl, map[string]*bintree{}},
+		"tcp_passthrough.yaml.tmpl":       &bintree{listenerTcp_passthroughYamlTmpl, map[string]*bintree{}},
+		"tcp_server.yaml.tmpl":            &bintree{listenerTcp_serverYamlTmpl, map[string]*bintree{}},
+		"tcp_waypoint_server.yaml.tmpl":   &bintree{listenerTcp_waypoint_serverYamlTmpl, map[string]*bintree{}},
+		"terminate_connect.yaml.tmpl":     &bintree{listenerTerminate_connectYamlTmpl, map[string]*bintree{}},
 	}},
 }}
 
