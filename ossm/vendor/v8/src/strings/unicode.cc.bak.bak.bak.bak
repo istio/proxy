@@ -21,7 +21,7 @@
 #include "unicode/uchar.h"
 #endif
 
-#include "third_party/simdutf/simdutf.h"
+#include "simdutf.h"
 
 namespace unibrow {
 

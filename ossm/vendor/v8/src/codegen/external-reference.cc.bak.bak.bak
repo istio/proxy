@@ -43,7 +43,7 @@
 #include "src/regexp/regexp-stack.h"
 #include "src/strings/string-search.h"
 #include "src/strings/unicode-inl.h"
-#include "third_party/fp16/src/include/fp16.h"
+#include "fp16.h"
 
 #if V8_ENABLE_WEBASSEMBLY
 #include "src/wasm/wasm-external-refs.h"

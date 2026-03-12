@@ -10,7 +10,7 @@
 
 #include "src/base/logging.h"
 #include "src/utils/utils.h"
-#include "third_party/simdutf/simdutf.h"
+#include "simdutf.h"
 
 namespace unibrow {
 
