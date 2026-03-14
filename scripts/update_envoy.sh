@@ -46,7 +46,7 @@ DATE=$(echo "${DATE/\"/}" | cut -d'T' -f1)
 
 # Get ENVOY_SHA256
 URL="https://github.com/${ENVOY_ORG}/${ENVOY_REPO}/archive/${LATEST_SHA}.tar.gz"
-GETSHA=$(wget "${URL}" && sha256sum "${LATEST_SHA}".tar.gz | awk '{ print $1 }')
+GETSHA=$(wget -q "${URL}" && sha256sum "${LATEST_SHA}".tar.gz | awk '{ print $1 }')
 SHAArr=("${GETSHA}")
 SHA256=${SHAArr[0]}
 rm "${LATEST_SHA}".tar.gz
