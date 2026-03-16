@@ -31,7 +31,11 @@ config_setting(
 )
 
 ISTIO_EXTENSIONS = [
-    "//source/extensions/common/workload_discovery:api_lib",  # Experimental: WIP
+    # TODO(krinkinmu): drop this extension once upstream Envoy hashable string
+    # is available in all Istio releases we support, so that we can migrate to
+    # envoy hashable string instead of using custom Envoy implementation.
+    "//source/extensions/common/hashable_string",
+    "//source/extensions/common/workload_discovery:api_lib",
     "//source/extensions/filters/http/alpn:config_lib",
     "//source/extensions/filters/http/istio_stats",
     "//source/extensions/filters/http/peer_metadata:filter_lib",
