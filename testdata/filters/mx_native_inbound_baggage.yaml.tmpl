@@ -1,0 +1,14 @@
+- name: mx_inbound{{.N}}
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/io.istio.http.peer_metadata.Config
+    value:
+      downstream_discovery:
+      - baggage: {}
+      downstream_propagation:
+      - baggage: {}
+      shared_with_upstream: true
+- name: stats_inbound{{.N}}
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/stats.PluginConfig
