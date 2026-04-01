@@ -23,9 +23,9 @@
 #include "src/objects/string-inl.h"
 #include "src/strings/char-predicates-inl.h"
 #include "src/utils/allocation.h"
-#include "third_party/dragonbox/src/include/dragonbox/dragonbox.h"
-#include "third_party/fast_float/src/include/fast_float/fast_float.h"
-#include "third_party/fast_float/src/include/fast_float/float_common.h"
+#include "dragonbox/dragonbox.h"
+#include "fast_float/fast_float.h"
+#include "fast_float/float_common.h"
 
 #if defined(_STLP_VENDOR_CSTD)
 // STLPort doesn't import fpclassify into the std namespace.
