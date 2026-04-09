@@ -14,7 +14,7 @@
 #include "src/handles/handles.h"
 #include "src/utils/boxed-float.h"
 #include "src/wasm/value-type.h"
-#include "third_party/fp16/src/include/fp16.h"
+#include "fp16.h"
 
 namespace v8 {
 namespace internal {
