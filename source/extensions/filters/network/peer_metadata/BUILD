@@ -67,7 +67,7 @@ envoy_cc_test(
     repository = "@envoy",
     deps = [
         ":peer_metadata",
-        "@abseil-cpp//absl/strings",
+        "@com_google_absl//absl/strings",
         "@envoy//envoy/router:string_accessor_interface",
         "@envoy//test/mocks/local_info:local_info_mocks",
         "@envoy//test/mocks/network:network_mocks",
