@@ -103,9 +103,7 @@ if [ -n "${DST}" ]; then
   R2_EXISTS=0
   AWS_ACCESS_KEY_ID="$CF_ACCESS_KEY_ID" \
     AWS_SECRET_ACCESS_KEY="$CF_ACCESS_KEY_SECRET" \
-    aws s3api head-object \
-    --bucket "$(echo "${R2_DST}" | sed 's|s3://\([^/]*\).*|\1|')" \
-    --key "$(echo "${R2_DST}" | sed 's|s3://[^/]*/||')/${BINARY_NAME}" \
+    aws s3 ls "${R2_DST}/${BINARY_NAME}" \
     --endpoint-url "${R2_ENDPOINT}" && R2_EXISTS=1
 
   if [ "${GCS_EXISTS}" -eq 1 ] && [ "${R2_EXISTS}" -eq 1 ]; then
