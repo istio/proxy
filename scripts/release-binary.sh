@@ -175,13 +175,16 @@ do
     gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DWP_NAME}" "${DST}/"
 
     R2_DST="${DST/gs:\/\//s3:\/\/}"
-    R2_ENDPOINT="https://${CF_ACCOUNT_ID}.r2.cloudflarestorage.com"
+    ENDPOINT="$(echo "${CF_CREDENTIALS}" | jq -r '.endpoint' | tr -d '\n')"
+
+    AWS_ACCESS_KEY_ID="$(echo "${CF_CREDENTIALS}" | jq -r '.access_key' | tr -d '\n')"
+    AWS_SECRET_ACCESS_KEY="$(echo "${CF_CREDENTIALS}" | jq -r '.secret_key' | tr -d '\n')"
+    AWS_REGION="$(echo "${CF_CREDENTIALS}" | jq -r '.region' | tr -d '\n')"
+    AWS_SESSION_TOKEN="$(echo "${CF_CREDENTIALS}" | jq -r '.session_token' | tr -d '\n')"
+    export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION AWS_SESSION_TOKEN
     for f in "${BINARY_NAME}" "${SHA256_NAME}" "${DWP_NAME}"; do
       echo "Copying $(basename "${f}") to R2"
-      AWS_ACCESS_KEY_ID="$CF_ACCESS_KEY_ID" \
-        AWS_SECRET_ACCESS_KEY="$CF_ACCESS_KEY_SECRET" \
-        aws s3 cp "${f}" "${R2_DST}/$(basename "${f}")" \
-        --endpoint-url "${R2_ENDPOINT}"
+      aws s3 cp "${f}" "${R2_DST}/$(basename "${f}")" --endpoint-url "${ENDPOINT}"
     done
   fi
 done
