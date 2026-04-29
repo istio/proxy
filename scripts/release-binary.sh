@@ -16,7 +16,8 @@
 #
 ################################################################################
 #
-set -ex
+set -e
+set +x
 
 # Use clang for the release builds.
 export PATH=/usr/lib/llvm/bin:$PATH
