@@ -15,4 +15,9 @@
 # limitations under the License.
 #
 
+common --enable_bzlmod
+
+build --cxxopt=-std=c++17
+build --host_cxxopt=-std=c++17
+
 try-import %workspace%/user.bazelrc

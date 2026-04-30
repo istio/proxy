@@ -563,7 +563,13 @@ def _com_github_nghttp2_nghttp2():
         # This patch cannot be picked up due to ABI rules. Discussion at;
         # https://github.com/nghttp2/nghttp2/pull/1395
         # https://github.com/envoyproxy/envoy/pull/8572#discussion_r334067786
-        patches = ["@envoy//bazel/foreign_cc:nghttp2.patch"],
+        patches = [
+            "@envoy//bazel/foreign_cc:nghttp2.patch",
+            "@envoy//bazel/foreign_cc:nghttp2-CVE-2026-27135_part1.diff",
+            "@envoy//bazel/foreign_cc:nghttp2-CVE-2026-27135_part2.diff",
+            "@envoy//bazel/foreign_cc:nghttp2-CVE-2026-27135_part3.diff",
+            "@envoy//bazel/foreign_cc:nghttp2-CVE-2026-27135_part4.diff",
+        ],
     )
     native.bind(
         name = "nghttp2",
@@ -607,11 +613,7 @@ def _com_github_skyapm_cpp2sky():
         patches = ["@envoy//bazel:com_github_skyapm_cpp2sky.patch"],
         patch_args = ["-p1"],
     )
-    external_http_archive(
-        name = "skywalking_data_collect_protocol",
-        patches = ["@envoy//bazel:skywalking_data_collect_protocol.patch"],
-        patch_args = ["-p1"],
-    )
+    external_http_archive("skywalking_data_collect_protocol")
 
 def _com_github_nlohmann_json():
     external_http_archive(

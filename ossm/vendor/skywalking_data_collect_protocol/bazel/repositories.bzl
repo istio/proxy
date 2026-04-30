@@ -18,24 +18,18 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def skywalking_data_collect_protocol_dependencies():
-  rules_proto()
-  com_github_grpc_grpc()
+    if "com_github_grpc_grpc" not in native.existing_rules():
+        http_archive(
+            name = "com_github_grpc_grpc",
+            sha256 = "7bf97c11cf3808d650a3a025bbf9c5f922c844a590826285067765dfd055d228",
+            urls = ["https://github.com/grpc/grpc/archive/refs/tags/v1.74.1.tar.gz"],
+            strip_prefix = "grpc-1.74.1",
+        )
 
-def com_github_grpc_grpc():
-  http_archive(
-    name = "com_github_grpc_grpc",
-    sha256 = "3ccc4e5ae8c1ce844456e39cc11f1c991a7da74396faabe83d779836ef449bce",
-    urls = ["https://github.com/grpc/grpc/archive/v1.27.0.tar.gz"],
-    strip_prefix = "grpc-1.27.0",
-  )
-
-def rules_proto():
-  http_archive(
-    name = "rules_proto",
-    sha256 = "602e7161d9195e50246177e7c55b2f39950a9cf7366f74ed5f22fd45750cd208",
-    strip_prefix = "rules_proto-97d8af4dc474595af3900dd85cb3a29ad28cc313",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/97d8af4dc474595af3900dd85cb3a29ad28cc313.tar.gz",
-        "https://github.com/bazelbuild/rules_proto/archive/97d8af4dc474595af3900dd85cb3a29ad28cc313.tar.gz",
-    ],
-  )
+    if "com_google_protobuf" not in native.existing_rules():
+        http_archive(
+            name = "com_google_protobuf",
+            sha256 = "3ad017543e502ffaa9cd1f4bd4fe96cf117ce7175970f191705fa0518aff80cd",
+            urls = ["https://github.com/google/protobuf/archive/refs/tags/v32.0.tar.gz"],
+            strip_prefix = "protobuf-32.0",
+        )

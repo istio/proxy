@@ -96,13 +96,17 @@ message ZTunnelAttachmentEnvironment {
     // the real destination ip address of the connection
     string real_destination_ip = 1;
     // how the environment detected
+    // if detect by inbound, then the real destination ip is empty
     ZTunnelAttachmentEnvironmentDetectBy by = 2;
     // the security policy of the ztunnel communicate with upstream
     ZTunnelAttachmentSecurityPolicy security_policy = 3;
+    // additional arguments
+    repeated KeyStringValuePair addition = 4;
 }
 
 enum ZTunnelAttachmentEnvironmentDetectBy {
     ZTUNNEL_OUTBOUND_FUNC = 0;
+    ZTUNNEL_INBOUND_FUNC = 1;
 }
 
 enum ZTunnelAttachmentSecurityPolicy {

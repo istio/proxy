@@ -219,6 +219,8 @@ enum SpanLayer {
     Cache = 5;
     // A FAAS layer, used in function-as-a-Service platform.
     FAAS = 6;
+    // A GenAI layer, used in Generative AI services.
+    GenAI = 7;
 }
 
 // The segment collections for trace report in batch and sync mode.

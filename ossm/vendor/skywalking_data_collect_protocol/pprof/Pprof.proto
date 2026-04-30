@@ -1,0 +1,77 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+syntax = "proto3";
+package skywalking.v10;
+
+option java_multiple_files = true;
+option java_package = "org.apache.skywalking.apm.network.pprof.v10";
+option csharp_namespace = "SkyWalking.NetworkProtocol.V10";
+option go_package = "skywalking.apache.org/repo/goapi/collect/pprof/v10";
+
+import "common/Command.proto";
+
+service PprofTask {
+  // collect pprof data to the OAP server.
+  rpc collect (stream PprofData) returns (stream PprofCollectionResponse);
+  // getPprofTaskCommands sends query to the OAP server for all pprof tasks to be executed for the given Go Agent instance
+  rpc getPprofTaskCommands (PprofTaskCommandQuery) returns (skywalking.v3.Commands);
+}
+
+message PprofData {
+  // metaData of the pprof task and its result data, only sent in the first request.
+  PprofMetaData metadata = 1;
+  oneof result {
+    string errorMessage = 2;
+    // pprof binary content
+    bytes content = 3;
+  }
+}
+
+enum PprofProfilingStatus {
+  // PROFILING_SUCCESS indicates the Go Agent has finished the execution
+  PPROF_PROFILING_SUCCESS = 0;
+  // EXECUTION_TASK_ERROR indicates a potential execution error caused by the Go Agent, such as an error in the task parameters that were sent.
+  PPROF_EXECUTION_TASK_ERROR = 1;
+  // TERMINATED_BY_OVERSIZE means that the server cannot receive the pprof file because the size of the file is over the limitation.
+  PPROF_TERMINATED_BY_OVERSIZE = 2;
+}
+
+message PprofCollectionResponse {
+  PprofProfilingStatus status = 1;
+}
+
+message PprofMetaData {
+  string service = 1;
+  string serviceInstance = 2;
+  // pprof task id
+  string taskId = 3;
+  // PprofProfilingStatus indicates the overall status of the pprof task, i.e. success or failure
+  PprofProfilingStatus type = 4;
+  // if type is success then it will be the size of the pprof file, otherwise it will be 0
+  int32 contentSize = 5;
+}
+
+message PprofTaskCommandQuery {
+  // service name of the Go process
+  string service = 1;
+  string serviceInstance = 2;
+
+  // lastCommandTime is the timestamp of the last pprof task received
+  int64 lastCommandTime = 3;
+}

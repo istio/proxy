@@ -15,16 +15,11 @@
 # limitations under the License.
 #
 
-load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
-
-package(default_visibility = ["//visibility:public"])
-
-licenses(["notice"])  # Apache 2
-
-proto_library(
-    name = "common_protocol_proto_lib",
-    srcs = [
-        "Command.proto",
-        "Common.proto",
-    ],
+module(
+    name = "skywalking-data-collect-protocol",
+    version = "10.2.1-dev",
+    repo_name = "skywalking_data_collect_protocol",
 )
+
+bazel_dep(name = "grpc", version = "1.74.1", repo_name = "com_github_grpc_grpc")
+bazel_dep(name = "protobuf", version = "32.0", repo_name = "com_google_protobuf")

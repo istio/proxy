@@ -36,7 +36,9 @@ service ProfileTask {
     // collect dumped thread snapshot
     rpc collectSnapshot (stream ThreadSnapshot) returns (Commands) {
     }
-
+    // collect bytes profile data from go agent
+    rpc goProfileReport (stream GoProfileData) returns (Commands) {
+    }
     // report profiling task finished
     rpc reportTaskFinish (ProfileTaskFinishReport) returns (Commands) {
     }
@@ -79,4 +81,13 @@ message ProfileTaskFinishReport {
 
     // profile task
     string taskId = 3;
+}
+
+// profile for go agent
+message GoProfileData{
+    string taskId = 1;
+    // the truly profile data
+    bytes payload = 2;
+    // check last part true or false
+    bool isLast = 3;
 }
