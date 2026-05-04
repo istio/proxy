@@ -40,7 +40,7 @@ envoy_cc_library(
         "@envoy//envoy/stats:stats_macros",
         "@envoy//envoy/thread_local:thread_local_interface",
         "@envoy//source/common/common:non_copyable",
-        "@envoy//source/common/config:subscription_base_interface",
+        "@envoy//source/common/config:resource_type_helper_lib",
         "@envoy//source/common/grpc:common_lib",
         "@envoy//source/common/init:target_lib",
     ],
