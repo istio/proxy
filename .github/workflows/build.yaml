@@ -1,0 +1,26 @@
+name: Proxy build (Testing Farm)
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run build on Testing Farm bare metal
+        uses: sclorg/testing-farm-as-github-action@v4
+        with:
+          api_key: ${{ secrets.TESTING_FARM_API_TOKEN }}
+          compose: RHEL-9-Nightly
+          git_url: ${{ github.event.pull_request.head.repo.clone_url }}
+          git_ref: ${{ github.event.pull_request.head.sha }}
+          plan: /plans/build
+          pool: aws-10-bare-metal-dedicated
+          hardware: |
+            virtualization:
+              is-virtualized: false
+          timeout: 60
+          tmt_context: "arch=x86_64"
+          environment_settings: |
+            SOURCE_REPO=${{ github.event.pull_request.head.repo.clone_url }}
+            SOURCE_REF=${{ github.event.pull_request.head.sha }}
