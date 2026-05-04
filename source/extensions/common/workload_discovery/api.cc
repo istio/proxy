@@ -253,7 +253,7 @@ public:
         });
   }
 
-  void onWorkerThreadInitialized() override {};
+  void onWorkerThreadInitialized() override{};
 
 private:
   Server::Configuration::ServerFactoryContext& factory_context_;
