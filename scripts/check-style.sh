@@ -105,6 +105,7 @@ while IFS='' read -r line; do CHANGED_BAZEL_FILES+=("$line"); done < <(git diff 
 
 if [[ "${#CHANGED_SOURCE_FILES}" -ne 0 ]]; then
   echo -e "Source file(s) not formatted:\n${CHANGED_SOURCE_FILES[*]}"
+  git diff HEAD -- "${CHANGED_SOURCE_FILES[@]}"
 fi
 if [[ "${#CHANGED_BAZEL_FILES}" -ne 0 ]]; then
   echo -e "Bazel file(s) not formatted:\n${CHANGED_BAZEL_FILES[*]}"
