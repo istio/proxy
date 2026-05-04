@@ -147,8 +147,7 @@ private:
   class WorkloadSubscription : Config::SubscriptionCallbacks {
   public:
     WorkloadSubscription(WorkloadMetadataProviderImpl& parent)
-        : Config::SubscriptionBase(parent.factory_context_.messageValidationVisitor(), "uid"),
-          parent_(parent),
+        : parent_(parent),
           resource_type_helper_(parent.factory_context_.messageValidationVisitor(), "uid") {
       subscription_ = THROW_OR_RETURN_VALUE(
           parent.factory_context_.clusterManager()
