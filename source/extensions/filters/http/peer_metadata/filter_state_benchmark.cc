@@ -60,9 +60,9 @@ void setupCelFilterState(Envoy::StreamInfo::StreamInfo& stream_info) {
       std::make_unique<Filters::Common::Expr::CelState>(FilterConfig::peerInfoPrototype());
   cel_state->setValue(absl::string_view(proto->SerializeAsString()));
 
-  stream_info.filterState()->setData(
-      std::string(Istio::Common::DownstreamPeer), std::move(cel_state),
-      StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::FilterChain);
+  stream_info.filterState()->setData(std::string(Istio::Common::DownstreamPeer),
+                                     std::move(cel_state),
+                                     StreamInfo::FilterState::LifeSpan::FilterChain);
 }
 
 // Setup stream info with filter state for FIELD access
@@ -70,9 +70,9 @@ void setupFieldFilterState(Envoy::StreamInfo::StreamInfo& stream_info) {
   auto metadata = makeWorkloadMetadata();
 
   // FIELD access uses WorkloadMetadataObject under "downstream_peer_obj" key
-  stream_info.filterState()->setData(
-      std::string(Istio::Common::DownstreamPeerObj), std::move(metadata),
-      StreamInfo::FilterState::StateType::Mutable, StreamInfo::FilterState::LifeSpan::FilterChain);
+  stream_info.filterState()->setData(std::string(Istio::Common::DownstreamPeerObj),
+                                     std::move(metadata),
+                                     StreamInfo::FilterState::LifeSpan::FilterChain);
 }
 
 } // namespace
