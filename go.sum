@@ -9,8 +9,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/envoyproxy/go-control-plane v0.14.1-0.20260103185439-d6ff64e48402 h1:Jm3kw/Enxm3pcwPwKpjNanZSVq6N/XyA0pkcLI9BVpk=
 github.com/envoyproxy/go-control-plane v0.14.1-0.20260103185439-d6ff64e48402/go.mod h1:iuP4OVLgz85ISHlL+dS0cf6wg5cCz/KmuySk+g+F3uY=
-github.com/envoyproxy/go-control-plane/envoy v1.37.1-0.20260515010941-d9e0f651b1a5 h1:gDsZPQXpwXX1IrcTyO6AHM3+OXgWuWrydidqW3ESWjg=
-github.com/envoyproxy/go-control-plane/envoy v1.37.1-0.20260515010941-d9e0f651b1a5/go.mod h1:APnisR67BBt4fAcUT4yxY1IxYPCfM5VItdproxYa6G0=
+github.com/envoyproxy/go-control-plane/envoy v1.37.1-0.20260523003051-13fbb3da6c97 h1:PtgZmetV9xsgStUWbXThZw7/MUtZrgEjbEdIdu3RP1Q=
+github.com/envoyproxy/go-control-plane/envoy v1.37.1-0.20260523003051-13fbb3da6c97/go.mod h1:RgJXVdNtBhId0AeGnDEqPRSejRMoz//JumYvSTcJTvM=
 github.com/envoyproxy/go-control-plane/ratelimit v0.1.0 h1:/G9QYbddjL25KvtKTv3an9lx6VBE2cnb8wp1vEGNYGI=
 github.com/envoyproxy/go-control-plane/ratelimit v0.1.0/go.mod h1:Wk+tMFAFbCXaJPzVVHnPgRKdUdwW/KdbRt94AzgRee4=
 github.com/envoyproxy/protoc-gen-validate v1.3.3 h1:MVQghNeW+LZcmXe7SY1V36Z+WFMDjpqGAGacLe2T0ds=
@@ -74,8 +74,8 @@ google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171 h1:
 google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171/go.mod h1:M5krXqk4GhBKvB596udGL3UyjL4I1+cTbK0orROM9ng=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 h1:ggcbiqK8WWh6l1dnltU4BgWGIGo+EVYxCaAPih/zQXQ=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171/go.mod h1:4Hqkh8ycfw05ld/3BWL7rJOSfebL2Q+DVDeRgYgxUU8=
-google.golang.org/grpc v1.81.0 h1:W3G9N3KQf3BU+YuCtGKJk0CmxQNbAISICD/9AORxLIw=
-google.golang.org/grpc v1.81.0/go.mod h1:xGH9GfzOyMTGIOXBJmXt+BX/V0kcdQbdcuwQ/zNw42I=
+google.golang.org/grpc v1.81.1 h1:VnnIIZ88UzOOKLukQi+ImGz8O1Wdp8nAGGnvOfEIWQQ=
+google.golang.org/grpc v1.81.1/go.mod h1:xGH9GfzOyMTGIOXBJmXt+BX/V0kcdQbdcuwQ/zNw42I=
 google.golang.org/protobuf v1.36.11 h1:fV6ZwhNocDyBLK0dj+fg8ektcVegBBuEolpbTQyBNVE=
 google.golang.org/protobuf v1.36.11/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
