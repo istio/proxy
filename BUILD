@@ -43,12 +43,17 @@ ISTIO_EXTENSIONS = [
     "//source/extensions/filters/network/peer_metadata",
 ]
 
+load("@envoy_build_config//:extensions_build_config.bzl", "OPENSSL_INCOMPATIBLE_CONTRIB_DEPS")
+
 envoy_cc_binary(
     name = "envoy",
     repository = "@envoy",
     deps = ISTIO_EXTENSIONS + [
         "@envoy//source/exe:envoy_main_entry_lib",
-    ],
+    ] + select({
+        "@envoy//bazel:using_openssl": [],
+        "//conditions:default": OPENSSL_INCOMPATIBLE_CONTRIB_DEPS,
+    }),
 )
 
 pkg_tar(
