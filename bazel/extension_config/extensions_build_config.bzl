@@ -538,12 +538,17 @@ ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.filters.network.postgres_proxy",
     "envoy.filters.network.sip_proxy",
     "envoy.filters.sip.router",
-    "envoy.tls.key_providers.cryptomb",
-    "envoy.tls.key_providers.qat",
     "envoy.network.connection_balance.dlb",
     "envoy.load_balancing_policies.peak_ewma",
     "envoy.filters.http.peak_ewma",
 ]
+
+OPENSSL_INCOMPATIBLE_CONTRIB_EXTENSIONS = [
+    "envoy.tls.key_providers.cryptomb",
+    "envoy.tls.key_providers.qat",
+]
+
+OPENSSL_INCOMPATIBLE_CONTRIB_DEPS = ["@envoy" + v + "_envoy_extension" for k, v in ENVOY_CONTRIB_EXTENSIONS.items() if k in OPENSSL_INCOMPATIBLE_CONTRIB_EXTENSIONS]
 
 EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_DISABLED_EXTENSIONS] +
                   [(k,v) for k, v in ENVOY_CONTRIB_EXTENSIONS.items() if k in ISTIO_ENABLED_CONTRIB_EXTENSIONS])
