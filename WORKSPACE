@@ -19,6 +19,13 @@ workspace(name = "io_istio_proxy")
 # http_archive is not a native function since bazel 0.19
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# Use OpenSSL from the system rather than vendoring it
+new_local_repository(
+    name = "openssl",
+    path = "/usr/",
+    build_file = "//:openssl.BUILD"
+)
+
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc and .bazelrc if needed.
 #
@@ -38,6 +45,8 @@ http_archive(
     sha256 = ENVOY_SHA256,
     strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
     url = "https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz",
+    patches = ["//ossm/patches:use-cmake-from-host.patch"],
+    patch_args = ["-p1"],
 )
 
 load("@envoy//bazel:api_binding.bzl", "envoy_api_binding")
@@ -79,7 +88,7 @@ install_deps()
 
 load("@envoy//bazel:dependency_imports.bzl", "envoy_dependency_imports")
 
-envoy_dependency_imports()
+envoy_dependency_imports(go_version = "host")
 
 load("@envoy//bazel:repo.bzl", "envoy_repo")
 
