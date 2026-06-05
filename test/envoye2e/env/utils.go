@@ -75,6 +75,22 @@ func GetDefaultEnvoyBinOrDie() string {
 	return GetBazelBinOrDie()
 }
 
+func IsHTTP3Enabled() bool {
+	buildArgs := os.Getenv("BAZEL_BUILD_ARGS")
+	args := []string{"cquery", "@envoy//bazel:http3",
+		"--output=starlark",
+		"--starlark:expr=providers(target)[\"@@bazel_skylib//rules:common_settings.bzl%BuildSettingInfo\"].value",
+	}
+	if buildArgs != "" {
+		args = append(args, strings.Split(buildArgs, " ")...)
+	}
+	out, err := exec.Command("bazel", args...).Output()
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(out)) == "True"
+}
+
 func SkipTSanASan(t *testing.T) {
 	if os.Getenv("TSAN") != "" || os.Getenv("ASAN") != "" {
 		t.Skip("https://github.com/istio/istio/issues/21273")
