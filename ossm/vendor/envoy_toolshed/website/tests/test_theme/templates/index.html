@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Articles</h2>
+{% for article in articles %}
+    <article>
+        <h3>{{ article.title }}</h3>
+        <p>{{ article.content }}</p>
+    </article>
+{% endfor %}
+{% endblock %}

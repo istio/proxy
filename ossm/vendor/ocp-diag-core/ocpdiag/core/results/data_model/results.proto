@@ -1,0 +1,252 @@
+// Copyright 2022 Google LLC
+//
+// Use of this source code is governed by an MIT-style
+// license that can be found in the LICENSE file or at
+// https://opensource.org/licenses/MIT.
+
+// This protobuf implements version 2.0 of the OCP Diagnostic Test and
+// Validation Output Specification and should maintain parity with this
+// standard. See the specification document for additional documentation.
+syntax = "proto3";
+
+package ocpdiag_results_v2_pb;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+
+message OutputArtifact {
+  reserved 1;
+  reserved 2;
+  oneof artifact {
+    SchemaVersion schema_version = 5;
+    TestRunArtifact test_run_artifact = 6;
+    TestStepArtifact test_step_artifact = 7;
+  }
+  int32 sequence_number = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}
+
+message SchemaVersion {
+  int32 major = 1;
+  int32 minor = 2;
+}
+
+message TestRunArtifact {
+  oneof artifact {
+    TestRunStart test_run_start = 1;
+    TestRunEnd test_run_end = 2;
+    Log log = 3;
+    Error error = 4;
+  }
+}
+
+message TestRunStart {
+  string name = 1;
+  string version = 2;
+  string command_line = 3;
+  google.protobuf.Struct parameters = 4;
+  DutInfo dut_info = 5;
+  google.protobuf.Struct metadata = 6;
+}
+
+message DutInfo {
+  string dut_info_id = 1;
+  string name = 2;
+  google.protobuf.Struct metadata = 3;
+  repeated PlatformInfo platform_infos = 4;
+  repeated HardwareInfo hardware_infos = 5;
+  repeated SoftwareInfo software_infos = 6;
+}
+
+message PlatformInfo {
+  string info = 1;
+}
+
+message HardwareInfo {
+  string hardware_info_id = 1;
+  string computer_system = 2;
+  string name = 3;
+  string location = 4;
+  string odata_id = 5;
+  string part_number = 6;
+  string serial_number = 7;
+  string manager = 8;
+  string manufacturer = 9;
+  string manufacturer_part_number = 10;
+  string part_type = 11;
+  string version = 12;
+  string revision = 13;
+}
+
+message SoftwareInfo {
+  string software_info_id = 1;
+  string computer_system = 2;
+  string name = 3;
+  string version = 4;
+  string revision = 5;
+  enum SoftwareType {
+    UNSPECIFIED = 0;
+    FIRMWARE = 1;
+    SYSTEM = 2;
+    APPLICATION = 3;
+  }
+  SoftwareType software_type = 6;
+}
+
+message TestRunEnd {
+  enum TestStatus {
+    UNKNOWN = 0;
+    COMPLETE = 1;
+    ERROR = 2;
+    SKIP = 3;
+  }
+  TestStatus status = 1;
+  enum TestResult {
+    NOT_APPLICABLE = 0;
+    PASS = 1;
+    FAIL = 2;
+  }
+  TestResult result = 2;
+}
+
+message TestStepArtifact {
+  oneof artifact {
+    TestStepStart test_step_start = 1;
+    TestStepEnd test_step_end = 2;
+    Measurement measurement = 3;
+    MeasurementSeriesStart measurement_series_start = 4;
+    MeasurementSeriesEnd measurement_series_end = 5;
+    MeasurementSeriesElement measurement_series_element = 6;
+    Diagnosis diagnosis = 7;
+    Error error = 8;
+    File file = 9;
+    Log log = 10;
+    Extension extension = 11;
+  }
+  string test_step_id = 12;
+}
+
+message TestStepStart {
+  string name = 1;
+}
+
+message TestStepEnd {
+  TestRunEnd.TestStatus status = 2;
+}
+
+message Measurement {
+  string name = 1;
+  string unit = 2;
+  string hardware_info_id = 3;
+  Subcomponent subcomponent = 4;
+  repeated Validator validators = 5;
+  google.protobuf.Value value = 6;
+  google.protobuf.Struct metadata = 7;
+}
+
+message Subcomponent {
+  enum SubcomponentType {
+    UNSPECIFIED = 0;
+    ASIC = 1;
+    ASIC_SUBSYSTEM = 2;
+    BUS = 3;
+    FUNCTION = 4;
+    CONNECTOR = 5;
+  }
+  SubcomponentType type = 1;
+  string name = 2;
+  string location = 3;
+  string version = 4;
+  string revision = 5;
+}
+
+message Validator {
+  string name = 1;
+  enum ValidatorType {
+    UNSPECIFIED = 0;
+    EQUAL = 1;
+    NOT_EQUAL = 2;
+    LESS_THAN = 3;
+    LESS_THAN_OR_EQUAL = 4;
+    GREATER_THAN = 5;
+    GREATER_THAN_OR_EQUAL = 6;
+    REGEX_MATCH = 7;
+    REGEX_NO_MATCH = 8;
+    IN_SET = 9;
+    NOT_IN_SET = 10;
+  }
+  ValidatorType type = 2;
+  google.protobuf.Value value = 3;
+  google.protobuf.Struct metadata = 4;
+}
+
+message MeasurementSeriesStart {
+  string measurement_series_id = 1;
+  string name = 2;
+  string unit = 3;
+  string hardware_info_id = 4;
+  Subcomponent subcomponent = 5;
+  repeated Validator validators = 6;
+  google.protobuf.Struct metadata = 7;
+}
+
+message MeasurementSeriesEnd {
+  string measurement_series_id = 1;
+  int32 total_count = 2;
+}
+
+message MeasurementSeriesElement {
+  int32 index = 1;
+  string measurement_series_id = 2;
+  google.protobuf.Value value = 3;
+  google.protobuf.Timestamp timestamp = 4;
+  google.protobuf.Struct metadata = 5;
+}
+
+message Diagnosis {
+  string verdict = 1;
+  enum Type {
+    UNKNOWN = 0;
+    PASS = 1;
+    FAIL = 2;
+  }
+  Type type = 2;
+  string message = 3;
+  string hardware_info_id = 4;
+  Subcomponent subcomponent = 5;
+}
+
+message Error {
+  string symptom = 1;
+  string message = 2;
+  repeated string software_info_ids = 3;
+}
+
+message Log {
+  // The numbers in the enum should match the Abseil LogSeverity enum where they
+  // overlap so one way conversion to Abseil LogSeverity is possible.
+  enum Severity {
+    INFO = 0;  // Default
+    WARNING = 1;
+    ERROR = 2;
+    FATAL = 3;
+    DEBUG = 4;
+  }
+  Severity severity = 1;
+  string message = 2;
+}
+
+message File {
+  string display_name = 1;
+  string uri = 2;
+  string description = 3;
+  string content_type = 4;
+  bool is_snapshot = 5;
+  google.protobuf.Struct metadata = 6;
+}
+
+message Extension {
+  string name = 1;
+  google.protobuf.Struct content = 2;
+}

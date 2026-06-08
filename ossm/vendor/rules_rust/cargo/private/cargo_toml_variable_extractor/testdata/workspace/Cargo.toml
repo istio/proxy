@@ -1,0 +1,12 @@
+[workspace]
+members = ["subcrate"]
+package.authors = ["some", "authors"]
+package.description = "Just a test crate"
+package.edition = "2021"
+package.homepage = "https://example.com"
+package.license = "Apache-2.0"
+package.license-file = "../../../LICENSE.txt"
+package.readme = "README.md"
+package.repository = "https://github.com/bazelbuild/rules_rust"
+package.rust-version = "1.68"
+package.version = "0.2.0"

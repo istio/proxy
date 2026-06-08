@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "test3_hybrid",
+    srcs = [
+        "test.hybrid.pb.go",
+        "test_import.hybrid.pb.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/testprotos/test3/test3_hybrid",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":test3_hybrid",
+    visibility = ["//:__subpackages__"],
+)

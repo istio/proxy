@@ -1,0 +1,46 @@
+#!/bin/sh
+
+usage() {
+    cat <<'END_USAGE'
+with-toolchain: Run a command using a specific C++ build toolchain.
+
+usage:
+    with-toolchain gnu [COMMAND ...]
+    with-toolchain llvm [COMMAND ...]
+        Execute COMMAND in an environment that uses either GNU's compilers (gcc
+        and g++) or LLVM's compilers (clang and clang++).
+    
+    with-toolchain --help
+    with-toolchain -h
+        Print this message.
+
+example:
+    $ ../bin/with-toolchain llvm cmake .. -DDD_TRACE_BUILD_TESTING=1
+END_USAGE
+}
+
+if [ "$#" -eq 0 ]; then
+  >&2 usage
+  exit 1
+fi
+
+case "$1" in
+  -h|--help)
+    usage
+    exit ;;
+  gnu)
+    toolchain=gnu ;;
+  llvm)
+    toolchain=llvm ;;
+  *)
+    >&2 echo "Invalid toolchain value \"$1\".  Expected \"gnu\" or \"llvm\"."
+    exit 2 ;;
+esac
+
+shift
+case "$toolchain" in
+  gnu)
+    CC=gcc CXX=g++ "$@" ;;
+  llvm)
+    CC=clang CXX=clang++ "$@" ;;
+esac

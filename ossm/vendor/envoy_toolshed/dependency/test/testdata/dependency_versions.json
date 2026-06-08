@@ -1,0 +1,16 @@
+{
+    "bazel_skylib": {
+        "type": "github_archive",
+        "repo": "bazelbuild/bazel-skylib",
+        "version": "1.4.2",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "urls": ["https://example.com/{repo}/archive/{version}.tar.gz"]
+    },
+    "rules-shell": {
+        "type": "github_archive",
+        "repo": "bazelbuild/rules_shell",
+        "version": "0.6.1",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "urls": ["https://example.com/{repo}/archive/{version}.tar.gz"]
+    }
+}

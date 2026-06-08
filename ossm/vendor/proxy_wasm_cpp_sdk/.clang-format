@@ -1,0 +1,16 @@
+---
+Language: Cpp
+ColumnLimit: 100
+AccessModifierOffset: -2
+DerivePointerAlignment: false
+PointerAlignment: Right
+SortIncludes: false
+...
+
+---
+Language: Proto
+ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: false
+ReflowComments: false
+SpacesInContainerLiterals: false
+...

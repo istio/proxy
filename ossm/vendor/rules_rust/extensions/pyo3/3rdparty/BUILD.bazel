@@ -1,0 +1,78 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "pyo3-build-config": [
+            crate.annotation(
+                build_script_data = [
+                    "@rules_rust_pyo3//:current_pyo3_toolchain",
+                ],
+                build_script_env = {
+                    "PYO3_CROSS": "$(PYO3_CROSS)",
+                    "PYO3_CROSS_LIB_DIR": "$(PYO3_CROSS_LIB_DIR)",
+                    "PYO3_CROSS_PYTHON_IMPLEMENTATION": "$(PYO3_CROSS_PYTHON_IMPLEMENTATION)",
+                    "PYO3_CROSS_PYTHON_VERSION": "$(PYO3_CROSS_PYTHON_VERSION)",
+                    "PYO3_NO_PYTHON": "$(PYO3_NO_PYTHON)",
+                    "PYO3_PYTHON": "$(PYO3_PYTHON)",
+                },
+                build_script_toolchains = [
+                    "@rules_rust_pyo3//:current_pyo3_toolchain",
+                ],
+                patch_args = ["-p1"],
+                patches = ["@rules_rust_pyo3//3rdparty/patches:resolve_cross_compile_config_path.patch"],
+            ),
+        ],
+        "pyo3-ffi": [
+            crate.annotation(
+                build_script_data = [
+                    "@rules_rust_pyo3//:current_pyo3_toolchain",
+                ],
+                build_script_env = {
+                    "PYO3_CROSS": "$(PYO3_CROSS)",
+                    "PYO3_CROSS_LIB_DIR": "$(PYO3_CROSS_LIB_DIR)",
+                    "PYO3_CROSS_PYTHON_IMPLEMENTATION": "$(PYO3_CROSS_PYTHON_IMPLEMENTATION)",
+                    "PYO3_CROSS_PYTHON_VERSION": "$(PYO3_CROSS_PYTHON_VERSION)",
+                    "PYO3_NO_PYTHON": "$(PYO3_NO_PYTHON)",
+                    "PYO3_PYTHON": "$(PYO3_PYTHON)",
+                },
+                build_script_toolchains = [
+                    "@rules_rust_pyo3//:current_pyo3_toolchain",
+                ],
+            ),
+        ],
+    },
+    cargo_lockfile = "Cargo.Bazel.lock",
+    mode = "remote",
+    packages = {
+        "pyo3": crate.spec(
+            features = [
+                "abi3",
+                "abi3-py311",
+                "extension-module",
+                "experimental-inspect",
+            ],
+            version = "0.26.0",
+        ),
+        "pyo3-ffi": crate.spec(
+            version = "0.26.0",
+        ),
+        "pyo3-introspection": crate.spec(
+            version = "0.26.0",
+        ),
+    },
+    # Name is short to avoid windows paths being too long
+    # https://github.com/bazelbuild/rules_rust/issues/1120
+    repository_name = "rpyo3c",
+    tags = ["manual"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = [
+        "//3rdparty/crates:crates.bzl",
+        "//3rdparty/crates:defs.bzl",
+    ],
+    visibility = ["//:__pkg__"],
+)

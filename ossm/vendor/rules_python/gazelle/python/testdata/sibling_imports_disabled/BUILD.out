@@ -1,0 +1,18 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+# gazelle:python_resolve_sibling_imports false
+# gazelle:python_experimental_allow_relative_imports true
+
+py_library(
+    name = "sibling_imports_disabled",
+    srcs = [
+        "a.py",
+        "b.py",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+py_test(
+    name = "test_util",
+    srcs = ["test_util.py"],
+)

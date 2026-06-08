@@ -1,0 +1,4 @@
+bazel-out
+bazel-testlogs
+bazel-wasm_bindgen
+bazel-bin

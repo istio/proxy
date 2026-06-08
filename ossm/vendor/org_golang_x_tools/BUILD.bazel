@@ -1,0 +1,20 @@
+
+load("@package_metadata//rules:package_metadata.bzl", "package_metadata")
+load("@rules_license//rules:package_info.bzl", "package_info")
+
+package_metadata(
+    name = "package_metadata",
+    purl = "pkg:golang/golang.org/x/tools@v0.7.0",
+    visibility = [
+        "//:__subpackages__",
+    ],
+)
+
+package_info(
+    name = "gazelle_generated_package_info",
+    package_name = "golang.org/x/tools",
+    package_url = "https://golang.org/x/tools",
+    package_version = "0.7.0",
+    purl = "pkg:golang/golang.org/x/tools@v0.7.0",
+    visibility = ["//:__subpackages__"],
+)

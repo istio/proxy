@@ -1,0 +1,11 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "file_name_matches_import_statement",
+    srcs = [
+        "__init__.py",
+        "rest_framework.py",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["@gazelle_python_test//djangorestframework"],
+)

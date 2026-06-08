@@ -1,0 +1,27 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_proto_grpc//cpp:defs.bzl", "cpp_proto_library")
+
+package(default_visibility = ["//visibility:private"])
+
+# Test that paths to protos and prefixes support special characters correctly
+
+proto_library(
+    name = "proto_lib",
+    srcs = ["path-with-special-chars/a b!/demo.proto"],
+    import_prefix = "c d^*",
+    strip_import_prefix = "path-with-special-chars/a b!",
+)
+
+cpp_proto_library(
+    name = "cpp_lib",
+    protos = ["proto_lib"],
+)
+
+cc_test(
+    name = "test",
+    srcs = ["test.cc"],
+    deps = [
+        "cpp_lib",
+    ],
+)

@@ -1,0 +1,37 @@
+# Import Aspect bazelrc presets
+try-import %workspace%/.aspect/bazelrc/bazel7.bazelrc
+import %workspace%/.aspect/bazelrc/convenience.bazelrc
+import %workspace%/.aspect/bazelrc/correctness.bazelrc
+import %workspace%/.aspect/bazelrc/debug.bazelrc
+import %workspace%/.aspect/bazelrc/javascript.bazelrc
+import %workspace%/.aspect/bazelrc/performance.bazelrc
+
+### YOUR PROJECT SPECIFIC SETTINGS GO HERE ###
+
+# We have some empty globs in rules_js
+common --noincompatible_disallow_empty_glob
+
+# Don't try and auto detect the cc toolchain, as we use our llvm.
+build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+build --incompatible_strict_action_env=true
+build --incompatible_enable_cc_toolchain_resolution
+
+# Disable lockfile for now. It is unstable.
+# https://github.com/bazelbuild/bazel/issues/19026
+# https://github.com/bazelbuild/bazel/issues/19621
+# https://github.com/bazelbuild/bazel/issues/19971
+# https://github.com/bazelbuild/bazel/issues/20272
+# https://github.com/bazelbuild/bazel/issues/20369
+common --lockfile_mode=off
+
+# Mock versioning command to test the --stamp behavior
+build --workspace_status_command="echo BUILD_SCM_VERSION 1.2.3"
+
+# Load any settings specific to the current user.
+# .bazelrc.user should appear in .gitignore so that settings are not shared with team members
+# This needs to be last statement in this
+# config, as the user configuration should be able to overwrite flags from this file.
+# See https://docs.bazel.build/versions/master/best-practices.html#bazelrc
+# (Note that we use .bazelrc.user so the file appears next to .bazelrc in directory listing,
+# rather than user.bazelrc as suggested in the Bazel docs)
+try-import %workspace%/.bazelrc.user

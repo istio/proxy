@@ -1,0 +1,2 @@
+# gazelle:python_generation_mode package
+# gazelle:python_generation_mode_per_package_require_test_entry_point false

@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "analysis",
+    srcs = [
+        "analysis.go",
+        "json.go",
+    ],
+    importpath = "golang.org/x/tools/godoc/analysis",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":analysis",
+    visibility = ["//visibility:public"],
+)

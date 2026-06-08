@@ -1,0 +1,46 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "protorange",
+    srcs = ["range.go"],
+    importpath = "google.golang.org/protobuf/reflect/protorange",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/genid",
+        "//internal/order",
+        "//proto",
+        "//reflect/protopath",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protorange",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "protorange_test",
+    srcs = [
+        "example_test.go",
+        "range_test.go",
+    ],
+    embed = [":protorange"],
+    deps = [
+        "//encoding/protojson",
+        "//internal/detrand",
+        "//internal/testprotos/news",
+        "//proto",
+        "//reflect/protopath",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+        "//testing/protocmp",
+        "//testing/protopack",
+        "//types/known/anypb",
+        "//types/known/timestamppb",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp/cmpopts:go_default_library",
+    ],
+)

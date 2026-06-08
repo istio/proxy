@@ -1,0 +1,23 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "all",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//src/google/protobuf/util/converter:default_value",
+        "//src/google/protobuf/util/converter:json",
+        "//src/google/protobuf/util/converter:object_writer",
+        "//src/google/protobuf/util/converter:protostream",
+        "//src/google/protobuf/util/converter:type_info",
+    ],
+)
+
+cc_library(
+    name = "testing",
+    testonly = 1,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":all",
+        "//src/google/protobuf/util/converter:expecting_objectwriter",
+    ],
+)

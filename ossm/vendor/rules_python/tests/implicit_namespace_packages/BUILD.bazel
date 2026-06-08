@@ -1,0 +1,12 @@
+load("//python:py_test.bzl", "py_test")
+load("//tests/support:support.bzl", "SUPPORTS_BZLMOD_UNIXY")
+
+py_test(
+    name = "namespace_packages_test",
+    srcs = ["namespace_packages_test.py"],
+    target_compatible_with = SUPPORTS_BZLMOD_UNIXY,
+    deps = [
+        "@implicit_namespace_ns_sub1//:pkg",
+        "@implicit_namespace_ns_sub2//:pkg",
+    ],
+)

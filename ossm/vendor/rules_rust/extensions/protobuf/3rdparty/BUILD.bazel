@@ -1,0 +1,60 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
+
+crates_vendor(
+    name = "crates_vendor",
+    annotations = {
+        "grpc-compiler": [crate.annotation(
+            gen_binaries = ["protoc-gen-rust-grpc"],
+        )],
+        "lazy_static": [crate.annotation(
+            rustc_flags = [
+                "--cfg=lazy_static_heap_impl",
+            ],
+        )],
+        "protobuf": [crate.annotation(
+            patch_args = ["-p1"],
+            patches = ["@rules_rust_protobuf//3rdparty/patches:protobuf-2.8.2.patch"],
+        )],
+        "protobuf-codegen": [crate.annotation(
+            gen_binaries = ["protoc-gen-rust"],
+        )],
+    },
+    cargo_lockfile = "Cargo.Bazel.lock",
+    mode = "remote",
+    packages = {
+        "grpc": crate.spec(
+            version = "0.6.2",
+        ),
+        "grpc-compiler": crate.spec(
+            version = "0.6.2",
+        ),
+        "log": crate.spec(
+            version = "0.4, 0.4.7",
+        ),
+        "protobuf": crate.spec(
+            features = ["with-bytes"],
+            version = "2.8.2",
+        ),
+        "protobuf-codegen": crate.spec(
+            version = "2.8.2",
+        ),
+        "tls-api": crate.spec(
+            version = "0.1.22",
+        ),
+        "tls-api-stub": crate.spec(
+            version = "0.1.22",
+        ),
+    },
+    repository_name = "rules_rust_protobuf_deps",
+    tags = ["manual"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = [
+        "//3rdparty/crates:crates.bzl",
+        "//3rdparty/crates:defs.bzl",
+    ],
+    visibility = ["//:__pkg__"],
+)

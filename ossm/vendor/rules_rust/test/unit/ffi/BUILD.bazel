@@ -1,0 +1,3 @@
+load(":allocator_library_test.bzl", "allocator_library_test_suite")
+
+allocator_library_test_suite(name = "allocator_library_test_suite")

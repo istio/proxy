@@ -1,0 +1,7 @@
+filegroup(
+    name = "bzl_srcs",
+    srcs = [
+        "//crate_universe/tools/cross_installer:bzl_srcs",
+    ],
+    visibility = ["//crate_universe:__subpackages__"],
+)

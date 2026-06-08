@@ -1,0 +1,4 @@
+# python_visibilty directive applies to all child bazel packages.
+# Thus, the generated file for this package will also have vis for
+# //tests:__pkg__ and //bar:baz in addition to the default.
+# gazelle:python_visibility //tests:__subpackages__

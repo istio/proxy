@@ -1,0 +1,18 @@
+syntax = "proto3";
+package samples;
+
+message FirstMessage {
+    string name1       = 1;
+    string timestamp1  = 2;
+    int32 id1          = 3;
+    float rating1      = 4;
+    bool complete1     = 5;
+}
+
+message SecondMessage {
+    string name2       = 1;
+    string timestamp2  = 2;
+    int32 id2          = 3;
+    float rating2      = 4;
+    bool complete2     = 5;
+}

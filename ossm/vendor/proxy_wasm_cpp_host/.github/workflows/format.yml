@@ -1,0 +1,146 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Format
+
+on:
+
+  pull_request:
+    branches:
+    - main
+    - 'envoy-release/**'
+    - 'istio-release/**'
+
+  push:
+    branches:
+    - main
+    - 'envoy-release/**'
+    - 'istio-release/**'
+
+  schedule:
+    - cron: '0 0 * * *'
+
+  workflow_dispatch:
+
+concurrency:
+
+  group: ${{ github.head_ref || github.run_id }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+
+  addlicense:
+    name: verify licenses
+
+    runs-on: ubuntu-24.04-16core
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '^1.16'
+
+    - name: Install dependencies
+      run: |
+        go install github.com/google/addlicense@latest
+        echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+    - name: Format (addlicense)
+      run: addlicense -ignore "bazel/cargo/*/remote/**" -check .
+
+  buildifier:
+    name: check format with buildifier
+
+    runs-on: ubuntu-24.04-16core
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '^1.16'
+
+    - name: Install dependencies
+      run: |
+        go install github.com/bazelbuild/buildtools/buildifier@latest
+        echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+    - name: Format (buildifier)
+      run: find . -name "WORKSPACE" -o -name "*BUILD*" -o -name "*.bzl" | xargs -n1 buildifier -mode=check
+
+  rules_rust:
+    name: check format with rules_rust
+
+    runs-on: ubuntu-24.04-16core
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: bazel-contrib/setup-bazel@0.16.0
+      with:
+        bazelisk-cache: true
+        disk-cache: ${{ github.job }}
+        external-cache: false
+        repository-cache: true
+
+    - name: Format (bazel query)
+      run: |
+        bazel query 'deps(//bazel/cargo/...)'
+
+    - name: Format (rules_rust)
+      run: |
+        bazel run //bazel/cargo/wasmsign:crates_vendor
+        bazel run //bazel/cargo/wasmtime:crates_vendor
+        git diff --exit-code
+
+  clang_format:
+    name: check format with clang-format
+
+    runs-on: ubuntu-24.04-16core
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies (Linux)
+      run: sudo apt update -y && sudo apt install -y clang-format-18
+
+    - name: Format (clang-format)
+      run: |
+        find . -name "*.h" -o -name "*.cc" -o -name "*.proto" | grep -v ".pb." | xargs -n1 clang-format-18 -i
+        git diff --exit-code
+
+  clang_tidy:
+    name: check format with clang-tidy
+
+    runs-on: ubuntu-24.04-16core
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: bazel-contrib/setup-bazel@0.16.0
+      with:
+        bazelisk-cache: true
+        disk-cache: ${{ github.job }}
+        external-cache: false
+        repository-cache: true
+
+    - name: Bazel build
+      run: >
+        bazel build
+        --config=hermetic-llvm
+        --config clang-tidy
+        --define engine=multi
+        --copt=-DPROXY_WASM_VERIFY_WITH_ED25519_PUBKEY=\"$(xxd -p -c 256 test/test_data/signature_key1.pub | cut -c3-)\"
+        //...

@@ -1,0 +1,10 @@
+load("@rules_proto_grpc//rust:defs.bzl", "rust_tonic_grpc_compile")
+
+rust_tonic_grpc_compile(
+    name = "greeter_rust_grpc",
+    declared_proto_packages = ["example.proto"],
+    protos = [
+        "@rules_proto_grpc//example/proto:greeter_grpc",
+        "@rules_proto_grpc//example/proto:thing_proto",
+    ],
+)

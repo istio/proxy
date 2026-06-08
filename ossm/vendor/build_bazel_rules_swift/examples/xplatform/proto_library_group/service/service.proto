@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package service;
+
+import "examples/xplatform/proto_library_group/request/request.proto";
+import "examples/xplatform/proto_library_group/response/response.proto";
+
+service EchoService {
+  rpc Echo(request.Request) returns (response.Response);
+}

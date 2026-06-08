@@ -1,0 +1,8 @@
+[
+    {"type": "file", "dest": "1-a", "src": "tests/testdata/utf8/1-a", "mode": "0644", "user": null, "group": null, "uid": null, "gid": null, "origin": "@//tests/mappings:utf8_files"},
+    {"type": "file", "dest": "2-λ", "src": "tests/testdata/utf8/2-λ", "mode": "0644", "user": null, "group": null, "uid": null, "gid": null, "origin": "@//tests/mappings:utf8_files"},
+    {"type": "file", "dest": "3-世", "src": "tests/testdata/utf8/3-世", "mode": "0644", "user": null, "group": null, "uid": null, "gid": null, "origin": "@//tests/mappings:utf8_files"},
+    {"type": "file", "dest": "BUILD", "src": "tests/testdata/utf8/BUILD", "mode": "0644", "user": null, "group": null, "uid": null, "gid": null, "origin": "@//tests/mappings:utf8_files"},
+    {"type": "file", "dest": "sübdir/2-λ", "src": "tests/testdata/utf8/sübdir/2-λ", "mode": "0644", "user": null, "group": null, "uid": null, "gid": null, "origin": "@//tests/mappings:utf8_files"},
+    {"type": "file", "dest": "sübdir/hello", "src": "tests/testdata/utf8/sübdir/hello", "mode": "0644", "user": null, "group": null, "uid": null, "gid": null, "origin": "@//tests/mappings:utf8_files"}
+]

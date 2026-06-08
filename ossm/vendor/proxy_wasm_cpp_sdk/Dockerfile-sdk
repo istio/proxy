@@ -1,0 +1,6 @@
+FROM ubuntu:noble
+
+COPY *.sh /
+COPY *.cc *.h *.js *.proto Makefile* /sdk/
+
+RUN ./sdk_container.sh

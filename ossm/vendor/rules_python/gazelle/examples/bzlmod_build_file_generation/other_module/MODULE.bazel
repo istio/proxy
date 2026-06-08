@@ -1,0 +1,7 @@
+module(
+    name = "other_module",
+)
+
+# Version doesn't matter because the root module overrides it,
+# but Bazel requires it exist in the registry.
+bazel_dep(name = "rules_python", version = "1.0.0")

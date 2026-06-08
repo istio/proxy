@@ -1,0 +1,3 @@
+# This aids debugging on failure
+build --toolchain_resolution_debug=python
+common:bazel7.x --incompatible_python_disallow_native_rules

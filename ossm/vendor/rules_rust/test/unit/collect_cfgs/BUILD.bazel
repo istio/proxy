@@ -1,0 +1,5 @@
+load(":collect_cfgs_test.bzl", "collect_cfgs_test_suite")
+
+collect_cfgs_test_suite(
+    name = "collect_cfgs_test_suite",
+)

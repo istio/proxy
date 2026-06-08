@@ -1,0 +1,28 @@
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//:defs.bzl", "pyo3_extension")
+
+pyo3_extension(
+    name = "string_sum",
+    srcs = ["string_sum.rs"],
+    edition = "2021",
+    stubs = 1,
+)
+
+filegroup(
+    name = "string_sum_type_stubs",
+    srcs = [":string_sum"],
+    output_group = "pyo3_type_stubs",
+)
+
+diff_test(
+    name = "string_sum_type_stubs_diff_test",
+    file1 = "string_sum_expected.pyi",
+    file2 = ":string_sum_type_stubs",
+)
+
+py_test(
+    name = "string_sum_test",
+    srcs = ["string_sum_test.py"],
+    deps = [":string_sum"],
+)

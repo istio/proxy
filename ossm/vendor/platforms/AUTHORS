@@ -1,0 +1,15 @@
+# This is the list of bazelbuild/platforms' significant contributors.
+#
+# This does not necessarily list everyone who has contributed code,
+# especially since many employees of one corporation may be contributing.
+# To see the full list of contributors, see the revision history in
+# source control.
+
+# Names should be added to this file as:
+# Name or Organization <email address>
+# The email address is not required for organizations.
+
+Google Inc.
+Austin Schuh <austin.linux@gmail.com>
+Lizan Zhou <lizan@tetrate.io>
+Mathieu Boespflug <m@tweag.io>

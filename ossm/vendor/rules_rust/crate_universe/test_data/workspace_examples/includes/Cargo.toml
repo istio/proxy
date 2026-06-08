@@ -1,0 +1,18 @@
+[workspace]
+members = [
+  "explicit-child",
+  "glob-direct-children/*",
+  "glob-transitive-children/**/anchor",
+  "glob-char?",
+]
+exclude = [
+  "glob-char3",
+  "glob-direct-children/excluded",
+]
+
+[package]
+name = "includes"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

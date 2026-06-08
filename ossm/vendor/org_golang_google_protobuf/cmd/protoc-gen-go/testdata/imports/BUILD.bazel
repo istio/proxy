@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "imports",
+    srcs = [
+        "test_import_a1m1.pb.go",
+        "test_import_a1m2.pb.go",
+        "test_import_all.pb.go",
+    ],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/imports",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/protoc-gen-go/testdata/imports/fmt",
+        "//cmd/protoc-gen-go/testdata/imports/test_a_1",
+        "//cmd/protoc-gen-go/testdata/imports/test_a_2",
+        "//cmd/protoc-gen-go/testdata/imports/test_b_1",
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":imports",
+    visibility = ["//visibility:public"],
+)

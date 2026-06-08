@@ -1,0 +1,64 @@
+###############################################################################
+## Bazel Configuration Flags
+##
+## `.bazelrc` is a Bazel configuration file.
+## https://bazel.build/docs/best-practices#bazelrc-file
+###############################################################################
+
+###############################################################################
+## Build configuration
+###############################################################################
+
+# Don't create bazel-* symlinks in the WORKSPACE directory.
+# Instead, set a prefix and put it in .gitignore
+# build --symlink_prefix=target-bzl/
+
+###############################################################################
+## Test configuration
+###############################################################################
+
+# Reduce test output to just error cases
+test --test_output=errors
+test --verbose_failures
+
+###############################################################################
+## Common configuration
+###############################################################################
+
+# Enable Bzlmod for every Bazel command
+common --enable_bzlmod
+
+# Write build outputs in a platform-specific directory;
+# avoid outputs being wiped and rewritten when switching between platforms.
+common --experimental_platform_in_output_dir
+
+# https://github.com/bazelbuild/bazel/issues/8195
+build --incompatible_disallow_empty_glob=true
+
+# https://github.com/bazelbuild/bazel/issues/12821
+build --nolegacy_external_runfiles
+
+# https://github.com/bazelbuild/bazel/issues/23043.
+build --incompatible_autoload_externally=
+
+###############################################################################
+## Rust configuration
+###############################################################################
+
+# Enable rustfmt for all targets in the workspace
+build:rustfmt --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
+build:rustfmt --output_groups=+rustfmt_checks
+
+# Enable clippy for all targets in the workspace
+build:clippy --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+build:clippy --output_groups=+clippy_checks
+
+###############################################################################
+## Custom user flags
+##
+## This should always be the last thing in the `.bazelrc` file to ensure
+## consistent behavior when setting flags in that file as `.bazelrc` files are
+## evaluated top to bottom.
+###############################################################################
+
+try-import %workspace%/user.bazelrc

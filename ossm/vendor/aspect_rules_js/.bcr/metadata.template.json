@@ -1,0 +1,23 @@
+{
+    "homepage": "https://docs.aspect.build/rules/aspect_rules_js",
+    "maintainers": [
+        {
+            "name": "Alex Eagle",
+            "email": "alex@aspect.dev",
+            "github": "alexeagle"
+        },
+        {
+            "name": "Greg Magolan",
+            "email": "greg@aspect.dev",
+            "github": "gregmagolan"
+        },
+        {
+            "name": "Jason Bedard",
+            "email": "jason@aspect.dev",
+            "github": "jbedard"
+        }
+    ],
+    "repository": ["github:aspect-build/rules_js"],
+    "versions": [],
+    "yanked_versions": {}
+}

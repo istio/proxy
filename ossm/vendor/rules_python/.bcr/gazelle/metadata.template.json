@@ -1,0 +1,21 @@
+{
+    "homepage": "https://github.com/bazel-contrib/rules_python",
+    "maintainers": [
+        {
+            "name": "Richard Levasseur",
+            "email": "richardlev@gmail.com",
+            "github": "rickeylev"
+        },
+        {
+            "name": "Ignas Anikevicius",
+            "email": "bcr-ignas@use.startmail.com",
+            "github": "aignas"
+        }
+    ],
+    "repository": [
+        "github:bazelbuild/rules_python",
+        "github:bazel-contrib/rules_python"
+    ],
+    "versions": [],
+    "yanked_versions": {}
+}

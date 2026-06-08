@@ -1,0 +1,34 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+# gazelle:python_generation_mode file
+
+# This target should be kept unmodified by Gazelle.
+py_library(
+    name = "custom",
+    srcs = ["bar.py"],
+    tags = ["cant_touch_this"],
+    visibility = ["//visibility:private"],
+)
+
+py_library(
+    name = "baz",
+    srcs = ["baz.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_library(
+    name = "foo",
+    srcs = ["foo.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [":custom"],
+)
+
+py_test(
+    name = "bar_test",
+    srcs = ["bar_test.py"],
+)
+
+py_test(
+    name = "foo_test",
+    srcs = ["foo_test.py"],
+)

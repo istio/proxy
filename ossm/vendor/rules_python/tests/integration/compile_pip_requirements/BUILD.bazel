@@ -1,0 +1,67 @@
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+
+genrule(
+    name = "generate_requirements_extra_in",
+    srcs = [],
+    outs = ["requirements_extra.in"],
+    cmd = "echo 'setuptools~=65.6.3' > $@",
+)
+
+genrule(
+    name = "generate_requirements_in",
+    srcs = [],
+    outs = ["requirements.in"],
+    cmd = """
+cat > $@ <<EOF
+-r requirements_extra.in
+pip~=22.3.1
+EOF
+""",
+)
+
+compile_pip_requirements(
+    name = "requirements",
+    src = "requirements.txt",
+    data = [
+        "requirements.in",
+        "requirements_extra.in",
+    ],
+    requirements_txt = "requirements_lock.txt",
+)
+
+compile_pip_requirements(
+    name = "requirements_nohashes",
+    src = "requirements.txt",
+    data = [
+        "requirements.in",
+        "requirements_extra.in",
+    ],
+    generate_hashes = False,
+    requirements_txt = "requirements_nohashes_lock.txt",
+)
+
+genrule(
+    name = "generate_os_specific_requirements_in",
+    srcs = [],
+    outs = ["requirements_os_specific.in"],
+    cmd = """
+cat > $@ <<EOF
+pip==22.3.0 ; sys_platform == "linux"
+pip==22.2.2 ; sys_platform == "darwin"
+pip==22.2.1 ; sys_platform == "win32"
+EOF
+""",
+)
+
+compile_pip_requirements(
+    name = "os_specific_requirements",
+    src = "requirements_os_specific.in",
+    data = [
+        "requirements_extra.in",
+        "requirements_os_specific.in",
+    ],
+    requirements_darwin = "requirements_lock_darwin.txt",
+    requirements_linux = "requirements_lock_linux.txt",
+    requirements_txt = "requirements_lock.txt",
+    requirements_windows = "requirements_lock_windows.txt",
+)

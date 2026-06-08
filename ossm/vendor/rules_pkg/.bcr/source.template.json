@@ -1,0 +1,4 @@
+{
+    "integrity": "**leave this alone**",
+    "url": "https://github.com/{OWNER}/{REPO}/releases/download/{TAG}/rules_pkg-{TAG}.tar.gz"
+}

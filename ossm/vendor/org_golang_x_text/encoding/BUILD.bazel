@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "encoding",
+    srcs = ["encoding.go"],
+    importpath = "golang.org/x/text/encoding",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding/internal/identifier",
+        "//transform",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":encoding",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "encoding_test",
+    srcs = [
+        "encoding_test.go",
+        "example_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    deps = [
+        ":encoding",
+        "//encoding/charmap",
+        "//encoding/unicode",
+        "//transform",
+    ],
+)

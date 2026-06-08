@@ -1,0 +1,24 @@
+module(name = "module_a")
+
+local_path_override(
+    module_name = "module_b",
+    path = "../module_b",
+)
+
+local_path_override(
+    module_name = "module_c",
+    path = "../module_c",
+)
+
+bazel_dep(name = "module_b", version = "0.0.0")
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../../..",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2021")
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")

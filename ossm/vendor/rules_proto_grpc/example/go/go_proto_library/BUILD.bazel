@@ -1,0 +1,11 @@
+load("@rules_proto_grpc//go:defs.bzl", "go_proto_library")
+
+go_proto_library(
+    name = "proto_go_proto",
+    importpath = "github.com/rules-proto-grpc/rules_proto_grpc/example/proto",
+    protos = [
+        "@rules_proto_grpc//example/proto:person_proto",
+        "@rules_proto_grpc//example/proto:place_proto",
+        "@rules_proto_grpc//example/proto:thing_proto",
+    ],
+)

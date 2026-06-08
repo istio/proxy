@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "nameclash",
+    srcs = ["nameclash.go"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/nameclash",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/protoc-gen-go/testdata/nameclash/test_name_clash_hybrid",
+        "//cmd/protoc-gen-go/testdata/nameclash/test_name_clash_hybrid3",
+        "//cmd/protoc-gen-go/testdata/nameclash/test_name_clash_opaque",
+        "//cmd/protoc-gen-go/testdata/nameclash/test_name_clash_opaque3",
+        "//cmd/protoc-gen-go/testdata/nameclash/test_name_clash_open",
+        "//cmd/protoc-gen-go/testdata/nameclash/test_name_clash_open3",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":nameclash",
+    visibility = ["//visibility:public"],
+)

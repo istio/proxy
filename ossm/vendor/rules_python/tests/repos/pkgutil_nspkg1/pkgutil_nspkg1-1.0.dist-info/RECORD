@@ -1,0 +1,5 @@
+nspkg/__init__.py,sha256=d10f14d9ce938ae14416c3c1f4b516c4f40dfe0c9bf973a833e4ef40517ba7d0,81
+nspkg/one/a.txt,sha256=bf0ecbdb9b814248d086c9b69cf26182d9d4138f2ad3d0637c4555fc8cbf68e5,13
+pkgutil_nspkg1-1.0.dist-info/METADATA,sha256=49525c3e6f1fc8f46d9c92c996e35f81327f9fe417df2d9d10784fa4e9cfe84b,59
+pkgutil_nspkg1-1.0.dist-info/WHEEL,sha256=d652ec50af6f144788dc1ffef052e8833b6704e98818e6cf78d80a625ad498fb,105
+pkgutil_nspkg1-1.0.dist-info/RECORD,,

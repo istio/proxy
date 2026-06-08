@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "peers-json_lib",
+    srcs = ["main.go"],
+    importpath = "golang.org/x/tools/cmd/guru/testdata/src/peers-json",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "peers-json",
+    embed = [":peers-json_lib"],
+    visibility = ["//visibility:public"],
+)

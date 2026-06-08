@@ -1,0 +1,17 @@
+
+package(default_visibility = ["//visibility:public"])
+cc_library(
+    name = "cpp",
+    srcs = glob(["runtime/Cpp/runtime/src/**/*.cpp"]),
+    hdrs = glob(["runtime/Cpp/runtime/src/**/*.h"]),
+    defines = ["ANTLR4CPP_USING_ABSEIL"],
+    includes = ["runtime/Cpp/runtime/src"],
+    deps = [
+        "@abseil-cpp//absl/base",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/container:flat_hash_map",
+        "@abseil-cpp//absl/container:flat_hash_set",
+        "@abseil-cpp//absl/synchronization",
+    ],
+)
+  

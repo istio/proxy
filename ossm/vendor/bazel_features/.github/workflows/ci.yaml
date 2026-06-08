@@ -1,0 +1,56 @@
+name: CI
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+concurrency:
+  # Cancel previous actions from the same PR: https://stackoverflow.com/a/72408109
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        bazelversion: [6.*, 7.*, 8.*, 9.*, last_green]
+        folder: ["test/bcr_test", "."]
+        include:
+          # bazel_features is intended to be OS-agnostic, so we only test other OSes with the latest Bazel version
+          - os: macos-latest
+            bazelversion: 9.*
+          - os: windows-latest
+            bazelversion: 9.*
+          - bazelversion: 6.*
+            # Protobuf isn't provided by the WORKSPACE setup, but referenced in the .bazelrc file.
+            extra_arg: "--ignore_all_rc_files"
+        exclude:
+          - bazelversion: 6.*
+            folder: "test/bcr_test"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: bazel-contrib/setup-bazel@0.18.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}-${{ matrix.os }}
+          repository-cache: true
+          cache-save: ${{ github.event_name != 'pull_request' }}
+
+      - name: bazel test //...
+        working-directory: ${{ matrix.folder }}
+        shell: bash
+        run: USE_BAZEL_VERSION=${{ matrix.bazelversion }} bazel ${{ matrix.extra_arg }} test //...

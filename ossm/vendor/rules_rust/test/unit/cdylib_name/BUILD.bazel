@@ -1,0 +1,4 @@
+load(":cdylib_name_analysis_test.bzl", "cdylib_name_analysis_test_suite")
+
+############################ UNIT TESTS #############################
+cdylib_name_analysis_test_suite(name = "cdylib_name_analysis_test_suite")

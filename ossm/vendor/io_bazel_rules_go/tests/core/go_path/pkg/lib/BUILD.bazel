@@ -1,0 +1,80 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load(":generated_embeded.bzl", "generated_embeded")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["lib.go"],
+    cgo = True,
+    data = [
+        "data.txt",
+        "testdata/testdata.txt",
+    ],
+    embedsrcs = [
+        "embedded_src.txt",
+        "renamed_embedded_src.txt",
+        "template/index.html.tmpl",
+    ],
+    importpath = "example.com/repo/pkg/lib",
+    visibility = ["//visibility:public"],
+    deps = [":transitive_lib"],
+)
+
+copy_file(
+    name = "rename_embedded_src.txt",
+    src = ":embedded_src.txt",
+    out = "renamed_embedded_src.txt",
+)
+
+generated_embeded(
+    name = "generated_embeded",
+    srcs = ["embed_test.go"],
+    embedsrcs = ["embedded_src.txt"],
+    importpath = "lib",
+    visibility = ["//visibility:public"],
+)
+
+generated_embeded(
+    name = "generated_embeded_no_srcs",
+    embedsrcs = ["embedded_src.txt"],
+    importpath = "lib",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "external_test.go",
+        "internal_test.go",
+    ],
+    importpath = "example.com/repo/pkg/lib",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "embed_test",
+    embed = [":embed_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "embed_lib",
+    srcs = ["embed_test.go"],
+    importpath = "example.com/repo/pkg/lib",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "vendored",
+    srcs = ["vendored.go"],
+    importmap = "example.com/repo/vendor/example.com/repo2",
+    importpath = "example.com/repo2",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "transitive_lib",
+    srcs = ["transitive.go"],
+    importpath = "example.com/repo/pkg/lib/transitive",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,7 @@
+load("//python/uv:lock.bzl", "lock")
+
+lock(
+    name = "requirements",
+    srcs = ["pyproject.toml"],
+    out = "requirements.txt",
+)

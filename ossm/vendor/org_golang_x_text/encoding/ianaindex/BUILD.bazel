@@ -1,0 +1,50 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ianaindex",
+    srcs = [
+        "ascii.go",
+        "ianaindex.go",
+        "tables.go",
+    ],
+    importpath = "golang.org/x/text/encoding/ianaindex",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding",
+        "//encoding/charmap",
+        "//encoding/internal",
+        "//encoding/internal/identifier",
+        "//encoding/japanese",
+        "//encoding/korean",
+        "//encoding/simplifiedchinese",
+        "//encoding/traditionalchinese",
+        "//encoding/unicode",
+        "//transform",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ianaindex",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "ianaindex_test",
+    srcs = [
+        "ascii_test.go",
+        "example_test.go",
+        "ianaindex_test.go",
+    ],
+    embed = [":ianaindex"],
+    deps = [
+        "//encoding",
+        "//encoding/charmap",
+        "//encoding/internal/identifier",
+        "//encoding/japanese",
+        "//encoding/korean",
+        "//encoding/simplifiedchinese",
+        "//encoding/traditionalchinese",
+        "//encoding/unicode",
+    ],
+)

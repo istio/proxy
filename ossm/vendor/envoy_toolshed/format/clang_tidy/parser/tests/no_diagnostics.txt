@@ -1,0 +1,2 @@
+# Empty clang-tidy output (no diagnostics)
+0 warnings generated.

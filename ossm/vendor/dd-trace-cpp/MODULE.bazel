@@ -1,0 +1,18 @@
+module(
+    name = "dd-trace-cpp",
+    version = "",
+)
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.2.1",
+)
+bazel_dep(
+    name = "rules_cc",
+    version = "0.0.9",
+)
+bazel_dep(
+    name = "abseil-cpp",
+    version = "20230125.1",
+    repo_name = "com_google_absl",
+)

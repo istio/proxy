@@ -1,0 +1,31 @@
+load("@rules_rust//rust:defs.bzl", "rust_library_group")
+load("//:defs.bzl", "pyo3_toolchain", "rust_pyo3_toolchain")
+
+rust_library_group(
+    name = "pyo3",
+    deps = [
+        "@rpyo3c//:pyo3",
+    ],
+)
+
+rust_pyo3_toolchain(
+    name = "rust_pyo3_toolchain",
+    pyo3 = ":pyo3",
+    pyo3_introspection = "@rpyo3c//:pyo3-introspection",
+)
+
+toolchain(
+    name = "rust_toolchain",
+    toolchain = ":rust_pyo3_toolchain",
+    toolchain_type = "//:rust_toolchain_type",
+)
+
+pyo3_toolchain(
+    name = "pyo3_toolchain",
+)
+
+toolchain(
+    name = "toolchain",
+    toolchain = ":pyo3_toolchain",
+    toolchain_type = "//:toolchain_type",
+)

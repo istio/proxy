@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "protoc-gen-example_lib",
+    srcs = [
+        "jsonify.go",
+        "main.go",
+        "printer.go",
+    ],
+    importpath = "github.com/lyft/protoc-gen-star/v2/testdata/protoc-gen-example",
+    importpath_aliases = ["github.com/lyft/protoc-gen-star/testdata/protoc-gen-example"],
+    visibility = ["//visibility:private"],
+    deps = [
+        "//:protoc-gen-star",
+        "//lang/go",
+    ],
+)
+
+go_binary(
+    name = "protoc-gen-example",
+    embed = [":protoc-gen-example_lib"],
+    visibility = ["//visibility:public"],
+)

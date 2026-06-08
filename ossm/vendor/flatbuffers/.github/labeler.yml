@@ -1,0 +1,137 @@
+# Configuration for Auto Labeler during pull request
+#
+# See https://github.com/actions/labeler for file format
+# and https://github.com/google/flatbuffers/labels for a list of valid labels
+#
+# See .github/workflows/label.yml for Github Action workflow script
+
+"c#":
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.cs'
+      - 'net/**/*'
+      - 'tests/FlatBuffers.Test/**/*'
+      - 'tests/FlatBuffers.Benchmarks/**/*'
+      - 'src/idl_gen_csharp.cpp'
+
+swift:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.swift'
+      - 'swift/**/*'
+      - 'tests/swift/**'
+      - 'src/idl_gen_swift.cpp'
+
+nim:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.nim'
+      - 'nim/**/*'
+      - 'src/idl_gen_nim.cpp'
+      - 'src/bfbs_gen_nim.cpp'
+
+javascript:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.js'
+      - 'src/idl_gen_ts.cpp'
+
+typescript:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.ts'
+      - 'src/idl_gen_ts.cpp'
+      - 'grpc/flatbuffers-js-grpc/**/*.ts'
+
+golang:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.go'
+      - 'src/idl_gen_go.cpp'
+
+python:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.py'
+      - 'src/idl_gen_python.cpp'
+
+java:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.java'
+      - 'src/idl_gen_java.cpp'
+
+kotlin:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.kt'
+      - 'src/idl_gen_kotlin.cpp'
+      - 'src/idl_gen_kotlin_kmp.cpp'
+
+lua:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.lua'
+      - 'lua/**/*'
+      - 'src/bfbs_gen_lua.cpp'
+
+lobster:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.lobster'
+      - 'src/idl_gen_lobster.cpp'
+
+php:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.php'
+      - 'src/idl_gen_php.cpp'
+
+rust:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.rs'
+      - 'rust/**/*'
+      - 'src/idl_gen_rust.cpp'
+
+dart:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.dart'
+      - 'src/idl_gen_dart.cpp'
+
+"c++":
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.cc'
+      - '**/*.cpp'
+      - '**/*.h'
+
+json:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.json'
+      - 'src/idl_gen_json_schema.cpp'
+
+codegen:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/**/*'
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'docs/**/*'
+      - '**/*.md'
+
+CI:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/**/*'
+      - '.bazelci/**/*'
+
+grpc:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'grpc/**/*'
+      - 'src/idl_gen_grpc.cpp'

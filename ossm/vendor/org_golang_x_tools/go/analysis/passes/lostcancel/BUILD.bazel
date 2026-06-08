@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "lostcancel",
+    srcs = ["lostcancel.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/lostcancel",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/ctrlflow",
+        "//go/analysis/passes/inspect",
+        "//go/ast/inspector",
+        "//go/cfg",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":lostcancel",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "lostcancel_test",
+    srcs = ["lostcancel_test.go"],
+    deps = [
+        ":lostcancel",
+        "//go/analysis/analysistest",
+        "//internal/typeparams",
+    ],
+)

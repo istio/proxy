@@ -1,0 +1,28 @@
+    maybe(
+        http_archive,
+        name = "{{ crate_repository(name = crate.name, version = crate.version) }}",
+    {%- if attrs | get(key="patch_args", default=Null) %}
+        patch_args = [
+    {%- for arg in attrs.patch_args %}
+            "{{ arg }}",
+    {%- endfor %}
+        ],
+    {%- endif %}
+    {%- if attrs | get(key="patch_tool", default=Null) %}
+        patch_tool = "{{ attrs.patch_tool }}",
+    {%- endif %}
+    {%- if attrs | get(key="patches", default=Null) %}
+        patches = [
+    {%- for patch in attrs.patches %}
+            "{{ patch }}",
+    {%- endfor %}
+        ],
+    {%- endif %}
+    {%- if attrs | get(key="sha256", default=Null) %}
+        sha256 = "{{ attrs.sha256 }}",
+    {%- endif %}
+        type = "tar.gz",
+        urls = ["{{ attrs.url }}"],
+        strip_prefix = "{{ crate.name }}-{{ crate.version }}",
+        build_file = Label("{{ crate_build_file(name = crate.name, version = crate.version)}}"),
+    )

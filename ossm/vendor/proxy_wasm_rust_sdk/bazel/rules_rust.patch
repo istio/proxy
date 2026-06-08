@@ -1,0 +1,15 @@
+# https://github.com/bazelbuild/rules_rust/pull/1315
+
+diff --git a/rust/private/rustc.bzl b/rust/private/rustc.bzl
+index 20a09f94..53122967 100644
+--- a/rust/private/rustc.bzl
++++ b/rust/private/rustc.bzl
+@@ -1518,7 +1518,7 @@ def rustc_compile_action(
+         })
+         crate_info = rust_common.create_crate_info(**crate_info_dict)
+ 
+-    if crate_info.type in ["staticlib", "cdylib"]:
++    if crate_info.type in ["staticlib", "cdylib"] and not out_binary:
+         # These rules are not supposed to be depended on by other rust targets, and
+         # as such they shouldn't provide a CrateInfo. However, one may still want to
+         # write a rust_test for them, so we provide the CrateInfo wrapped in a provider

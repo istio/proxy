@@ -1,0 +1,17 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
+package(default_visibility = ["//visibility:public"])
+
+# A flag controlling whether to generate stubs for pyo3 extensions. This flag
+# requires the creation of binary from the extension crate to generate stubs
+# which means, the extension itself must be usable in some capacity on the
+# exec platform. An additional limitation is that the stubs will only ever
+# be generated for the exec platform so module interfaces should be platform
+# agnostic or incorrect stubs will be generated.
+#
+# The use of this feature requires the `experimental-inspect` feature. For
+# details see: https://pyo3.rs/v0.26.0/features.html#experimental-inspect
+bool_flag(
+    name = "experimental_stubgen",
+    build_setting_default = True,
+)

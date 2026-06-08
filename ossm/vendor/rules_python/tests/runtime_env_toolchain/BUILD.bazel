@@ -1,0 +1,65 @@
+# Copyright 2024 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@rules_python_runtime_env_tc_info//:info.bzl", "PYTHON_VERSION")
+load("//tests/support:py_reconfig.bzl", "py_reconfig_test")
+load("//tests/support:support.bzl", "CC_TOOLCHAIN")
+load(":runtime_env_toolchain_tests.bzl", "runtime_env_toolchain_test_suite")
+
+runtime_env_toolchain_test_suite(name = "runtime_env_toolchain_tests")
+
+py_reconfig_test(
+    name = "toolchain_runs_test",
+    srcs = ["toolchain_runs_test.py"],
+    data = [
+        "//tests/support:current_build_settings",
+    ],
+    extra_toolchains = [
+        "//python/runtime_env_toolchains:all",
+        # Necessary for RBE CI
+        CC_TOOLCHAIN,
+    ],
+    main = "toolchain_runs_test.py",
+    # With bootstrap=script, the build version must match the runtime version
+    # because the venv has the version in the lib/site-packages dir name.
+    python_version = PYTHON_VERSION,
+    # Our RBE has Python 3.6, which is too old for the language features
+    # we use now. Using the runtime-env toolchain on RBE is pretty
+    # questionable anyways.
+    tags = ["no-remote-exec"],
+    deps = ["//python/runfiles"],
+)
+
+py_reconfig_test(
+    name = "bootstrap_script_test",
+    srcs = ["toolchain_runs_test.py"],
+    bootstrap_impl = "script",
+    data = [
+        "//tests/support:current_build_settings",
+    ],
+    extra_toolchains = [
+        "//python/runtime_env_toolchains:all",
+        # Necessary for RBE CI
+        CC_TOOLCHAIN,
+    ],
+    main = "toolchain_runs_test.py",
+    # With bootstrap=script, the build version must match the runtime version
+    # because the venv has the version in the lib/site-packages dir name.
+    python_version = PYTHON_VERSION,
+    # Our RBE has Python 3.6, which is too old for the language features
+    # we use now. Using the runtime-env toolchain on RBE is pretty
+    # questionable anyways.
+    tags = ["no-remote-exec"],
+    deps = ["//python/runfiles"],
+)

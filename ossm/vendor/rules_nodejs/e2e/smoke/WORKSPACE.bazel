@@ -1,0 +1,46 @@
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+local_repository(
+    name = "rules_nodejs",
+    path = "../..",
+)
+
+load("@rules_nodejs//nodejs:repositories.bzl", "nodejs_register_toolchains")
+
+# The order matters because Bazel will provide the first registered toolchain when a rule asks Bazel to select it
+# This applies to the resolved_toolchain
+nodejs_register_toolchains(node_version = "16.5.0")
+
+nodejs_register_toolchains(
+    name = "node17",
+    node_version = "17.9.1",
+)
+
+http_archive(
+    name = "npm_acorn-8.5.0",
+    build_file_content = """load("@aspect_bazel_lib//lib:copy_directory.bzl", "copy_directory")
+
+# Turn a source directory into a TreeArtifact for RBE-compat
+copy_directory(
+    name = "npm_acorn-8.5.0",
+    src = "package",
+    # We must give this as the directory in order for it to appear on NODE_PATH
+    out = "acorn",
+    visibility = ["//visibility:public"],
+)""",
+    sha256 = "d8f9d40c4656537a60bf0c6daae6f0553f54df5ff2518f86464b7c785f20376b",
+    urls = ["https://registry.npmjs.org/acorn/-/acorn-8.5.0.tgz"],
+)
+
+http_archive(
+    name = "aspect_bazel_lib",
+    sha256 = "6d758a8f646ecee7a3e294fbe4386daafbe0e5966723009c290d493f227c390b",
+    strip_prefix = "bazel-lib-2.7.7",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v2.7.7/bazel-lib-v2.7.7.tar.gz",
+)
+
+load("@aspect_bazel_lib//lib:repositories.bzl", "aspect_bazel_lib_dependencies", "aspect_bazel_lib_register_toolchains")
+
+aspect_bazel_lib_dependencies()
+
+aspect_bazel_lib_register_toolchains()

@@ -1,0 +1,22 @@
+{
+  "aspect_bazel_lib": {
+    "minimum_version": "2.21.2",
+    "registry": "https://bcr.bazel.build",
+    "version": "2.21.2"
+  },
+  "bazel_skylib": {
+    "minimum_version": "1.8.0",
+    "registry": "https://bcr.bazel.build",
+    "version": "1.8.0"
+  },
+  "platforms": {
+    "minimum_version": "1.0.0",
+    "registry": "https://bcr.bazel.build",
+    "version": "1.0.0"
+  },
+  "rules_python": {
+    "minimum_version": "1.6.3",
+    "registry": "https://bcr.bazel.build",
+    "version": "1.7.0"
+  }
+}

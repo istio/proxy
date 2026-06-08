@@ -1,0 +1,9 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
+exports_files(["empty.template"])
+
+cc_binary(
+    name = "fixer",
+    srcs = ["main.cpp"],
+    visibility = ["//visibility:public"],
+)

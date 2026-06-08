@@ -1,0 +1,58 @@
+bazel_dep(name = "rules_nodejs", version = "0.0.0", dev_dependency = True)
+local_path_override(
+    module_name = "rules_nodejs",
+    path = "../..",
+)
+
+bazel_dep(name = "aspect_bazel_lib", version = "2.7.7", dev_dependency = True)
+bazel_dep(name = "bazel_skylib", version = "1.7.1", dev_dependency = True)
+bazel_dep(name = "platforms", version = "0.0.10", dev_dependency = True)
+
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node", dev_dependency = True)
+node.toolchain(node_version = "16.5.0")
+node.toolchain(
+    name = "node17",
+    node_version = "17.9.1",
+)
+node.toolchain(
+    name = "node15",
+    node_urls = [
+        "https://nodejs.org/dist/v{version}/{filename}",
+        "https://mirrors.dotsrc.org/nodejs/release/v{version}/{filename}",
+    ],
+    node_version = "15.14.0",
+)
+
+# FIXME(6.0): a repo rule with name=foo should create a repo named @foo, not @foo_toolchains
+use_repo(
+    node,
+    "node15_darwin_amd64",
+    "node15_linux_amd64",
+    "node15_windows_amd64",
+    "node17_darwin_amd64",
+    "node17_linux_amd64",
+    "node17_windows_amd64",
+    "nodejs_darwin_amd64",
+    "nodejs_linux_amd64",
+    "nodejs_toolchains",
+    "nodejs_windows_amd64",
+)
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "npm_acorn-8.5.0",
+    build_file_content = """load("@aspect_bazel_lib//lib:copy_directory.bzl", "copy_directory")
+
+# Turn a source directory into a TreeArtifact for RBE-compat
+copy_directory(
+    name = "npm_acorn-8.5.0",
+    src = "package",
+    # We must give this as the directory in order for it to appear on NODE_PATH
+    out = "acorn",
+    visibility = ["//visibility:public"],
+)""",
+    dev_dependency = True,
+    sha256 = "d8f9d40c4656537a60bf0c6daae6f0553f54df5ff2518f86464b7c785f20376b",
+    urls = ["https://registry.npmjs.org/acorn/-/acorn-8.5.0.tgz"],
+)

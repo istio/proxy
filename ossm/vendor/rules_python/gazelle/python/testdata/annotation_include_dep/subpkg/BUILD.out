@@ -1,0 +1,29 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+# gazelle:python_generation_mode package
+
+py_library(
+    name = "subpkg",
+    srcs = [
+        "__init__.py",
+        "module1.py",
+        "module2.py",
+        "module3.py",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        ":nonexistant_target_from_include_dep_in_module3",
+        "//me_from_module1",
+        "//other/thing:from_include_dep_in_module2",
+        "//you_from_module1",
+    ],
+)
+
+py_test(
+    name = "module1_test",
+    srcs = ["module1_test.py"],
+    deps = [
+        ":subpkg",
+        "//:bagel_from_include_dep_in_module1_test",
+    ],
+)

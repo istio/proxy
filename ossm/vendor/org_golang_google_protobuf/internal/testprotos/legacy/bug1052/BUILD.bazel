@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "bug1052",
+    srcs = ["bug1052.pb.go"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/legacy/bug1052",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/protolegacy",
+        "//types/descriptorpb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":bug1052",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "bug1052_test",
+    srcs = ["bug1052_test.go"],
+    deps = [":bug1052"],
+)

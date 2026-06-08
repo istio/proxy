@@ -1,0 +1,63 @@
+load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
+load("@rules_python//python:py_test.bzl", "py_test")
+
+# Below are targets for testing the `py_console_script_binary` feature and are
+# not part of the example how to use the feature.
+
+# And a test that we can correctly run `pylint --version`
+py_test(
+    name = "pylint_test",
+    srcs = ["pylint_test.py"],
+    data = ["//entry_points:pylint"],
+    env = {
+        "ENTRY_POINT": "$(rlocationpath //entry_points:pylint)",
+    },
+    deps = ["@rules_python//python/runfiles"],
+)
+
+# Next run pylint on the file to generate a report.
+run_binary(
+    name = "pylint_report",
+    srcs = [
+        ":file_with_pylint_errors.py",
+    ],
+    outs = ["pylint_report.txt"],
+    args = [
+        "--output-format=text:$(location pylint_report.txt)",
+        "--load-plugins=pylint_print",
+        # The `exit-zero` ensures that `run_binary` is successful even though there are lint errors.
+        # We check the generated report in the test below.
+        "--exit-zero",
+        "$(location :file_with_pylint_errors.py)",
+    ],
+    env = {
+        # otherwise it may try to create ${HOME}/.cache/pylint
+        "PYLINTHOME": "./.pylint_home",
+    },
+    tool = "//entry_points:pylint_with_deps",
+)
+
+py_test(
+    name = "pylint_deps_test",
+    srcs = ["pylint_deps_test.py"],
+    data = [
+        ":pylint_report",
+        "//entry_points:pylint_with_deps",
+    ],
+    env = {
+        "ENTRY_POINT": "$(rlocationpath //entry_points:pylint_with_deps)",
+        "PYLINT_REPORT": "$(rlocationpath :pylint_report)",
+    },
+    deps = ["@rules_python//python/runfiles"],
+)
+
+# And a test to check that yamllint works
+py_test(
+    name = "yamllint_test",
+    srcs = ["yamllint_test.py"],
+    data = ["//entry_points:yamllint"],
+    env = {
+        "ENTRY_POINT": "$(rlocationpath //entry_points:yamllint)",
+    },
+    deps = ["@rules_python//python/runfiles"],
+)

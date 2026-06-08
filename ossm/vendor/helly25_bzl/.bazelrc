@@ -1,0 +1,8 @@
+# To debug bazel options, uncomment next line.
+# common --announce_rc
+
+common --consistent_labels
+common --enable_bzlmod
+common --noenable_workspace
+common --incompatible_disallow_empty_glob
+common --features=layering_check

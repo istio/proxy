@@ -1,0 +1,11 @@
+load("//tests/support:py_reconfig.bzl", "py_reconfig_test")
+
+py_reconfig_test(
+    name = "pypi_alpha_test",
+    srcs = ["pypi_alpha_test.py"],
+    config_settings = {
+        "//tests/multi_pypi:external_deps_name": "alpha",
+    },
+    main = "pypi_alpha_test.py",
+    deps = ["//tests/multi_pypi:common"],
+)

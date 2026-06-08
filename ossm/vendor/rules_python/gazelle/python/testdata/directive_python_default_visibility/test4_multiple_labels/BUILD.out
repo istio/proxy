@@ -1,0 +1,13 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_default_visibility //foo/bar:__pkg__,//tests:__subpackages__,//a:b
+
+py_library(
+    name = "test4_multiple_labels",
+    srcs = ["test4.py"],
+    visibility = [
+        "//a:b",
+        "//foo/bar:__pkg__",
+        "//tests:__subpackages__",
+    ],
+)

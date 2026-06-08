@@ -1,0 +1,38 @@
+module(
+    name = "other_module",
+)
+
+# This module is using the same version of rules_python
+# that the parent module uses.
+bazel_dep(name = "rules_python", version = "")
+local_path_override(
+    module_name = "rules_python",
+    path = "../../..",
+)
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.defaults(
+    # In a submodule this is ignored
+    python_version = "3.11",
+)
+python.toolchain(
+    configure_coverage_tool = True,
+    python_version = "3.12",
+)
+python.toolchain(
+    configure_coverage_tool = True,
+    python_version = "3.11",
+)
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "other_module_pip",
+    # NOTE: This version must be different than the root module's
+    # default python version.
+    # This is testing that a sub-module can use pip.parse() and only specify
+    # Python versions that DON'T include whatever the root-module's default
+    # Python version is.
+    python_version = "3.11",
+    requirements_lock = ":requirements_lock_3_11.txt",
+)
+use_repo(pip, "other_module_pip")

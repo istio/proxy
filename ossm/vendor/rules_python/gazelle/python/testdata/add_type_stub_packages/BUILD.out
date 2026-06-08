@@ -1,0 +1,18 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+# gazelle:python_generate_pyi_deps true
+
+py_binary(
+    name = "add_type_stub_packages_bin",
+    srcs = ["__main__.py"],
+    main = "__main__.py",
+    pyi_deps = [
+        "@gazelle_python_test//boto3_stubs",
+        "@gazelle_python_test//django_types",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@gazelle_python_test//boto3",
+        "@gazelle_python_test//django",
+    ],
+)

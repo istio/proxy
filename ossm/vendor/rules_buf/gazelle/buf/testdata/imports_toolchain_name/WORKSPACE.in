@@ -1,0 +1,8 @@
+load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_toolchains")
+
+rules_buf_dependencies()
+
+rules_buf_toolchains(
+    "buf_toolchains",
+    version = "v1.5.0",
+)

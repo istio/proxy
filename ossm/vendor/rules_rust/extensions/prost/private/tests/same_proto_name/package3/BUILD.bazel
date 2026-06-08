@@ -1,0 +1,25 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//:defs.bzl", "rust_prost_library", "rust_prost_transform")
+
+package(default_visibility = ["//private/tests:__subpackages__"])
+
+proto_library(
+    name = "models",
+    srcs = [
+        "models.proto",
+    ],
+    data = [
+        ":models_transform",
+    ],
+    strip_import_prefix = "/private/tests/same_proto_name",
+)
+
+rust_prost_transform(
+    name = "models_transform",
+    crate_name = "package3_models",
+)
+
+rust_prost_library(
+    name = "models_rs_proto",
+    proto = ":models",
+)

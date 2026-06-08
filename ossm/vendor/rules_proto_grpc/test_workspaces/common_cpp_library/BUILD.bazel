@@ -1,0 +1,55 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_proto_grpc//cpp:defs.bzl", "cpp_proto_library")
+
+package(default_visibility = ["//visibility:private"])
+
+# Use the same base proto in two different trees. The rules should not tread
+# on each other and try to write the same file.
+
+proto_library(
+    name = "proto_common",
+    srcs = ["common.proto"],
+    deps = ["@com_google_protobuf//:descriptor_proto"],
+)
+
+proto_library(
+    name = "proto_lib_a",
+    srcs = ["a.proto"],
+    deps = [":proto_common"],
+)
+
+proto_library(
+    name = "proto_lib_b",
+    srcs = ["b.proto"],
+    deps = [":proto_common"],
+)
+
+cpp_proto_library(
+    name = "cpp_common",
+    protos = ["proto_common"],
+)
+
+cpp_proto_library(
+    name = "cpp_lib_a",
+    protos = ["proto_lib_a"],
+    deps = ["cpp_common"],
+)
+
+cpp_proto_library(
+    name = "cpp_lib_b",
+    protos = ["proto_lib_b"],
+    deps = ["cpp_common"],
+)
+
+cc_test(
+    name = "test",
+    srcs = ["test.cc"],
+    deps = [
+        # Depend on both -- this is typically due to a "diamond" pattern in
+        # some other transitive include graph, rather than "direct" redundant
+        # dependencies.
+        "cpp_lib_a",
+        "cpp_lib_b",
+    ],
+)

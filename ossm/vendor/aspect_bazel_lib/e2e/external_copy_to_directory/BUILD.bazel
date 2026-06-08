@@ -1,0 +1,13 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load(":directory.bzl", "directory")
+
+directory(
+    name = "dir",
+    srcs = ["foo.txt"],
+    visibility = ["//visibility:public"],
+)
+
+build_test(
+    name = "test",
+    targets = [":dir"],
+)

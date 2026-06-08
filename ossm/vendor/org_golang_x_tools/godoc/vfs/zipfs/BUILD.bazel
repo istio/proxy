@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "zipfs",
+    srcs = ["zipfs.go"],
+    importpath = "golang.org/x/tools/godoc/vfs/zipfs",
+    visibility = ["//visibility:public"],
+    deps = ["//godoc/vfs"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":zipfs",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "zipfs_test",
+    srcs = ["zipfs_test.go"],
+    embed = [":zipfs"],
+    deps = ["//godoc/vfs"],
+)

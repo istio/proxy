@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "splitdwarf_lib",
+    srcs = ["splitdwarf.go"],
+    importpath = "golang.org/x/tools/cmd/splitdwarf",
+    visibility = ["//visibility:private"],
+    deps = select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            "//cmd/splitdwarf/internal/macho",
+        ],
+        "@io_bazel_rules_go//go/platform:android": [
+            "//cmd/splitdwarf/internal/macho",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//cmd/splitdwarf/internal/macho",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "//cmd/splitdwarf/internal/macho",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//cmd/splitdwarf/internal/macho",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            "//cmd/splitdwarf/internal/macho",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//cmd/splitdwarf/internal/macho",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//cmd/splitdwarf/internal/macho",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "//cmd/splitdwarf/internal/macho",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//cmd/splitdwarf/internal/macho",
+        ],
+        "@io_bazel_rules_go//go/platform:osx": [
+            "//cmd/splitdwarf/internal/macho",
+        ],
+        "@io_bazel_rules_go//go/platform:qnx": [
+            "//cmd/splitdwarf/internal/macho",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+go_binary(
+    name = "splitdwarf",
+    embed = [":splitdwarf_lib"],
+    visibility = ["//visibility:public"],
+)

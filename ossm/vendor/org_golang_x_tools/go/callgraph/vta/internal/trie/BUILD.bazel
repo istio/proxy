@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "trie",
+    srcs = [
+        "bits.go",
+        "builder.go",
+        "scope.go",
+        "trie.go",
+    ],
+    importpath = "golang.org/x/tools/go/callgraph/vta/internal/trie",
+    visibility = ["//go/callgraph/vta:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":trie",
+    visibility = ["//go/callgraph/vta:__subpackages__"],
+)
+
+go_test(
+    name = "trie_test",
+    srcs = [
+        "bits_test.go",
+        "op_test.go",
+        "trie_test.go",
+    ],
+    embed = [":trie"],
+)

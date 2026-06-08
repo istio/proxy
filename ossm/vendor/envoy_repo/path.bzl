@@ -1,0 +1,1 @@
+PATH = '/tmp/proxy-deps-output-base/external/envoy'

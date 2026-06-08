@@ -1,0 +1,14 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "protos_proto",
+    srcs = [
+        "foo.proto",
+        "foo_generated.proto",
+    ],
+    _gazelle_imports = [
+        "google/protobuf/any.proto",
+        "protos/sub/sub.proto",
+    ],
+    visibility = ["//visibility:public"],
+)

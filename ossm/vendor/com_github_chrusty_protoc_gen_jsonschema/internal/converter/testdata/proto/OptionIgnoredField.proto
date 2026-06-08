@@ -1,0 +1,10 @@
+syntax = "proto3";
+package samples;
+import "options.proto";
+
+message OptionIgnoredField {
+    string visible1 = 1 [(protoc.gen.jsonschema.field_options).ignore = false];
+    string visible2 = 2;
+    string hidden1  = 3 [(protoc.gen.jsonschema.field_options).ignore = true];
+    string hidden2  = 4 [deprecated = true, (protoc.gen.jsonschema.field_options).ignore = true];
+}

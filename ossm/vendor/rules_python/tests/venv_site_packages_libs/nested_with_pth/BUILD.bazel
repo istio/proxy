@@ -1,0 +1,11 @@
+load("//python:py_library.bzl", "py_library")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "nested_with_pth",
+    srcs = glob(["site-packages/**/*.py"]),
+    data = glob(["site-packages/*.pth"]),
+    experimental_venvs_site_packages = "//python/config_settings:venvs_site_packages",
+    imports = ["site-packages"],
+)

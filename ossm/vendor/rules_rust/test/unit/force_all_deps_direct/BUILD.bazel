@@ -1,0 +1,4 @@
+load(":force_all_deps_direct_test.bzl", "force_all_deps_direct_test_suite")
+
+############################ UNIT TESTS #############################
+force_all_deps_direct_test_suite(name = "force_all_deps_direct_test_suite")

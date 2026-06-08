@@ -1,0 +1,27 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+py_library(
+    name = "simple_binary_with_library",
+    srcs = [
+        "__init__.py",
+        "bar.py",
+        "foo.py",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+# This target should be kept unmodified by Gazelle.
+py_library(
+    name = "custom",
+    srcs = [
+        "bar.py",
+    ],
+)
+
+py_binary(
+    name = "simple_binary_with_library_bin",
+    srcs = ["__main__.py"],
+    main = "__main__.py",
+    visibility = ["//:__subpackages__"],
+    deps = [":simple_binary_with_library"],
+)

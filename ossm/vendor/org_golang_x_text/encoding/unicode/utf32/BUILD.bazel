@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "utf32",
+    srcs = ["utf32.go"],
+    importpath = "golang.org/x/text/encoding/unicode/utf32",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding",
+        "//encoding/internal/identifier",
+        "//transform",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":utf32",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "utf32_test",
+    srcs = ["utf32_test.go"],
+    embed = [":utf32"],
+    deps = [
+        "//encoding",
+        "//encoding/internal/enctest",
+        "//transform",
+    ],
+)

@@ -1,0 +1,25 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_proc_macro",
+    "rust_test",
+)
+
+cc_library(
+    name = "linkstamp",
+    linkstamp = "linkstamp.cc",
+)
+
+rust_proc_macro(
+    name = "linkstamp_proc_macro",
+    srcs = ["linkstamp_proc_macro.rs"],
+    edition = "2018",
+    deps = [":linkstamp"],
+)
+
+rust_test(
+    name = "linkstamp_proc_macro_test",
+    srcs = ["linkstamp_proc_macro_test.rs"],
+    edition = "2018",
+    proc_macro_deps = [":linkstamp_proc_macro"],
+)

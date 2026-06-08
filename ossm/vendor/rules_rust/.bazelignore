@@ -1,0 +1,7 @@
+.direnv
+bzlmod
+crate_universe/private/bootstrap
+docs
+examples
+extensions
+test/integration

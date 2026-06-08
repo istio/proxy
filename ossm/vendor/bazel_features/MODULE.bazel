@@ -1,0 +1,15 @@
+module(
+    name = "bazel_features",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.6.1")
+
+version = use_extension("//private:extensions.bzl", "version_extension")
+use_repo(version, "bazel_features_globals", "bazel_features_version")
+
+bazel_dep(
+    name = "protobuf",
+    version = "33.6",
+    dev_dependency = True,
+)

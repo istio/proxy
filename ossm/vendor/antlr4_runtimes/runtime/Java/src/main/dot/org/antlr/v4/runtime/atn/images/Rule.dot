@@ -1,0 +1,15 @@
+digraph "" {
+    graph[fontname="CourierNew";rankdir="LR";pad="0.25"];
+    node[fontname="CourierNew";target="_parent"];
+    edge[fontname="CourierNew"];
+    {   node[shape="box"];
+        RuleStartState[URL="../RuleStartState.html"];
+        RuleStopState[URL="../RuleStopState.html"];
+    }
+    {   node[style="dashed"];
+        content;
+    }
+
+    RuleStartState -> content[label="&#0949;"];
+    content -> RuleStopState[style="dashed"];
+}

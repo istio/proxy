@@ -1,0 +1,29 @@
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("//python:defs.bzl", "py_library")
+
+string_flag(
+    name = "external_deps_name",
+    build_setting_default = "",
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "common",
+    srcs = [],
+    visibility = ["//visibility:public"],
+    deps = select({
+        ":is_external_alpha": ["@pypi_alpha//more_itertools"],
+        ":is_external_beta": ["@pypi_beta//more_itertools"],
+        "//conditions:default": [],
+    }),
+)
+
+config_setting(
+    name = "is_external_alpha",
+    flag_values = {"//tests/multi_pypi:external_deps_name": "alpha"},
+)
+
+config_setting(
+    name = "is_external_beta",
+    flag_values = {"//tests/multi_pypi:external_deps_name": "beta"},
+)

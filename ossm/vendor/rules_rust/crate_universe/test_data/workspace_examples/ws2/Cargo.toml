@@ -1,0 +1,6 @@
+[workspace]
+exclude = ["ws2excluded", "ws2excluded/ws2excluded2"]
+[package]
+name = "ws2"
+version = "0.1.0"
+edition = "2021"

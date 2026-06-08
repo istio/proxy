@@ -1,0 +1,42 @@
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_shared_library",
+    "rust_static_library",
+    "rust_test",
+)
+
+rust_shared_library(
+    name = "greeter_cdylib",
+    srcs = [
+        "greeter.rs",
+        "shared_lib.rs",
+    ],
+    crate_root = "shared_lib.rs",
+    edition = "2018",
+)
+
+rust_static_library(
+    name = "greeter_staticlib",
+    srcs = [
+        "greeter.rs",
+        "static_lib.rs",
+    ],
+    crate_root = "static_lib.rs",
+    edition = "2018",
+)
+
+rust_test(
+    name = "auto_discovery_json_test",
+    srcs = ["auto_discovery_json_test.rs"],
+    data = [":auto-discovery.json"],
+    edition = "2018",
+    env = {"AUTO_DISCOVERY_JSON": "$(rootpath :auto-discovery.json)"},
+    # This target is tagged as manual since it's not expected to pass in
+    # contexts outside of `//test/rust_analyzer:rust_analyzer_test`. Run
+    # that target to execute this test.
+    tags = ["manual"],
+    deps = [
+        "//test/rust_analyzer/3rdparty/crates:serde",
+        "//test/rust_analyzer/3rdparty/crates:serde_json",
+    ],
+)

@@ -1,0 +1,1 @@
+Resolved symlink file or relative symlink

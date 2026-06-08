@@ -1,0 +1,48 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load("@rules_rust_prost//:defs.bzl", "rust_prost_library")
+load(":transition.bzl", "nocompile_wkt_transitioned")
+
+package(default_visibility = ["//private/tests:__subpackages__"])
+
+proto_library(
+    name = "nocompile_well_known_types_proto",
+    srcs = [
+        "nocompile_well_known_types.proto",
+    ],
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:api_proto",
+        "@com_google_protobuf//:compiler_plugin_proto",
+        "@com_google_protobuf//:descriptor_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:empty_proto",
+        "@com_google_protobuf//:field_mask_proto",
+        "@com_google_protobuf//:source_context_proto",
+        "@com_google_protobuf//:struct_proto",
+        "@com_google_protobuf//:timestamp_proto",
+        "@com_google_protobuf//:type_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ],
+)
+
+rust_prost_library(
+    name = "nocompile_well_known_types_rs_proto",
+    proto = ":nocompile_well_known_types_proto",
+    tags = ["manual"],
+)
+
+nocompile_wkt_transitioned(
+    name = "nocompile_well_known_types_rs_proto_transitioned",
+    lib = ":nocompile_well_known_types_rs_proto",
+)
+
+rust_test(
+    name = "nocompile_well_known_types_test",
+    srcs = ["nocompile_well_known_types_test.rs"],
+    edition = "2021",
+    deps = [
+        ":nocompile_well_known_types_rs_proto_transitioned",
+        "//private/3rdparty/crates:prost-types",
+    ],
+)

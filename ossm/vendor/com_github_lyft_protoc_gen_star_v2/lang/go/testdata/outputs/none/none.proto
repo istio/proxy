@@ -1,0 +1,4 @@
+syntax="proto3";
+package outputs.none;
+option go_package="./;none";
+message None {}

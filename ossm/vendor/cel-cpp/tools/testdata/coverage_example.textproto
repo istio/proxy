@@ -1,0 +1,494 @@
+# proto-file: google3/google/api/expr/checked.proto
+# proto-message: CheckedExpr
+#
+# int1 < int2 &&
+# (43 > 42) &&
+# !(bool1 || bool2) &&
+# 4 / int_divisor >= 1 &&
+# (ternary_c ? ternary_t : ternary_f)
+reference_map: {
+  key: 1
+  value: {
+    name: "int1"
+  }
+}
+reference_map: {
+  key: 2
+  value: {
+    overload_id: "less_int64"
+  }
+}
+reference_map: {
+  key: 3
+  value: {
+    name: "int2"
+  }
+}
+reference_map: {
+  key: 5
+  value: {
+    overload_id: "greater_int64"
+  }
+}
+reference_map: {
+  key: 7
+  value: {
+    overload_id: "logical_and"
+  }
+}
+reference_map: {
+  key: 8
+  value: {
+    overload_id: "logical_not"
+  }
+}
+reference_map: {
+  key: 9
+  value: {
+    name: "bool1"
+  }
+}
+reference_map: {
+  key: 10
+  value: {
+    name: "bool2"
+  }
+}
+reference_map: {
+  key: 11
+  value: {
+    overload_id: "logical_or"
+  }
+}
+reference_map: {
+  key: 12
+  value: {
+    overload_id: "logical_and"
+  }
+}
+reference_map: {
+  key: 14
+  value: {
+    overload_id: "divide_int64"
+  }
+}
+reference_map: {
+  key: 15
+  value: {
+    name: "int_divisor"
+  }
+}
+reference_map: {
+  key: 16
+  value: {
+    overload_id: "greater_equals_int64"
+  }
+}
+reference_map: {
+  key: 18
+  value: {
+    overload_id: "logical_and"
+  }
+}
+reference_map: {
+  key: 19
+  value: {
+    name: "ternary_c"
+  }
+}
+reference_map: {
+  key: 20
+  value: {
+    overload_id: "conditional"
+  }
+}
+reference_map: {
+  key: 21
+  value: {
+    name: "ternary_t"
+  }
+}
+reference_map: {
+  key: 22
+  value: {
+    name: "ternary_f"
+  }
+}
+reference_map: {
+  key: 23
+  value: {
+    overload_id: "logical_and"
+  }
+}
+type_map: {
+  key: 1
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 2
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 3
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 4
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 5
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 6
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 7
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 8
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 9
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 10
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 11
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 12
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 13
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 14
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 15
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 16
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 17
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 18
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 19
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 20
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 21
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 22
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 23
+  value: {
+    primitive: BOOL
+  }
+}
+source_info: {
+  location: "<input>"
+  line_offsets: 109
+  positions: {
+    key: 1
+    value: 0
+  }
+  positions: {
+    key: 2
+    value: 5
+  }
+  positions: {
+    key: 3
+    value: 7
+  }
+  positions: {
+    key: 4
+    value: 16
+  }
+  positions: {
+    key: 5
+    value: 19
+  }
+  positions: {
+    key: 6
+    value: 21
+  }
+  positions: {
+    key: 7
+    value: 12
+  }
+  positions: {
+    key: 8
+    value: 28
+  }
+  positions: {
+    key: 9
+    value: 30
+  }
+  positions: {
+    key: 10
+    value: 39
+  }
+  positions: {
+    key: 11
+    value: 36
+  }
+  positions: {
+    key: 12
+    value: 25
+  }
+  positions: {
+    key: 13
+    value: 49
+  }
+  positions: {
+    key: 14
+    value: 51
+  }
+  positions: {
+    key: 15
+    value: 53
+  }
+  positions: {
+    key: 16
+    value: 65
+  }
+  positions: {
+    key: 17
+    value: 68
+  }
+  positions: {
+    key: 18
+    value: 46
+  }
+  positions: {
+    key: 19
+    value: 74
+  }
+  positions: {
+    key: 20
+    value: 84
+  }
+  positions: {
+    key: 21
+    value: 86
+  }
+  positions: {
+    key: 22
+    value: 98
+  }
+  positions: {
+    key: 23
+    value: 70
+  }
+}
+expr: {
+  id: 18
+  call_expr: {
+    function: "_&&_"
+    args: {
+      id: 12
+      call_expr: {
+        function: "_&&_"
+        args: {
+          id: 7
+          call_expr: {
+            function: "_&&_"
+            args: {
+              id: 2
+              call_expr: {
+                function: "_<_"
+                args: {
+                  id: 1
+                  ident_expr: {
+                    name: "int1"
+                  }
+                }
+                args: {
+                  id: 3
+                  ident_expr: {
+                    name: "int2"
+                  }
+                }
+              }
+            }
+            args: {
+              id: 5
+              call_expr: {
+                function: "_>_"
+                args: {
+                  id: 4
+                  const_expr: {
+                    int64_value: 43
+                  }
+                }
+                args: {
+                  id: 6
+                  const_expr: {
+                    int64_value: 42
+                  }
+                }
+              }
+            }
+          }
+        }
+        args: {
+          id: 8
+          call_expr: {
+            function: "!_"
+            args: {
+              id: 11
+              call_expr: {
+                function: "_||_"
+                args: {
+                  id: 9
+                  ident_expr: {
+                    name: "bool1"
+                  }
+                }
+                args: {
+                  id: 10
+                  ident_expr: {
+                    name: "bool2"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    args: {
+      id: 23
+      call_expr: {
+        function: "_&&_"
+        args: {
+          id: 16
+          call_expr: {
+            function: "_>=_"
+            args: {
+              id: 14
+              call_expr: {
+                function: "_/_"
+                args: {
+                  id: 13
+                  const_expr: {
+                    int64_value: 4
+                  }
+                }
+                args: {
+                  id: 15
+                  ident_expr: {
+                    name: "int_divisor"
+                  }
+                }
+              }
+            }
+            args: {
+              id: 17
+              const_expr: {
+                int64_value: 1
+              }
+            }
+          }
+        }
+        args: {
+          id: 20
+          call_expr: {
+            function: "_?_:_"
+            args: {
+              id: 19
+              ident_expr: {
+                name: "ternary_c"
+              }
+            }
+            args: {
+              id: 21
+              ident_expr: {
+                name: "ternary_t"
+              }
+            }
+            args: {
+              id: 22
+              ident_expr: {
+                name: "ternary_f"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

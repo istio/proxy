@@ -1,0 +1,36 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
+
+# gazelle:python_generate_pyi_srcs true
+
+py_library(
+    name = "directive_python_generate_pyi_srcs",
+    srcs = [
+        "__init__.py",
+        "bar.py",
+        "baz.py",
+        "foo.py",
+    ],
+    pyi_srcs = [
+        "baz.pyi",
+        "foo.pyi",
+    ],
+    visibility = ["//:__subpackages__"],
+)
+
+py_binary(
+    name = "directive_python_generate_pyi_srcs_bin",
+    srcs = ["__main__.py"],
+    main = "__main__.py",
+    pyi_srcs = ["__main__.pyi"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_test(
+    name = "directive_python_generate_pyi_srcs_test",
+    srcs = [
+        "__test__.py",
+        "foo_test.py",
+    ],
+    main = "__test__.py",
+    pyi_srcs = ["foo_test.pyi"],
+)

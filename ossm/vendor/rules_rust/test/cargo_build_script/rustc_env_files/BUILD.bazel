@@ -1,0 +1,31 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_library", "rust_test")
+
+write_file(
+    name = "generate_rustc_env_file",
+    out = "rustc_env_file",
+    content = [
+        "GREETING=Howdy",
+        "",
+    ],
+)
+
+cargo_build_script(
+    name = "cargo_build_script",
+    srcs = ["build.rs"],
+    edition = "2018",
+    rustc_env_files = [":generate_rustc_env_file"],
+)
+
+rust_library(
+    name = "test_lib",
+    srcs = ["test_lib.rs"],
+    edition = "2018",
+    deps = [":cargo_build_script"],
+)
+
+rust_test(
+    name = "consume_build_script",
+    crate = ":test_lib",
+)

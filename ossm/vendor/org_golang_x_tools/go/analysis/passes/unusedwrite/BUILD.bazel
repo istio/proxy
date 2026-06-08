@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "unusedwrite",
+    srcs = ["unusedwrite.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/unusedwrite",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/buildssa",
+        "//go/ssa",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":unusedwrite",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "unusedwrite_test",
+    srcs = ["unusedwrite_test.go"],
+    deps = [
+        ":unusedwrite",
+        "//go/analysis/analysistest",
+    ],
+)

@@ -1,0 +1,13 @@
+---
+bcr_test_module:
+  module_path: "examples/check_glob"
+  matrix:
+    platform: ["debian10", "macos", "ubuntu2004"]
+    bazel: [6.x, 7.x]
+  tasks:
+    run_tests:
+      name: "Run test module"
+      platform: ${{ platform }}
+      bazel: ${{ bazel }}
+      test_targets:
+        - "//..."

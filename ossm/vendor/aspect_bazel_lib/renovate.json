@@ -1,0 +1,26 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    ":dependencyDashboard",
+    ":enablePreCommit",
+    ":semanticPrefixFixDepsChoreOthers",
+    "group:monorepos",
+    "group:recommended",
+    "replacements:all",
+    "workarounds:all"
+  ],
+  "schedule": ["before 4am on monday"],
+  "packageRules": [
+    {
+      "matchFiles": ["MODULE.bazel"],
+      "matchPackageNames": ["pre-commit/mirrors-prettier"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["gomod"],
+      "groupName": "all Go dependencies",
+      "groupSlug": "all-go-deps"
+    }
+  ],
+  "labels": ["deps"]
+}

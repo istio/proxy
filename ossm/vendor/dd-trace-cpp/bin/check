@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# Run some of the checks that are performed by CircleCI.
+# This is convenient to run before committing.
+
+set -e
+
+# Go to the repository root directory.
+cd "$(dirname "$0")"/..
+
+bin/format --dry-run -Werror
+
+bin/test
+
+if [ "$1" != '--no-bazel' ]; then
+  # Specifying two different build configurations in bazel seems to trigger a
+  # clean build each time :(
+  bin/bazel-build --absl
+  bin/bazel-build --std
+fi
+
+find bin/ -executable -type f -print0 | xargs -0 shellcheck

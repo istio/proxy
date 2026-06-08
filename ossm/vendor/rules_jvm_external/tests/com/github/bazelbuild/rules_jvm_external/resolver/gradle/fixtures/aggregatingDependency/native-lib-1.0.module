@@ -1,0 +1,47 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.example",
+    "module": "native-lib",
+    "version": "1.0",
+    "attributes": { "org.gradle.status": "release" }
+  },
+  "variants": [
+    {
+      "name": "runtimeElements",
+      "attributes": {
+       "org.gradle.category": "library",
+       "org.gradle.libraryelements": "jar",
+       "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.example",
+          "module": "native-lib",
+          "version": { "requires": "1.0" },
+          "thirdPartyCompatibility": {
+            "artifactSelector": {
+              "name": "native-lib",
+              "type": "jar",
+              "extension": "jar",
+              "classifier": "osx-aarch_64"
+            }
+          }
+        },
+        {
+          "group": "com.example",
+          "module": "native-lib",
+          "version": { "requires": "1.0" },
+          "thirdPartyCompatibility": {
+            "artifactSelector": {
+              "name": "native-lib",
+              "type": "jar",
+              "extension": "jar",
+              "classifier": "osx-x86_64"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

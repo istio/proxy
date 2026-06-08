@@ -1,0 +1,73 @@
+name: cppcheck
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  cppcheck:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: 'recursive'
+
+      - name: Set up dependencies
+        run: |
+          sudo apt update -y
+          sudo apt install -y cppcheck
+
+      - name: Run cppcheck
+        run: |
+          cppcheck --version | tee cppcheck.log
+          cppcheck \
+            --force \
+            --enable=warning,performance,portability \
+            --inline-suppr \
+            --suppress=unknownMacro:exporters/etw/include/opentelemetry/exporters/etw/TraceLoggingDynamic.h \
+            --language=c++ \
+            --std=c++17 \
+            -I api/include \
+            -I exporters/elasticsearch/include \
+            -I exporters/etw/include \
+            -I exporters/memory/include \
+            -I exporters/ostream/include \
+            -I exporters/otlp/include \
+            -I exporters/prometheus/include \
+            -I exporters/zipkin/include \
+            -I ext/include \
+            -I opentracing-shim/include \
+            -I resource_detectors/include \
+            -I sdk/include \
+            -i build \
+            -i test \
+            -i third_party \
+            -i tools \
+            -j $(nproc) \
+            . 2>&1 | tee --append cppcheck.log
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: success() || failure()
+        with:
+          name: Logs (cppcheck)
+          path: ./cppcheck.log
+
+      - name: Count warnings
+        run: |
+          set +e
+          readonly WARNING_COUNT=`grep -c -E "\[.+\]" cppcheck.log`
+          echo "cppcheck reported ${WARNING_COUNT} warning(s)"
+          if [ $WARNING_COUNT -gt 0 ] ; then
+            echo "::warning::cppcheck reported ${WARNING_COUNT} warning(s)"
+            exit 1
+          fi

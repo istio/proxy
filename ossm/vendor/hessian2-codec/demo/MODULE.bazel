@@ -1,0 +1,20 @@
+module(
+    name = "com_alibaba_hessian2_codec_demo",
+)
+
+bazel_dep(
+    name = "hessian2-codec",
+    version = "",
+    repo_name = "com_alibaba_hessian2_codec",
+)
+bazel_dep(
+    name = "abseil-cpp",
+    version = "20220623.1",
+    repo_name = "com_google_absl",
+)
+# -- bazel_dep definitions -- #
+
+local_path_override(
+    module_name = "hessian2-codec",
+    path = "..",
+)

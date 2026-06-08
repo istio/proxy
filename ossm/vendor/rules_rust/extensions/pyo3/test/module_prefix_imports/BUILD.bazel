@@ -1,0 +1,18 @@
+load("@rules_python//python:defs.bzl", "py_test")
+load("//:defs.bzl", "pyo3_extension")
+
+# Variant that relies on the `imports` attribute to put this package root on
+# `PYTHONPATH` (so you can import `foo.bar` directly).
+pyo3_extension(
+    name = "module_prefix_imports",
+    srcs = ["bar.rs"],
+    edition = "2021",
+    imports = ["."],
+    module_name = "foo.bar",
+)
+
+py_test(
+    name = "module_prefix_imports_test",
+    srcs = ["module_prefix_imports_test.py"],
+    deps = [":module_prefix_imports"],
+)

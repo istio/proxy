@@ -1,0 +1,60 @@
+load("@aspect_bazel_lib//lib:diff_test.bzl", "diff_test")
+load("@aspect_bazel_lib//lib:testing.bzl", "assert_contains")
+load("//js/private:expand_template.bzl", "expand_template")
+
+expand_template(
+    name = "a_tmpl_stamp",
+    out = "a_stamp",
+    data = ["a.tmpl"],
+    stamp = 1,
+    stamp_substitutions = {
+        "{{VERSION}}": "v{{BUILD_SCM_VERSION}}",
+    },
+    substitutions = {
+        "{{TMPL_PATH}}": "$(rootpath a.tmpl)",
+        "{{VERSION}}": "v0.0.0",
+        "{{WORKSPACE}}": "$(WORKSPACE)",
+    },
+    template = "a.tmpl",
+)
+
+diff_test(
+    name = "a_stamp_test",
+    file1 = ":a_stamp",
+    file2 = select({
+        "@aspect_bazel_lib//lib:bzlmod": "a_stamp_expected_bzlmod",
+        "//conditions:default": "a_stamp_expected",
+    }),
+)
+
+expand_template(
+    name = "a_tmpl",
+    out = "a",
+    data = ["a.tmpl"],
+    stamp = 0,
+    stamp_substitutions = {
+        "{{VERSION}}": "v{{BUILD_SCM_VERSION}}",
+    },
+    substitutions = {
+        "{{TMPL_PATH}}": "$(rootpath a.tmpl)",
+        "{{VERSION}}": "v0.0.0",
+        "{{WORKSPACE}}": "$(WORKSPACE)",
+    },
+    template = "a.tmpl",
+)
+
+diff_test(
+    name = "a_test",
+    file1 = ":a",
+    file2 = select({
+        "@aspect_bazel_lib//lib:bzlmod": "a_expected_bzlmod",
+        "//conditions:default": "a_expected",
+    }),
+)
+
+# This test requires that DefaultInfo be returned with the proper outputs.
+assert_contains(
+    name = "default_info_test",
+    actual = ":a_tmpl_stamp",
+    expected = "WORKSPACE:",
+)

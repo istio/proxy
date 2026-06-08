@@ -1,0 +1,7 @@
+bazel_dep(name = "jq.bzl", version = "0.0.0")
+bazel_dep(name = "aspect_bazel_lib", version = "2.8.1")
+
+local_path_override(
+    module_name = "jq.bzl",
+    path = "../..",
+)

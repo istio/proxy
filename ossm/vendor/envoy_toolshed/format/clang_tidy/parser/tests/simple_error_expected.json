@@ -1,0 +1,14 @@
+[
+  {
+    "file": "file.cpp",
+    "line": 1,
+    "column": 1,
+    "severity": "error",
+    "message": "expected ';' after expression",
+    "check": "clang-diagnostic-error",
+    "context_lines": [
+      "  return 0",
+      "  ^"
+    ]
+  }
+]

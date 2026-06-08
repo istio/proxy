@@ -1,0 +1,23 @@
+constraint_setting(
+    name = "libc",
+    default_constraint_value = "unconstrained",
+    visibility = ["//visibility:public"],
+)
+
+constraint_value(
+    name = "unconstrained",
+    constraint_setting = "libc",
+    visibility = ["//visibility:public"],
+)
+
+constraint_value(
+    name = "glibc",
+    constraint_setting = "libc",
+    visibility = ["//visibility:public"],
+)
+
+constraint_value(
+    name = "musl",
+    constraint_setting = "libc",
+    visibility = ["//visibility:public"],
+)

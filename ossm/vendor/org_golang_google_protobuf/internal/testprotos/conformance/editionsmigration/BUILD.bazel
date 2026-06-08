@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "editionsmigration",
+    srcs = [
+        "test_messages_proto2_editions.pb.go",
+        "test_messages_proto3_editions.pb.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/testprotos/conformance/editionsmigration",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/known/anypb",
+        "//types/known/durationpb",
+        "//types/known/fieldmaskpb",
+        "//types/known/structpb",
+        "//types/known/timestamppb",
+        "//types/known/wrapperspb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":editionsmigration",
+    visibility = ["//:__subpackages__"],
+)

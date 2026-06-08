@@ -1,0 +1,29 @@
+os:
+  - linux
+
+dist:
+  - focal
+
+compiler:
+  - gcc
+
+language:
+  - python
+
+python:
+  - "2.7"
+  - "3.8"
+
+before_script:
+  - sudo apt-get update -qq
+  - sudo apt-get install luajit -y
+
+env:
+  - PATH: /home/travis/virtualenv/python2.7.18/bin:$PATH
+
+script:
+  - buildtools/install-dependencies.sh
+  - autoconf
+  - ./configure
+  - make
+  - make tests

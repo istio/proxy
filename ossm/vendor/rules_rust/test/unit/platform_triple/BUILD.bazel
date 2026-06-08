@@ -1,0 +1,10 @@
+load(":platform_triple_test.bzl", "platform_triple_test_suite")
+load(":wasi_platform_test.bzl", "wasi_platform_test_suite")
+
+platform_triple_test_suite(
+    name = "platform_triple_test_suite",
+)
+
+wasi_platform_test_suite(
+    name = "wasi_platform_test_suite",
+)

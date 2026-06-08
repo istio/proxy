@@ -1,0 +1,9 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_validate_import_statements false
+
+py_library(
+    name = "disable_import_statements_validation",
+    srcs = ["__init__.py"],
+    visibility = ["//:__subpackages__"],
+)

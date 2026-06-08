@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+option go_package = "github.com/rules-proto-grpc/rules_proto_grpc/test_workspaces/go_fixer";
+
+message demo {
+    bool field = 1;
+}

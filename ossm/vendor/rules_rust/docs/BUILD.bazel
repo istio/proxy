@@ -1,0 +1,305 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_rust_mdbook//:defs.bzl", "mdbook", "mdbook_server")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@stardoc//stardoc:stardoc.bzl", "stardoc")
+
+package(default_visibility = ["//visibility:private"])
+
+bzl_library(
+    name = "docs_deps",
+    srcs = [
+        "@bazel_tools//tools:bzl_srcs",
+    ],
+    deps = [
+        "@bazel_skylib//lib:paths",
+        "@bazel_skylib//lib:selects",
+        "@bazel_skylib//lib:structs",
+        "@bazel_skylib//rules:common_settings",
+    ],
+)
+
+bzl_library(
+    name = "all_docs",
+    deps = [
+        ":docs_deps",
+        "@rules_rust//cargo:bzl_lib",
+        "@rules_rust//crate_universe:bzl_lib",
+        "@rules_rust//rust:bzl_lib",
+        "@rules_rust_bindgen//:bzl_lib",
+        "@rules_rust_prost//:bzl_lib",
+        "@rules_rust_protobuf//:bzl_lib",
+        "@rules_rust_wasm_bindgen//:bzl_lib",
+    ],
+)
+
+stardoc(
+    name = "cargo",
+    out = "src/cargo.md",
+    input = "@rules_rust//cargo:defs.bzl",
+    symbol_names = [
+        "cargo_bootstrap_repository",
+        "cargo_build_script",
+        "cargo_dep_env",
+        "cargo_env",
+        "extract_cargo_lints",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust",
+    out = "src/rust.md",
+    input = "@rules_rust//rust:defs.bzl",
+    symbol_names = [
+        "rust_binary",
+        "rust_library",
+        "rust_library_group",
+        "rust_lint_config",
+        "rust_static_library",
+        "rust_shared_library",
+        "rust_proc_macro",
+        "rust_test",
+        "rust_test_suite",
+        "rust_unpretty_aspect",
+        "rust_unpretty",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_bzlmod",
+    out = "src/rust_bzlmod.md",
+    input = "@rules_rust//rust:extensions.bzl",
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_unpretty",
+    out = "src/rust_unpretty.md",
+    input = "@rules_rust//rust:defs.bzl",
+    symbol_names = [
+        "rust_unpretty_aspect",
+        "rust_unpretty",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "providers",
+    out = "src/providers.md",
+    input = "@rules_rust//rust/private:providers.bzl",
+    symbol_names = [
+        "CrateInfo",
+        "DepInfo",
+        "StdLibInfo",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_clippy",
+    out = "src/rust_clippy.md",
+    header_template = ":rust_clippy.vm",
+    input = "@rules_rust//rust:defs.bzl",
+    symbol_names = [
+        "rust_clippy",
+        "rust_clippy_aspect",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_doc",
+    out = "src/rust_doc.md",
+    input = "@rules_rust//rust:defs.bzl",
+    symbol_names = [
+        "rust_doc",
+        "rust_doc_test",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_fmt",
+    out = "src/rust_fmt.md",
+    header_template = ":rust_fmt.vm",
+    input = "@rules_rust//rust:defs.bzl",
+    symbol_names = [
+        "rustfmt_aspect",
+        "rustfmt_test",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_repositories",
+    out = "src/rust_repositories.md",
+    input = "@rules_rust//rust:repositories.bzl",
+    symbol_names = [
+        "rules_rust_dependencies",
+        "rust_analyzer_toolchain_repository",
+        "rust_register_toolchains",
+        "rust_repositories",
+        "rust_repository_set",
+        "rust_stdlib_filegroup",
+        "rust_toolchain_repository_proxy",
+        "rust_toolchain_repository",
+        "rust_toolchain_tools_repository",
+        "rust_toolchain",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "rust_toolchains",
+    out = "src/rust_toolchains.md",
+    input = "@rules_rust//rust:toolchain.bzl",
+    symbol_names = [
+        "rust_toolchain",
+        "rustfmt_toolchain",
+        "rust_analyzer_toolchain",
+    ],
+    table_of_contents_template = "@stardoc//stardoc:templates/markdown_tables/table_of_contents.vm",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "crate_universe_workspace",
+    out = "src/crate_universe_workspace.md",
+    input = "@rules_rust//crate_universe:defs.bzl",
+    deps = [":all_docs"],
+)
+
+stardoc(
+    name = "crate_universe_bzlmod",
+    out = "src/crate_universe_bzlmod.md",
+    input = "@rules_rust//crate_universe:extensions.bzl",
+    deps = [":all_docs"],
+)
+
+# This target exists to avoid this issue:
+# https://github.com/bazelbuild/rules_cc/issues/279
+bzl_library(
+    name = "bindgen_lib",
+    srcs = [
+        "@com_google_protobuf//:bzl_srcs",
+        "@rules_cc//cc:bzl_srcs",
+    ],
+    deps = [
+        "@com_google_protobuf//bazel:cc_proto_library_bzl",
+        "@rules_cc//cc/common",
+        "@rules_cc//cc/toolchains:toolchain_rules",
+        "@rules_rust_bindgen//:bzl_lib",
+    ],
+)
+
+stardoc(
+    name = "rust_bindgen",
+    out = "src/rust_bindgen.md",
+    input = "@rules_rust_bindgen//:defs.bzl",
+    deps = [":bindgen_lib"],
+)
+
+stardoc(
+    name = "rust_mdbook",
+    out = "src/rust_mdbook.md",
+    input = "@rules_rust_mdbook//:defs.bzl",
+    deps = ["@rules_rust_mdbook//:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_protobuf",
+    out = "src/rust_protobuf.md",
+    input = "@rules_rust_protobuf//:defs.bzl",
+    deps = ["@rules_rust_protobuf//:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_prost",
+    out = "src/rust_prost.md",
+    input = "@rules_rust_prost//:defs.bzl",
+    deps = ["@rules_rust_prost//:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_pyo3",
+    out = "src/rust_pyo3.md",
+    input = "@rules_rust_pyo3//:defs.bzl",
+    deps = ["@rules_rust_pyo3//:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_wasm_bindgen",
+    out = "src/rust_wasm_bindgen.md",
+    input = "@rules_rust_wasm_bindgen//:defs.bzl",
+    deps = ["@rules_rust_wasm_bindgen//:bzl_lib"],
+)
+
+stardoc(
+    name = "rust_settings",
+    out = "src/rust_settings.md",
+    func_template = "rust_settings_func.vm",
+    input = "@rules_rust//rust/settings:settings.bzl",
+    deps = ["@rules_rust//rust:bzl_lib"],
+)
+
+stardoc(
+    name = "cargo_settings",
+    out = "src/cargo_settings.md",
+    func_template = "cargo_settings_func.vm",
+    input = "@rules_rust//cargo/settings:settings.bzl",
+    deps = ["@rules_rust//cargo:bzl_lib"],
+)
+
+mdbook(
+    name = "book",
+    srcs = glob(["src/**/*.md"]) + [
+        ":cargo",
+        ":cargo_settings",
+        ":crate_universe_bzlmod",
+        ":crate_universe_workspace",
+        ":providers",
+        ":rust",
+        ":rust_bindgen",
+        ":rust_bzlmod",
+        ":rust_clippy",
+        ":rust_doc",
+        ":rust_fmt",
+        ":rust_mdbook",
+        ":rust_prost",
+        ":rust_protobuf",
+        ":rust_pyo3",
+        ":rust_repositories",
+        ":rust_settings",
+        ":rust_toolchains",
+        ":rust_unpretty",
+        ":rust_wasm_bindgen",
+    ],
+    book = "book.toml",
+)
+
+alias(
+    name = "docs",
+    actual = ":book",
+)
+
+mdbook_server(
+    name = "server",
+    book = ":book",
+)
+
+sh_binary(
+    name = "publish_book",
+    srcs = ["publish_book.sh"],
+    data = [":book"],
+    env = {"BOOK_DIR": "$(rootpath :book)"},
+)

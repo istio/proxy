@@ -1,0 +1,4 @@
+Name: pkg
+Version: 1.0
+Requires-Dist: optional_dep; extra == "optional"
+Provides-Extra: optional

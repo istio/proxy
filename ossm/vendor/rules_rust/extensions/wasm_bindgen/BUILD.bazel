@@ -1,0 +1,59 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load(":defs.bzl", "rust_wasm_bindgen_toolchain")
+
+exports_files([
+    "defs.bzl",
+    "MODULE.bazel",
+    "webdriver.json",
+])
+
+toolchain_type(
+    name = "toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//3rdparty:bzl_lib",
+        "//private:bzl_lib",
+    ],
+)
+
+rust_wasm_bindgen_toolchain(
+    name = "default_wasm_bindgen_toolchain_impl",
+    browser = select({
+        "//settings:test_browser_chrome": "@chrome",
+        "//settings:test_browser_firefox": "@firefox",
+        "//settings:test_browser_safari": None,
+    }),
+    browser_type = select({
+        "//settings:test_browser_chrome": "chrome",
+        "//settings:test_browser_firefox": "firefox",
+        "//settings:test_browser_safari": "safari",
+    }),
+    visibility = ["//visibility:public"],
+    wasm_bindgen_cli = "//3rdparty:wasm_bindgen_cli",
+    wasm_bindgen_test = "//3rdparty:wasm_bindgen_test",
+    wasm_bindgen_test_runner = "//3rdparty:wasm_bindgen_test_runner",
+    webdriver = select({
+        "//settings:test_browser_chrome": "@chromedriver",
+        "//settings:test_browser_firefox": "@geckodriver",
+        "//settings:test_browser_safari": "@safaridriver",
+    }),
+    webdriver_args = select({
+        "//settings:test_browser_chrome": ["--verbose"],
+        "//settings:test_browser_firefox": [],
+        "//settings:test_browser_safari": [],
+    }),
+    webdriver_json = "webdriver.json",
+)
+
+toolchain(
+    name = "default_wasm_bindgen_toolchain",
+    toolchain = "default_wasm_bindgen_toolchain_impl",
+    toolchain_type = ":toolchain_type",
+    visibility = ["//visibility:public"],
+)

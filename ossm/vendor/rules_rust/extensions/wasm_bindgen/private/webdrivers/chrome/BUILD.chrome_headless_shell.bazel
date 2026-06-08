@@ -1,0 +1,33 @@
+alias(
+    name = "chrome_headless_shell_macos",
+    actual = select({
+        "@platforms//cpu:x86_64": "@chrome_headless_shell_mac_x64",
+        "//conditions:default": "@chrome_headless_shell_mac_arm64",
+    }),
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+alias(
+    name = "chrome_headless_shell_linux",
+    actual = "@chrome_headless_shell_linux64",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+alias(
+    name = "chrome_headless_shell_windows",
+    actual = select({
+        "@platforms//cpu:i386": "@chrome_headless_shell_win32",
+        "//conditions:default": "@chrome_headless_shell_win64",
+    }),
+    target_compatible_with = ["@platforms//os:windows"],
+)
+
+alias(
+    name = "chrome_headless_shell",
+    actual = select({
+        "@platforms//os:linux": ":chrome_headless_shell_linux",
+        "@platforms//os:macos": ":chrome_headless_shell_macos",
+        "@platforms//os:windows": ":chrome_headless_shell_windows",
+    }),
+    visibility = ["//visibility:public"],
+)

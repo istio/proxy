@@ -1,0 +1,145 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions: read-all
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write # For trunk to post annotations
+      contents: read # For repo checkout
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Trunk Check
+        uses: trunk-io/trunk-action@v1
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        bazel_version: [7.*, 8.*, 9.*, latest]
+        bzlmod: [true, false]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - if: startsWith(matrix.os, 'ubuntu')
+        run: tests/scripts/ubuntu_install_libtinfo.sh
+      - run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android
+      - name: Test
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+          USE_BZLMOD: ${{ matrix.bzlmod }}
+        run: tests/scripts/run_tests.sh -O
+  toolchain_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        bazel_version: [7.*, 8.*, 9.*, latest]
+        bzlmod: [true, false]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Test
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+          USE_BZLMOD: ${{ matrix.bzlmod }}
+        run: tests/scripts/run_toolchain_tests.sh
+  external_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        bazel_version: [latest] # rules_rust bzlmod support is experimental and needs latest version as of now (20230912).
+        bzlmod: [true, false]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - if: startsWith(matrix.os, 'ubuntu')
+        run: tests/scripts/ubuntu_install_libtinfo.sh
+      - name: Test
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+          USE_BZLMOD: ${{ matrix.bzlmod }}
+        run: tests/scripts/run_external_tests.sh
+  container_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        script: [
+            archlinux,
+            debian,
+            fedora,
+            suse_leap,
+            suse_tumbleweed,
+            ubuntu_20_04, # Includes omp tests
+            ubuntu_22_04,
+            ubuntu_24_04,
+            linux_sysroot,
+          ]
+        bzlmod: [true, false]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android
+      - name: Test
+        env:
+          USE_BZLMOD: ${{ matrix.bzlmod }}
+        run: tests/scripts/${{ matrix.script }}_test.sh
+  xcompile_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        bzlmod: [true, false]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Test
+        env:
+          USE_BZLMOD: ${{ matrix.bzlmod }}
+        run: tests/scripts/run_xcompile_tests.sh
+  abs_paths_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        bzlmod: [true, false]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: tests/scripts/ubuntu_install_libtinfo.sh
+      - name: Test
+        env:
+          USE_BZLMOD: ${{ matrix.bzlmod }}
+        run: tests/scripts/run_tests.sh -t @llvm_toolchain_with_absolute_paths//:cc-toolchain-x86_64-linux -O
+  sys_paths_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        bzlmod: [true, false]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: tests/scripts/ubuntu_install_libtinfo.sh
+      - name: Download and Extract LLVM distribution
+        # The downloaded version here must match version specified as '-v' arg to run_tests.sh below.
+        env:
+          release: llvmorg-16.0.0
+          archive: clang+llvm-16.0.0-x86_64-linux-gnu-ubuntu-18.04
+          ext: .tar.xz
+          local_path: /opt/llvm-16
+        run: wget --no-verbose "https://github.com/llvm/llvm-project/releases/download/${release}/${archive}${ext}" && tar -xf "${archive}${ext}" && mv "${archive}" "${local_path}"
+      - name: Test
+        env:
+          USE_BZLMOD: ${{ matrix.bzlmod }}
+        run: tests/scripts/run_tests.sh -t @llvm_toolchain_with_system_llvm//:cc-toolchain-x86_64-linux -v 16.0.0

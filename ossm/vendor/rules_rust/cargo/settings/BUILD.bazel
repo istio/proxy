@@ -1,0 +1,32 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load(
+    ":settings.bzl",
+    "cargo_manifest_dir_filename_suffixes_to_retain",
+    "debug_std_streams_output_group",
+    "experimental_symlink_execroot",
+    "incompatible_runfiles_cargo_manifest_dir",
+    "use_default_shell_env",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["settings.bzl"])
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["*.bzl"]),
+    visibility = ["//cargo:__pkg__"],
+    deps = [
+        "@bazel_skylib//rules:common_settings",
+    ],
+)
+
+cargo_manifest_dir_filename_suffixes_to_retain()
+
+debug_std_streams_output_group()
+
+experimental_symlink_execroot()
+
+incompatible_runfiles_cargo_manifest_dir()
+
+use_default_shell_env()

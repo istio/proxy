@@ -1,0 +1,6 @@
+configure:
+    languages:
+        javascript: false
+        go: false
+        kotlin: false
+        protobuf: true

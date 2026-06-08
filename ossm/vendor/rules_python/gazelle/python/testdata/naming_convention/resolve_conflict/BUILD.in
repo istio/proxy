@@ -1,0 +1,5 @@
+go_library(name = "resolve_conflict")
+
+go_binary(name = "resolve_conflict_bin")
+
+go_test(name = "resolve_conflict_test")

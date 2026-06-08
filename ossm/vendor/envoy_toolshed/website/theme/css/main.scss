@@ -1,0 +1,73 @@
+$font-stack: 'Source Sans Pro', Helvetica, sans-serif;
+$primary-color: #333;
+$padding-side: 38px;
+$media_path: "/theme/";
+$width: 950px;
+
+html, body {
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  font: 100% $font-stack;
+  color: $primary-color;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  width: 100%;
+  max-width: $width;
+  margin: 0 auto;
+}
+
+@media screen and (max-width: 700px) {
+  #phone {
+    float: none !important;
+    margin: 30px auto -200px auto !important;
+  }
+}
+
+@media screen and (max-width: 550px) {
+  nav {
+    padding: 10px;
+  }
+
+  header {
+    padding: 0;
+  }
+
+  section {
+    margin: 10px 15px 0 15px !important;
+  }
+
+  section#body article {
+    width: 100% !important;
+  }
+
+  #back-clouds {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  #front-clouds {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+@media screen and (max-width: 340px) {
+  #logo {
+    opacity: 0;
+  }
+
+  header {
+    nav ul {
+      float: none !important;
+    }
+  }
+}

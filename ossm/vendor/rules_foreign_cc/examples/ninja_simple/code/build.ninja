@@ -1,0 +1,44 @@
+# build.ninja
+
+ninja_required_version = 1.3
+
+# Variables
+
+builddir       = rules_foreign_cc_build
+rm             = rm -fr
+cxx            = $$CLANG_WRAPPER
+ar             = ar
+lib            = $builddir/liba.a
+cxx_flags      = $$CXX_FLAGS
+
+# Rules
+
+rule compile
+  command = $cxx -c $in $cxx_flags -o $out
+  description = Building C file $in
+
+rule ar
+  command = $rm $out && $ar crs $out $in
+  description = Creating archive $out
+
+rule clean
+  command = $rm $builddir
+  description = Cleaning directory $builddir
+
+rule install
+  command = mkdir -p $$INSTALLDIR/lib $$INSTALLDIR/include && cp -rpv $builddir/*.a $$INSTALLDIR/lib/ && cp -p liba.h $$INSTALLDIR/include/
+  description = Installing compiled lib
+
+# Builds
+
+build clean: clean
+
+build $builddir/liba.o: compile liba.cpp
+
+build $lib: ar $builddir/liba.o
+
+build install: install
+
+# Entrypoint
+
+default $lib

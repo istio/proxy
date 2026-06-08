@@ -1,0 +1,3 @@
+load(":hub_builder_tests.bzl", "hub_builder_test_suite")
+
+hub_builder_test_suite(name = "hub_builder_tests")

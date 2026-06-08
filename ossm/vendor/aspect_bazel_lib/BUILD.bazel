@@ -1,0 +1,149 @@
+load("@aspect_bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
+load("@aspect_bazel_lib_host//:defs.bzl", "host")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+load("@gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary")
+load("//lib:diff_test.bzl", "diff_test")
+load("//lib:testing.bzl", "assert_contains")
+load("//lib:write_source_files.bzl", "write_source_files")
+
+exports_files([".shellcheckrc"])
+
+# gazelle:prefix github.com/bazel-contrib/bazel-lib
+
+gazelle_binary(
+    name = "gazelle_bin",
+    languages = select({
+        # TODO: under bzlmod we get go linking errors when adding
+        # the skylib gazelle plugin.
+        # https://github.com/bazelbuild/rules_go/issues/1877
+        "@aspect_bazel_lib//lib:bzlmod": DEFAULT_LANGUAGES,
+        "//conditions:default": DEFAULT_LANGUAGES + [
+            "@bazel_skylib_gazelle_plugin//bzl",
+        ],
+    }),
+)
+
+gazelle(
+    name = "gazelle",
+    gazelle = "gazelle_bin",
+    mode = "fix",
+)
+
+gazelle(
+    name = "gazelle.check",
+    gazelle = "gazelle_bin",
+    mode = "diff",
+)
+
+gazelle(
+    name = "gazelle_update_repos",
+    args = [
+        "-build_file_proto_mode=disable_global",
+        "-from_file=go.mod",
+        "-to_macro=deps.bzl%go_dependencies",
+        "-prune",
+    ],
+    command = "update-repos",
+)
+
+buildifier(
+    name = "buildifier",
+    exclude_patterns = ["./.git/*"],
+    lint_mode = "fix",
+    mode = "fix",
+    tags = ["manual"],  # tag as manual so windows ci does not build it by default
+)
+
+buildifier(
+    name = "buildifier.check",
+    exclude_patterns = ["./.git/*"],
+    lint_mode = "warn",
+    mode = "diff",
+    tags = ["manual"],  # tag as manual so windows ci does not build it by default
+)
+
+alias(
+    name = "format",
+    actual = "//tools/format",
+    tags = ["manual"],  # tag as manual so windows ci does not build it by default
+)
+
+# write_source_files() to a git ignored subdirectory of the root
+genrule(
+    name = "write_source_file_root",
+    outs = ["write_source_file-root_directory/test.txt"],
+    cmd = "mkdir -p $$(dirname $@) && echo 'test' > $@",
+    visibility = ["//visibility:private"],
+)
+
+write_source_files(
+    name = "write_source_file_root-test",
+    diff_test = False,
+    files = {
+        "test-out/dist/write_source_file_root-test/test.txt": ":write_source_file_root",
+        "test-out/dist/write_source_file_root-test_b/test.txt": ":write_source_file_root",
+    },
+)
+
+# Test case: diff_test with a file in a directory prefixed with "external"
+# stamped in the root package
+write_file(
+    name = "file_in_external_prefixed_dir",
+    out = "external-dir/foo.txt",
+    content = ["foo"],
+)
+
+copy_file(
+    name = "copy_of_file_in_external_prefixed_dir",
+    src = "external-dir/foo.txt",
+    out = "foo_copy.txt",
+)
+
+diff_test(
+    name = "case_file_has_external_prefix",
+    file1 = "external-dir/foo.txt",
+    file2 = "foo_copy.txt",
+)
+
+assert_contains(
+    name = "bazel_version_test",
+    actual = ".bazelversion",
+    expected = str(host.bazel_version),
+    # TODO: Enable this for windows
+    target_compatible_with = [] if host.bazel_version.startswith("7") and not host.is_windows else ["@platforms//:incompatible"],
+)
+
+bzl_library(
+    name = "bzl_library",
+    srcs = ["bzl_library.bzl"],
+    deps = ["@bazel_skylib//:bzl_library"],
+)
+
+bzl_library(
+    name = "deps",
+    srcs = ["deps.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_tools//tools/build_defs/repo:cache.bzl",
+        "@bazel_tools//tools/build_defs/repo:http.bzl",
+        "@gazelle//:deps",
+    ],
+)
+
+# Place the .vale.ini file in bazel-bin so the relative path it contains
+# StylesPath = tools/lint/vale
+# will work when it's run as an action.
+copy_to_bin(
+    name = ".vale_ini",
+    srcs = [".vale.ini"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "markdown_files",
+    srcs = glob(["*.md"]),
+    tags = ["markdown"],
+)

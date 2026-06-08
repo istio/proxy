@@ -1,0 +1,10 @@
+module(
+    name = "rules_pkg_examples",
+    version = "0.0.1",
+)
+
+bazel_dep(name = "rules_pkg")
+local_path_override(
+    module_name = "rules_pkg",
+    path = "../..",
+)

@@ -1,0 +1,14 @@
+load("//crate_universe:defs.bzl", "crates_vendor", "render_config")
+
+crates_vendor(
+    name = "crates_vendor",
+    cargo_lockfile = "Cargo.Bazel.lock",
+    manifests = [
+        "//cargo:Cargo.toml",
+    ],
+    mode = "remote",
+    render_config = render_config(generate_cargo_toml_env_vars = False),
+    # `rrc` == `rules_rust_cargo`.
+    repository_name = "rrc",
+    tags = ["manual"],
+)

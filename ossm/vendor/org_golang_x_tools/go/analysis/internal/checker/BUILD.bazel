@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "checker",
+    srcs = ["checker.go"],
+    importpath = "golang.org/x/tools/go/analysis/internal/checker",
+    visibility = ["//go/analysis:__subpackages__"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/internal/analysisflags",
+        "//go/packages",
+        "//internal/diff",
+        "//internal/robustio",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":checker",
+    visibility = ["//go/analysis:__subpackages__"],
+)
+
+go_test(
+    name = "checker_test",
+    srcs = [
+        "checker_test.go",
+        "fix_test.go",
+        "start_test.go",
+    ],
+    deps = [
+        ":checker",
+        "//go/analysis",
+        "//go/analysis/analysistest",
+        "//go/analysis/passes/inspect",
+        "//go/ast/inspector",
+        "//internal/testenv",
+    ],
+)

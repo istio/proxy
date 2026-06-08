@@ -1,0 +1,6 @@
+load("//d:defs.bzl", "d_proto_compile")
+
+d_proto_compile(
+    name = "routeguide",
+    protos = ["//example/proto:routeguide_proto"],
+)

@@ -1,0 +1,103 @@
+# Copyright 2021 The Bazel Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package(default_visibility = ["//visibility:public"])
+
+platform(
+    name = "linux-x86_64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+platform(
+    name = "none-x86_64",
+    constraint_values = [
+        "@platforms//os:none",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+platform(
+    name = "linux-aarch64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+platform(
+    name = "linux-armv7",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:armv7",
+    ],
+)
+
+platform(
+    name = "linux-riscv64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:riscv64",
+    ],
+)
+
+platform(
+    name = "darwin-x86_64",
+    constraint_values = [
+        "@platforms//os:osx",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+platform(
+    name = "darwin-aarch64",
+    constraint_values = [
+        "@platforms//os:osx",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+platform(
+    name = "wasm32",
+    constraint_values = [
+        "@platforms//os:none",
+        "@platforms//cpu:wasm32",
+    ],
+)
+
+platform(
+    name = "wasm64",
+    constraint_values = [
+        "@platforms//os:none",
+        "@platforms//cpu:wasm64",
+    ],
+)
+
+platform(
+    name = "wasip1-wasm32",
+    constraint_values = [
+        "@platforms//os:wasi",
+        "@platforms//cpu:wasm32",
+    ],
+)
+
+platform(
+    name = "wasip1-wasm64",
+    constraint_values = [
+        "@platforms//os:wasi",
+        "@platforms//cpu:wasm64",
+    ],
+)

@@ -1,0 +1,47 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load(
+    ":pyo3_toolchain.bzl",
+    "current_pyo3_toolchain",
+    "current_rust_pyo3_introspection_toolchain",
+    "current_rust_pyo3_toolchain",
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["*.bzl"]),
+    visibility = ["//:__pkg__"],
+    deps = [
+        "@rules_python//python:defs_bzl",
+        "@rules_rust//rust:bzl_lib",
+    ],
+)
+
+current_pyo3_toolchain(
+    name = "current_pyo3_toolchain",
+)
+
+current_rust_pyo3_toolchain(
+    name = "current_rust_pyo3_toolchain",
+    tags = [
+        "no-clippy",
+        "no-rustfmt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+current_rust_pyo3_introspection_toolchain(
+    name = "current_rust_pyo3_introspection_toolchain",
+    tags = [
+        "no-clippy",
+        "no-rustfmt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+rust_binary(
+    name = "stubgen",
+    srcs = ["stubgen.rs"],
+    edition = "2021",
+    deps = [":current_rust_pyo3_introspection_toolchain"],
+)

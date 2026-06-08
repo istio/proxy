@@ -1,0 +1,30 @@
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+
+rust_library(
+    name = "cargo_build_script_runner",
+    srcs = [
+        "cargo_manifest_dir.rs",
+        "lib.rs",
+    ],
+    edition = "2018",
+)
+
+rust_test(
+    name = "test",
+    crate = ":cargo_build_script_runner",
+    edition = "2018",
+)
+
+rust_binary(
+    name = "runner",
+    srcs = ["bin.rs"],
+    edition = "2018",
+    visibility = ["//visibility:public"],
+    deps = [":cargo_build_script_runner"],
+)
+
+rust_test(
+    name = "bin_test",
+    crate = ":runner",
+    edition = "2018",
+)

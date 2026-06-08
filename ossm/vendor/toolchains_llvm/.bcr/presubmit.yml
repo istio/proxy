@@ -1,0 +1,25 @@
+matrix:
+  bazel: [7.*, 8.*]
+  platform: [ubuntu2004, ubuntu2404, macos, macos_arm64]
+tasks:
+  verify_targets:
+    name: Verify build targets
+    bazel: ${{ bazel }}
+    platform: ${{ platform }}
+    build_targets:
+      - "@toolchains_llvm//toolchain:all"
+      - "@toolchains_llvm//platforms:all"
+bcr_test_module:
+  module_path: tests
+  matrix:
+    bazel: [7.*, 8.*]
+    platform: [ubuntu2004, ubuntu2404, macos, macos_arm64]
+  tasks:
+    run_test_module:
+      name: Run test module
+      bazel: ${{ bazel }}
+      platform: ${{ platform }}
+      build_targets:
+        - //:all
+      test_targets:
+        - //:all

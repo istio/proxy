@@ -1,0 +1,33 @@
+load(
+    "cc_args_and_env_test.bzl",
+    "bindir_absolute_test",
+    "bindir_relative_test",
+    "fsanitize_ignorelist_absolute_test",
+    "fsanitize_ignorelist_relative_test",
+    "isystem_absolute_test",
+    "isystem_relative_test",
+    "legacy_cc_toolchain_test",
+    "sysroot_absolute_test",
+    "sysroot_next_absolute_test",
+    "sysroot_relative_test",
+)
+
+sysroot_relative_test(name = "sysroot_relative_test")
+
+sysroot_absolute_test(name = "sysroot_absolute_test")
+
+sysroot_next_absolute_test(name = "sysroot_next_absolute_test")
+
+isystem_relative_test(name = "isystem_relative_test")
+
+isystem_absolute_test(name = "isystem_absolute_test")
+
+bindir_relative_test(name = "bindir_relative_test")
+
+bindir_absolute_test(name = "bindir_absolute_test")
+
+fsanitize_ignorelist_absolute_test(name = "fsanitize_ignorelist_absolute_test")
+
+fsanitize_ignorelist_relative_test(name = "fsanitize_ignorelist_relative_test")
+
+legacy_cc_toolchain_test(name = "legacy_cc_toolchain_test")

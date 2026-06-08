@@ -1,0 +1,3 @@
+# https://docs.bazel.build/versions/main/best-practices.html#using-the-bazelrc-file
+try-import %workspace%/user.bazelrc
+common --incompatible_python_disallow_native_rules

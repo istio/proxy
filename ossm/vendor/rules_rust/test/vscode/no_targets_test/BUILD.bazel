@@ -1,0 +1,10 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+# This BUILD file intentionally has no rust_binary or rust_test targets
+# to test that gen_launch_json errors appropriately
+
+rust_library(
+    name = "mylib",
+    srcs = ["lib.rs"],
+    edition = "2021",
+)

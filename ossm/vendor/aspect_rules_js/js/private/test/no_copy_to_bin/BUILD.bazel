@@ -1,0 +1,8 @@
+load("//js:defs.bzl", "js_test")
+
+js_test(
+    name = "no_copy_to_bin_test",
+    data = ["//js/private/test/no_copy_to_bin/subpkg:42.js"],
+    entry_point = "test_no_copy_to_bin.js",
+    no_copy_to_bin = ["//js/private/test/no_copy_to_bin/subpkg:42.js"],
+)

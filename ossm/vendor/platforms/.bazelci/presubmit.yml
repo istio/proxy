@@ -1,0 +1,35 @@
+tasks:
+  ubuntu:
+    platform: ubuntu2004
+    build_targets:
+    - "//..."
+    test_targets:
+    - "//..."
+    environment:
+      EXPECTED_HOST_CONSTRAINTS: '["@platforms//cpu:x86_64", "@platforms//os:linux"]'
+  macos:
+    platform: macos
+    build_targets:
+    - "//..."
+    test_targets:
+    - "//..."
+    environment:
+      EXPECTED_HOST_CONSTRAINTS: '["@platforms//cpu:x86_64", "@platforms//os:osx"]'
+  macos_arm64:
+    platform: macos_arm64
+    build_targets:
+    - "//..."
+    test_targets:
+    - "//..."
+    environment:
+      EXPECTED_HOST_CONSTRAINTS: '["@platforms//cpu:aarch64", "@platforms//os:osx"]'
+  windows:
+    platform: windows
+    build_targets:
+    - "//..."
+    # We don't run this test on Windows, because amazingly, sh_test doesn't work on Windows for exactly
+    # the @platforms repo (see https://github.com/bazelbuild/platforms/pull/86#issuecomment-2011954684)
+    #test_targets:
+    #- "//..."
+    #environment:
+    #  EXPECTED_HOST_CONSTRAINTS: '["@platforms//cpu:x86_64", "@platforms//os:windows"]'

@@ -1,0 +1,16 @@
+test --test_output=errors --enable_runfiles
+
+# Windows requires these for multi-python support:
+build --enable_runfiles
+
+common --enable_bzlmod
+
+coverage --java_runtime_version=remotejdk_11
+common:bazel7.x --incompatible_python_disallow_native_rules
+
+# NOTE: This override is specific to the development of gazelle itself
+# and the testing of it during its BCR release presubmits.
+# In development of gazelle itself, we override it to the development
+# rules_python code. In the BCR presubmits, this override is removed
+# and the bazel_dep version of rules_python is used.
+common --override_module=rules_python=../../../

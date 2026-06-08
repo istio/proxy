@@ -1,0 +1,26 @@
+load("//rust:defs.bzl", "rust_binary", "rust_library")
+
+rust_library(
+    name = "bar",
+    srcs = ["bar.rs"],
+    edition = "2021",
+)
+
+genquery(
+    name = "bar_deps",
+    expression = "deps(//test/genquery:bar)",
+    scope = [":bar"],
+)
+
+rust_binary(
+    name = "foo",
+    srcs = ["foo.rs"],
+    edition = "2021",
+    deps = [":bar"],
+)
+
+genquery(
+    name = "foo_deps",
+    expression = "deps(//test/genquery:foo)",
+    scope = [":foo"],
+)

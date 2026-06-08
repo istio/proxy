@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "copyright",
+    srcs = ["copyright.go"],
+    importpath = "golang.org/x/tools/copyright",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":copyright",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "copyright_test",
+    srcs = ["copyright_test.go"],
+    embed = [":copyright"],
+)

@@ -1,0 +1,16 @@
+load("@rules_proto_grpc//go:defs.bzl", "go_proto_compile")
+
+go_proto_compile(
+    name = "person_go_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+)
+
+go_proto_compile(
+    name = "place_go_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+)
+
+go_proto_compile(
+    name = "thing_go_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

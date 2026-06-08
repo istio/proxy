@@ -1,0 +1,15 @@
+[package]
+name = "build-scripts"
+version = "0.1.0"
+edition = "2018"
+
+# Required to satisfy cargo but no `lib.rs` is expected to
+# exist within test data.
+[lib]
+path = "lib.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+openssl = "=0.10.52"
+git2 = "=0.17.1"

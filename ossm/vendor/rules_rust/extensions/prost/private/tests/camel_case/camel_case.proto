@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package camel_case;
+
+enum SomethingID {
+    UNKNOWN = 0;
+    SOMETHING = 1;
+}
+
+message NameWithCAPS {
+    string name = 1;
+}

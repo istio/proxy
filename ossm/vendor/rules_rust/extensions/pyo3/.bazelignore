@@ -1,0 +1,4 @@
+bazel-out
+bazel-testlogs
+bazel-pyo3
+bazel-bin

@@ -1,0 +1,41 @@
+load("//python/entry_points:py_console_script_binary.bzl", "py_console_script_binary")
+load("//tools/private:publish_deps.bzl", "publish_deps")
+
+py_console_script_binary(
+    name = "twine",
+    # We transition to a specific python version in order to ensure that we
+    # don't rely on the default version configured by the root module.
+    pkg = "@rules_python_publish_deps//twine",
+    python_version = "3.11",
+    script = "twine",
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "distribution",
+    srcs = [
+        "BUILD.bazel",
+        "requirements_darwin.txt",
+        "requirements_linux.txt",
+        "requirements_universal.txt",
+        "requirements_windows.txt",
+    ],
+    visibility = ["//tools:__subpackages__"],
+)
+
+# Run bazel run //private:requirements.update to update the outs
+publish_deps(
+    name = "requirements",
+    srcs = ["requirements.in"],
+    outs = {
+        "requirements_darwin.txt": "macos",
+        "requirements_linux.txt": "linux",
+        "requirements_universal.txt": "",  # universal
+        "requirements_windows.txt": "windows",
+    },
+    args = [
+        "--emit-index-url",
+        "--upgrade",  # always upgrade
+    ],
+    visibility = ["//private:__pkg__"],
+)

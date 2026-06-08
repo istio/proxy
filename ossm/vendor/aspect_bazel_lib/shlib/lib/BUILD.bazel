@@ -1,0 +1,9 @@
+load("@rules_shell//shell:sh_library.bzl", "sh_library")
+
+package(default_visibility = ["//visibility:public"])
+
+sh_library(
+    name = "assertions",
+    testonly = True,
+    srcs = ["assertions.sh"],
+)

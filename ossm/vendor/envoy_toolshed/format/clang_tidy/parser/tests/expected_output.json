@@ -1,0 +1,84 @@
+[
+  {
+    "file": "/path/to/source.cpp",
+    "line": 10,
+    "column": 5,
+    "severity": "warning",
+    "message": "use auto when initializing with a template cast to avoid duplicating the type name",
+    "check": "modernize-use-auto",
+    "context_lines": [
+      "    int* ptr = static_cast<int*>(malloc(sizeof(int)));",
+      "    ^~~",
+      "    auto"
+    ]
+  },
+  {
+    "file": "/path/to/source.cpp",
+    "line": 15,
+    "column": 3,
+    "severity": "error",
+    "message": "use of undeclared identifier 'foo'",
+    "check": "clang-diagnostic-error",
+    "context_lines": [
+      "  foo();",
+      "  ^"
+    ]
+  },
+  {
+    "file": "/path/to/header.h",
+    "line": 20,
+    "column": 10,
+    "severity": "warning",
+    "message": "parameter 'x' is unused",
+    "check": "misc-unused-parameters",
+    "context_lines": [
+      "void bar(int x) {",
+      "         ^"
+    ]
+  },
+  {
+    "file": "/path/to/header.h",
+    "line": 20,
+    "column": 10,
+    "severity": "note",
+    "message": "FIX-IT applied suggested code changes",
+    "check": "",
+    "context_lines": []
+  },
+  {
+    "file": "source.cpp",
+    "line": 25,
+    "column": 1,
+    "severity": "warning",
+    "message": "namespace 'test' not terminated with a closing comment",
+    "check": "readability-namespace-comments",
+    "context_lines": [
+      "namespace test {",
+      "^"
+    ]
+  },
+  {
+    "file": "source.cpp",
+    "line": 30,
+    "column": 1,
+    "severity": "note",
+    "message": "namespace 'test' begins here",
+    "check": "",
+    "context_lines": [
+      "namespace test {",
+      "^"
+    ]
+  },
+  {
+    "file": "/another/file.cpp",
+    "line": 42,
+    "column": 12,
+    "severity": "warning",
+    "message": "variable 'unused' is not used",
+    "check": "clang-analyzer-deadcode.DeadStores",
+    "context_lines": [
+      "  int unused = 5;",
+      "      ^"
+    ]
+  }
+]

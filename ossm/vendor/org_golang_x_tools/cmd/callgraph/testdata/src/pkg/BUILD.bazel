@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "pkg_lib",
+    srcs = ["pkg.go"],
+    importpath = "golang.org/x/tools/cmd/callgraph/testdata/src/pkg",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "pkg",
+    embed = [":pkg_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "pkg_test",
+    srcs = ["pkg_test.go"],
+    embed = [":pkg_lib"],
+)

@@ -1,0 +1,50 @@
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+
+rust_binary(
+    name = "hello-world",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+)
+
+filegroup(
+    name = "hello_world_main",
+    srcs = ["src/main.rs"],
+)
+
+rust_test(
+    name = "test_run",
+    srcs = ["tests/run.rs"],
+    data = [
+        ":hello-world",
+        ":hello_world_main",
+    ],
+    edition = "2018",
+    env = {
+        "FERRIS_SAYS": "Hello fellow Rustaceans!",
+        "HELLO_WORLD_BIN_ROOTPATH": "$(rootpath :hello-world)",
+    },
+    # `CARGO_BIN_EXE` behaves similarly to `CARGO_MANIFEST_DIR`. See
+    # the comment on `test_manifest_dir`.
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+rust_test(
+    name = "test_manifest_dir",
+    srcs = ["tests/manifest_dir.rs"],
+    data = ["src/manifest_dir_file.txt"],
+    edition = "2018",
+    # `CARGO_MANIFEST_DIR` relies on relative paths that often align with
+    # runfiles paths but on Windows it's the common case that runfiles
+    # directories may not exist due to the system not having symlinks enabled.
+    # Thus this test is not run for now. Perhaps in the future these variables
+    # will switch to being runfiles paths so it's commonly usable across
+    # platforms. However, this would violate the expectation of Cargo so
+    # it's left as-is for now.
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)

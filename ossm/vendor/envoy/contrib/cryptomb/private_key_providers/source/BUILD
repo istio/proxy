@@ -1,0 +1,158 @@
+load(
+    "//bazel:envoy_build_system.bzl",
+    "envoy_cc_contrib_extension",
+    "envoy_cc_library",
+    "envoy_cmake",
+    "envoy_contrib_package",
+)
+load(
+    "//contrib:all_contrib_extensions.bzl",
+    "envoy_contrib_linux_x86_64_constraints",
+)
+
+licenses(["notice"])  # Apache 2
+
+envoy_contrib_package()
+
+envoy_cmake(
+    name = "ipp-crypto",
+    build_args = select({
+        "//bazel/foreign_cc:parallel_builds_enabled": ["-j"],
+        "//conditions:default": ["-j1"],
+    }),
+    cache_entries = {
+        "BORINGSSL": "on",
+        "DYNAMIC_LIB": "off",
+        "MB_STANDALONE": "on",
+        "Python_EXECUTABLE": "$$EXT_BUILD_ROOT/$(PYTHON3)",
+    } | select({
+        # FIPS builds use libcrypto.a/libssl.a
+        "//bazel:using_fips_ssl": {
+            "OPENSSL_CRYPTO_LIBRARY": "$$EXT_BUILD_DEPS/lib/libcrypto.a",
+        },
+        # Non-FIPS builds use libcrypto_internal.a/libssl_internal.a
+        "//conditions:default": {
+            "OPENSSL_CRYPTO_LIBRARY": "$$EXT_BUILD_DEPS/lib/libcrypto_internal.a",
+        },
+    }),
+    defines = [
+        "OPENSSL_USE_STATIC_LIBS=TRUE",
+    ],
+    exec_properties = select({
+        "//bazel:engflow_rbe_x86_64": {
+            "Pool": "linux_x64_large",
+        },
+        "//conditions:default": {},
+    }),
+    generate_args = [
+        "-G",
+        "Ninja",
+    ],
+    lib_source = "@ipp-crypto//:all",
+    out_static_libs = ["libcrypto_mb.a"],
+    tags = ["skip_on_windows"],
+    target_compatible_with = envoy_contrib_linux_x86_64_constraints(),
+    toolchains = ["@rules_python//python:current_py_toolchain"],
+    visibility = ["//visibility:private"],
+    working_directory = "sources/ippcp/crypto_mb",
+    # Use ssl label_flag to select the SSL library.
+    deps = ["//bazel:ssl"],
+)
+
+envoy_cc_library(
+    name = "ipp_crypto_wrapper_lib",
+    hdrs = ["ipp_crypto.h"] + select({
+        "//bazel:linux_x86_64": [
+            "ipp_crypto_impl.h",
+        ],
+        "//conditions:default": [
+        ],
+    }),
+    defines = select({
+        "//bazel:linux_x86_64": [],
+        "//conditions:default": [
+            "IPP_CRYPTO_DISABLED=1",
+        ],
+    }),
+    external_deps = ["ssl"],
+    repository = "@envoy",
+    deps = select({
+        "//bazel:linux_x86_64": [
+            ":ipp-crypto",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+envoy_cc_library(
+    name = "cryptomb_private_key_provider_lib",
+    srcs = [
+        "cryptomb_private_key_provider.cc",
+    ],
+    hdrs = [
+        "cryptomb_private_key_provider.h",
+    ],
+    external_deps = ["ssl"],
+    repository = "@envoy",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":cryptomb_stats_lib",
+        ":ipp_crypto_wrapper_lib",
+        "//envoy/api:api_interface",
+        "//envoy/event:dispatcher_interface",
+        "//envoy/registry",
+        "//envoy/server:transport_socket_config_interface",
+        "//envoy/singleton:manager_interface",
+        "//envoy/ssl/private_key:private_key_config_interface",
+        "//envoy/ssl/private_key:private_key_interface",
+        "//source/common/common:logger_lib",
+        "//source/common/common:thread_lib",
+        "//source/common/config:datasource_lib",
+        "@envoy_api//contrib/envoy/extensions/private_key_providers/cryptomb/v3alpha:pkg_cc_proto",
+    ],
+)
+
+envoy_cc_library(
+    name = "cryptomb_stats_lib",
+    srcs = [
+        "cryptomb_stats.cc",
+    ],
+    hdrs = [
+        "cryptomb_stats.h",
+    ],
+    deps = [
+        "//envoy/stats:stats_interface",
+        "//envoy/stats:stats_macros",
+        "//source/common/stats:symbol_table_lib",
+        "//source/common/stats:utility_lib",
+    ],
+)
+
+envoy_cc_contrib_extension(
+    name = "config",
+    srcs = ["config.cc"],
+    hdrs = ["config.h"],
+    defines = select({
+        "//bazel:linux_x86_64": [],
+        "//conditions:default": [
+            "IPP_CRYPTO_DISABLED=1",
+        ],
+    }),
+    deps = [
+        "//envoy/registry",
+        "//envoy/ssl/private_key:private_key_config_interface",
+        "//envoy/ssl/private_key:private_key_interface",
+        "//source/common/common:logger_lib",
+        "//source/common/config:utility_lib",
+        "//source/common/protobuf:utility_lib",
+        "@envoy_api//contrib/envoy/extensions/private_key_providers/cryptomb/v3alpha:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg_cc_proto",
+    ] + select({
+        "//bazel:linux_x86_64": [
+            ":cryptomb_private_key_provider_lib",
+            ":ipp_crypto_wrapper_lib",
+        ],
+        "//conditions:default": [
+        ],
+    }),
+)

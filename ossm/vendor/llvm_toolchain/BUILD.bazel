@@ -1,0 +1,467 @@
+# Copyright 2018 The Bazel Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package(default_visibility = ["//visibility:public"])
+
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+load("@rules_cc//cc:defs.bzl", "cc_import", "cc_toolchain", "cc_toolchain_suite")
+load("@toolchains_llvm//toolchain/internal:system_module_map.bzl", "system_module_map")
+load("@toolchains_llvm//toolchain:cc_toolchain_config.bzl", "cc_toolchain_config")
+
+# This filegroup target is used when not using absolute paths and shared
+# between different toolchains.
+
+# Tools wrapped and symlinked through this repo. This target is for internal use in the toolchain only.
+filegroup(
+    name = "internal-use-tools",
+    srcs = ["bin"],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "internal-use-tools-legacy",
+    srcs = [
+        "bin/cc_wrapper.sh",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+
+# CC toolchain for cc-clang-x86_64-linux.
+
+cc_toolchain_config(
+    name = "local-x86_64-linux",
+    exec_arch = "x86_64",
+    exec_os = "linux",
+    target_arch = "x86_64",
+    target_os = "linux",
+    target_system_name = "x86_64-unknown-linux-gnu",
+    toolchain_path_prefix = "/usr/",
+    tools_path_prefix = "/usr/bin/",
+    wrapper_bin_prefix = "bin/",
+    compiler_configuration = {
+      "sysroot_path": "",
+      "stdlib": "builtin-libc++",
+      "cxx_standard": "c++20",
+      "compile_flags": None,
+      "conly_flags": [],
+      "cxx_flags": None,
+      "link_flags": None,
+      "archive_flags": None,
+      "link_libs": None,
+      "fastbuild_compile_flags": None,
+      "opt_compile_flags": None,
+      "opt_link_flags": None,
+      "dbg_compile_flags": None,
+      "coverage_compile_flags": None,
+      "coverage_link_flags": None,
+      "unfiltered_compile_flags": None,
+      "extra_compile_flags": None,
+      "extra_cxx_flags": None,
+      "extra_link_flags": None,
+      "extra_archive_flags": None,
+      "extra_link_libs": None,
+      "extra_opt_compile_flags": None,
+      "extra_opt_link_flags": None,
+      "extra_dbg_compile_flags": None,
+      "extra_coverage_compile_flags": None,
+      "extra_coverage_link_flags": None,
+      "extra_unfiltered_compile_flags": None,
+    },
+    extra_known_features = [],
+    extra_enabled_features = [],
+    cxx_builtin_include_directories = ["%workspace%//usr/include/c++/v1", "%workspace%//usr/lib/clang/21/include", "%workspace%//usr/include/x86_64-unknown-linux-gnu/c++/v1", "%workspace%//usr/lib64/clang/21.1.8/include", "%workspace%//usr/lib64/clang/21/include", "/usr/include", "/usr/local/include"],
+    major_llvm_version = 21,
+)
+
+toolchain(
+    name = "cc-toolchain-x86_64-linux",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ] + [] + [],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ] + [] + [],
+    target_settings = None,
+    toolchain = ":cc-clang-x86_64-linux",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
+filegroup(
+    name = "sysroot-components-x86_64-linux",
+    srcs = [],
+)
+
+filegroup(
+    name = "cxx_builtin_include_files-x86_64-linux",
+    srcs = [],
+)
+
+filegroup(
+    name = "compiler-components-x86_64-linux",
+    srcs = [
+        ":sysroot-components-x86_64-linux",
+        
+        
+    ],
+)
+
+filegroup(
+    name = "linker-components-x86_64-linux",
+    srcs = [":sysroot-components-x86_64-linux"],
+)
+
+filegroup(
+    name = "all-components-x86_64-linux",
+    srcs = [
+        ":compiler-components-x86_64-linux",
+        ":linker-components-x86_64-linux",
+    ],
+)
+
+filegroup(name = "all-files-x86_64-linux", srcs = [":all-components-x86_64-linux", ":internal-use-tools-legacy"])
+filegroup(name = "archiver-files-x86_64-linux", srcs = [":internal-use-tools-legacy"])
+filegroup(name = "assembler-files-x86_64-linux", srcs = [":internal-use-tools-legacy"])
+filegroup(name = "compiler-files-x86_64-linux", srcs = [":compiler-components-x86_64-linux", ":internal-use-tools-legacy"])
+filegroup(name = "dwp-files-x86_64-linux", srcs = [":internal-use-tools-legacy"])
+filegroup(name = "linker-files-x86_64-linux", srcs = [":linker-components-x86_64-linux", ":internal-use-tools-legacy"])
+filegroup(name = "objcopy-files-x86_64-linux", srcs = [":internal-use-tools-legacy"])
+filegroup(name = "strip-files-x86_64-linux", srcs = [":internal-use-tools-legacy"])
+
+system_module_map(
+    name = "module-x86_64-linux",
+    cxx_builtin_include_files = ":cxx_builtin_include_files-x86_64-linux",
+    cxx_builtin_include_directories = ["%workspace%//usr/include/c++/v1", "%workspace%//usr/lib/clang/21/include", "%workspace%//usr/include/x86_64-unknown-linux-gnu/c++/v1", "%workspace%//usr/lib64/clang/21.1.8/include", "%workspace%//usr/lib64/clang/21/include", "/usr/include", "/usr/local/include"],
+    sysroot_files = ":sysroot-components-x86_64-linux",
+    sysroot_path = "",
+)
+
+cc_toolchain(
+    name = "cc-clang-x86_64-linux",
+    all_files = "all-files-x86_64-linux",
+    ar_files = "archiver-files-x86_64-linux",
+    as_files = "assembler-files-x86_64-linux",
+    compiler_files = "compiler-files-x86_64-linux",
+    dwp_files = "dwp-files-x86_64-linux",
+    linker_files = "linker-files-x86_64-linux",
+    objcopy_files = "objcopy-files-x86_64-linux",
+    strip_files = "strip-files-x86_64-linux",
+    toolchain_config = "local-x86_64-linux",
+    module_map = "module-x86_64-linux",
+    supports_header_parsing = True,
+)
+
+# CC toolchain for cc-clang-riscv32-none.
+
+cc_toolchain_config(
+    name = "local-riscv32-none",
+    exec_arch = "x86_64",
+    exec_os = "linux",
+    target_arch = "riscv32",
+    target_os = "none",
+    target_system_name = "riscv32-unknown-none-elf",
+    toolchain_path_prefix = "/usr/",
+    tools_path_prefix = "/usr/bin/",
+    wrapper_bin_prefix = "bin/",
+    compiler_configuration = {
+      "sysroot_path": "",
+      "stdlib": "builtin-libc++",
+      "cxx_standard": "c++20",
+      "compile_flags": None,
+      "conly_flags": [],
+      "cxx_flags": None,
+      "link_flags": None,
+      "archive_flags": None,
+      "link_libs": None,
+      "fastbuild_compile_flags": None,
+      "opt_compile_flags": None,
+      "opt_link_flags": None,
+      "dbg_compile_flags": None,
+      "coverage_compile_flags": None,
+      "coverage_link_flags": None,
+      "unfiltered_compile_flags": None,
+      "extra_compile_flags": None,
+      "extra_cxx_flags": None,
+      "extra_link_flags": None,
+      "extra_archive_flags": None,
+      "extra_link_libs": None,
+      "extra_opt_compile_flags": None,
+      "extra_opt_link_flags": None,
+      "extra_dbg_compile_flags": None,
+      "extra_coverage_compile_flags": None,
+      "extra_coverage_link_flags": None,
+      "extra_unfiltered_compile_flags": None,
+    },
+    extra_known_features = [],
+    extra_enabled_features = [],
+    cxx_builtin_include_directories = ["%workspace%//usr/include/c++/v1", "%workspace%//usr/lib/clang/21/include", "%workspace%//usr/include/riscv32-unknown-none-elf/c++/v1", "%workspace%//usr/lib64/clang/21.1.8/include", "%workspace%//usr/lib64/clang/21/include"],
+    major_llvm_version = 21,
+)
+
+toolchain(
+    name = "cc-toolchain-riscv32-none",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ] + [] + [],
+    target_compatible_with = [
+        "@platforms//cpu:riscv32",
+        "@platforms//os:none",
+    ] + [] + [],
+    target_settings = None,
+    toolchain = ":cc-clang-riscv32-none",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
+filegroup(
+    name = "sysroot-components-riscv32-none",
+    srcs = [],
+)
+
+filegroup(
+    name = "cxx_builtin_include_files-riscv32-none",
+    srcs = [],
+)
+
+filegroup(
+    name = "compiler-components-riscv32-none",
+    srcs = [
+        ":sysroot-components-riscv32-none",
+        
+        
+    ],
+)
+
+filegroup(
+    name = "linker-components-riscv32-none",
+    srcs = [":sysroot-components-riscv32-none"],
+)
+
+filegroup(
+    name = "all-components-riscv32-none",
+    srcs = [
+        ":compiler-components-riscv32-none",
+        ":linker-components-riscv32-none",
+    ],
+)
+
+filegroup(name = "all-files-riscv32-none", srcs = [":all-components-riscv32-none", ":internal-use-tools-legacy"])
+filegroup(name = "archiver-files-riscv32-none", srcs = [":internal-use-tools-legacy"])
+filegroup(name = "assembler-files-riscv32-none", srcs = [":internal-use-tools-legacy"])
+filegroup(name = "compiler-files-riscv32-none", srcs = [":compiler-components-riscv32-none", ":internal-use-tools-legacy"])
+filegroup(name = "dwp-files-riscv32-none", srcs = [":internal-use-tools-legacy"])
+filegroup(name = "linker-files-riscv32-none", srcs = [":linker-components-riscv32-none", ":internal-use-tools-legacy"])
+filegroup(name = "objcopy-files-riscv32-none", srcs = [":internal-use-tools-legacy"])
+filegroup(name = "strip-files-riscv32-none", srcs = [":internal-use-tools-legacy"])
+
+system_module_map(
+    name = "module-riscv32-none",
+    cxx_builtin_include_files = ":cxx_builtin_include_files-riscv32-none",
+    cxx_builtin_include_directories = ["%workspace%//usr/include/c++/v1", "%workspace%//usr/lib/clang/21/include", "%workspace%//usr/include/riscv32-unknown-none-elf/c++/v1", "%workspace%//usr/lib64/clang/21.1.8/include", "%workspace%//usr/lib64/clang/21/include"],
+    sysroot_files = ":sysroot-components-riscv32-none",
+    sysroot_path = "",
+)
+
+cc_toolchain(
+    name = "cc-clang-riscv32-none",
+    all_files = "all-files-riscv32-none",
+    ar_files = "archiver-files-riscv32-none",
+    as_files = "assembler-files-riscv32-none",
+    compiler_files = "compiler-files-riscv32-none",
+    dwp_files = "dwp-files-riscv32-none",
+    linker_files = "linker-files-riscv32-none",
+    objcopy_files = "objcopy-files-riscv32-none",
+    strip_files = "strip-files-riscv32-none",
+    toolchain_config = "local-riscv32-none",
+    module_map = "module-riscv32-none",
+    supports_header_parsing = True,
+)
+
+# CC toolchain for cc-clang-x86_64-none.
+
+cc_toolchain_config(
+    name = "local-x86_64-none",
+    exec_arch = "x86_64",
+    exec_os = "linux",
+    target_arch = "x86_64",
+    target_os = "none",
+    target_system_name = "x86_64-unknown-none",
+    toolchain_path_prefix = "/usr/",
+    tools_path_prefix = "/usr/bin/",
+    wrapper_bin_prefix = "bin/",
+    compiler_configuration = {
+      "sysroot_path": "",
+      "stdlib": "builtin-libc++",
+      "cxx_standard": "c++20",
+      "compile_flags": None,
+      "conly_flags": [],
+      "cxx_flags": None,
+      "link_flags": None,
+      "archive_flags": None,
+      "link_libs": None,
+      "fastbuild_compile_flags": None,
+      "opt_compile_flags": None,
+      "opt_link_flags": None,
+      "dbg_compile_flags": None,
+      "coverage_compile_flags": None,
+      "coverage_link_flags": None,
+      "unfiltered_compile_flags": None,
+      "extra_compile_flags": None,
+      "extra_cxx_flags": None,
+      "extra_link_flags": None,
+      "extra_archive_flags": None,
+      "extra_link_libs": None,
+      "extra_opt_compile_flags": None,
+      "extra_opt_link_flags": None,
+      "extra_dbg_compile_flags": None,
+      "extra_coverage_compile_flags": None,
+      "extra_coverage_link_flags": None,
+      "extra_unfiltered_compile_flags": None,
+    },
+    extra_known_features = [],
+    extra_enabled_features = [],
+    cxx_builtin_include_directories = ["%workspace%//usr/include/c++/v1", "%workspace%//usr/lib/clang/21/include", "%workspace%//usr/include/x86_64-unknown-none/c++/v1", "%workspace%//usr/lib64/clang/21.1.8/include", "%workspace%//usr/lib64/clang/21/include"],
+    major_llvm_version = 21,
+)
+
+toolchain(
+    name = "cc-toolchain-x86_64-none",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ] + [] + [],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:none",
+    ] + [] + [],
+    target_settings = None,
+    toolchain = ":cc-clang-x86_64-none",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
+filegroup(
+    name = "sysroot-components-x86_64-none",
+    srcs = [],
+)
+
+filegroup(
+    name = "cxx_builtin_include_files-x86_64-none",
+    srcs = [],
+)
+
+filegroup(
+    name = "compiler-components-x86_64-none",
+    srcs = [
+        ":sysroot-components-x86_64-none",
+        
+        
+    ],
+)
+
+filegroup(
+    name = "linker-components-x86_64-none",
+    srcs = [":sysroot-components-x86_64-none"],
+)
+
+filegroup(
+    name = "all-components-x86_64-none",
+    srcs = [
+        ":compiler-components-x86_64-none",
+        ":linker-components-x86_64-none",
+    ],
+)
+
+filegroup(name = "all-files-x86_64-none", srcs = [":all-components-x86_64-none", ":internal-use-tools-legacy"])
+filegroup(name = "archiver-files-x86_64-none", srcs = [":internal-use-tools-legacy"])
+filegroup(name = "assembler-files-x86_64-none", srcs = [":internal-use-tools-legacy"])
+filegroup(name = "compiler-files-x86_64-none", srcs = [":compiler-components-x86_64-none", ":internal-use-tools-legacy"])
+filegroup(name = "dwp-files-x86_64-none", srcs = [":internal-use-tools-legacy"])
+filegroup(name = "linker-files-x86_64-none", srcs = [":linker-components-x86_64-none", ":internal-use-tools-legacy"])
+filegroup(name = "objcopy-files-x86_64-none", srcs = [":internal-use-tools-legacy"])
+filegroup(name = "strip-files-x86_64-none", srcs = [":internal-use-tools-legacy"])
+
+system_module_map(
+    name = "module-x86_64-none",
+    cxx_builtin_include_files = ":cxx_builtin_include_files-x86_64-none",
+    cxx_builtin_include_directories = ["%workspace%//usr/include/c++/v1", "%workspace%//usr/lib/clang/21/include", "%workspace%//usr/include/x86_64-unknown-none/c++/v1", "%workspace%//usr/lib64/clang/21.1.8/include", "%workspace%//usr/lib64/clang/21/include"],
+    sysroot_files = ":sysroot-components-x86_64-none",
+    sysroot_path = "",
+)
+
+cc_toolchain(
+    name = "cc-clang-x86_64-none",
+    all_files = "all-files-x86_64-none",
+    ar_files = "archiver-files-x86_64-none",
+    as_files = "assembler-files-x86_64-none",
+    compiler_files = "compiler-files-x86_64-none",
+    dwp_files = "dwp-files-x86_64-none",
+    linker_files = "linker-files-x86_64-none",
+    objcopy_files = "objcopy-files-x86_64-none",
+    strip_files = "strip-files-x86_64-none",
+    toolchain_config = "local-x86_64-none",
+    module_map = "module-x86_64-none",
+    supports_header_parsing = True,
+)
+
+
+# Convenience targets from the LLVM toolchain.
+
+cc_import(
+    name = "omp",
+    shared_library = ":lib/libomp.so",
+)
+
+native_binary(
+    name = "clang-apply-replacements",
+    out = "clang-apply-replacements",
+    src = ":bin/clang-apply-replacements",
+)
+
+native_binary(
+    name = "clang-format",
+    out = "clang-format",
+    src = ":bin/clang-format",
+)
+
+native_binary(
+    name = "clang-tidy",
+    out = "clang-tidy",
+    src = ":bin/clang-tidy",
+)
+
+native_binary(
+    name = "clangd",
+    out = "clangd",
+    src = ":bin/clangd",
+)
+
+native_binary(
+    name = "llvm-cov",
+    out = "llvm-cov",
+    src = ":bin/llvm-cov",
+)
+
+native_binary(
+    name = "llvm-profdata",
+    out = "llvm-profdata",
+    src = ":bin/llvm-profdata",
+)
+
+native_binary(
+    name = "llvm-symbolizer",
+    out = "llvm-symbolizer",
+    src = ":bin/llvm-symbolizer",
+)

@@ -1,0 +1,34 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "common/minimal_descriptor_pool.h"
+
+#include "absl/base/nullability.h"
+#include "absl/status/status.h"
+#include "internal/minimal_descriptor_pool.h"
+#include "google/protobuf/descriptor.h"
+
+namespace cel {
+
+const google::protobuf::DescriptorPool* absl_nonnull GetMinimalDescriptorPool() {
+  return internal::GetMinimalDescriptorPool();
+}
+
+// If required, adds the minimally required descriptors to the pool.
+absl::Status AddMinimumRequiredDescriptorsToPool(
+    google::protobuf::DescriptorPool* absl_nonnull pool) {
+  return internal::AddMinimumRequiredDescriptorsToPool(pool);
+}
+
+}  // namespace cel

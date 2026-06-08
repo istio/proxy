@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "a",
+    srcs = [
+        "asm.go",
+        "asm1.s",
+        "asm11.s",
+        "asm2.s",
+        "asm3.s",
+        "asm4.s",
+        "asm5.s",
+        "asm6.s",
+        "asm7.s",
+        "asm8.s",
+        "asm9.s",
+    ],
+    importpath = "golang.org/x/tools/go/analysis/passes/asmdecl/testdata/src/a",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":a",
+    visibility = ["//visibility:public"],
+)

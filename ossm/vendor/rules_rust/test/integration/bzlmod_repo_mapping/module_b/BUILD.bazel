@@ -1,0 +1,9 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+rust_library(
+    name = "lib_b",
+    srcs = ["lib.rs"],
+    data = ["@aliased_c//:MODULE.bazel"],
+    visibility = ["//visibility:public"],
+    deps = ["@rules_rust//rust/runfiles"],
+)

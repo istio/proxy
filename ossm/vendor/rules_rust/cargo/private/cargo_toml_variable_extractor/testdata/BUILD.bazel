@@ -1,0 +1,174 @@
+load("//cargo:defs.bzl", "cargo_toml_env_vars")
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+
+# TODO: This target currently fails on windows.
+NOT_WINDOWS = select({
+    "@platforms//os:windows": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
+
+genrule(
+    name = "gen_empty_cargo_output",
+    srcs = glob([
+        "empty/**/*.toml",
+        "empty/**/*.rs",
+    ]),
+    outs = ["empty_cargo_output"],
+    cmd = "RUSTC=$(execpath //tools/upstream_wrapper:rustc) $(execpath //tools/upstream_wrapper:cargo) run --manifest-path=cargo/private/cargo_toml_variable_extractor/testdata/empty/Cargo.toml > $@",
+    cmd_bat = "set RUSTC=$(execpath //tools/upstream_wrapper:rustc) && $(execpath //tools/upstream_wrapper:cargo) run --manifest-path=cargo\\private\\cargo_toml_variable_extractor\\testdata\\empty\\Cargo.toml > $@",
+    target_compatible_with = NOT_WINDOWS,
+    tools = [
+        "//tools/upstream_wrapper:cargo",
+        "//tools/upstream_wrapper:rustc",
+    ],
+)
+
+cargo_toml_env_vars(
+    name = "empty_cargo_env",
+    src = "empty/Cargo.toml",
+)
+
+rust_binary(
+    name = "empty_bin",
+    srcs = ["empty/src/main.rs"],
+    edition = "2021",
+    rustc_env_files = [":empty_cargo_env"],
+)
+
+genrule(
+    name = "gen_empty_bazel_output",
+    outs = ["empty_bazel_output"],
+    cmd = "$(execpath :empty_bin) > $@",
+    cmd_bat = "$(execpath :empty_bin) > $@",
+    tools = [":empty_bin"],
+)
+
+rust_test(
+    name = "empty_diff_test",
+    srcs = ["diff_test.rs"],
+    data = [
+        ":empty_bazel_output",
+        ":empty_cargo_output",
+    ],
+    edition = "2021",
+    env = {
+        "FILE_1": "$(rlocationpath :empty_cargo_output)",
+        "FILE_2": "$(rlocationpath :empty_bazel_output)",
+    },
+    deps = [
+        "//rust/runfiles",
+    ],
+)
+
+genrule(
+    name = "gen_standalone_cargo_output",
+    srcs = glob([
+        "standalone/**/*.toml",
+        "standalone/**/*.rs",
+    ]),
+    outs = ["standalone_cargo_output"],
+    cmd = "RUSTC=$(execpath //tools/upstream_wrapper:rustc) $(execpath //tools/upstream_wrapper:cargo) run --manifest-path=cargo/private/cargo_toml_variable_extractor/testdata/standalone/Cargo.toml > $@",
+    cmd_bat = "set RUSTC=$(execpath //tools/upstream_wrapper:rustc) && $(execpath //tools/upstream_wrapper:cargo) run --manifest-path=cargo\\private\\cargo_toml_variable_extractor\\testdata\\standalone\\Cargo.toml > $@",
+    target_compatible_with = NOT_WINDOWS,
+    tools = [
+        "//rust/toolchain:current_rust_stdlib_files",
+        "//tools/upstream_wrapper:cargo",
+        "//tools/upstream_wrapper:rustc",
+    ],
+)
+
+cargo_toml_env_vars(
+    name = "standalone_cargo_env",
+    src = "standalone/Cargo.toml",
+)
+
+rust_binary(
+    name = "standalone_bin",
+    srcs = ["standalone/src/main.rs"],
+    edition = "2021",
+    rustc_env_files = [":standalone_cargo_env"],
+)
+
+genrule(
+    name = "gen_standalone_bazel_output",
+    outs = ["standalone_bazel_output"],
+    cmd = "$(execpath :standalone_bin) > $@",
+    cmd_bat = "$(execpath :standalone_bin) > $@",
+    tools = [":standalone_bin"],
+)
+
+rust_test(
+    name = "standalone_diff_test",
+    srcs = ["diff_test.rs"],
+    data = [
+        ":standalone_bazel_output",
+        ":standalone_cargo_output",
+    ],
+    edition = "2021",
+    env = {
+        "FILE_1": "$(rlocationpath :standalone_cargo_output)",
+        "FILE_2": "$(rlocationpath :standalone_bazel_output)",
+    },
+    deps = [
+        "//rust/runfiles",
+    ],
+)
+
+genrule(
+    name = "gen_workspace_subcrate_cargo_output",
+    srcs = glob(
+        include = [
+            "workspace/**/*.toml",
+            "workspace/**/*.rs",
+            "workspace/**/.gitignore",
+        ],
+        exclude = ["workspace/target/**"],
+    ),
+    outs = ["workspace_subcrate_cargo_output"],
+    cmd = "RUSTC=$(execpath //tools/upstream_wrapper:rustc) $(execpath //tools/upstream_wrapper:cargo) run --quiet --manifest-path=cargo/private/cargo_toml_variable_extractor/testdata/workspace/subcrate/Cargo.toml > $@",
+    cmd_bat = "set RUSTC=$(execpath //tools/upstream_wrapper:rustc) && $(execpath //tools/upstream_wrapper:cargo) run --quiet --manifest-path=cargo\\private\\cargo_toml_variable_extractor\\testdata\\workspace\\subcrate\\Cargo.toml > $@",
+    target_compatible_with = NOT_WINDOWS,
+    tools = [
+        "//rust/toolchain:current_rust_stdlib_files",
+        "//tools/upstream_wrapper:cargo",
+        "//tools/upstream_wrapper:rustc",
+    ],
+)
+
+cargo_toml_env_vars(
+    name = "workspace_subcrate_cargo_env",
+    src = "workspace/subcrate/Cargo.toml",
+    workspace = "workspace/Cargo.toml",
+)
+
+rust_binary(
+    name = "workspace_subcrate_bin",
+    srcs = ["workspace/subcrate/src/main.rs"],
+    edition = "2021",
+    rustc_env_files = [":workspace_subcrate_cargo_env"],
+)
+
+genrule(
+    name = "gen_workspace_subcrate_bazel_output",
+    outs = ["workspace_subcrate_bazel_output"],
+    cmd = "$(execpath :workspace_subcrate_bin) > $@",
+    cmd_bat = "$(execpath :workspace_subcrate_bin) > $@",
+    tools = [":workspace_subcrate_bin"],
+)
+
+rust_test(
+    name = "workspace_subcrate_diff_test",
+    srcs = ["diff_test.rs"],
+    data = [
+        ":workspace_subcrate_bazel_output",
+        ":workspace_subcrate_cargo_output",
+    ],
+    edition = "2021",
+    env = {
+        "FILE_1": "$(rlocationpath :workspace_subcrate_cargo_output)",
+        "FILE_2": "$(rlocationpath :workspace_subcrate_bazel_output)",
+    },
+    deps = [
+        "//rust/runfiles",
+    ],
+)

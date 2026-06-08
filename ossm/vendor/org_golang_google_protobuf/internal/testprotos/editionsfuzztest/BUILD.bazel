@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "editionsfuzztest",
+    srcs = [
+        "test2.pb.go",
+        "test2editions.pb.go",
+        "test3.pb.go",
+        "test3editions.pb.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/testprotos/editionsfuzztest",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/gofeaturespb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":editionsfuzztest",
+    visibility = ["//:__subpackages__"],
+)

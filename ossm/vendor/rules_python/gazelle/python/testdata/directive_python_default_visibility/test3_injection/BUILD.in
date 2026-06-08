@@ -1,0 +1,2 @@
+# gazelle:python_root
+# gazelle:python_default_visibility //foo/$python_root$/bar:__pkg__

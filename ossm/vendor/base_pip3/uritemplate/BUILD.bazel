@@ -1,0 +1,8 @@
+load("@rules_python//python/private/pypi:pkg_aliases.bzl", "pkg_aliases")
+
+package(default_visibility = ["//visibility:public"])
+
+pkg_aliases(
+    name = "uritemplate",
+    actual = "base_pip3_uritemplate",
+)

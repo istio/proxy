@@ -1,0 +1,37 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+type: google.api.Service
+config_version: 3
+name: field_value_extractor_test.googleapis.com
+title: Field Extractor Test API
+apis:
+- name: google.protobuf.field_extraction.testing.FieldExtractorTestService
+
+documentation:
+  overview: |
+    (== suppress_warning quota-presence ==)
+    (== suppress_warning usage_manager-presence ==)
+    (== suppress_warning http-rest ==)
+    (== suppress_warning versioning-http-version-prefix ==)
+    (== suppress_warning documentation-presence ==)
+    (== suppress_warning legacy-contacts ==)
+    (== suppress_warning versioning-config ==)
+  summary:
+    Field Extractor Test
+
+backend:
+  rules:
+  - selector: '*'
+    address: <external>

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "genericfeatures",
+    srcs = ["features.go"],
+    importpath = "golang.org/x/tools/internal/typeparams/genericfeatures",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//go/ast/inspector",
+        "//internal/typeparams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":genericfeatures",
+    visibility = ["//:__subpackages__"],
+)

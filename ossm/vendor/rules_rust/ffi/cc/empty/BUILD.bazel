@@ -1,0 +1,5 @@
+alias(
+    name = "empty",
+    actual = "//rust/private/cc:empty",
+    visibility = ["//visibility:public"],
+)

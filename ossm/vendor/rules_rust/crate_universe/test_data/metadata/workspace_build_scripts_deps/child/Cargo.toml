@@ -1,0 +1,16 @@
+[package]
+name = "child"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+# Required to satisfy cargo but no `lib.rs` is expected to
+# exist within test data.
+[lib]
+path = "lib.rs"
+
+[dependencies]
+tonic = "=0.4.3"
+
+[build-dependencies]
+tonic-build = "=0.4"

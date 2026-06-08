@@ -1,0 +1,5 @@
+{
+    "targets": "eyJzaWduZWQiOiB7InZlcnNpb24iOiAyLCAidGFyZ2V0cyI6IHsiZW1wbG95ZWUvQVBNX1RSQUNJTkcvdmFsaWRfY29uZl9wYXRoL2NvbmZpZyI6IHt9LCAiYmFyIjoge319LCJjdXN0b20iOiB7Im9wYXF1ZV9iYWNrZW5kX3N0YXRlIjogIjE1In19fQ==",
+    "client_configs": ["employee/APM_TRACING/valid_conf_path/config"],
+    "target_files": []
+}

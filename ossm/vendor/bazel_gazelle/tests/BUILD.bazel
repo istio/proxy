@@ -1,0 +1,75 @@
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:sets.bzl", "sets")
+load(
+    "//:def.bzl",
+    "gazelle_binary",
+    "gazelle_generation_test",
+)
+load("//tests:tools.bzl", "get_binary")
+
+# Exclude this entire directly from having anything gnerated by Gazelle. That
+# way the test cases won't be fixed by `bazel run //:gazelle` when run in this
+# repository.
+# gazelle:exclude **
+
+# This test Gazelle binary only has the "test_filegroup" plugin installed.
+gazelle_binary(
+    name = "gazelle",
+    languages = [
+        "//internal/language/test_filegroup",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+gazelle_binary(
+    name = "gazelle_with_language_loads_from_flag",
+    languages = [
+        "//internal/language/test_loads_from_flag",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+gazelle_binary(
+    name = "gazelle_with_language_load_for_packed_rules",
+    languages = [
+        "//internal/language/test_load_for_packed_rules",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+gazelle_binary(
+    name = "gazelle_with_proto_and_go_languages",
+    languages = [
+        "//language/proto:go_default_library",
+        "//language/go:go_default_library",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+[gazelle_generation_test(
+    # Name the test the path to the directory containing the WORKSPACE file.
+    name = test_dir,
+    gazelle_binary = get_binary(test_dir),
+    # This is a noop as the default is False. However, it does confirm that
+    # gazelle_generation_test accepts setting common test attributes.
+    local = False,
+    test_data = glob(
+        include = [test_dir + "/**"],
+    ),
+) for test_dir in sets.to_list(sets.make([
+    paths.dirname(p)
+    # Note that glob matches "this package's directories and non-subpackage
+    # subdirectories," so any directory with a BUILD or BUILD.bazel file
+    # will not match, but those with BUILD.in and BUILD.out will.
+    for p in glob([
+        "**/WORKSPACE",
+        "**/MODULE.bazel",
+    ])
+]))]
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [],
+    visibility = ["//visibility:public"],
+)

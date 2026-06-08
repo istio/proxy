@@ -1,0 +1,16 @@
+"""BUILD file for cargo info helper binary."""
+
+load("//rust:defs.bzl", "rust_binary", "rust_test")
+
+rust_binary(
+    name = "cargo_toml_info",
+    srcs = ["main.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = ["//cargo/3rdparty/crates:cargo_toml"],
+)
+
+rust_test(
+    name = "unit_test",
+    crate = ":cargo_toml_info",
+)

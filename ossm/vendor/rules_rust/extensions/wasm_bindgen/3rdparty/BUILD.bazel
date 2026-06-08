@@ -1,0 +1,67 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_rust//crate_universe:defs.bzl", "crate", "crates_vendor")
+load("//:repositories.bzl", "WASM_BINDGEN_VERSION")
+
+exports_files([
+    "BUILD.wasm-bindgen-cli.bazel",
+])
+
+crates_vendor(
+    name = "crates_vendor",
+    cargo_lockfile = "Cargo.Bazel.lock",
+    generate_binaries = True,
+    mode = "remote",
+    packages = {
+        "serde_json": crate.spec(
+            version = "1.0.145",
+        ),
+        "wasm-bindgen": crate.spec(
+            version = WASM_BINDGEN_VERSION,
+        ),
+        "wasm-bindgen-cli": crate.spec(
+            version = WASM_BINDGEN_VERSION,
+        ),
+        "wasm-bindgen-test": crate.spec(
+            version = "0.3.55",
+        ),
+    },
+    # Shorten the repository name to avoid MAX_PATH issues on Windows
+    # `rules_rust_wasm_bindgen_deps` == `rrwbd`
+    repository_name = "rrwbd",
+    tags = ["manual"],
+)
+
+alias(
+    name = "wasm_bindgen_cli",
+    actual = "//3rdparty/crates:wasm-bindgen-cli__wasm-bindgen",
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "wasm_bindgen_test_runner",
+    actual = "//3rdparty/crates:wasm-bindgen-cli__wasm-bindgen-test-runner",
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "wasm_bindgen",
+    actual = "//3rdparty/crates:wasm-bindgen",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "wasm_bindgen_test",
+    actual = "//3rdparty/crates:wasm-bindgen-test",
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = [
+        "//3rdparty/crates:crates.bzl",
+        "//3rdparty/crates:defs.bzl",
+    ],
+    visibility = ["//:__pkg__"],
+)

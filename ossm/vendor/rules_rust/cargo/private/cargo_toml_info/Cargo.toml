@@ -1,0 +1,11 @@
+[package]
+name = "cargo_toml_info"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cargo_toml = "0.20.5"
+
+[[bin]]
+name = "cargo_toml_info"
+path = "main.rs"

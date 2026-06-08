@@ -1,0 +1,65 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust//rust:defs.bzl", "rust_test")
+load("//:defs.bzl", "rust_prost_library")
+
+package(default_visibility = ["//private/tests:__subpackages__"])
+
+proto_library(
+    name = "pkg_empty_proto",
+    srcs = [
+        "pkg.empty.proto",
+    ],
+)
+
+rust_prost_library(
+    name = "pkg_empty_rs_proto",
+    proto = ":pkg_empty_proto",
+)
+
+proto_library(
+    name = "pkg_proto",
+    srcs = [
+        "pkg.proto",
+    ],
+)
+
+rust_prost_library(
+    name = "pkg_rs_proto",
+    proto = ":pkg_proto",
+)
+
+proto_library(
+    name = "pkg_a_proto",
+    srcs = [
+        "pkg.a.proto",
+    ],
+)
+
+rust_prost_library(
+    name = "pkg_a_rs_proto",
+    proto = ":pkg_a_proto",
+)
+
+proto_library(
+    name = "pkg_a_b_proto",
+    srcs = [
+        "pkg.a.b.proto",
+    ],
+)
+
+rust_prost_library(
+    name = "pkg_a_b_rs_proto",
+    proto = ":pkg_a_b_proto",
+)
+
+rust_test(
+    name = "package_test",
+    srcs = ["package_test.rs"],
+    edition = "2021",
+    deps = [
+        ":pkg_a_b_rs_proto",
+        ":pkg_a_rs_proto",
+        ":pkg_empty_rs_proto",
+        ":pkg_rs_proto",
+    ],
+)

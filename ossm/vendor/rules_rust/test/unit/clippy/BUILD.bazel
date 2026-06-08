@@ -1,0 +1,5 @@
+load(":clippy_test.bzl", "clippy_test_suite")
+
+clippy_test_suite(
+    name = "clippy_test_suite",
+)

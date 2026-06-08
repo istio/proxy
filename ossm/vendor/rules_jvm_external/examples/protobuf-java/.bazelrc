@@ -1,0 +1,13 @@
+# Required to get `protobuf` compiling. Note that MSVC requires a
+# different flag than both macOS and Linux.
+
+common --enable_platform_specific_config
+common:linux --cxxopt=-std=c++17
+common:linux --host_cxxopt=-std=c++17
+common:macos --cxxopt=-std=c++17
+common:macos --host_cxxopt=-std=c++17
+common:windows --cxxopt=/std:c++17
+common:windows --host_cxxopt=/std:c++17
+
+# Enable protobuf MSVC support on Windows
+build:windows --define=protobuf_allow_msvc=true

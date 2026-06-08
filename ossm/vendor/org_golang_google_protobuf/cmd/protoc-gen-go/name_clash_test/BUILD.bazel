@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "name_clash_test_test",
+    srcs = [
+        "name_clash_proto3_test.go",
+        "name_clash_test.go",
+    ],
+    deps = [
+        "//cmd/protoc-gen-go/testdata/nameclash/test_name_clash_hybrid",
+        "//cmd/protoc-gen-go/testdata/nameclash/test_name_clash_hybrid3",
+        "//cmd/protoc-gen-go/testdata/nameclash/test_name_clash_opaque",
+        "//cmd/protoc-gen-go/testdata/nameclash/test_name_clash_opaque3",
+        "//cmd/protoc-gen-go/testdata/nameclash/test_name_clash_open",
+        "//cmd/protoc-gen-go/testdata/nameclash/test_name_clash_open3",
+        "//compiler/protogen",
+        "//internal/genid",
+        "//proto",
+        "//reflect/protodesc",
+        "//types/descriptorpb",
+        "//types/gofeaturespb",
+        "//types/pluginpb",
+    ],
+)

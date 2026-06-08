@@ -1,0 +1,1 @@
+# gazelle:python_test_file_pattern foo_*_[A-Z_test?.py

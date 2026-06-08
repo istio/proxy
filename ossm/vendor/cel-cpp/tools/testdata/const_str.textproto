@@ -1,0 +1,23 @@
+# proto-file: google3/google/api/expr/checked.proto
+# proto-message: CheckedExpr
+type_map {
+  key: 1
+  value {
+    primitive: STRING
+  }
+}
+expr {
+  id: 1
+  const_expr {
+    string_value: "127.0.0.1"
+  }
+}
+source_info {
+  location: "<input>"
+  line_offsets: 12
+  positions {
+    key: 1
+    value: 0
+  }
+}
+

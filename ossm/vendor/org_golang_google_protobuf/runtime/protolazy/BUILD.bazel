@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "protolazy",
+    srcs = ["protolazy.go"],
+    importpath = "google.golang.org/protobuf/runtime/protolazy",
+    visibility = ["//visibility:public"],
+    deps = ["//internal/impl"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protolazy",
+    visibility = ["//visibility:public"],
+)

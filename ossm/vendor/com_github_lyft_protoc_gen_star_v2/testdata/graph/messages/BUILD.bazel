@@ -1,0 +1,49 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "graph_messages_proto",
+    srcs = [
+        "embedded.proto",
+        "enums.proto",
+        "enums_ext.proto",
+        "maps.proto",
+        "oneofs.proto",
+        "recursive.proto",
+        "repeated.proto",
+        "scalars.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//messages:messages_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:type_proto",
+    ],
+)
+
+go_proto_library(
+    name = "graph_messages_go_proto",
+    importpath = "github.com/lyft/protoc-gen-star/v2/testdata/graph/messages",
+    importpath_aliases = ["github.com/lyft/protoc-gen-star/testdata/graph/messages"],
+    proto = ":graph_messages_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//messages:enums_ext_proto",
+        "//messages:scalars_proto",
+    ],
+)
+
+go_library(
+    name = "messages",
+    embed = [":graph_messages_go_proto"],
+    importpath = "github.com/lyft/protoc-gen-star/v2/testdata/graph/messages",
+    importpath_aliases = ["github.com/lyft/protoc-gen-star/testdata/graph/messages"],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":messages",
+    visibility = ["//visibility:public"],
+)

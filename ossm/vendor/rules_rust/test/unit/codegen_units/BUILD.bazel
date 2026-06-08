@@ -1,0 +1,5 @@
+load(":codegen_units_test_suite.bzl", "codegen_units_test_suite")
+
+codegen_units_test_suite(
+    name = "codegen_units_test_suite",
+)

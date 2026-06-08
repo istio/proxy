@@ -1,0 +1,71 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("//python:packaging.bzl", "py_package", "py_wheel")
+load("//python:pip.bzl", "whl_filegroup")
+load("//python:py_library.bzl", "py_library")
+load("//python:py_test.bzl", "py_test")
+load(":whl_filegroup_tests.bzl", "whl_filegroup_test_suite")
+
+whl_filegroup_test_suite(name = "whl_filegroup_tests")
+
+py_test(
+    name = "extract_wheel_files_test",
+    size = "small",
+    srcs = ["extract_wheel_files_test.py"],
+    data = ["//examples/wheel:minimal_with_py_package"],
+    deps = ["//python/private/whl_filegroup:extract_wheel_files"],
+)
+
+write_file(
+    name = "header",
+    out = "include/whl_headers/header.h",
+    content = [
+        "#pragma once",
+        "#include <Python.h>",
+        "#define CUSTOM_ZERO ((Py_ssize_t) 0)",
+    ],
+)
+
+write_file(
+    name = "lib_py",
+    out = "lib.py",
+)
+
+py_library(
+    name = "lib",
+    srcs = ["lib.py"],
+    data = [":header"],
+)
+
+py_package(
+    name = "pkg",
+    deps = [":lib"],
+)
+
+py_wheel(
+    name = "wheel",
+    distribution = "wheel",
+    python_tag = "py3",
+    version = "0.0.1",
+    deps = [":pkg"],
+)
+
+whl_filegroup(
+    name = "filegroup",
+    pattern = "tests/whl_filegroup/include/.*\\.h",
+    whl = ":wheel",
+)
+
+cc_library(
+    name = "whl_headers",
+    hdrs = [":filegroup"],
+    includes = ["filegroup/tests/whl_filegroup/include"],
+    deps = ["@rules_python//python/cc:current_py_cc_headers"],
+)
+
+cc_test(
+    name = "whl_headers_test",
+    srcs = ["whl_headers_test.c"],
+    deps = [":whl_headers"],
+)

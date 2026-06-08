@@ -1,0 +1,3 @@
+func second() {
+    print("second")
+}

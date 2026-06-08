@@ -1,0 +1,49 @@
+load("//rust:defs.bzl", "rust_library", "rust_test", "rust_test_suite")
+
+# This package has a rust_test_suite containing no tests.
+# (This could happen if the srcs were selected via a glob).
+#
+# We test that the test suite exists and is empty, bypassing test_suite's
+# special-case behavior for empty suites.
+
+rust_library(
+    name = "code",
+    srcs = ["src/code.rs"],
+    edition = "2018",
+)
+
+rust_test(
+    name = "unrelated_unittest",
+    crate = "code",
+    edition = "2018",
+)
+
+rust_test(
+    name = "unrelated_test",
+    srcs = ["src/unrelated_test.rs"],
+    edition = "2018",
+    deps = [":code"],
+)
+
+rust_test_suite(
+    name = "suite",
+    srcs = [],
+    edition = "2018",
+)
+
+# This verifies the suite exists, and calculates its contents.
+genquery(
+    name = "deps",
+    expression = "deps(//test/empty_suite:suite, 1) - //test/empty_suite:suite",
+    scope = [":suite"],
+)
+
+# Test that the suite is empty.
+rust_test(
+    name = "deps_test",
+    srcs = ["verify_empty.rs"],
+    data = [":deps"],
+    edition = "2021",
+    env = {"GENQUERY_OUTPUT": "$(rlocationpath :deps)"},
+    deps = ["//rust/runfiles"],
+)

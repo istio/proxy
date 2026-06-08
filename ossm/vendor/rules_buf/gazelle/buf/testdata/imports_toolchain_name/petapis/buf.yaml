@@ -1,0 +1,9 @@
+version: v1
+deps: 
+  - buf.build/envoyproxy/protoc-gen-validate
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT

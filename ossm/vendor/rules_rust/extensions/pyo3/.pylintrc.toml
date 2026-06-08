@@ -1,0 +1,15 @@
+[tool.pylint.main]
+
+# Allow loading of arbitrary C extensions. Extensions are imported into the
+# active Python interpreter and may run arbitrary code.
+unsafe-load-any-extension = true
+
+# Limit actions to using 1 core per action.
+jobs = 1
+
+disable = [
+    "fixme",                  # Developers should be allowed to leave TODO comments.
+    "wrong-import-position",  # isort is in charge of import ordering.
+    "wrong-import-order",     # isort is in charge of import ordering.
+    "line-too-long",          # Black is responsible for shortening where possible.
+]

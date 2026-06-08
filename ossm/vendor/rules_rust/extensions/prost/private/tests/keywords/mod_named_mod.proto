@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package mod;
+
+import "imported_keyword.proto";
+
+message A {
+    string name = 1;
+    imported.type.B b = 2;
+}

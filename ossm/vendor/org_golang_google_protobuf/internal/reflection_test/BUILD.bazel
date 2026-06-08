@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "reflection_test_test",
+    srcs = [
+        "reflection_hybrid_test.go",
+        "reflection_large_opaque_test.go",
+        "reflection_opaque_test.go",
+        "reflection_open_test.go",
+        "reflection_repeated_test.go",
+        "reflection_test.go",
+    ],
+    deps = [
+        "//internal/testprotos/testeditions",
+        "//internal/testprotos/testeditions/testeditions_hybrid",
+        "//internal/testprotos/testeditions/testeditions_opaque",
+        "//proto",
+        "//reflect/protoreflect",
+        "//runtime/protoiface",
+        "//testing/prototest",
+    ],
+)

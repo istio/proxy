@@ -1,0 +1,35 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load(":platform.bzl", "declare_config_settings")
+
+package(default_visibility = ["//visibility:public"])
+
+declare_config_settings()
+
+# WASI Preview version constraint settings
+constraint_setting(
+    name = "wasi_version",
+    default_constraint_value = ":wasi_preview_1",
+)
+
+constraint_value(
+    name = "wasi_preview_1",
+    constraint_setting = ":wasi_version",
+)
+
+constraint_value(
+    name = "wasi_preview_2",
+    constraint_setting = ":wasi_version",
+)
+
+package_group(
+    name = "function_transition_allowlist",
+    packages = [
+        "//...",
+    ],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]),
+    visibility = ["//rust:__subpackages__"],
+)

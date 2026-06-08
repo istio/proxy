@@ -1,0 +1,12 @@
+load("@rules_proto_grpc//js:defs.bzl", "js_grpc_web_library")
+
+js_grpc_web_library(
+    name = "thing_js_grpc",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)
+
+js_grpc_web_library(
+    name = "greeter_js_grpc",
+    protos = ["@rules_proto_grpc//example/proto:greeter_grpc"],
+    deps = ["thing_js_grpc"],
+)

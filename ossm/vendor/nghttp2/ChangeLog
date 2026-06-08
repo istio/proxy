@@ -1,0 +1,3358 @@
+commit ac22e0efe3f82f43c1366961c89a50ee821cfba3
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-17
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-17
+
+    Update manual pages
+
+commit 031ae82552bdb297f4d9030a71fb32a31006819d
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-17
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-17
+
+    Bump package and library versions
+
+commit 6b3e58127d8e87f999e6813f98baa69837efcfd3
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-17
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-17
+
+    Update AUTHORS
+
+commit 5e576bda7d71ff1616f9f502d8e061d706abfc7d
+Merge: 121e4011 6039258f
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-16
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-16
+
+    Merge pull request #2462 from nghttp2/nghttpx-preserve-weightgroup-cycle
+    
+    nghttpx: Preserve WeightGroup cycles between backend replaces
+
+commit 6039258f015415e40a67fd90ee18aaf7cd96dfca
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-11
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-16
+
+    nghttpx: Preserve WeightGroup cycles between backend replaces
+    
+    Preserve cycle in WeightGroups if name and weight of WeightGroups
+    under a single pattern do not change after replacing backends via
+    backendconfig API call.  It does not matter if backend addresses under
+    those groups are changed.
+
+commit 121e4011664881321b852f31d518905f5302b9e4
+Merge: 68b663ea 67ab8145
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-10
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-10
+
+    Merge pull request #2460 from nghttp2/dependabot/go_modules/golang.org/x/net-0.41.0
+    
+    Bump golang.org/x/net from 0.40.0 to 0.41.0
+
+commit 67ab8145c7a919dac304e36b283206cfb0ba58b8
+Author:     dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+AuthorDate: 2025-06-09
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-09
+
+    Bump golang.org/x/net from 0.40.0 to 0.41.0
+    
+    Bumps [golang.org/x/net](https://github.com/golang/net) from 0.40.0 to 0.41.0.
+    - [Commits](https://github.com/golang/net/compare/v0.40.0...v0.41.0)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: golang.org/x/net
+      dependency-version: 0.41.0
+      dependency-type: direct:production
+      update-type: version-update:semver-minor
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+
+commit 68b663eabaa4e8db438fede14b6e2f409a84a132
+Merge: eafb876a c9f3166c
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-09
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-09
+
+    Merge pull request #2459 from nghttp2/conf-file-check-error
+    
+    nghttpx: Check error when reading the configuration file
+
+commit c9f3166c4df89cd89c655a811e3e35c29529e6a6
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-09
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-09
+
+    nghttpx: Check error when reading the configuration file
+
+commit eafb876a5be9e5034dcb9472fe9ba8dfdcdb41ab
+Merge: fbcf3418 c8790efa
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-09
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-09
+
+    Merge pull request #2458 from nghttp2/quic-secret-getline
+    
+    nghttpx: Use std::getline to read QUIC secrets
+
+commit c8790efadf2b10d1db331886ce0decc758c79c18
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-09
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-09
+
+    nghttpx: Use std::getline to read QUIC secrets
+
+commit fbcf341878c6f01d27aa212ec820212753dfee8a
+Merge: c9bf55f1 1adb1d9b
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-09
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-09
+
+    Merge pull request #2457 from nghttp2/thread-local
+    
+    Remove the availability check for thread_local
+
+commit 1adb1d9bb704c0f9501ab184c2955e28dba4ef7e
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-09
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-09
+
+    Remove the availability check for thread_local
+
+commit c9bf55f125d662357c5c1d48713d63a439a1705f
+Merge: 2b07607c 556fa9f7
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-09
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-09
+
+    Merge pull request #2455 from starrify/nghttpd-support-sslkeylogfile
+    
+    nghttpd: Support SSLKEYLOGFILE
+
+commit 2b07607cac4093bdf48a0a6905b92a59bd0c3640
+Merge: b1496253 827da803
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-09
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-09
+
+    Merge pull request #2456 from nghttp2/as-string-view
+    
+    Use as_string_view to simplify the construction
+
+commit 556fa9f781a9db99039fedc32be172e9193da3cd
+Author:     Peng-Yu Chen <pengyu@libstarrify.so>
+AuthorDate: 2025-06-08
+Commit:     Peng-Yu Chen <pengyu@libstarrify.so>
+CommitDate: 2025-06-09
+
+    nghttpd: Support SSLKEYLOGFILE
+
+commit 827da803f69d3effbc313d71c60649ea4d063a71
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-09
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-09
+
+    Use as_string_view to simplify the construction
+
+commit b1496253d01ede4d831d3565f697052495fdf814
+Merge: 2f283177 811608be
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-08
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-08
+
+    Merge pull request #2454 from nghttp2/replace-stringref-with-stringview
+    
+    Replace stringref with stringview
+
+commit 811608bef84c4b8320d06b5a17f7fb2380d2ede1
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    Update script
+
+commit db304adf70fd3a8f7f2975c23a67ac3250bb2e89
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    Remove unnecessary casts and some adjustments
+
+commit ef94a3be9a4e93dda32fed11cb49510dfe2ccf92
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    Replace StringRef with std::string_view
+
+commit 2f283177f71e4e06c434707eebff8eda2dde2ce1
+Merge: e004f75e b13eb2c1
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-08
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-08
+
+    Merge pull request #2453 from nghttp2/src-refactor
+    
+    Src refactor
+
+commit b13eb2c13f9b83858e804dd8e2c54614a930f99c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    util::format_duration: Use std::string_view for unit
+
+commit 9707f9bfbe6e75b2301222effeabb0cacf62d0a3
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    util::show_candidates: Use std::string_view for cands
+
+commit 53785c243416fe05d466823b60f0a5ac0abf0961
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    tls::get_tls_protocol: Return std::string_view
+
+commit 4f450d0f5a368ad6744885d540386b899cd04b59
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    Router::add_node: Receive pattern as StringRef
+
+commit 86a36fec8a0196445b91761e8f5918ac3df9750b
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    RNode: Store s as std::string_view
+
+commit 5ccd54734ad3958b098169ee71f63dec07b794d9
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    Rewrite http::colorize_headers
+
+commit ecf42e76a8fbc5383ec6fe8acc500cb8cff57f3c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    FieldStore: Pass StringRef rather than const char * and its length
+
+commit c72e5f116dbb583d469ed2d5550d4303dbda1f73
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    Remove unused http2::dump_nv overloads
+
+commit d79fd53b67cced5078f6f8093425f84a99212ae8
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    http2::get_header: Take std::string_view
+
+commit 0bfdc8682dc5a5e511fbab51c12d87f3f20bd4d2
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    Remove http2::get_header overloads that take HeaderIndex
+
+commit af5f768a52d56b86695ad5dcddeaf9ba719b77cd
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    Remove unused http2::copy_url_component
+
+commit 9a51528aabc5fff64a1f6f1a156fda226f42ad31
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    Remove unused http2::lws
+
+commit e403873ac85ac2fa89a3f35baa60bd18bf0e935f
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    Refactor levenshtein to accept std::string_view
+
+commit e004f75e77bdf38fd1be963ae7f7ef5adc27087e
+Merge: d28170aa 55e02bdb
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-08
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-08
+
+    Merge pull request #2452 from nghttp2/nghttpx-quic-read-rate
+    
+    nghttpx: Implement rate limiting for incoming QUIC traffic
+
+commit 55e02bdb70747a082270963b54c96bc7e19f0337
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-08
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-08
+
+    nghttpx: Implement rate limiting for incoming QUIC traffic
+
+commit d28170aaeb72ed8a68914b758701c1c8f214429c
+Merge: e0c81524 d2e9479d
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-06
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-06
+
+    Merge pull request #2451 from nghttp2/refactor-siphash-keygen
+    
+    src: Refactor siphash key generation
+
+commit d2e9479da4cd1be197ffecdf77876c68a6568226
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-06
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-06
+
+    src: Refactor siphash key generation
+
+commit e0c815249d9cdf42186cfc4b02797494b69c187e
+Merge: 53ca70ae f5053fb2
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-04
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-04
+
+    Merge pull request #2450 from nghttp2/bump-libbpf
+    
+    Bump libbpf to v1.5.1
+
+commit f5053fb2ad7959c6d91d2e1e8278698f2723f8f6
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-04
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-04
+
+    Bump libbpf to v1.5.1
+
+commit 53ca70ae700e75178dde001a4c8cd1ae82c65c87
+Merge: 2e86b1bd eea717d2
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-04
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-04
+
+    Merge pull request #2449 from nghttp2/bump-llhttp
+    
+    Bump llhttp to v9.3.0
+
+commit eea717d21b8f6d471b97890aad4397df10b098c6
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-04
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-04
+
+    Bump llhttp to v9.3.0
+
+commit 2e86b1bd772ef2e611984cfa9fc7fa098df32392
+Merge: 91340d59 8b638f21
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-06-03
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-06-03
+
+    Merge pull request #2448 from nghttp2/bump-ngtcp2
+    
+    Bump ngtcp2 and its dependencies
+
+commit 8b638f219cee261bdb5d507ef02248e01f17c0ee
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-06-03
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-06-03
+
+    Bump ngtcp2 and its dependencies
+
+commit 91340d59bbfc255f9f1e843ab5a1ae967ffddecf
+Merge: d159ff9b 3eafe7e6
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-31
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-31
+
+    Merge pull request #2447 from nghttp2/app-cleanup-part2
+    
+    App cleanup part2
+
+commit 3eafe7e630a63b17f6b80a60a9144f6314bd0756
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-31
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-31
+
+    Remove unnecessary cast
+
+commit 923014d163dea30f3db06f7ee09ba181cf12b7f6
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-31
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-31
+
+    Remove noexcept
+
+commit 4fe2aab723662f2c5d44baa1966e1f2d0b39d05a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-31
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-31
+
+    Might be easier to read
+
+commit 65c9142cd194bb10dee7c3d153cf7bcf255a4e1b
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-31
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-31
+
+    Use is_digit
+
+commit d159ff9baaeaceb5962c7e445cf8d84cbe93d755
+Merge: a4d961eb 4ef64cab
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-31
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-31
+
+    Merge pull request #2446 from nghttp2/app-cleanup
+    
+    App cleanup
+
+commit 4ef64cab52aca5b69858d3bad060e6f4da814e3e
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-31
+
+    Use std::unordered_map::contains
+
+commit a7ae4f80abc361c9436d4b42a82e17645870bf0c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-31
+
+    Remove unused bio_method
+
+commit 075788af7cbeab2b3cec84aad16821663a8a4cf4
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-31
+
+    Remove unnecessary <map> include
+
+commit 24d4afb967c205415f32e1c3726d7b6861dc6358
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-31
+
+    Use std::chrono::floor
+
+commit a4d961eb175f09f32fa12ae6cf67123e50264381
+Merge: 6ad6c61a 1d8abe7d
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-31
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-31
+
+    Merge pull request #2445 from nghttp2/unordered_set
+    
+    Use std::unordered_set if applicable
+
+commit 1d8abe7d1ca5998074612580f2ab8876b8cf7ff4
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-31
+
+    Use std::unordered_set if applicable
+
+commit 6ad6c61af28a1fa74cc80699fcdbc6a2d6686a9e
+Merge: 4e34e45b 1440e883
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-31
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-31
+
+    Merge pull request #2444 from trofi/gcc-16-include-fix
+    
+    src/template.h: add missing `cstdint` include
+
+commit 1440e883475488ddda25556c7b3d9f78694716ba
+Author:     Sergei Trofimovich <slyich@gmail.com>
+AuthorDate: 2025-05-30
+Commit:     Sergei Trofimovich <slyich@gmail.com>
+CommitDate: 2025-05-30
+
+    src/template.h: add missing `cstdint` include
+    
+    Without the change build against upcoming gcc-16 fails as:
+    
+        template.h:457:9: error: ISO C++ forbids declaration of 'type name' with no type [-fpermissive]
+          457 |   const uint8_t, N == std::dynamic_extent ? std::dynamic_extent : N * sizeof(T)>
+              |         ^~~~~~~
+
+commit 4e34e45be649dd7659e96be7d0d89d28e14ddf37
+Merge: abdd0ea3 3ebd7f99
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-30
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-30
+
+    Merge pull request #2443 from nghttp2/unordered_map
+    
+    Unordered map
+
+commit 3ebd7f9966529573550926db478d73880d5f2178
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-30
+
+    Remove std::map::emplace detection
+
+commit ef7b3499287c8b5f0f9309384aa1b07becf31892
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-30
+
+    Use std::unordered_map if applicable
+
+commit abdd0ea313560914f40057feebe270edeb3b0d28
+Merge: bbc091d7 7eb7740e
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-30
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-30
+
+    Merge pull request #2442 from nghttp2/remove-const_cast-sockaddr
+    
+    Remove unnecessary const_cast<sockaddr *>
+
+commit 7eb7740e013f6912eddc9d6cb9a617350976ac5e
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-30
+
+    Remove unnecessary const_cast<sockaddr *>
+
+commit bbc091d7620a7e15d9aa80036f4f58878003c5c1
+Merge: 06b758de 4fa4e5fd
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-30
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-30
+
+    Merge pull request #2441 from nghttp2/socklen_t
+    
+    Reduce cast to socklen_t
+
+commit 4fa4e5fdada811da932560ee648af9bd60957f11
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-30
+
+    Reduce cast to socklen_t
+
+commit 06b758de98e92592ee91b09da532a094f6908031
+Merge: b4207491 c98c67ae
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-30
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-30
+
+    Merge pull request #2440 from nghttp2/cxx-wconversion
+    
+    Cxx wconversion
+
+commit c98c67ae73664a7fbb5bd50eb441ec3a65304267
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-29
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-30
+
+    Bump neverbleed
+
+commit 32e26bcf68d414b22d55e9be0e588eb2dbc91558
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-29
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-30
+
+    Add -Wconversion flag to C++ compiler
+
+commit b42074913553d41ff8740aa8c06c8f2abbe676ba
+Merge: cf5b34a1 47e886b5
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-28
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-28
+
+    Merge pull request #2439 from nghttp2/remove-NGHTTP2_MAX_UINT64_DIGITS
+    
+    Remove NGHTTP2_MAX_UINT64_DIGITS
+
+commit 47e886b5a009d9034d853dc88be74bb67105c075
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-27
+
+    Remove NGHTTP2_MAX_UINT64_DIGITS
+    
+    Remove NGHTTP2_MAX_UINT64_DIGITS.  Rely on
+    std::numeric_limits<T>::digits10 instead.
+
+commit cf5b34a12ea8989903ff3bb8152a11f01cd06eaf
+Merge: d3451537 91328046
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-27
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-27
+
+    Merge pull request #2438 from nghttp2/nghttpx-log-without-snprintf
+    
+    nghttpx: Write log without snprintf
+
+commit 91328046dd0f693a6bb018cfded2bc712449eced
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-27
+
+    nghttpx: Write log without snprintf
+    
+    Write log without snprintf.  For syslog, printf-like format is
+    unavoidable.  Construct a message as much as possible, and then pass
+    the entire log message.
+
+commit d34515372a0097b19c66b5f220ff9e4bfa5c50a2
+Merge: b07227a1 2a791512
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-27
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-27
+
+    Merge pull request #2437 from nghttp2/nghttpx-fix-integral-logging
+    
+    nghttpx: Fix integral logging is always done in 64 bits integer
+
+commit 2a791512488e57e1f2226b733c1eb066c6cc664f
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-27
+
+    nghttpx: Fix integral logging is always done in 64 bits integer
+
+commit b07227a169a1b0a76bd7697a3290856b7fb970f5
+Merge: fe0f31a8 12139860
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-27
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-27
+
+    Merge pull request #2436 from nghttp2/bump-quic-go
+    
+    Bump quic-go to v0.52.0
+
+commit 1213986096894d2ddd4ff844d8dda809aca15df2
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-27
+
+    Bump quic-go to v0.52.0
+
+commit fe0f31a85c25a4cd57f49a151487fecd8b93fbc6
+Merge: 36a9d362 550000f1
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-27
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-27
+
+    Merge pull request #2435 from nghttp2/refactor-capitalize
+    
+    Refactor http2::capitalize
+
+commit 550000f1607979459473845a5244c88b8aecb5be
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-27
+
+    Refactor http2::capitalize
+
+commit 36a9d3620ed5150561e382d833d593b3c7ef7c27
+Merge: c827d07c e6463c00
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-27
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-27
+
+    Merge pull request #2434 from nghttp2/revert-2409-no-capitalize-http-field-name
+    
+    Revert "nghttpx: No need to capitalize HTTP/1.1 field name"
+
+commit e6463c00f72561712bb2ac24b6c8fbf86b80c025
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-27
+
+    Revert "nghttpx: No need to capitalize HTTP/1.1 field name"
+    
+    This reverts commit e0089070f5a42ab15e8de8c70030b1f74eaf6f26.
+
+commit c827d07c103955deb4906556c136c719c9b6ebe8
+Merge: 963cbb4c f8e31cf4
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-27
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-27
+
+    Merge pull request #2432 from nghttp2/fix-logger-format_hex
+    
+    nghttpx: Fix logger does not show address correctly
+
+commit f8e31cf478cf794b3316d3d38f22050915b45a06
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-26
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-26
+
+    nghttpx: Fix logger does not show address correctly
+
+commit 963cbb4ccee65d8b610569f613546dc447a0c06e
+Merge: a6c036e7 a1e557a7
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-26
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-26
+
+    Merge pull request #2431 from nghttp2/avoid-int-overflow
+    
+    Avoid integer overflow in table generation
+
+commit a1e557a72509ef6cc84dbad33f9dabf14a5feacb
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-26
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-26
+
+    Avoid integer overflow in table generation
+
+commit a6c036e7192ef3bfa65b2be9bacef0f066b8a777
+Merge: 052a3faf 80627afe
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-25
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-25
+
+    Merge pull request #2430 from nghttp2/remove-shrpx_exec
+    
+    Remove unused shrpx_exec
+
+commit 80627afe000299aa50a9c01ef94e5ffb185da868
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-25
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-25
+
+    Remove unused shrpx_exec
+
+commit 052a3fafa95256f2bc5a2583054276b6d8e87460
+Merge: 23e55566 5535d099
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-25
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-25
+
+    Merge pull request #2429 from nghttp2/rewrite-to_token68
+    
+    Rewrite util::to_token68
+
+commit 5535d099f6f63e2db14c88e2d76ace35548a5dad
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-25
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-25
+
+    Rewrite util::to_token68
+
+commit 23e555662ee2fc57354692cb981983d32ee1a0fb
+Merge: a86e70d2 bbe10abe
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-25
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-25
+
+    Merge pull request #2428 from nghttp2/h2load-ranges
+    
+    h2load: Adopt std::ranges
+
+commit bbe10abe2e8105a76d33babc78886b542a18026a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-25
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-25
+
+    h2load: Adopt std::ranges
+
+commit a86e70d2789270d6dfe67a01a7b50969a9ff6471
+Merge: 413674f3 ba484c41
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-25
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-25
+
+    Merge pull request #2427 from nghttp2/nghttpd-ranges
+    
+    nghttpd: Adopt std::ranges
+
+commit ba484c41a9c66accf8cf5e3a3001cb19813c12ce
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-25
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-25
+
+    nghttpd: Adopt std::ranges
+
+commit 413674f3ab15fca7bc50c2dbdf492fe3b28db0a0
+Merge: 05f517b1 e907529a
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-25
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-25
+
+    Merge pull request #2426 from nghttp2/nghttp-ranges
+    
+    nghttp: Adopt std::ranges
+
+commit e907529aaf747b5683c45f08309c3329939212e5
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-25
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-25
+
+    nghttp: Adopt std::ranges
+
+commit 05f517b1188f79a80def55d53197a7d310ddb9f3
+Merge: ceeb73fb d99de279
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-25
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-25
+
+    Merge pull request #2425 from nghttp2/remove-memchunks-append-return-value
+    
+    Remove Memchunks::append return value
+
+commit d99de27967e071d20d25ef10463dee12c0ab0ae9
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-25
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-25
+
+    Remove Memchunks::append return value
+    
+    Make Memchunks::append return nothing because it always stores
+    everything given.
+
+commit ceeb73fbfb44491113dd681cd94a8ffa7983481f
+Merge: 196e5334 f336a3df
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-25
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-25
+
+    Merge pull request #2424 from nghttp2/safer-memchunks-reserve-append
+    
+    Safer way to write data directly to Memchunks buffer
+
+commit f336a3dfde8094e41e85c02b0ba7802e4892ed37
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-25
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-25
+
+    Safer way to write data directly to Memchunks buffer
+
+commit 196e53343066391235c817a0e427c5b1d860ea5b
+Merge: 03c416a2 eefe3759
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2423 from nghttp2/update-android-dockerfile
+    
+    Update android dockerfile
+
+commit eefe3759f1bf852866a90751d408897dc63ee153
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Use ARG instead of ENV because they are build time variables
+
+commit fd18019e84e0c8d9a29e8ff6e1c0d62daf9f9f90
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Fix deprecated warning about ENV syntax
+
+commit 8dfd1c3f95615285be5da72e98f007510b0005fd
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Migrate deprecated MAINTAINER instruction to LABEL
+
+commit d448ee9fa52279b65eaceb55de248663adef4bd0
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Bump NDK version to r27c
+
+commit 0f6f47ebc9632e045e4dcae2dbcb9d70044916f8
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Dockerfile.android: Bump ubuntu to 24.04
+
+commit 03c416a2cac074ec2694c972b9a78159d89c7fa8
+Merge: a4e447bd 2ac38479
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2422 from nghttp2/bump-mruby
+    
+    Bump mruby to 3.4.0+
+
+commit 2ac38479f520d8c60394e70c9e094c39d4633c19
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-22
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Bump mruby to 3.4.0+
+    
+    3.4.0 breaks out-of-tree build.  Fast forward to the commit that fixes
+    it.
+
+commit a4e447bd84e30ebe714491629d7cab1e5abfc277
+Merge: 3ed14f2b bf292cc7
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2421 from nghttp2/fix-dockerfile
+    
+    docker: Fix build failure
+
+commit bf292cc752545ba38f35e4ce05245766270ce392
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    docker: Fix build failure
+
+commit 3ed14f2b3801d02597952f23904e004aef12cd08
+Merge: 34b18758 c3574b71
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2420 from nghttp2/nghttpx-ranges-part4
+    
+    Nghttpx ranges part4
+
+commit c3574b711dd938bec725c09dade782b997b9aa5b
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Adopt std::ranges for tests
+
+commit 8d9c80a28556973657f0149511edb4edf162c459
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    nghttpx: Fix std::ranges adoption remnants
+
+commit 34b18758cb7032050122f0bbdcb760ca8df75535
+Merge: 7634e066 89fb8dd5
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2418 from nghttp2/utos-require-unsigned
+    
+    Make util::utos require std::unsigned_integral
+
+commit 89fb8dd5034cc9dfcdf648d4815e9cb69deefe22
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Make util::utos require std::unsigned_integral
+
+commit 7634e06611fbdda1c885efc7c2dfd544584e6e42
+Merge: 82320337 9278383c
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2417 from nghttp2/remove-draft-h2-alpn-support
+    
+    Remove draft h2 alpn support
+
+commit 9278383c1a2bece3a6394d192e854890e723d842
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Remove util::get_default_alpn
+
+commit 86ba78b4615ef1566c2b05776591d8195e5cffeb
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Remove draft h2 ALPN support
+
+commit 82320337eae4b5c8bdabfb19c81ffa1cdfaf1766
+Merge: 63aa83ac 3b7cabf1
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2416 from nghttp2/memchunk-reserve-test
+    
+    Add test for Memchunks::reserve
+
+commit 3b7cabf15a4bf324ac71a4e2f05892c5d1105de9
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Add test for Memchunks::reserve
+
+commit 63aa83ac42cbb37a91e3a4726f812d1465ed70f2
+Merge: 9ac5a1a7 9a09d960
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2415 from nghttp2/remove-memchunk-append-char-array
+    
+    Remove Memchunks::append(const char (&)[N])
+
+commit 9a09d9602b6932a99ee1bf14589a278b82338f68
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Remove Memchunks::append(const char (&)[N])
+
+commit 9ac5a1a773aabbda67e56adaf9f61274271407e9
+Merge: 23f2cb85 1814fc1f
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2414 from nghttp2/refactor-to_numeric_addr
+    
+    Refactor util::to_numeric_addr
+
+commit 1814fc1f2fb1dc9d0327e1023af2082ae6410ea1
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Refactor util::to_numeric_addr
+
+commit 23f2cb85fe5515e2080df91e20e63faf9e2cf8e0
+Merge: 44484e2e 1c07b88b
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2413 from nghttp2/ranges-util
+    
+    util: Adopt std::ranges
+
+commit 1c07b88b2a21e76d55625a653d6551f30d2803e2
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    util: Adopt std::ranges
+
+commit 44484e2ed57a45a068e65d519874b6827f02150a
+Merge: 99f658d6 78f542d5
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2412 from nghttp2/memchunk-direct-write
+    
+    Allow Writing data to Memchunks directly
+
+commit 78f542d59e3cc66c45111e005c50a58488fa30ec
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Allow Writing data to Memchunks directly
+
+commit 99f658d600c387fe8a5476ae5845be25a4fcbc66
+Merge: d995c751 aa2955c8
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2411 from nghttp2/status-write
+    
+    Write http status string directly
+
+commit aa2955c8fbfa4b045ab20eddc0461e409f5e6b6d
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Write http status string directly
+
+commit d995c75173c220120319ed33f312fcd736e5ce23
+Merge: 49932973 bb7a0c78
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2410 from nghttp2/rewrite-upcase
+    
+    Rewrite util::upcase
+
+commit bb7a0c78cea0e708d269a15bfe9a3e30b8ed98ec
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Rewrite util::upcase
+
+commit 49932973265a4b5536d7b9f8f20f02dd0f9e6313
+Merge: c3c418ce e0089070
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2409 from nghttp2/no-capitalize-http-field-name
+    
+    nghttpx: No need to capitalize HTTP/1.1 field name
+
+commit e0089070f5a42ab15e8de8c70030b1f74eaf6f26
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    nghttpx: No need to capitalize HTTP/1.1 field name
+
+commit c3c418ce7a09e044724c81b7546d2142bbd2319e
+Merge: 1a118fc0 2643afa5
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-24
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-24
+
+    Merge pull request #2408 from nghttp2/pred-func-tables
+    
+    Generate tables for character predicate functions
+
+commit 2643afa593c382ff13b2f32fe3f00691eacfc7bf
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-24
+
+    Generate tables for character predicate functions
+
+commit 1a118fc0b24103eed873f1dac75d4b61d45b6d61
+Merge: e3fbf4b0 1af84eca
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-23
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-23
+
+    Merge pull request #2407 from nghttp2/amend-date
+    
+    Amend date
+
+commit 1af84eca7ba674d594a010c90e643765c0810323
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-23
+
+    Amend date
+    
+    - Use std::chrono::system_clock::from_time_t
+    - Allocate extra byte for terminal NUL just in case
+
+commit e3fbf4b0f1279b5d28bf0fd2c0ec1951abbe6bc9
+Merge: f59f7b6d ac080aea
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-23
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-23
+
+    Merge pull request #2406 from nghttp2/rewrite-format_http_date
+    
+    Rewrite format_http_date with std::chrono
+
+commit ac080aeabb65202c705ef46716cb3e3dc5e31a8a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-23
+
+    Rewrite format_http_date with std::chrono
+
+commit f59f7b6dede92b289c7e721c529f29c280bc9675
+Merge: 8b0c1221 d73b5d42
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-23
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-23
+
+    Merge pull request #2405 from nghttp2/rewrite-format_common_log
+    
+    Rewrite format_common_log
+
+commit d73b5d42e9a2f5669a68905231cd2065ddb5e398
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-23
+
+    Rewrite format_common_log
+
+commit 8b0c12219ad1d4263010449a52603103c5e5c484
+Merge: c39db115 f0fce329
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-23
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-23
+
+    Merge pull request #2404 from nghttp2/rewrite-format_iso8601_basic
+    
+    Rewrite format_iso8601_basic with std::chrono
+
+commit f0fce329b37fd1e509b352a45a713ae8c1808ec1
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-23
+
+    Rewrite format_iso8601_basic with std::chrono
+
+commit c39db115328dc04537151241b4fddb46f322daaa
+Merge: 3b82d484 be06de73
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-23
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-23
+
+    Merge pull request #2403 from nghttp2/hide-iso8601_date
+    
+    Hide iso8601_date in unnamed namespace
+
+commit be06de738c41cb3cf8de8ad5949e25670ac09007
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-23
+
+    Hide iso8601_date in unnamed namespace
+
+commit 3b82d4848a98079cc213d966ffd6e461abd9eddf
+Merge: 75d836c2 5504920f
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-22
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-22
+
+    Merge pull request #2402 from nghttp2/util-refactor-format-date
+    
+    Util refactor format date
+
+commit 5504920feb046bed667c1fa595688d68d30342af
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-22
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-22
+
+    Make MONTH and DAY_OF_WEEK array of std::string_view
+
+commit faa3831d05f5c662c714f357f9ed988fd96235ae
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-22
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-22
+
+    Rewrite cpydig
+
+commit 75d836c21edea06c22ae057674fb6f121196a681
+Merge: 4f2b72db 0b730de7
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-22
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-22
+
+    Merge pull request #2401 from nghttp2/chrono-format_iso8601
+    
+    Rewrite format_iso8601 with std::chrono
+
+commit 0b730de70593ffa1fb7587ea9892fb456b02ba95
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-20
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-22
+
+    Rewrite format_iso8601 with std::chrono
+
+commit 4f2b72dbeb866c46509f27a6717c684799cda71a
+Merge: 784c1dbe 5faf84cf
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-22
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-22
+
+    Merge pull request #2400 from nghttp2/hide-xdigits
+    
+    Hide *_XDIGITS inside table generator functions
+
+commit 5faf84cf2f9c48e5c60465efbf32ca8251a9e951
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-22
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-22
+
+    Hide *_XDIGITS inside table generator functions
+
+commit 784c1dbe369f27fc7faa53b0036bf12798ee1007
+Merge: 901d8d77 74c6a20d
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-22
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-22
+
+    Merge pull request #2399 from nghttp2/range-disallow-array
+    
+    Disallow array to substitute R &&
+
+commit 74c6a20d966c31d29ca93983b048f25d7a4cf845
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-22
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-22
+
+    Disallow array to substitute R &&
+    
+    C array is sometimes very dangerous for this purpose, for example, if
+    it contains NULL terminated string.  In such case, passing entire
+    array is unacceptable.
+
+commit 901d8d777c0e50efb6a494412b4bce2b567790c1
+Merge: 855e65b9 880fa82e
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-22
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-22
+
+    Merge pull request #2398 from nghttp2/faster-utox
+    
+    Optimize util::utox
+
+commit 880fa82e65942d041f0333b9ce29c3cd6fcfc635
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-21
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-21
+
+    Optimize util::utox
+
+commit 855e65b9c86707d2f40678d50ceafb8bf97b0506
+Merge: e9b9de10 a2f37abd
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-21
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-21
+
+    Merge pull request #2397 from nghttp2/faster-format_hex
+    
+    Optimize util::format_hex
+
+commit a2f37abdbe993ce285ce316af471bbe8146ac38f
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-21
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-21
+
+    Optimize util::format_hex
+
+commit e9b9de1006a6cfa99a3f2c221955ad98273d3cb0
+Merge: e81aeb6f ab32a1bb
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-21
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-21
+
+    Merge pull request #2396 from nghttp2/faster-utos
+    
+    Optimize util::utos
+
+commit ab32a1bb40a5dd84345a992ed93bc680db3bc2ce
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-21
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-21
+
+    Optimize util::utos
+
+commit e81aeb6fe4c8bfdcf57e6643740c6362419a29f9
+Merge: 7d15a7aa a404ba5c
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-20
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-20
+
+    Merge pull request #2395 from nghttp2/base64-constexpr
+    
+    Make base64 encoder/decoder constexpr
+
+commit a404ba5c128660aa86a04476aa04f6e7d26aeaf8
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-20
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-20
+
+    Make base64 encoder/decoder constexpr
+
+commit 7d15a7aa6b4b881710be441b96a14b54fbf3c1cd
+Merge: c1f08ca2 d41fd15d
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-20
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-20
+
+    Merge pull request #2394 from nghttp2/refine-output-iterator
+    
+    Refine output iterator requirements
+
+commit d41fd15d23c6a0a11802a3d1fa0876375bd5b28a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-20
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-20
+
+    Refine output iterator requirements
+
+commit c1f08ca2f6b59bf7c8f949b825e7cf36d3a5ab7f
+Merge: 88171ab2 aeb5185a
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-20
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-20
+
+    Merge pull request #2393 from nghttp2/refactor-make_hostport
+    
+    Refactor util::make_http_hostport and util::make_hostport
+
+commit aeb5185a441459bb9a8e868817b486a86cbbc74d
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-20
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-20
+
+    Refactor util::make_http_hostport and util::make_hostport
+
+commit 88171ab2bf0e4d8f29662f45ef9b29eb39b6d9e3
+Merge: 339bc419 02d1de1d
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-20
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-20
+
+    Merge pull request #2392 from nghttp2/remove-inp_strlower
+    
+    Remove util::inp_strlower in favor of util::tolower
+
+commit 02d1de1d9d7906f56de9fdf21483be6a5fe220cc
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-19
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-20
+
+    Remove util::inp_strlower in favor of util::tolower
+
+commit 339bc419bfcf279db30b0b26ebfe6bca265112c7
+Merge: 6659de1c 81e817f6
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-19
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-19
+
+    Merge pull request #2391 from nghttp2/constexpr-format_hex
+    
+    Make util::format_hex constexpr
+
+commit 81e817f695a0a2be507f334881921a314e92b192
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-19
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-19
+
+    Make util::format_hex constexpr
+
+commit 6659de1cfde6f252c70ae418391aa08f4ceae4da
+Merge: a1e9e5f6 9e11a12c
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-19
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-19
+
+    Merge pull request #2390 from nghttp2/rewrite-decode_hex
+    
+    Rewrite util::decode_hex
+
+commit 9e11a12c720e18da27f3954cca04adb7b9a9f5fb
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-19
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-19
+
+    Rewrite util::decode_hex
+
+commit a1e9e5f640a300b437ec7e85bd8c665fe2795f16
+Merge: 3bca3282 2f02abfe
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-19
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-19
+
+    Merge pull request #2389 from nghttp2/rewrite-utos
+    
+    Rewrite util::utos functions
+
+commit 2f02abfe7afe993ce757cd30916c67e02a1dc3ff
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-19
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-19
+
+    Rewrite util::utos functions
+
+commit 3bca3282f1cefeb4a37d0bf47703e31f8e372eae
+Merge: dd293082 64661502
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-19
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-19
+
+    Merge pull request #2388 from nghttp2/rewrite-quote_string
+    
+    Rewrite util::quote_string
+
+commit 646615022d3bce51722450f5ded3f37a2b4cbb39
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-18
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-19
+
+    Rewrite util::quote_string
+
+commit dd293082fcc8729a3c895c17d799817305266f95
+Merge: 2b47d4b5 9e235fe9
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-19
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-19
+
+    Merge pull request #2387 from nghttp2/constinit
+    
+    Declare hex_to_uint_tbl constinit
+
+commit 9e235fe95787892a5b5cf957c77f5cc92953c158
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-19
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-19
+
+    Declare hex_to_uint_tbl constinit
+
+commit 2b47d4b525545851ab6883a24dca57e5f6aa83f4
+Merge: 4513bfc3 fa5ac09a
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-18
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-18
+
+    Merge pull request #2386 from nghttp2/rewrite-percent-encoding
+    
+    Rewrite percent encoding
+
+commit fa5ac09aded2f99ccdfbfcc0a31ecd26aaa618ee
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-18
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-18
+
+    Remove old implementation
+
+commit a993d9997726b5e9e19d66574ae0e19faa3cfebc
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-18
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-18
+
+    Make util::is_hex_digit and util::hex_to_uint constexpr
+
+commit d400319bccf320584442488443e06b162f78c5b2
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-18
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-18
+
+    Remove unused util::percent_encode
+
+commit 10d00c8a53032a011f62e00bf16be8248e4e6c6e
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-18
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-18
+
+    Rewrite util::percent_encode_token
+
+commit b559f6919932341121ec5eb97d4f826cc14c3dd4
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-18
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-18
+
+    Rewrite util::percent_decode
+
+commit 4513bfc3fc155a165025072670a7a4e82f627fbf
+Merge: 0df91a4b 5e373a35
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-18
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-18
+
+    Merge pull request #2385 from nghttp2/immutablestring-literal
+    
+    Add ImmutableString string literal
+
+commit 5e373a35141868143e838079a998c5e35d4c929f
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-18
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-18
+
+    Add ImmutableString string literal
+
+commit 0df91a4b0c425e63134bdb7dcb1379315394f80c
+Merge: 9b568cf5 c362f9d3
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-18
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-18
+
+    Merge pull request #2384 from nghttp2/ranges-template
+    
+    template: Adopt std::ranges
+
+commit c362f9d36c035b0aa18fc4cb1e49bb0b47a87446
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-17
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-18
+
+    template: Adopt std::ranges
+
+commit 9b568cf5422e9778030a6a9df183593c828ee026
+Merge: fef9e8fb 6be52029
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-18
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-18
+
+    Merge pull request #2383 from nghttp2/ranges-memchunk
+    
+    memchunk: Adopt std::ranges
+
+commit 6be52029db19ce2def6f03e1739e5fea94a1c374
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-17
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-18
+
+    memchunk: Adopt std::ranges
+
+commit fef9e8fb2076b00eaf4f99c54dc48bdb4b69f7fc
+Merge: 10ebb382 09bb8350
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-17
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-17
+
+    Merge pull request #2382 from nghttp2/buffer-ranges
+    
+    buffer: Adopt std::ranges
+
+commit 09bb8350e833dfd9447d4d4ecf82d08f23b477de
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-17
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-17
+
+    buffer: Adopt std::ranges
+
+commit 10ebb3825aa8a2ee49b6c30aa71881ebb69b2d98
+Merge: 14f1169a 8bdf0224
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-17
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-17
+
+    Merge pull request #2381 from nghttp2/nghttpx-ranges-shrpx
+    
+    shrpx: Adopt std::ranges
+
+commit 8bdf0224659034e8028cd95a04de413f5f7dded4
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-17
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-17
+
+    shrpx: Adopt std::ranges
+
+commit 14f1169a5abc32b3202e65c42eaf1f2d182dd9f4
+Merge: afedd3aa 93dd369b
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-17
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-17
+
+    Merge pull request #2380 from nghttp2/nghttpx-remove-memcached-session-cache
+    
+    Nghttpx remove memcached session cache
+
+commit 93dd369b0ea0a20f86089affe8bbbda37d3e2e0a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-17
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-17
+
+    Update bash_completion
+
+commit bb3c2a36646fbc248f3250dcb84086e51605e60b
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-17
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-17
+
+    Update manual pages
+
+commit 11903f36a9081649d2002dac59451f2c6f3a7889
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-17
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-17
+
+    nghttpx: Remove TLS session cache with memcached
+    
+    Nowadays, TLS session caching is done via ticket and no server side
+    storage is required, remove TLS session cache with memcached.
+
+commit afedd3aa06f79e8e44bb024ff28069c89f29a7ce
+Merge: ed3b31fa 242c0c39
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-16
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-16
+
+    Merge pull request #2379 from nghttp2/rename-stream-root
+    
+    Rename root to nghttp2_stream_root
+
+commit 242c0c3988fa40df531c245d503b4ea00aa6785b
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-16
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-16
+
+    Rename root to nghttp2_stream_root
+    
+    Rename root to nghttp2_stream_root to avoid potential name crash.
+
+commit ed3b31fa4c0f4ed1e78ebb8e3990409818d7ede9
+Merge: f804e927 b7be212c
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-16
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-16
+
+    Merge pull request #2378 from nghttp2/nghttpx-remove-ocsp
+    
+    Nghttpx remove ocsp
+
+commit b7be212c30203a8bec3ed40c08d7a668a9e9fed0
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-16
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-16
+
+    Update bash_completion
+
+commit ac92a4daae12d49782e175b1f508ac8371a8ad09
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-16
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-16
+
+    Update manual pages
+
+commit ed1c6ed3445729f6538c86b94d75f33456ec4855
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-16
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-16
+
+    nghttpx: Remove OCSP stapling
+    
+    This commit removes OCSP stapling features and the following options
+    are deprecated and have no effect:
+    
+    - fetch-ocsp-response-file
+    - no-ocsp
+    - no-verify-ocsp
+    - ocsp-update-interval
+
+commit f804e927854fec7656a3bac6e50da79f6feb0b84
+Merge: d1bc03bd 9275353a
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-16
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-16
+
+    Merge pull request #2377 from nghttp2/nghttpx-listeners-per-worker
+    
+    nghttpx: Listen TCP and UNIX domain sockets on worker thread
+
+commit 9275353a4759fa27f95e83010ebc625d783c27f0
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-14
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-16
+
+    nghttpx: Listen TCP and UNIX domain sockets on worker thread
+    
+    Previously, nghttpx listens TCP and UNIX domain sockets on a dedicated
+    thread, and then distributes the accepted connection to the one of
+    worker threads.  With this commit, nghttpx listens those sockets on
+    each worker thread.  For TCP sockets, SO_REUSEPORT is used to load
+    balance the connections.  This removes the need for inheriting file
+    descriptors via environment variables.  For UNIX domain sockets,
+    because there is no SO_REUSEPORT equivalent for them, they are created
+    as before, but they are handled per worker.
+    
+    The support for legacy deprecated environment variables has been
+    removed.
+    
+    ocsp-startup option has been deprecated due to this change.  OCSP will
+    be remove very soon.
+
+commit d1bc03bd578ffd98a10fadd85eb44143421ea5f0
+Merge: dd02d164 853b9ccd
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-13
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-13
+
+    Merge pull request #2375 from nghttp2/nghttpx-ranges-config
+    
+    shrpx_config: Adopt std::ranges
+
+commit 853b9ccd3c727df7fc6cd010c398191728c49983
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-13
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    shrpx_config: Adopt std::ranges
+
+commit dd02d164ba1b68874b2e4e28007efd0f02d080a5
+Merge: e68fa651 c36d0cb8
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-13
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-13
+
+    Merge pull request #2374 from nghttp2/nghttpx-ranges-part3
+    
+    Nghttpx ranges part3
+
+commit c36d0cb80775c11c73a14b444411279eb944a438
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-13
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    http3: Adopt std::ranges
+
+commit 68ed95200422dd16c80a128df9c28b8006f90ef0
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-13
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    shrpx_quic_connection_handler: Adopt std::ranges
+
+commit f7f8592d6d25e423f1f4a3f9504dade6e1b1fe25
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-13
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    shrpx_quic: Adopt std::ranges
+
+commit 500eb253027c6677790b9bc071604decf02e8956
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-13
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    shrpx_dns_tracker: Adopt std::ranges
+
+commit d074d20ad4c58f81aef277094798aa9ffaf55cd4
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-13
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    shrpx_api_downstream_connection: Adopt std::ranges
+
+commit 66e5d4599431b865ac070f90266bd15612bece9a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-13
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    shrpx_router: Adopt std::ranges
+
+commit e68fa651665f4a0137961d7c40df5c2c3216719b
+Merge: 51909d8b d5b11e6f
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-13
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-13
+
+    Merge pull request #2373 from nghttp2/rewrite-format_hex
+    
+    Rewrite format_hex
+
+commit d5b11e6f94319e8d41c1f4475b709e2698ca8cc2
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-12
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    Rewrite format_hex
+
+commit 51909d8bf8bb75ce5f4b4284a3c63778745eb17c
+Merge: 996b02c2 299b6a4e
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-13
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-13
+
+    Merge pull request #2372 from nghttp2/nghttpx-ranges-part2
+    
+    Nghttpx ranges part2
+
+commit 299b6a4e31889b16c2e37d8915ad64f2b8d47731
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-12
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    shrpx_worker_process: Adopt std::ranges
+
+commit a7407b28ce9a117df4ac2bd1fb8aed30ca568dd1
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-12
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    shrpx_memcached_connection: Adopt std::ranges
+
+commit 4397a37b311daa52a7b9c29278038dd51aabf4fc
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-12
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    shrpx_downstream_connection_pool: Adopt std::ranges
+
+commit 996b02c2fe25be61ca57cf6a87925b8fca1583b7
+Merge: 50c2a0fc f27d667c
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-13
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-13
+
+    Merge pull request #2371 from nghttp2/str-cmp-constexpr
+    
+    Make string comparison functions constexpr
+
+commit f27d667cec23b58088e2e2103e133dfb5054293d
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-12
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    Make string comparison functions constexpr
+
+commit 50c2a0fc99c7954ec98868f4059876ab76687a62
+Merge: 3cdfcd38 9a7dad6a
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-13
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-13
+
+    Merge pull request #2370 from nghttp2/single-pass-header-name-lowecase
+    
+    Single pass header name lowecase
+
+commit 9a7dad6a50028d0f5ede7f2dcbb844531b03bc3b
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-11
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    Make sure that args are forwarded once
+
+commit 12e6caadcea6734b6d437a1fde188411ba6c1b8f
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-11
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-13
+
+    append_last_header_key: Copy and lowecase name in a single pass
+
+commit 3cdfcd38192f7a7e2b42ca71d31d0da35627f72a
+Merge: 87396313 48ee27dc
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-12
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-12
+
+    Merge pull request #2369 from nghttp2/dependabot/go_modules/golang.org/x/net-0.40.0
+    
+    build(deps): bump golang.org/x/net from 0.39.0 to 0.40.0
+
+commit 87396313d69ca98eb22a6204292ebfe40358c538
+Merge: fa00277a cb94c00a
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-12
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-12
+
+    Merge pull request #2368 from nghttp2/tolower
+    
+    Add template to copy lowercased string
+
+commit 48ee27dcd093054a43916c68de0e865581f3ccb6
+Author:     dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+AuthorDate: 2025-05-12
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-12
+
+    build(deps): bump golang.org/x/net from 0.39.0 to 0.40.0
+    
+    Bumps [golang.org/x/net](https://github.com/golang/net) from 0.39.0 to 0.40.0.
+    - [Commits](https://github.com/golang/net/compare/v0.39.0...v0.40.0)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: golang.org/x/net
+      dependency-version: 0.40.0
+      dependency-type: direct:production
+      update-type: version-update:semver-minor
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+
+commit cb94c00a36ae57e02e60a5ac235e9289d507084c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-11
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-12
+
+    Add template to copy lowercased string
+
+commit fa00277afe4d33fa5eef26abe7d16a72dbd512dc
+Merge: da6f0dd6 bf5565ea
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-12
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-12
+
+    Merge pull request #2367 from nghttp2/nghttpx-ranges-worker
+    
+    shrpx_worker: Adopt std::ranges
+
+commit bf5565ea2c4962295a5d725b1c543d5e48f3b134
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-11
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-12
+
+    shrpx_worker: Adopt std::ranges
+
+commit da6f0dd646131053a1d3789dc8de553e33af31da
+Merge: 08c0dad0 71dd4399
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-12
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-12
+
+    Merge pull request #2364 from nghttp2/as_string_ref
+    
+    Add helper template for StringRef from contiguous range
+
+commit 71dd4399fc468e9c9a09174a3c5ce2f659015083
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-11
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-12
+
+    Add helper template for StringRef from contiguous range
+
+commit 08c0dad06f5fda7ee120783d3153b68d7e41cbee
+Merge: 0dbcb08e be9066bd
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-12
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-12
+
+    Merge pull request #2366 from nghttp2/integration-external-dns-disable-backend-ipv6
+    
+    integration: Disable IPv6 on backend for external DNS tests
+
+commit be9066bd7a3cf2b090e889dcc74b85b2cbe9b908
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-12
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-12
+
+    GHA: Add backend to /etc/hosts to avoid nip.io
+
+commit 13aa7e5e78ecc3137b967af3cbab896f02658947
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-12
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-12
+
+    integration: Disable IPv6 on backend for external DNS tests
+
+commit 0dbcb08e64e459544319e2bd68d210b34c3d5cb1
+Merge: 57424303 a158d1db
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-11
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-11
+
+    Merge pull request #2363 from nghttp2/bump-munit
+    
+    Bump munit
+
+commit a158d1dbb4f59976412967a844d509ffef013de7
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-11
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-11
+
+    Bump munit
+
+commit 57424303376d1f00a41e53be0ef4e752c199976b
+Merge: 458613c9 75453db4
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-11
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-11
+
+    Merge pull request #2362 from nghttp2/nghttpx-ranges-tls
+    
+    shrpx_tls: Adopt std::ranges
+
+commit 75453db4cefc2f1aeed7229dd0a17d484ba74eb4
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-10
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-11
+
+    shrpx_tls: Adopt std::ranges
+
+commit 458613c923f1f28970ae25120f3c13712aa31673
+Merge: 5b725c8a f29a47d5
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-11
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-11
+
+    Merge pull request #2361 from nghttp2/nghttpx-ranges-part1
+    
+    Nghttpx ranges part1
+
+commit f29a47d5773fcbbb90757f27bbbc58ec372abb53
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-10
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-11
+
+    shrpx_downstream_queue: Adopt std::ranges
+
+commit 4b6e156ddf92c68d051dbac1b6c63eea2454a0b1
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-10
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-11
+
+    shrpx_http_downstream_connection: Adopt std::ranges
+
+commit 5e26011caf3184dd5f58e62534071682a179d659
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-10
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-11
+
+    shrpx_downstream:: Adopt std::ranges
+
+commit 4cd3369ed123de98485ede00cf0813abe42d11db
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-10
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-11
+
+    shrpx_client_handler: Adopt std::ranges
+    
+    I was surprised the changes between std::lower_bound and
+    std::ranges::lower_bound.  It seems using projection is the simplest
+    workaround for our use.
+
+commit 90b2fbea66e12094720ee08a03dc8bf156e43e4e
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-10
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-11
+
+    shrpx_connection_handler: Adopt std::ranges
+
+commit 5b725c8a83b6f424148b631d64624b9c4252ae1f
+Merge: cc0207c9 83e07932
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-11
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-11
+
+    Merge pull request #2360 from nghttp2/string-ref-hash
+    
+    StringRef: Piggyback std::hash<std::string_view>
+
+commit 83e079322e6595ea3bbc5e33ef4f1a8aeeff1010
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-11
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-11
+
+    StringRef: Piggyback std::hash<std::string_view>
+
+commit cc0207c967947fa70b730212d339b3efa7acbb6d
+Merge: 1f84d343 f1808e1a
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-10
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-10
+
+    Merge pull request #2359 from nghttp2/ranges-base64
+    
+    Ranges base64
+
+commit 1f84d3437127c045cc95c94bb77644e1f8ac23ee
+Merge: e1c1168d 07cc22bf
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-10
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-10
+
+    Merge pull request #2358 from nghttp2/nghttpx-ranges-https-upstream
+    
+    shrpx_https_upstream: Adopt std::ranges
+
+commit f1808e1a0f4650286eb90e4b1942ff70c18e717c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-07
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-10
+
+    base64::encode: Adopt std::ranges
+
+commit 07cc22bffac2196a1e4b8c4a3dec91a369905024
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-07
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-10
+
+    shrpx_https_upstream: Adopt std::ranges
+
+commit db0a93615861be187b647e26cb505bc83ee6e7f8
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-07
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-10
+
+    base64::decode: Adopt std::ranges
+
+commit e1c1168db39bc06e4d3c041424df6dcf5612e6fb
+Merge: d014bece f5606f98
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-10
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-10
+
+    Merge pull request #2357 from nghttp2/nghttpx-fix-forwarded-by
+    
+    nghttpx: Fix Forwarded By
+
+commit f5606f98558ca6716c349d4f5ab6d1edd5b9aba4
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-10
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-10
+
+    nghttpx: Fix Forwarded By
+    
+    Previously, the value sent with Forward By parameter is the address
+    assigned to the listening socket.  This does not work expected if the
+    assigned address is wild card, (e.g., ::, 0.0.0.0).
+    
+    This commit fixes this issue by using the local address that the
+    connection is accepted.  For QUIC, it is the local address that
+    handshake is performed, and it stays the same even after client
+    address migration occurred.
+
+commit d014becee2596d4c1bac54eff2e44bdba273d4b2
+Merge: fe628842 b27c5481
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-10
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-10
+
+    Merge pull request #2356 from nghttp2/nghttpx-quic-frontend-address-resolution
+    
+    nghttpx: Rework frontend address resolution for QUIC packets
+
+commit b27c5481ef02bde6a99f12d529ae15e843f53e96
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-09
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-09
+
+    nghttpx: Rework frontend address resolution for QUIC packets
+    
+    Instead of getnameinfo every time when forwarding a QUIC packet
+    internally, cache binary representation of frontend address on
+    startup, and compare them.
+
+commit fe6288421f87fb3a4d980374e325033fabc201f9
+Merge: 5784ff5b 6e60f768
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-09
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-09
+
+    Merge pull request #2355 from nghttp2/rst-stream-to-closed-stream
+    
+    Do not submit RST_STREAM more than once
+
+commit 6e60f7682500c860c6f98b3ee2652f07a748784f
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-09
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-09
+
+    Do not submit RST_STREAM more than once
+    
+    Do not submit RST_STREAM more than once for a same stream with
+    nghttp2_submit_rst_stream.  Historically, nghttp2_submit_rst_stream
+    allows this.  nghttp2 also allows receiving multiple RST_STREAM
+    frames.  To keep compatibility, nghttp2_submit_rst_stream does not
+    fail if it attempts to submit RST_STREAM to already closed stream.
+
+commit 5784ff5b46faad4b1155d41f218535989b4c10b6
+Merge: c17cf5f1 d75fddda
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-07
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-07
+
+    Merge pull request #2353 from nghttp2/rewrite-starts-with
+    
+    Rewrite starts_with, ends_with and streq with std::ranges
+
+commit d75fddda00e3873c123e6f1798c7f4e89a6667f4
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-07
+
+    Rewrite starts_with, ends_with and streq with std::ranges
+
+commit c17cf5f1f5a2ae82411586e3f0676e81da3b7963
+Merge: 9555260a 2fb05c54
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-07
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-07
+
+    Merge pull request #2352 from nghttp2/remove-copy_lit
+    
+    Remove util::copy_lit
+
+commit 2fb05c54ad753e6547b1bafc2a083ea7b6877826
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-07
+
+    Remove util::copy_lit
+
+commit 9555260a65d4563951a48699f9c23196b1b12324
+Merge: 4ce6c8e1 6677faed
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-07
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-07
+
+    Merge pull request #2351 from nghttp2/nghttpx-ranges-http3-upstream
+    
+    shrpx_http3_upstream: Adopt std::ranges
+
+commit 4ce6c8e1dcd5fa3f353677fbbf5f19c526f40669
+Merge: 8a8838de fa453878
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-07
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-07
+
+    Merge pull request #2350 from Karthikdasari0423/patch-1
+    
+    Update README.rst
+
+commit 6677faed55e58a3f988f56659445f094077b7d81
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-07
+
+    shrpx_http3_upstream: Adopt std::ranges
+
+commit 8a8838de291691a3451c515dbb4cc56a902447cb
+Merge: f52d191a 93072a28
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-07
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-07
+
+    Merge pull request #2349 from nghttp2/nghttpx-ranges-http2-upstream
+    
+    shrpx_http2_upstream: Adopt std::ranges
+
+commit fa453878c4035bee9cfb06d79f8e9bf6f066f44f
+Author:     Karthik Dasari <92445174+Karthikdasari0423@users.noreply.github.com>
+AuthorDate: 2025-05-07
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-07
+
+    Update README.rst
+    
+    Update clang-15 to clang-18 in README file.
+
+commit 93072a28287ac42bef45543800ddd71891e8e2ab
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-07
+
+    shrpx_http2_upstream: Adopt std::ranges
+
+commit f52d191a69adad4e4e0b9531a63a5a459d1bd26e
+Merge: 8dd06376 84f36115
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-07
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-07
+
+    Merge pull request #2348 from nghttp2/nghttpx-http2-dconn
+    
+    shrpx_http2_downstream_connection: Adopt std::ranges
+
+commit 84f36115e57d849ed423df362693229740dc276a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-06
+
+    shrpx_http2_downstream_connection: Adopt std::ranges
+
+commit 8dd0637645ed573a47e3e4d1ee310abcb6202c28
+Merge: 4d6bca22 7bb4146e
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-05
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-05
+
+    Merge pull request #2345 from nghttp2/nghttpx-log-ranges
+    
+    Nghttpx log ranges
+
+commit 4d6bca22cc2a7769ae605e5d9e15f539ba559ca1
+Merge: fcd710e3 2a0c0a25
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-03
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-03
+
+    Merge pull request #2342 from zjturner/fix_gettickcount64_check
+    
+    Fix CMake existence check for GetTickCount64
+
+commit 7bb4146e5898c6bf4ec7c8307b55a20e34cb3846
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-02
+
+    shrpx_log: Make write_seq take std::input_range
+
+commit ed5f3df61208341bda379070efbc7e2968b030ba
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-02
+
+    shrpx_log: Rewrite with std::span
+
+commit f402668a4ec85e18a3bb9e2771eee259bb46786c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-01
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-02
+
+    shrpx_log: Fix left over for std::ranges migration
+
+commit f723380e32dc6289820ab891f6498e414c4aaa90
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-02
+
+    shrpx_log: Do not return d_last which does not change
+
+commit 1db823f4519e28797b8593406a8a02be1a48af35
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-02
+
+    shrpx_log: Adopt std::ranges
+
+commit fcd710e31dc4f63670ec38dd05c6b7bb17f32a7d
+Merge: 6edf4343 6922b336
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-02
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-02
+
+    Merge pull request #2344 from nghttp2/nghttpx-dns
+    
+    nghttpx: Tweak DNS timeout and retry
+
+commit 6922b336b0f30426a56357cb9568fc4108c4c495
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-05-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-02
+
+    nghttpx: Tweak DNS timeout and retry
+    
+    Decrease DNS timeout to 250ms, which is the minimum duration allowed
+    in c-ares.  The number of retries is 3, which is the default value of
+    c-ares.
+
+commit 6edf4343b2cb884ea03881acd04a1aca0b104f44
+Merge: 3db4000c 81864f3c
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-02
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-02
+
+    Merge pull request #2343 from nghttp2/ranges-http
+    
+    shrpx_http: Adopt std::ranges
+
+commit 81864f3c7fbc63d7a7b9b06df85306a8c481a43b
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-02
+
+    shrpx_http: Adopt std::ranges
+
+commit 2a0c0a2598527c0b0df0141e5381798a5ef3f40c
+Author:     Zachary Turner <zturner@roblox.com>
+AuthorDate: 2025-05-01
+Commit:     Zachary Turner <zturner@roblox.com>
+CommitDate: 2025-05-01
+
+    Fix check for GetTickCount64
+
+commit 3db4000c80cfc380c8311e3785ae273ec5e42bbf
+Merge: e47a2cc3 c7b33cee
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-01
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-01
+
+    Merge pull request #2341 from nghttp2/ranges-http2
+    
+    http2: Adopt std::ranges
+
+commit c7b33ceea9ea4ae4d045eb99f1ea03bda7f933cc
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-01
+
+    http2: Adopt std::ranges
+
+commit e47a2cc34adefd6b53c2baf7a38f7b2d5c02ac0f
+Merge: ad4b9529 aa77184e
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-01
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-01
+
+    Merge pull request #2340 from nghttp2/refactor-allocator
+    
+    Refactor allocator
+
+commit aa77184ed58a6741c50eede2fd39a3a94866852e
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-29
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-01
+
+    allocator: Use auto
+
+commit 58ff9e5188b17bab92c73601ab5e15ee786d99e7
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-29
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-01
+
+    allocator: Adopt std::ranges
+
+commit a0bf1d13bb168a4b2131367677c714f178dbdee8
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-29
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-01
+
+    Remove inline from count_string_ref_count
+
+commit c47ab92f699f2edc33daacd81e23c1e6ee299562
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-29
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-01
+
+    Remove BlockAllocator template parameter
+
+commit ad4b9529dc249a537b26ff384876c7069ac60451
+Merge: 21dfefa0 b5819be0
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-05-01
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-05-01
+
+    Merge pull request #2339 from nghttp2/adopt-span-first
+    
+    nghttpx: Adopt std::span::first
+
+commit b5819be055d18893bc9cf2d64f8268743ac2410c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-28
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-05-01
+
+    nghttpx: Adopt std::span::first
+
+commit 21dfefa0c3a681748cea1bd6927cf2f51db7c683
+Merge: 825b296d 4c013d10
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-28
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-28
+
+    Merge pull request #2337 from nghttp2/h2load-refactor-quic-write-path
+    
+    h2load: Refactor QUIC packet write path
+
+commit 4c013d1087467e413c8f29a05ba0ef8bca12699c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-28
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-04-28
+
+    h2load: Refactor QUIC packet write path
+    
+    Refactor QUIC packet write path in h2load.  h2load now falls back to
+    non-GSO write after GSO failed.
+
+commit 825b296d125c89ad477d185bccc2eb64a8b861a0
+Merge: 52651105 514b7743
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-27
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-27
+
+    Merge pull request #2336 from nghttp2/nghttpx-refactor-quic-packet-write
+    
+    nghttpx: Refactor QUIC packet write
+
+commit 514b7743d68811564b174b13951cc19826438661
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-04-27
+
+    nghttpx: Refactor QUIC packet write
+
+commit 5265110509fd62f56c878f2582bdde4f4f006c1d
+Merge: aa96bfcb 32eeffcd
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-22
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-22
+
+    Merge pull request #2333 from nghttp2/quic-ossl
+    
+    h2load, nghttpx: Add libngtcp2_crypto_ossl support
+
+commit aa96bfcb27e02fda48bcf6e460e34c7e212b47d5
+Merge: 67a93b53 c7f062ae
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-22
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-22
+
+    Merge pull request #2335 from nghttp2/dependabot/go_modules/github.com/quic-go/quic-go-0.51.0
+    
+    build(deps): bump github.com/quic-go/quic-go from 0.50.1 to 0.51.0
+
+commit c7f062aecab7f6c2fea309defeda784fba399d7e
+Author:     dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+AuthorDate: 2025-04-21
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-21
+
+    build(deps): bump github.com/quic-go/quic-go from 0.50.1 to 0.51.0
+    
+    Bumps [github.com/quic-go/quic-go](https://github.com/quic-go/quic-go) from 0.50.1 to 0.51.0.
+    - [Release notes](https://github.com/quic-go/quic-go/releases)
+    - [Changelog](https://github.com/quic-go/quic-go/blob/master/Changelog.md)
+    - [Commits](https://github.com/quic-go/quic-go/compare/v0.50.1...v0.51.0)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: github.com/quic-go/quic-go
+      dependency-version: 0.51.0
+      dependency-type: direct:production
+      update-type: version-update:semver-minor
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+
+commit 32eeffcd11804689b058eaeeea6e87def85fc843
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-03-20
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-04-19
+
+    h2load, nghttpx: Add libngtcp2_crypto_ossl support
+
+commit 67a93b53a34bff3571dbeaa55591dd012c648902
+Merge: 127adf6a 941024f1
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-19
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-19
+
+    Merge pull request #2332 from nghttp2/gha-android-docker
+    
+    GHA: Add android workflow
+
+commit 941024f193a131d57d58056125db4974b41d7dc4
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-18
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-04-19
+
+    GHA: Add android workflow
+
+commit 127adf6acf245819a4b749af29b4ef0ce35efd84
+Merge: b58c6402 ff3655c7
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-19
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-19
+
+    Merge pull request #2330 from feicong/master
+    
+    Fixed android support
+
+commit ff3655c7cd48815ecee61f5e96324ec0167127c9
+Author:     feicong <fei_cong@hotmail.com>
+AuthorDate: 2025-04-18
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-18
+
+    Update Dockerfile.android
+    
+    Co-authored-by: Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+
+commit b58c6402f9fa0231e1e8e15314db54e31855ea6f
+Merge: aa82e013 0af7b9bb
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-18
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-18
+
+    Merge pull request #2331 from nghttp2/bump-ngtcp2
+    
+    Bump ngtcp2
+
+commit 0af7b9bb8448e2abc2fc706525dc2e801bb96c6a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-18
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-04-18
+
+    Bump ngtcp2
+
+commit 188cd1ef6b830971678a2b10bfd56871c42cc7ae
+Author:     feicong <fei_cong@hotmail.com>
+AuthorDate: 2025-04-17
+Commit:     feicong <fei_cong@hotmail.com>
+CommitDate: 2025-04-17
+
+    Fixed android support
+
+commit aa82e0132af3205142efa9a33b43f3699ac5bbb5
+Merge: 999baf90 dbd027c7
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-16
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-16
+
+    Merge pull request #2328 from nghttp2/dependabot/go_modules/golang.org/x/net-0.39.0
+    
+    build(deps): bump golang.org/x/net from 0.38.0 to 0.39.0
+
+commit dbd027c7969ea86ec3ae331a26d9cf5cd81926d9
+Author:     dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+AuthorDate: 2025-04-14
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-14
+
+    build(deps): bump golang.org/x/net from 0.38.0 to 0.39.0
+    
+    Bumps [golang.org/x/net](https://github.com/golang/net) from 0.38.0 to 0.39.0.
+    - [Commits](https://github.com/golang/net/compare/v0.38.0...v0.39.0)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: golang.org/x/net
+      dependency-version: 0.39.0
+      dependency-type: direct:production
+      update-type: version-update:semver-minor
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+
+commit 999baf909038c8841420ec03961e7471b58eab07
+Merge: ac29d9da ce5b1e92
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-13
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-13
+
+    Merge pull request #2327 from nghttp2/gha-macos-15
+    
+    GHA: Replace macos-13 with macos-15
+
+commit ce5b1e92352947caae47af914b6b684e4eb5f590
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-13
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-04-13
+
+    GHA: Replace macos-13 with macos-15
+
+commit ac29d9da5f6321daecb234ca7e96fda22dd3b063
+Merge: 29263b1b 44495acf
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-10
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-10
+
+    Merge pull request #2326 from nghttp2/quic-rand-take2
+    
+    quic: Use secure random generator for ngtcp2_rand
+
+commit 44495acf4f1c0f79e5e8e56c98ee9bf639866533
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-10
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-04-10
+
+    quic: Use secure random generator for ngtcp2_rand
+
+commit 29263b1b41dd7e5bc8cab8160ad570a635cf5935
+Merge: e1337244 3d2e252e
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-10
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-10
+
+    Merge pull request #2325 from nghttp2/revert-2324-quic-rand
+    
+    Revert "quic: Use secure random generator for ngtcp2_rand"
+
+commit 3d2e252e2cae869302281c59e83b9b75be64afc7
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-10
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-10
+
+    Revert "quic: Use secure random generator for ngtcp2_rand"
+
+commit e1337244d36dde12985cccbcdcfb9e3a027db6a9
+Merge: 58a38d00 885ea764
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-10
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-10
+
+    Merge pull request #2324 from nghttp2/quic-rand
+    
+    quic: Use secure random generator for ngtcp2_rand
+
+commit 885ea764a09f30a1af97aeee86b3bfc84d0c8328
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-10
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-04-10
+
+    quic: Use secure random generator for ngtcp2_rand
+
+commit 58a38d00e4067afd428f57a8ae5a7741e6bc690b
+Merge: 24a1554e a2aa9d1f
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-04
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-04
+
+    Merge pull request #2322 from nghttp2/update-integration-tests
+    
+    Update integration tests
+
+commit 24a1554e3a08bc860ea60b1c077dcf31a5ed2c03
+Merge: d167c347 a86dbfd7
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-04
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-04
+
+    Merge pull request #2318 from slyon/fix-ftbfs-upstream
+    
+    doc:rubydomain: Fix build failure with rubydomain namespace
+
+commit d167c34753c34a6b886733f2c1e90c98d07d7954
+Merge: 18d98dd2 4fd86afb
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-04
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-04
+
+    Merge pull request #2323 from nghttp2/nghttpx-close-conn-on-h1-connect-failure
+    
+    nghttpx: Close h1 connection on CONNECT failure
+
+commit 4fd86afb8988e3abe3b48262fe77bedae8694deb
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-04
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-04-04
+
+    nghttpx: Close h1 connection on CONNECT failure
+
+commit a2aa9d1fc77baba74ff5a1469f0f64992b2f08ef
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-04
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-04-04
+
+    Fix lint errors
+
+commit 283cbc4df5ff689c92557059fcc19778f8915898
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-04
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-04-04
+
+    Bump go version to 1.24
+
+commit 18d98dd215b9fbec753107cfcee9a9264a0bbe0b
+Merge: 3dee622d 594bc072
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-03
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-03
+
+    Merge pull request #2320 from nghttp2/dependabot/go_modules/github.com/quic-go/quic-go-0.50.1
+    
+    build(deps): bump github.com/quic-go/quic-go from 0.50.0 to 0.50.1
+
+commit 3dee622df62c0c6092ceac3e6fd4d7ec7c66e392
+Merge: 077259c0 6b81eeb1
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-03
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-03
+
+    Merge pull request #2321 from nghttp2/remove-go-toolchain
+    
+    Remove go toolchain
+
+commit 6b81eeb1062c00c32a2162922228488bed4fb6f3
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-04-03
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-04-03
+
+    Remove go toolchain
+
+commit 594bc072ae140e0c0db742706c87b2857934fbff
+Author:     dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+AuthorDate: 2025-04-03
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-03
+
+    build(deps): bump github.com/quic-go/quic-go from 0.50.0 to 0.50.1
+    
+    Bumps [github.com/quic-go/quic-go](https://github.com/quic-go/quic-go) from 0.50.0 to 0.50.1.
+    - [Release notes](https://github.com/quic-go/quic-go/releases)
+    - [Changelog](https://github.com/quic-go/quic-go/blob/master/Changelog.md)
+    - [Commits](https://github.com/quic-go/quic-go/compare/v0.50.0...v0.50.1)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: github.com/quic-go/quic-go
+      dependency-type: direct:production
+      update-type: version-update:semver-patch
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+
+commit 077259c08c9fdac3d80bb88166f355b877913451
+Merge: daef6159 168f210f
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-04-03
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-04-03
+
+    Merge pull request #2319 from nghttp2/dependabot/go_modules/golang.org/x/net-0.38.0
+    
+    build(deps): bump golang.org/x/net from 0.37.0 to 0.38.0
+
+commit 168f210f345c0adc8fc6f111c92b2dcba4a31e86
+Author:     dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+AuthorDate: 2025-03-31
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-03-31
+
+    build(deps): bump golang.org/x/net from 0.37.0 to 0.38.0
+    
+    Bumps [golang.org/x/net](https://github.com/golang/net) from 0.37.0 to 0.38.0.
+    - [Commits](https://github.com/golang/net/compare/v0.37.0...v0.38.0)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: golang.org/x/net
+      dependency-type: direct:production
+      update-type: version-update:semver-minor
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+
+commit a86dbfd7237334929238a2b055ac46639b2946a0
+Author:     Lukas Märdian <slyon@ubuntu.com>
+AuthorDate: 2025-03-27
+Commit:     Lukas Märdian <slyon@ubuntu.com>
+CommitDate: 2025-03-27
+
+    doc:rubydomain: Fix build failure with rubydomain namespace
+    
+    This package fails to build from source in Debian and Ubuntu:
+    
+    * https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1095360
+    * https://bugs.launchpad.net/ubuntu/+source/nghttp2/+bug/2104171
+    
+    With the following log output:
+    ```
+    During a rebuild of all packages in unstable, your package failed to build:
+    
+    --------------------------------------------------------------------------------
+    [...]
+    make[3]: Entering directory '/<<PKGBUILDDIR>>/integration-tests'
+    make[3]: Nothing to be done for 'html'.
+    make[3]: Leaving directory '/<<PKGBUILDDIR>>/integration-tests'
+    Making html in doc
+    make[3]: Entering directory '/<<PKGBUILDDIR>>/doc'
+    for i in README.rst programmers-guide.rst nghttp.1.rst nghttpd.1.rst nghttpx.1.rst h2load.1.rst; do [ -e ./$i ] || cp ./$i .; done
+    /usr/bin/python3 ../doc/mkapiref.py \
+    apiref.rst macros.rst enums.rst types.rst . ../lib/includes/nghttp2/nghttp2ver.h ../lib/includes/nghttp2/nghttp2.h
+    sphinx-build -b html -d manual/doctrees . manual/html
+    Running Sphinx v8.1.3
+    loading translations [en]... done
+    
+    Extension error:
+    Could not import extension rubydomain.rubydomain (exception: No module named 'pkg_resources')
+    make[3]: *** [Makefile:921: html-local] Error 2
+    make[3]: Leaving directory '/<<PKGBUILDDIR>>/doc'
+    make[2]: *** [Makefile:583: html-recursive] Error 1
+    make[2]: Leaving directory '/<<PKGBUILDDIR>>'
+    make[1]: *** [debian/rules:14: override_dh_auto_build-indep] Error 2
+    make[1]: Leaving directory '/<<PKGBUILDDIR>>'
+    make: *** [debian/rules:62: binary] Error 2
+    dpkg-buildpackage: error: debian/rules binary subprocess returned exit status 2
+    ```
+    
+    Adding a Build-Depends-Indep on `python3-pkg-resources` fixes the build, but is deprecated.
+    
+    According to setuptools:
+    ```
+    def declare_namespace(packageName: str) -> None:
+        """Declare that package 'packageName' is a namespace package"""
+    
+        msg = (
+            f"Deprecated call to `pkg_resources.declare_namespace({packageName!r})`.\n"
+            "Implementing implicit namespace packages (as specified in PEP 420) "
+            "is preferred to `pkg_resources.declare_namespace`. "
+            "See https://setuptools.pypa.io/en/latest/references/"
+            "keywords.html#keyword-namespace-packages"
+        )
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+    ```
+    
+    Here it looks like the explicit namespacing was only needed when extending the `sphinxcontrib` module, but it was renamed to be an independent module "rubydomain.rubydomain":
+    https://github.com/nghttp2/nghttp2/commit/a029f6ed2cd585dd739cf9a10de9a3710cad5beb
+    
+    So `doc/_extrs/rubydomain/__init__.py` should just be dropped to make it an implicit namespaced package in accordance with https://peps.python.org/pep-0420/.
+
+commit daef61594c9eb9ba081aa65ea08332586f4284d1
+Merge: d6af4a90 de7b174c
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-03-23
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-03-23
+
+    Merge pull request #2317 from nghttp2/h2load-group-name
+    
+    h2load: Check the return value from OBJ_nid2sn
+
+commit de7b174cecea9df9b14f96f3f0db232d699463d3
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-03-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-03-23
+
+    h2load: Check the return value from OBJ_nid2sn
+
+commit d6af4a90d5e99235ea7764ac007f80939bd76879
+Merge: 3fbebd97 ea6079c2
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-03-12
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-03-12
+
+    Merge pull request #2316 from nghttp2/dependabot/go_modules/golang.org/x/net-0.37.0
+    
+    build(deps): bump golang.org/x/net from 0.35.0 to 0.37.0
+
+commit ea6079c2ab7930c2e44ee01c8076dd9249b9352e
+Author:     dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+AuthorDate: 2025-03-10
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-03-10
+
+    build(deps): bump golang.org/x/net from 0.35.0 to 0.37.0
+    
+    Bumps [golang.org/x/net](https://github.com/golang/net) from 0.35.0 to 0.37.0.
+    - [Commits](https://github.com/golang/net/compare/v0.35.0...v0.37.0)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: golang.org/x/net
+      dependency-type: direct:production
+      update-type: version-update:semver-minor
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+
+commit 3fbebd97cdace84064fb19f975fcb547d87a01d6
+Merge: cfbe1ff6 b3f18d73
+Author:     Tatsuhiro Tsujikawa <404610+tatsuhiro-t@users.noreply.github.com>
+AuthorDate: 2025-03-04
+Commit:     GitHub <noreply@github.com>
+CommitDate: 2025-03-04
+
+    Merge pull request #2314 from nghttp2/bump-quic-go
+    
+    Bump github.com/quic-go/quic-go to v0.50.0
+
+commit b3f18d73f5ab778656e098bb6561c1fb0f2821d9
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-03-04
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-03-04
+
+    Bump github.com/quic-go/quic-go to v0.50.0
+
+commit cfbe1ff69caed5a012cbb042c670b6289a620c71
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2025-03-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2025-03-02
+
+    Bump package version

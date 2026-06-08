@@ -1,0 +1,5 @@
+alias(
+    name = "data",
+    actual = "data.txt",
+    visibility = ["//test/unit/compile_data/src:__pkg__"],
+)

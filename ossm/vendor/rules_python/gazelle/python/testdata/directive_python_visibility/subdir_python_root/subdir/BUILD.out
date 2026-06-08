@@ -1,0 +1,24 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# The default visibility is "//$python_root$:__subpackages" so the generated
+# target will also have "//subdir_python_root:__subpackages__" in the visibility
+# attribute.
+#
+# gazelle:python_visibility //$python_root$/anywhere:__pkg__
+# gazelle:python_visibility //$python_root$/and/also:here
+
+py_library(
+    name = "subdir",
+    srcs = [
+        "__init__.py",
+        "baz.py",
+    ],
+    imports = [".."],
+    visibility = [
+        "//bar:baz",
+        "//subdir_python_root:__subpackages__",
+        "//subdir_python_root/and/also:here",
+        "//subdir_python_root/anywhere:__pkg__",
+        "//tests:__pkg__",
+    ],
+)

@@ -1,0 +1,25 @@
+# Special placeholders for Bazel builtin //command_line_option psuedo-targets
+#
+# These are special targets to use with `py_binary.config_settings` that are
+# treated as aliases for `//command_line_option:XXX` psuedo-targets. They
+# are not actual flags or have any value.
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "build_runfile_links",
+    actual = "//python:none",
+)
+
+alias(
+    name = "enable_runfiles",
+    actual = "//python:none",
+)
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+    visibility = ["//:__subpackages__"],
+)

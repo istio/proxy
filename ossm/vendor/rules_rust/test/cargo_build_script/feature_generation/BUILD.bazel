@@ -1,0 +1,36 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_library", "rust_test")
+
+cargo_build_script(
+    name = "build_rs",
+    srcs = ["build.rs"],
+    edition = "2021",
+)
+
+rust_library(
+    name = "lib",
+    srcs = ["lib.rs"],
+    edition = "2021",
+    deps = [":build_rs"],
+)
+
+rust_test(
+    name = "test",
+    srcs = ["test.rs"],
+    edition = "2018",
+    deps = [":lib"],
+)
+
+rust_library(
+    name = "transitive",
+    srcs = ["transitive.rs"],
+    edition = "2021",
+    deps = [":lib"],
+)
+
+rust_test(
+    name = "transitive_test",
+    srcs = ["transitive_test.rs"],
+    edition = "2018",
+    deps = [":transitive"],
+)

@@ -1,0 +1,33 @@
+alias(
+    name = "firefox_macos",
+    actual = select({
+        "@platforms//cpu:aarch64": "@firefox_mac",
+        "//conditions:default": "@firefox_local//:firefox",
+    }),
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+alias(
+    name = "firefox_linux",
+    actual = select({
+        "@platforms//cpu:aarch64": "@firefox_linux_aarch64",
+        "//conditions:default": "@firefox_linux_x86_64",
+    }),
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+alias(
+    name = "firefox_windows",
+    actual = "@firefox_local//:firefox",
+    target_compatible_with = ["@platforms//os:windows"],
+)
+
+alias(
+    name = "firefox",
+    actual = select({
+        "@platforms//os:linux": ":firefox_linux",
+        "@platforms//os:macos": ":firefox_macos",
+        "@platforms//os:windows": ":firefox_windows",
+    }),
+    visibility = ["//visibility:public"],
+)

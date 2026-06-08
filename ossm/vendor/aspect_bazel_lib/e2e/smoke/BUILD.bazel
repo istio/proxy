@@ -1,0 +1,143 @@
+load("@aspect_bazel_lib//lib:bats.bzl", "bats_test")
+load("@aspect_bazel_lib//lib:copy_directory.bzl", "copy_directory")
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@aspect_bazel_lib//lib:diff_test.bzl", "diff_test")
+load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
+load("@aspect_bazel_lib//lib:jq.bzl", "jq")
+load("@aspect_bazel_lib//lib:tar.bzl", "tar")
+load("@aspect_bazel_lib//lib:yq.bzl", "yq")
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+# Validate that JQ works and resolves its toolchain
+jq(
+    name = "jq_case_no_sources",
+    srcs = [],
+    filter = ".",
+)
+
+diff_test(
+    name = "jq_test",
+    file1 = "jq_case_no_sources",
+    file2 = "expected_jq",
+)
+
+# Validate that YQ works and resolves its toolchain
+yq(
+    name = "yq_case_no_sources",
+    srcs = [],
+    expression = ".",
+)
+
+diff_test(
+    name = "yq_test",
+    file1 = "yq_case_no_sources",
+    file2 = "expected_yq",
+)
+
+# Validate that copy_directory works and resolves its toolchain
+copy_directory(
+    name = "copy_directory_case",
+    src = "d",
+    out = "d_out",
+    verbose = True,
+)
+
+diff_test(
+    name = "copy_directory_test",
+    file1 = "d",
+    file2 = "copy_directory_case",
+)
+
+# Validate that copy_to_directory works and resolves its toolchain
+copy_to_directory(
+    name = "copy_to_directory_case",
+    srcs = ["d"],
+    out = "d2_out",
+    replace_prefixes = {"d/": ""},
+)
+
+diff_test(
+    name = "copy_to_directory_test",
+    file1 = "d",
+    file2 = "copy_to_directory_case",
+)
+
+# Validate that expand_template works and resolves its toolchain
+expand_template(
+    name = "a_tmpl_stamp",
+    out = "a_stamp",
+    data = ["a.tmpl"],
+    stamp = 1,
+    stamp_substitutions = {
+        "{{VERSION}}": "v{{BUILD_SCM_VERSION}}",
+    },
+    substitutions = {
+        "{{VERSION}}": "v0.0.0",
+        "{{WORKSPACE}}": "$(WORKSPACE)",
+    },
+    template = "a.tmpl",
+)
+
+diff_test(
+    name = "a_stamp_test",
+    file1 = ":a_stamp",
+    file2 = select({
+        "@aspect_bazel_lib//lib:bzlmod": "a_stamp_expected_bzlmod",
+        "//conditions:default": "a_stamp_expected",
+    }),
+)
+
+# Validate that tar works and resolves its toolchain
+tar(
+    name = "tar_empty",
+    srcs = [],
+    mtree = [],
+)
+
+bats_test(
+    name = "bats",
+    srcs = [
+        "basic.bats",
+    ],
+)
+
+copy_to_directory(
+    name = "copy_to_directory_mtime_case",
+    srcs = ["d"],
+    out = "copy_to_directory_mtime_out",
+    preserve_mtime = True,
+    tags = ["no-remote"],
+)
+
+copy_directory(
+    name = "copy_directory_mtime_case",
+    src = "d",
+    out = "copy_directory_mtime_out",
+    preserve_mtime = True,
+    tags = ["no-remote"],
+)
+
+go_test(
+    name = "test_preserve_mtime",
+    size = "small",
+    srcs = ["test_preserve_mtime.go"],
+    data = [
+        "d",
+        ":copy_directory_mtime_case",
+        ":copy_to_directory_mtime_case",
+    ],
+    # Note: This test is marked as manual as it is not reliable in the CI environment. The reason for is that changes
+    # to only the modify time do not invalidate the Bazel cache. These failures can be reproduced by:
+    #   bazel clean --expunge
+    #   bazel test :test_preserve_mtime # This test should pass
+    #   touch d/1 # Update the mtime, in the CI environment this is done with the SCM integration.
+    #   bazel test :test_preserve_mtime # This test now fails
+    tags = [
+        "external",
+        "manual",
+        "no-remote",
+    ],
+    deps = [
+        "@io_bazel_rules_go//go/tools/bazel:go_default_library",
+    ],
+)

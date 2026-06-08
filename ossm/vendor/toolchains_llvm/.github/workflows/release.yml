@@ -1,0 +1,30 @@
+# Cut a release whenever a new tag is pushed to the repo.
+# You should use an annotated tag, like `git tag -a v1.2.3`
+# and put the release notes into the commit message for the tag.
+name: Release
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+permissions: read-all
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Prepare release
+        run: .github/workflows/release_prep.sh > release_notes.txt
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: false
+          generate_release_notes: true
+          body_path: release_notes.txt
+          files: toolchains_llvm-*.tar.gz
+          fail_on_unmatched_files: true

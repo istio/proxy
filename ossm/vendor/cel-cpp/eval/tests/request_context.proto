@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package google.api.expr.runtime;
+
+option cc_enable_arenas = true;
+
+// Message representing a sample request context
+message RequestContext {
+  // Example for deeply nested messages.
+  message D {
+    bool e = 1;
+  }
+  message C {
+    D d = 1;
+  }
+  message B {
+    C c = 1;
+  }
+  message A {
+    B b = 1;
+  }
+  string ip = 1;
+  string path = 2;
+  string token = 3;
+  map<string, string> headers = 4;
+  A a = 5;
+}

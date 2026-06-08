@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cldr",
+    srcs = [
+        "base.go",
+        "cldr.go",
+        "collate.go",
+        "decode.go",
+        "resolve.go",
+        "slice.go",
+        "xml.go",
+    ],
+    importpath = "golang.org/x/text/unicode/cldr",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cldr",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "cldr_test",
+    srcs = [
+        "cldr_test.go",
+        "collate_test.go",
+        "data_test.go",
+        "examples_test.go",
+        "resolve_test.go",
+        "slice_test.go",
+    ],
+    embed = [":cldr"],
+    deps = ["//internal/gen"],
+)

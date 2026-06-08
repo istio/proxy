@@ -1,0 +1,5 @@
+[project]
+name = "multiple_inputs_1"
+version = "0.0.0"
+
+dependencies = ["urllib3"]

@@ -1,0 +1,2 @@
+# Merge the second object onto the first
+.[0] * .[1]

@@ -1,0 +1,5 @@
+module(name = "other")
+
+bazel_dep(name = "rules_python", version = "0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "another_module", version = "0")

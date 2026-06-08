@@ -1,0 +1,22 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+py_library(
+    name = "python_target_with_test_in_name",
+    srcs = ["__init__.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_test(
+    name = "real_test",
+    srcs = ["real_test.py"],
+    deps = [
+        ":python_target_with_test_in_name",
+        "@gazelle_python_test//boto3",
+    ],
+)
+
+py_test(
+    name = "test_reality",
+    srcs = ["test_reality.py"],
+    deps = [":python_target_with_test_in_name"],
+)

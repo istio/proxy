@@ -1,0 +1,5 @@
+load(":app_files_building_tests.bzl", "app_files_building_test_suite")
+
+app_files_building_test_suite(
+    name = "app_files_building_tests",
+)

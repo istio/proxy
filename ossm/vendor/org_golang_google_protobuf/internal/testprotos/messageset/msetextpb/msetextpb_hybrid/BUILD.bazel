@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "msetextpb_hybrid",
+    srcs = ["msetextpb.hybrid.pb.go"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/messageset/msetextpb/msetextpb_hybrid",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/messageset/messagesetpb/messagesetpb_hybrid",
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/gofeaturespb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":msetextpb_hybrid",
+    visibility = ["//:__subpackages__"],
+)

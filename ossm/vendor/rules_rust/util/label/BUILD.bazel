@@ -1,0 +1,16 @@
+load("//rust:defs.bzl", "rust_library", "rust_test")
+
+rust_library(
+    name = "label",
+    srcs = [
+        "label.rs",
+        "label_error.rs",
+    ],
+    edition = "2018",
+    visibility = ["//:__subpackages__"],
+)
+
+rust_test(
+    name = "label_test",
+    crate = ":label",
+)

@@ -1,0 +1,44 @@
+# proto-file: google3/third_party/cel/spec/proto/cel/expr/conformance/test/suite.proto
+# proto-message: cel.expr.conformance.test.TestSuite
+
+name: "simple_tests"
+description: "Simple tests to validate the test runner."
+sections: {
+  name: "simple_map_operations"
+  description: "Tests for map operations."
+  tests: {
+    name: "literal_and_sum"
+    description: "Test that a map can be created and values can be accessed."
+    input: {
+      key: "x"
+      value { value { int64_value: 1 } }
+    }
+    input {
+      key: "y"
+      value { value { int64_value: 2 } }
+    }
+    output {
+      result_value {
+        bool_value: true
+      }
+    }
+  }
+  tests: {
+    name: "literal_and_sum_2_5"
+    description: "Test that a map can be created and values can be accessed."
+    input: {
+      key: "x"
+      value { value { int64_value: 2 } }
+    }
+    input {
+      key: "y"
+      value { value { int64_value: 5 } }
+    }
+    output {
+      result_value {
+        bool_value: false
+      }
+    }
+  }
+}
+

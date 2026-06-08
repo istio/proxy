@@ -1,0 +1,5 @@
+load(":is_proc_macro_dep_test.bzl", "is_proc_macro_dep_test_suite")
+
+is_proc_macro_dep_test_suite(
+    name = "is_proc_macro_dep_test_suite",
+)

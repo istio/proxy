@@ -1,0 +1,116 @@
+# syntax=docker/dockerfile:1
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# Prep:
+#   docker run --rm --privileged tonistiigi/binfmt --install all
+#   docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+#   Need to see "F" flag: cat /proc/sys/fs/binfmt_misc/qemu-*
+#
+# Build:
+#   docker buildx build --platform linux/s390x -t $IMAGE -f Dockerfile.bazel
+#
+# Push:
+#   docker image tag $IMAGE ghcr.io/proxy-wasm/$IMAGE
+#   docker push ghcr.io/proxy-wasm/$IMAGE
+#
+# Test:
+#   docker run --rm --volume $(pwd):/mnt --workdir /mnt \
+#     --platform linux/s390x $IMAGE \
+#     bazel test --verbose_failures --test_output=errors \
+#     --define engine=null --config=clang --test_timeout=1800 \
+#     -- //test/...
+
+ARG BAZEL_VERSION=7.7.1
+ARG UBUNTU_VERSION=24.04
+ARG TARGETARCH
+
+# Stage 1: build Bazel from release for the target platform
+FROM ubuntu:${UBUNTU_VERSION} AS bazel-builder
+WORKDIR /tmp
+ARG BAZEL_VERSION
+ARG DEPS_BUILDER="\
+        build-essential \
+        ca-certificates \
+        clang \
+        curl \
+        git \
+        openjdk-21-jdk \
+        python3 \
+        unzip \
+        wget \
+        zip"
+ARG TARGETARCH
+RUN apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $DEPS_BUILDER && \
+        mkdir -p /tmp/src/bazel && \
+        wget --progress=dot:giga -O /tmp/bazel-dist.zip https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-dist.zip && \
+        unzip /tmp/bazel-dist.zip -d /tmp/src/bazel && \
+        rm -f /tmp/bazel-dist.zip /tmp/src/bazel/MODULE.bazel.lock
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-${TARGETARCH}
+WORKDIR /tmp/src/bazel
+# Patch MODULE.bazel and tools/cpp/unix_cc_configure.bzl to:
+# - Force bazel_features v1.11.0 (avoids bzlmod macro requirement during bootstrap)
+# - Configure C++ toolchain compilation flags to avoid GCC segmentation faults on s390x under QEMU emulation
+COPY bazel/external/bazel-v7.7.1.patch /tmp/bazel-v7.7.1.patch
+RUN git apply /tmp/bazel-v7.7.1.patch && \
+    rm -rf derived/repository_cache
+# Additional compilation flags for bootstrap build to avoid GCC crashes under QEMU emulation
+# Note: .bazelrc is ignored during bootstrap (BAZELRC=/dev/null), so flags must be in EXTRA_BAZEL_ARGS
+# Use -c dbg and --host_compilation_mode=dbg to avoid default -O2 from opt mode
+# This prevents both -O2 and -O0 from appearing simultaneously in compiler invocations
+# Use clang instead of gcc as it's more stable under QEMU emulation
+ENV CC=clang
+ENV CXX=clang++
+ENV EXTRA_BAZEL_ARGS="--tool_java_runtime_version=local_jdk \
+    --jobs=1 \
+    --local_ram_resources=2048 \
+    -c dbg \
+    --host_compilation_mode=dbg \
+    --copt=-O0 --host_copt=-O0 \
+    --copt=-g0 --host_copt=-g0"
+RUN bash ./compile.sh && \
+        cp /tmp/src/bazel/output/bazel /tmp/bazel && \
+        chmod +x /tmp/bazel && \
+        rm -rf /tmp/src/bazel /tmp/bazel-v7.7.1.patch
+
+# Stage 2: minimal runtime for executing tests
+FROM ubuntu:${UBUNTU_VERSION} AS test-runtime
+ARG DEPS_RUNTIME="\
+        ca-certificates \
+        clang \
+        git \
+        libbz2-dev \
+        libffi-dev \
+        liblzma-dev \
+        libstdc++6 \
+        libssl-dev \
+        libz-dev \
+        openjdk-21-jdk \
+        python3 \
+        python3-dev \
+        unzip \
+        zip"
+ARG TARGETARCH
+RUN apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends $DEPS_RUNTIME && \
+        rm -rf /var/lib/apt/lists/*
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-${TARGETARCH}
+
+# Copy Bazel binary from builder
+COPY --from=bazel-builder /tmp/bazel /usr/bin/bazel
+
+# Set a valid working directory
+WORKDIR /root

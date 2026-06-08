@@ -1,0 +1,86 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//tests/support:py_reconfig.bzl", "py_reconfig_binary")
+load("//tests/support:support.bzl", "NOT_WINDOWS", "SUPPORTS_BOOTSTRAP_SCRIPT")
+
+# =====
+# bootstrap_impl=system_python testing
+# =====
+py_reconfig_binary(
+    name = "outer_bootstrap_system_python",
+    srcs = ["outer.py"],
+    bootstrap_impl = "system_python",
+    main = "outer.py",
+    tags = ["manual"],
+)
+
+py_reconfig_binary(
+    name = "inner_bootstrap_system_python",
+    srcs = ["inner.py"],
+    bootstrap_impl = "system_python",
+    main = "inner.py",
+    tags = ["manual"],
+)
+
+genrule(
+    name = "outer_calls_inner_system_python",
+    outs = ["outer_calls_inner_system_python.out"],
+    cmd = "RULES_PYTHON_TESTING_TELL_MODULE_SPACE=1 $(location :outer_bootstrap_system_python) $(location :inner_bootstrap_system_python) > $@",
+    tags = ["manual"],
+    tools = [
+        ":inner_bootstrap_system_python",
+        ":outer_bootstrap_system_python",
+    ],
+)
+
+sh_test(
+    name = "bootstrap_system_python_test",
+    srcs = ["verify_system_python.sh"],
+    data = [
+        "verify.sh",
+        ":outer_calls_inner_system_python",
+    ],
+    # The way verify_system_python.sh loads verify.sh doesn't work
+    # with Windows for some annoying reason. Just skip windows for now;
+    # the logic being test isn't OS-specific, so this should be fine.
+    target_compatible_with = NOT_WINDOWS,
+)
+
+# =====
+# bootstrap_impl=script testing
+# =====
+py_reconfig_binary(
+    name = "inner_bootstrap_script",
+    srcs = ["inner.py"],
+    bootstrap_impl = "script",
+    main = "inner.py",
+    tags = ["manual"],
+)
+
+py_reconfig_binary(
+    name = "outer_bootstrap_script",
+    srcs = ["outer.py"],
+    bootstrap_impl = "script",
+    main = "outer.py",
+    tags = ["manual"],
+)
+
+genrule(
+    name = "outer_calls_inner_script_python",
+    outs = ["outer_calls_inner_script_python.out"],
+    cmd = "RULES_PYTHON_TESTING_TELL_MODULE_SPACE=1 $(location :outer_bootstrap_script) $(location :inner_bootstrap_script) > $@",
+    tags = ["manual"],
+    tools = [
+        ":inner_bootstrap_script",
+        ":outer_bootstrap_script",
+    ],
+)
+
+sh_test(
+    name = "bootstrap_script_python_test",
+    srcs = ["verify_script_python.sh"],
+    data = [
+        "verify.sh",
+        ":outer_calls_inner_script_python",
+    ],
+    target_compatible_with = SUPPORTS_BOOTSTRAP_SCRIPT,
+)

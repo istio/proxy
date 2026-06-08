@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "editiondefaults",
+    srcs = ["defaults.go"],
+    embedsrcs = ["editions_defaults.binpb"],
+    importpath = "google.golang.org/protobuf/internal/editiondefaults",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":editiondefaults",
+    visibility = ["//:__subpackages__"],
+)

@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "pbdump_lib",
+    srcs = ["pbdump.go"],
+    importpath = "google.golang.org/protobuf/internal/cmd/pbdump",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//encoding/protowire",
+        "//internal/errors",
+        "//proto",
+        "//reflect/protodesc",
+        "//reflect/protoreflect",
+        "//testing/protopack",
+        "//types/descriptorpb",
+    ],
+)
+
+go_binary(
+    name = "pbdump",
+    embed = [":pbdump_lib"],
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "pbdump_test",
+    srcs = ["pbdump_test.go"],
+    embed = [":pbdump_lib"],
+    deps = [
+        "//encoding/prototext",
+        "//proto",
+        "//reflect/protoreflect",
+        "//types/descriptorpb",
+    ],
+)

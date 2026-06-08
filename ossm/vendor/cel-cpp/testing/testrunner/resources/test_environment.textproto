@@ -1,0 +1,15 @@
+# proto-file: third_party/cel/go/tools/compilecli/compile_input.proto
+# proto-message: Environment
+
+declarations: {
+  name: "x"
+  ident: {
+    type: { primitive: INT64 }
+  }
+}
+declarations: {
+  name: "y"
+  ident: {
+    type: { primitive: INT64 }
+  }
+}

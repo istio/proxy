@@ -1,0 +1,5 @@
+load(":namespace_pkgs_tests.bzl", "namespace_pkgs_test_suite")
+
+namespace_pkgs_test_suite(
+    name = "namespace_pkgs_tests",
+)

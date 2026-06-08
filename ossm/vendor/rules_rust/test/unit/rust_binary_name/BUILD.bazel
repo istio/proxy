@@ -1,0 +1,5 @@
+load(":rust_binary_name_suite.bzl", "binary_name_test_suite")
+
+binary_name_test_suite(
+    name = "binary_name_test_suite",
+)

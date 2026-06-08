@@ -1,0 +1,30 @@
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@rules_python//tests/support:py_reconfig.bzl", "py_reconfig_binary")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+py_reconfig_binary(
+    name = "external_main",
+    srcs = [":external_main.py"],
+    # We're testing a system_python specific code path,
+    # so force using that bootstrap
+    bootstrap_impl = "system_python",
+    main = "external_main.py",
+)
+
+py_binary(
+    name = "venv_bin",
+    srcs = ["venv_bin.py"],
+    config_settings = {
+        "@rules_python//python/config_settings:bootstrap_impl": "script",
+        "@rules_python//python/config_settings:venvs_site_packages": "yes",
+    },
+    deps = [
+        # Add two packages that install into the same directory. This is
+        # to test that namespace packages install correctly and are importable.
+        "//nspkg_delta",
+        "//nspkg_gamma",
+    ],
+)

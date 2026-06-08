@@ -1,0 +1,85 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//python:py_binary.bzl", "py_binary")
+load("//python:py_library.bzl", "py_library")
+load("//python:py_test.bzl", "py_test")
+load("//python/private:bzlmod_enabled.bzl", "BZLMOD_ENABLED")  # buildifier: disable=bzl-visibility
+load("//python/zipapp:py_zipapp_binary.bzl", "py_zipapp_binary")
+load("//tests/support:support.bzl", "NOT_WINDOWS")
+# todo: add windows support. Windows support will be a bit odd.
+# It previously worked by having special logic in the exe launcher
+# that knew to look for .zip and running that through python
+
+py_binary(
+    name = "venv_bin",
+    srcs = ["main.py"],
+    config_settings = {
+        "//python/config_settings:bootstrap_impl": "script",
+        "//python/config_settings:venvs_site_packages": "yes",
+    },
+    main = "main.py",
+    target_compatible_with = NOT_WINDOWS,
+    deps = [":some_dep"],
+)
+
+py_zipapp_binary(
+    name = "venv_zipapp",
+    binary = ":venv_bin",
+    target_compatible_with = NOT_WINDOWS,
+)
+
+py_test(
+    name = "venv_zipapp_test",
+    srcs = ["venv_zipapp_test.py"],
+    data = [":venv_zipapp"],
+    env = {
+        "BZLMOD_ENABLED": str(int(BZLMOD_ENABLED)),
+        "TEST_ZIPAPP": "$(location :venv_zipapp)",
+    },
+    target_compatible_with = NOT_WINDOWS,
+)
+
+py_binary(
+    name = "system_python_bin",
+    srcs = ["main.py"],
+    config_settings = {
+        "//python/config_settings:bootstrap_impl": "system_python",
+        "//python/config_settings:venvs_site_packages": "no",
+    },
+    main = "main.py",
+    deps = [":some_dep"],
+)
+
+py_zipapp_binary(
+    name = "system_python_zipapp",
+    binary = ":system_python_bin",
+)
+
+py_test(
+    name = "system_python_zipapp_test",
+    srcs = ["system_python_zipapp_test.py"],
+    data = [":system_python_zipapp"],
+    env = {
+        "TEST_ZIPAPP": "$(location :system_python_zipapp)",
+    },
+)
+
+sh_test(
+    name = "system_python_zipapp_external_bootstrap_test",
+    srcs = ["system_python_zipapp_external_bootstrap_test.sh"],
+    data = [
+        ":system_python_zipapp",
+        "//python:current_py_toolchain",
+    ],
+    env = {
+        "PYTHON": "$(PYTHON3_ROOTPATH)",
+        "ZIPAPP": "$(location :system_python_zipapp)",
+    },
+    toolchains = ["//python:current_py_toolchain"],
+)
+
+py_library(
+    name = "some_dep",
+    srcs = ["some_dep.py"],
+    experimental_venvs_site_packages = "//python/config_settings:venvs_site_packages",
+    imports = ["."],
+)

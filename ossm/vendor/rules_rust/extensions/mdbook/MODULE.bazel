@@ -1,0 +1,34 @@
+"""bazelbuild/rules_rust/extensions/mdbook"""
+
+module(
+    name = "rules_rust_mdbook",
+    version = "0.69.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.69.0")
+bazel_dep(name = "rules_cc", version = "0.2.4")
+bazel_dep(name = "bazel_features", version = "1.32.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "platforms", version = "1.0.0")
+
+rust_ext = use_extension("//:extensions.bzl", "rust_ext")
+use_repo(
+    rust_ext,
+    "rmdbi",
+    "rmdbi__mdbook-0.4.44",
+    "rules_rust_mdbook_toolchain",
+)
+
+register_toolchains("@rules_rust_mdbook_toolchain//:toolchain")
+
+bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
+
+rust_ext_dev = use_extension(
+    "//private:internal_extensions.bzl",
+    "rust_ext_dev",
+    dev_dependency = True,
+)
+use_repo(
+    rust_ext_dev,
+    "buildkite_config",
+)

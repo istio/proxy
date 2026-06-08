@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "gosumcheck_lib",
+    srcs = ["main.go"],
+    importpath = "golang.org/x/mod/gosumcheck",
+    visibility = ["//visibility:private"],
+    deps = ["//sumdb"],
+)
+
+go_binary(
+    name = "gosumcheck",
+    embed = [":gosumcheck_lib"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,5 @@
+build:ci --announce_rc
+
+# C++17 standard required for newer protobuf and grpc versions
+build --cxxopt=-std=c++17
+build --host_cxxopt=-std=c++17

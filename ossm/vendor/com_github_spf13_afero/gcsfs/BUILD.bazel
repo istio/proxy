@@ -1,0 +1,41 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gcsfs",
+    srcs = [
+        "errors.go",
+        "file.go",
+        "file_info.go",
+        "file_resource.go",
+        "fs.go",
+        "gcs.go",
+        "gcs_mocks.go",
+    ],
+    importpath = "github.com/spf13/afero/gcsfs",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:afero",
+        "@com_github_googleapis_google_cloud_go_testing//storage/stiface:go_default_library",
+        "@com_google_cloud_go_storage//:go_default_library",
+        "@org_golang_google_api//iterator:go_default_library",
+        "@org_golang_google_api//option:go_default_library",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gcsfs",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "gcsfs_test",
+    srcs = ["gcs_test.go"],
+    embed = [":gcsfs"],
+    deps = [
+        "//:afero",
+        "@com_github_googleapis_google_cloud_go_testing//storage/stiface:go_default_library",
+        "@com_google_cloud_go_storage//:go_default_library",
+        "@org_golang_x_oauth2//google:go_default_library",
+    ],
+)

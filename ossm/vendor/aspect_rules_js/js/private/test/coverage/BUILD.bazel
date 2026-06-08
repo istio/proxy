@@ -1,0 +1,67 @@
+load(":test.bzl", "coverage_fail_test", "coverage_pass_test")
+load("//js/private/coverage:merger.bzl", "coverage_merger")
+
+FAIL_CMD = """\
+echo "require('fs').writeFileSync(process.env.COVERAGE_OUTPUT_FILE, '# no coverage');" >> $@
+cat $(location //js/private/coverage:coverage.js) >> $@
+echo "process.on('exit', () => require('assert').equal(require('fs').readFileSync(process.env.COVERAGE_OUTPUT_FILE).toString(), '# no coverage'))" >> $@
+"""
+
+genrule(
+    name = "fail_merger_entrypoint",
+    srcs = ["//js/private/coverage:coverage.js"],
+    outs = ["fail_merger_entrypoint.js"],
+    cmd = FAIL_CMD,
+)
+
+coverage_merger(
+    name = "fail_merger",
+    entry_point = ":fail_merger_entrypoint.js",
+    visibility = ["//visibility:public"],
+)
+
+coverage_fail_test(
+    name = "fail",
+    data = ["lib.js"],
+    enable_runfiles = select({
+        "@aspect_rules_js//js:enable_runfiles": True,
+        "//conditions:default": False,
+    }),
+    entry_point = "lib.js",
+    unresolved_symlinks_enabled = select({
+        "@aspect_rules_js//js:allow_unresolved_symlinks": True,
+        "//conditions:default": False,
+    }),
+)
+
+PASS_CMD = """\
+cat $(location //js/private/coverage:coverage.js) >> $@
+echo "process.on('exit', () => require('assert').equal(require('fs').readFileSync(process.env.COVERAGE_OUTPUT_FILE).toString().split('\\n')[1], 'SF:js/private/test/coverage/lib.js'))" >> $@
+"""
+
+genrule(
+    name = "pass_merger_entrypoint",
+    srcs = ["//js/private/coverage:coverage.js"],
+    outs = ["pass_merger_entrypoint.js"],
+    cmd = PASS_CMD,
+)
+
+coverage_merger(
+    name = "pass_merger",
+    entry_point = ":pass_merger_entrypoint.js",
+    visibility = ["//visibility:public"],
+)
+
+coverage_pass_test(
+    name = "pass",
+    data = ["lib.js"],
+    enable_runfiles = select({
+        "@aspect_rules_js//js/private:enable_runfiles": True,
+        "//conditions:default": False,
+    }),
+    entry_point = "lib.js",
+    unresolved_symlinks_enabled = select({
+        "@aspect_rules_js//js:allow_unresolved_symlinks": True,
+        "//conditions:default": False,
+    }),
+)

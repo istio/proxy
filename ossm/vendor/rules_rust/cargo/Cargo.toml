@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "private/cargo_toml_variable_extractor",
+    "private/cargo_toml_info",
+]

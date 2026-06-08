@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "protowire",
+    srcs = ["wire.go"],
+    importpath = "google.golang.org/protobuf/encoding/protowire",
+    visibility = ["//visibility:public"],
+    deps = ["//internal/errors"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protowire",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "protowire_test",
+    srcs = ["wire_test.go"],
+    embed = [":protowire"],
+)

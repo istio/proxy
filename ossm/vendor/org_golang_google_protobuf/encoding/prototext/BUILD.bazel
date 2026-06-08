@@ -1,0 +1,68 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "prototext",
+    srcs = [
+        "decode.go",
+        "doc.go",
+        "encode.go",
+    ],
+    importpath = "google.golang.org/protobuf/encoding/prototext",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding/protowire",
+        "//internal/encoding/messageset",
+        "//internal/encoding/text",
+        "//internal/errors",
+        "//internal/flags",
+        "//internal/genid",
+        "//internal/order",
+        "//internal/pragma",
+        "//internal/set",
+        "//internal/strs",
+        "//proto",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":prototext",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "prototext_test",
+    srcs = [
+        "decode_test.go",
+        "encode_test.go",
+        "fuzz_test.go",
+        "other_test.go",
+        "testmessages_opaque_test.go",
+        "testmessages_test.go",
+    ],
+    deps = [
+        ":prototext",
+        "//internal/detrand",
+        "//internal/flags",
+        "//internal/protobuild",
+        "//internal/testprotos/editionsfuzztest",
+        "//internal/testprotos/textpb2",
+        "//internal/testprotos/textpb3",
+        "//internal/testprotos/textpbeditions",
+        "//internal/testprotos/textpbeditions/textpbeditions_opaque",
+        "//proto",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+        "//testing/protocmp",
+        "//testing/protopack",
+        "//types/known/anypb",
+        "//types/known/durationpb",
+        "//types/known/emptypb",
+        "//types/known/structpb",
+        "//types/known/timestamppb",
+        "//types/known/wrapperspb",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

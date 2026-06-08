@@ -1,0 +1,95 @@
+name: CodeQL/daily
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+  - cron: '0 12 * * 4'
+
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+
+jobs:
+  CodeQL-Build:
+
+    permissions:
+      security-events: write  # for github/codeql-action/analyze to upload SARIF results
+      pull-requests: read
+    strategy:
+      fail-fast: false
+
+    # CodeQL runs on ubuntu-24.04
+    runs-on: ubuntu-22.04
+    if: github.repository == 'envoyproxy/envoy'
+
+    steps:
+
+    - uses: envoyproxy/toolshed/actions/bind-mounts@0f75902a4f8ed63a5b5f9e4336ef22048f6f5670  # v0.4.6
+      if: |
+        ! github.event.repository.private
+      with:
+        mounts: |
+          - src: /mnt/workspace
+            target: GITHUB_WORKSPACE
+            chown: "runner:runner"
+          - src: /mnt/runner-home
+            target: /home/runner/.cache
+            chown: "runner:runner"
+    - name: Free disk space
+      if: |
+        env.BUILD_TARGETS != ''
+        && github.event.repository.private
+      uses: envoyproxy/toolshed/actions/diskspace@0f75902a4f8ed63a5b5f9e4336ef22048f6f5670  # v0.4.6
+      with:
+        to_remove: |
+          /usr/local/.ghcup
+          /usr/local/lib/android
+
+    - name: Checkout repository
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@95e58e9a2cdfd71adc6e0353d5c52f41a045d225  # codeql-bundle-v4.35.2
+      with:
+        languages: cpp
+        trap-caching: false
+        config-file: ./.github/codeql/codeql-config.yml
+
+    - name: Install deps
+      shell: bash
+      run: |
+       sudo apt-get update --error-on=any
+       sudo apt-get install --yes \
+           libtool libtinfo5 automake autoconf curl unzip
+       # Note: the llvm/clang version should match the version specifed in:
+       #  - bazel/repository_locations.bzl
+       #  - .github/workflows/codeql-push.yml
+       #  - https://github.com/envoyproxy/envoy-build-tools/blob/main/build_container/build_container_ubuntu.sh#L84
+       mkdir -p bin/clang18.1.8
+       cd bin/clang18.1.8
+       wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+       tar -xf clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz --strip-components 1
+
+    - name: Build
+      run: |
+       bazelisk shutdown
+       bazel build \
+           -c fastbuild \
+           --repo_env=BAZEL_LLVM_PATH="$(realpath bin/clang18.1.8)" \
+           --spawn_strategy=local \
+           --discard_analysis_cache \
+           --nouse_action_cache \
+           --features="-layering_check" \
+           --config=clang-local \
+           --config=ci \
+           //source/common/http/...
+
+    - name: Clean Artifacts
+      run: |
+        git clean -xdf
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@95e58e9a2cdfd71adc6e0353d5c52f41a045d225  # codeql-bundle-v4.35.2

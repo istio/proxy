@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+option go_package = "test_proto_path/folder";
+
+message nested_demo {
+    bool field = 1;
+}

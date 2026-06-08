@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "enums",
+    srcs = ["enums.pb.go"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/enums",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":enums",
+    visibility = ["//:__subpackages__"],
+)

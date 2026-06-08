@@ -1,0 +1,15 @@
+load("@rules_python//python:defs.bzl", "py_test")
+load("//:defs.bzl", "pyo3_extension")
+
+pyo3_extension(
+    name = "module_prefix",
+    srcs = ["bar.rs"],
+    edition = "2021",
+    module_name = "foo.bar",
+)
+
+py_test(
+    name = "module_prefix_import_test",
+    srcs = ["module_prefix_import_test.py"],
+    deps = [":module_prefix"],
+)

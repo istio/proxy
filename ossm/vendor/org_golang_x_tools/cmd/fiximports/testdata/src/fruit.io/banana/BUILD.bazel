@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "banana",
+    srcs = ["banana.go"],
+    importpath = "golang.org/x/tools/cmd/fiximports/testdata/src/fruit.io/banana",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":banana",
+    visibility = ["//visibility:public"],
+)

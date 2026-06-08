@@ -1,0 +1,14 @@
+load("//rust:defs.bzl", "rust_library", "rust_test_suite")
+
+rust_library(
+    name = "math_lib",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+)
+
+rust_test_suite(
+    name = "tests_suite",
+    srcs = glob(["tests/**"]),
+    edition = "2018",
+    deps = [":math_lib"],
+)

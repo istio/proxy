@@ -1,0 +1,191 @@
+load("@aspect_bazel_lib//lib:diff_test.bzl", "diff_test")
+load("@aspect_bazel_lib//lib:testing.bzl", "assert_contains")
+load("//jq:jq.bzl", "jq")
+
+exports_files([
+    "a_pretty.json",
+    "a.json",
+    "b.json",
+])
+
+# Identity filter produces identical json
+jq(
+    name = "case_dot_filter",
+    srcs = ["a.json"],
+    filter = ".",
+)
+
+diff_test(
+    name = "case_dot_filter_test",
+    file1 = "a_pretty.json",
+    file2 = ":case_dot_filter",
+)
+
+# Merge filter with slurp merges two jsons
+jq(
+    name = "case_merge_filter",
+    srcs = [
+        "a.json",
+        "b.json",
+    ],
+    args = ["--slurp"],
+    filter = ".[0] * .[1]",
+)
+
+diff_test(
+    name = "case_merge_filter_test",
+    file1 = "a_b_merged.json",
+    file2 = ":case_merge_filter",
+)
+
+# Use predeclared output
+jq(
+    name = "case_predeclared_output",
+    srcs = ["a.json"],
+    out = "foo.json",
+    filter = ".",
+)
+
+diff_test(
+    name = "case_predeclared_output_test",
+    file1 = "a_pretty.json",
+    file2 = "foo.json",
+)
+
+# No sources produces null (equivalent to --null-input)
+jq(
+    name = "case_no_sources",
+    srcs = [],
+    filter = ".",
+)
+
+diff_test(
+    name = "case_no_sources_test",
+    file1 = ":case_no_sources",
+    file2 = "null.json",
+)
+
+# Sources with --null-input flag produces null
+jq(
+    name = "case_null_input_flag",
+    srcs = ["a.json"],
+    args = ["--null-input"],
+    filter = ".",
+)
+
+diff_test(
+    name = "case_null_input_flag_test",
+    file1 = ":case_null_input_flag",
+    file2 = "null.json",
+)
+
+# Data files are passed in correctly
+jq(
+    name = "case_data_input_flag",
+    srcs = [],
+    args = [
+        "--slurpfile",
+        "a",
+        "$(location a_pretty.json)",
+    ],
+    data = ["a_pretty.json"],
+    expand_args = True,
+    filter = "$a[0]",
+)
+
+diff_test(
+    name = "case_data_input_flag_test",
+    file1 = ":case_data_input_flag",
+    file2 = "a_pretty.json",
+)
+
+# Load filter from file
+jq(
+    name = "case_filter_file",
+    srcs = [
+        "a.json",
+        "b.json",
+    ],
+    args = ["--slurp"],
+    filter_file = "merge_filter.txt",
+)
+
+diff_test(
+    name = "case_filter_file_test",
+    file1 = "a_b_merged.json",
+    file2 = ":case_filter_file",
+)
+
+# Filter that uses a stamp variable
+[
+    jq(
+        name = ("" if stamp else "un") + "stamped",
+        srcs = ["a.json"],
+        filter = "|".join([
+            # Don't directly reference $STAMP as it's only set when stamping
+            "$ARGS.named.STAMP as $stamp",
+            # Provide a default using the "alternative operator"
+            ".foo = ($stamp[0].BUILD_EMBED_LABEL // \"<unstamped>\")",
+            ".value = ($stamp[0].BUILD_TIMESTAMP // 1 | tonumber)",
+        ]),
+        stamp = stamp,
+    )
+    for stamp in [
+        0,
+        1,
+    ]
+]
+
+assert_contains(
+    name = "check_stamped",
+    actual = "stamped.json",
+    # v1.2.3 comes from the --embed_label flag in .bazelrc
+    expected = """foo": "v1.2.3""",
+)
+
+assert_contains(
+    name = "check_unstamped",
+    actual = "unstamped.json",
+    expected = """foo": "<unstamped>""",
+)
+
+# Call jq within a genrule
+genrule(
+    name = "case_genrule",
+    srcs = ["a.json"],
+    outs = ["genrule_output.json"],
+    cmd = "$(JQ_BIN) '.' $(location a.json) > $@",
+    toolchains = ["@jq_toolchains//:resolved_toolchain"],
+)
+
+diff_test(
+    name = "case_genrule_test",
+    file1 = "genrule_output.json",
+    file2 = "a_pretty.json",
+)
+
+# Raw input (--raw-input / -R)
+jq(
+    name = "case_raw_input",
+    srcs = ["raw.txt"],
+    args = [
+        "--raw-input",
+        "--slurp",
+    ],
+    filter = "split(\"\\n\")",
+)
+
+diff_test(
+    name = "case_raw_input_test",
+    file1 = ":case_raw_input",
+    file2 = "raw_expected.json",
+)
+
+# Similar to copy_to_bin, this will create a file a.json in the output folder.
+# That's the same path as an input file, but that's okay as long as the jq
+# rule doesn't pre-declare that output.
+jq(
+    name = "a",
+    srcs = ["a.json"],
+    filter = """ .foo = "baz" """,
+)

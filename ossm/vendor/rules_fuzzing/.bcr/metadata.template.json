@@ -1,0 +1,20 @@
+{
+  "homepage": "https://github.com/bazelbuild/rules_fuzzing",
+  "maintainers": [
+    {
+      "email": "fabian@meumertzhe.im",
+      "github": "fmeum",
+      "name": "Fabian Meumertzheim"
+    },
+    {
+      "email": "simon.resch@code-intelligence.com",
+      "github": "simonresch",
+      "name": "Simon Resch"
+    }
+  ],
+  "repository": [
+      "github:bazelbuild/rules_fuzzing"
+  ],
+  "versions": [],
+  "yanked_versions": {}
+}

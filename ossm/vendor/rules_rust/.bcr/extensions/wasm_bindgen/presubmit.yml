@@ -1,0 +1,29 @@
+bcr_test_module:
+  module_path: ""
+  matrix:
+    platform: ["ubuntu2004", "windows"]
+    bazel: ["7.x", "8.x"]
+  tasks:
+    run_tests:
+      name: "Run test module"
+      platform: ${{ platform }}
+      bazel: ${{ bazel }}
+      shell_commands:
+        - "bash ./test/bazelci_unix_setup.sh"
+      test_targets:
+        - "//..."
+bcr_test_module_macos:
+  module_path: ""
+  matrix:
+    platform: ["macos_arm64"]
+    bazel: ["7.x", "8.x"]
+  tasks:
+    run_tests:
+      name: "Run test module"
+      platform: ${{ platform }}
+      bazel: ${{ bazel }}
+      shell_commands:
+        - "bash ./test/bazelci_unix_setup.sh"
+      # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
+      # test_targets:
+      #   - "//..."

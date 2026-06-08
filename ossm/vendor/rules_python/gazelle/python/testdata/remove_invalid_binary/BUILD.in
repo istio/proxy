@@ -1,0 +1,20 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+py_library(
+    name = "remove_invalid_binary",
+    srcs = ["__init__.py"],
+    deps = ["//keep_binary:foo"],
+)
+
+py_binary(
+    name = "remove_invalid_binary_bin",
+    srcs = ["__main__.py"],
+    data = ["testdata/test.txt"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_binary(
+    name = "another_removed_binary",
+    srcs = ["foo.py"],  # eg a now-deleted file that used to have `if __name__` block
+    imports = ["."],
+)

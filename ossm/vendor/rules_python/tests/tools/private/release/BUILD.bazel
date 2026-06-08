@@ -1,0 +1,10 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+py_test(
+    name = "release_test",
+    srcs = ["release_test.py"],
+    deps = [
+        "//tools/private/release",
+        "@dev_pip//packaging",
+    ],
+)

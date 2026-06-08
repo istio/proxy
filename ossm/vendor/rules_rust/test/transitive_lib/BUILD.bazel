@@ -1,0 +1,30 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_binary", "rust_library")
+
+# sets link alias
+cargo_build_script(
+    name = "buildscript",
+    srcs = ["build.rs"],
+    crate_root = "build.rs",
+    edition = "2018",
+)
+
+# links to a symbol in shell32
+rust_library(
+    name = "dll_user",
+    srcs = ["dll_user.rs"],
+    edition = "2018",
+    deps = [
+        ":buildscript",
+    ],
+)
+
+# does not link to any symbol in shell32
+rust_binary(
+    name = "dll_user_user",
+    srcs = ["dll_user_user.rs"],
+    edition = "2018",
+    deps = [
+        ":dll_user",
+    ],
+)

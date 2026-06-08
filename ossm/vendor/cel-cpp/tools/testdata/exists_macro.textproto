@@ -1,0 +1,319 @@
+# proto-file: google3/google/api/expr/checked.proto
+# proto-message: CheckedExpr
+
+# [1].exists(x, x == 1)
+reference_map: {
+  key: 5
+  value: {
+    name: "x"
+  }
+}
+reference_map: {
+  key: 6
+  value: {
+    overload_id: "equals"
+  }
+}
+reference_map: {
+  key: 9
+  value: {
+    name: "__result__"
+  }
+}
+reference_map: {
+  key: 10
+  value: {
+    overload_id: "logical_not"
+  }
+}
+reference_map: {
+  key: 11
+  value: {
+    overload_id: "not_strictly_false"
+  }
+}
+reference_map: {
+  key: 12
+  value: {
+    name: "__result__"
+  }
+}
+reference_map: {
+  key: 13
+  value: {
+    overload_id: "logical_or"
+  }
+}
+reference_map: {
+  key: 14
+  value: {
+    name: "__result__"
+  }
+}
+type_map: {
+  key: 1
+  value: {
+    list_type: {
+      elem_type: {
+        primitive: INT64
+      }
+    }
+  }
+}
+type_map: {
+  key: 2
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 5
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 6
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 7
+  value: {
+    primitive: INT64
+  }
+}
+type_map: {
+  key: 8
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 9
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 10
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 11
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 12
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 13
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 14
+  value: {
+    primitive: BOOL
+  }
+}
+type_map: {
+  key: 15
+  value: {
+    primitive: BOOL
+  }
+}
+source_info: {
+  location: "<input>"
+  line_offsets: 22
+  positions: {
+    key: 1
+    value: 0
+  }
+  positions: {
+    key: 2
+    value: 1
+  }
+  positions: {
+    key: 3
+    value: 10
+  }
+  positions: {
+    key: 4
+    value: 11
+  }
+  positions: {
+    key: 5
+    value: 14
+  }
+  positions: {
+    key: 6
+    value: 16
+  }
+  positions: {
+    key: 7
+    value: 19
+  }
+  positions: {
+    key: 8
+    value: 10
+  }
+  positions: {
+    key: 9
+    value: 10
+  }
+  positions: {
+    key: 10
+    value: 10
+  }
+  positions: {
+    key: 11
+    value: 10
+  }
+  positions: {
+    key: 12
+    value: 10
+  }
+  positions: {
+    key: 13
+    value: 10
+  }
+  positions: {
+    key: 14
+    value: 10
+  }
+  positions: {
+    key: 15
+    value: 10
+  }
+  macro_calls: {
+    key: 15
+    value: {
+      call_expr: {
+        target: {
+          id: 1
+          list_expr: {
+            elements: {
+              id: 2
+              const_expr: {
+                int64_value: 1
+              }
+            }
+          }
+        }
+        function: "exists"
+        args: {
+          id: 4
+          ident_expr: {
+            name: "x"
+          }
+        }
+        args: {
+          id: 6
+          call_expr: {
+            function: "_==_"
+            args: {
+              id: 5
+              ident_expr: {
+                name: "x"
+              }
+            }
+            args: {
+              id: 7
+              const_expr: {
+                int64_value: 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+expr: {
+  id: 15
+  comprehension_expr: {
+    iter_var: "x"
+    iter_range: {
+      id: 1
+      list_expr: {
+        elements: {
+          id: 2
+          const_expr: {
+            int64_value: 1
+          }
+        }
+      }
+    }
+    accu_var: "__result__"
+    accu_init: {
+      id: 8
+      const_expr: {
+        bool_value: false
+      }
+    }
+    loop_condition: {
+      id: 11
+      call_expr: {
+        function: "@not_strictly_false"
+        args: {
+          id: 10
+          call_expr: {
+            function: "!_"
+            args: {
+              id: 9
+              ident_expr: {
+                name: "__result__"
+              }
+            }
+          }
+        }
+      }
+    }
+    loop_step: {
+      id: 13
+      call_expr: {
+        function: "_||_"
+        args: {
+          id: 12
+          ident_expr: {
+            name: "__result__"
+          }
+        }
+        args: {
+          id: 6
+          call_expr: {
+            function: "_==_"
+            args: {
+              id: 5
+              ident_expr: {
+                name: "x"
+              }
+            }
+            args: {
+              id: 7
+              const_expr: {
+                int64_value: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    result: {
+      id: 14
+      ident_expr: {
+        name: "__result__"
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "test_name_clash_opaque",
+    srcs = ["test_name_clash_opaque.pb.go"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/nameclash/test_name_clash_opaque",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/gofeaturespb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":test_name_clash_opaque",
+    visibility = ["//visibility:public"],
+)

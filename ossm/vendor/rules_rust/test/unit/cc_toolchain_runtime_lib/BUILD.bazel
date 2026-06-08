@@ -1,0 +1,3 @@
+load(":cc_toolchain_runtime_lib_test.bzl", "runtime_libs_test")
+
+runtime_libs_test(name = "runtime_libs_test")

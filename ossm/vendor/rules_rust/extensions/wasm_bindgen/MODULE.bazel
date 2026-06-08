@@ -1,0 +1,71 @@
+"""bazelbuild/rules_rust/extensions/wasm_bindgen"""
+
+module(
+    name = "rules_rust_wasm_bindgen",
+    version = "0.69.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.69.0")
+bazel_dep(name = "bazel_features", version = "1.32.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.4")
+bazel_dep(name = "apple_support", version = "1.24.1")
+
+rust_ext = use_extension("//:extensions.bzl", "rust_ext")
+use_repo(
+    rust_ext,
+    "chrome",
+    "chrome_headless_shell",
+    "chrome_headless_shell_linux64",
+    "chrome_headless_shell_mac_arm64",
+    "chrome_headless_shell_mac_x64",
+    "chrome_headless_shell_win32",
+    "chrome_headless_shell_win64",
+    "chrome_linux64",
+    "chrome_mac_arm64",
+    "chrome_mac_x64",
+    "chrome_win32",
+    "chrome_win64",
+    "chromedriver",
+    "chromedriver_linux64",
+    "chromedriver_mac_arm64",
+    "chromedriver_mac_x64",
+    "chromedriver_win32",
+    "chromedriver_win64",
+    "firefox",
+    "firefox_linux_aarch64",
+    "firefox_linux_x86_64",
+    "firefox_local",
+    "firefox_mac",
+    "geckodriver",
+    "geckodriver_linux64",
+    "geckodriver_linux_aarch64",
+    "geckodriver_macos",
+    "geckodriver_macos_aarch64",
+    "geckodriver_win64",
+    "rrwbd",
+    "rrwbd__serde_json-1.0.145",
+    "rrwbd__wasm-bindgen-0.2.105",
+    "rrwbd__wasm-bindgen-cli-0.2.105",
+    "rrwbd__wasm-bindgen-test-0.3.55",
+    "safaridriver",
+)
+
+register_toolchains(
+    "//:default_wasm_bindgen_toolchain",
+    "@rules_rust//rust/private/dummy_cc_toolchain:dummy_cc_wasm32_toolchain",
+    "@rules_rust//rust/private/dummy_cc_toolchain:dummy_cc_wasm64_toolchain",
+)
+
+bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
+
+rust_ext_dev = use_extension(
+    "//private:internal_extensions.bzl",
+    "rust_ext_dev",
+    dev_dependency = True,
+)
+use_repo(
+    rust_ext_dev,
+    "buildkite_config",
+)

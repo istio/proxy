@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "msetextpb",
+    srcs = ["msetextpb.pb.go"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/messageset/msetextpb",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/messageset/messagesetpb",
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":msetextpb",
+    visibility = ["//:__subpackages__"],
+)

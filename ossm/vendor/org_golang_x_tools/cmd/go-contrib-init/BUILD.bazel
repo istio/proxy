@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "go-contrib-init_lib",
+    srcs = ["contrib.go"],
+    importpath = "golang.org/x/tools/cmd/go-contrib-init",
+    visibility = ["//visibility:private"],
+    deps = ["@org_golang_x_sys//execabs:go_default_library"],
+)
+
+go_binary(
+    name = "go-contrib-init",
+    embed = [":go-contrib-init_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go-contrib-init_test",
+    srcs = ["contrib_test.go"],
+    embed = [":go-contrib-init_lib"],
+)

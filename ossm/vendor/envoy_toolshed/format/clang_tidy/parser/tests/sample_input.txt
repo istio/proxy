@@ -1,0 +1,21 @@
+/path/to/source.cpp:10:5: warning: use auto when initializing with a template cast to avoid duplicating the type name [modernize-use-auto]
+    int* ptr = static_cast<int*>(malloc(sizeof(int)));
+    ^~~
+    auto
+/path/to/source.cpp:15:3: error: use of undeclared identifier 'foo' [clang-diagnostic-error]
+  foo();
+  ^
+/path/to/header.h:20:10: warning: parameter 'x' is unused [misc-unused-parameters]
+void bar(int x) {
+         ^
+/path/to/header.h:20:10: note: FIX-IT applied suggested code changes
+source.cpp:25:1: warning: namespace 'test' not terminated with a closing comment [readability-namespace-comments]
+namespace test {
+^
+source.cpp:30:1: note: namespace 'test' begins here
+namespace test {
+^
+/another/file.cpp:42:12: warning: variable 'unused' is not used [clang-analyzer-deadcode.DeadStores]
+  int unused = 5;
+      ^
+1 warning and 1 error generated.

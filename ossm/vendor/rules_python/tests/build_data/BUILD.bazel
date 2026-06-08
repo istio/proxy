@@ -1,0 +1,25 @@
+load("//python:py_binary.bzl", "py_binary")
+load("//python:py_test.bzl", "py_test")
+
+py_test(
+    name = "build_data_test",
+    srcs = ["build_data_test.py"],
+    data = [
+        ":tool_build_data.txt",
+    ],
+    stamp = 1,
+    deps = ["//python/runfiles"],
+)
+
+py_binary(
+    name = "print_build_data",
+    srcs = ["print_build_data.py"],
+    deps = ["//python/runfiles"],
+)
+
+genrule(
+    name = "tool_build_data",
+    outs = ["tool_build_data.txt"],
+    cmd = "$(location :print_build_data) > $(OUTS)",
+    tools = [":print_build_data"],
+)

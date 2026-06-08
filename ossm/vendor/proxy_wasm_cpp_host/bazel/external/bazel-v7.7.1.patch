@@ -1,0 +1,53 @@
+diff --git a/MODULE.bazel b/MODULE.bazel
+index 0a5ea5b..82411c9 100755
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -12,6 +12,8 @@ module(
+ # Bazel module dependencies
+ # =========================================
+ 
++bazel_dep(name = "bazel_features", version = "1.11.0")
++
+ bazel_dep(name = "rules_license", version = "0.0.7")
+ bazel_dep(name = "bazel_skylib", version = "1.7.1")
+ bazel_dep(name = "protobuf", version = "21.7", repo_name = "com_google_protobuf")
+@@ -41,6 +43,10 @@ single_version_override(
+     patch_strip = 1,
+     patches = ["//third_party:rules_jvm_external_6.0.patch"],
+ )
++single_version_override(
++    module_name = "bazel_features",
++    version = "1.11.0",
++)
+ 
+ local_path_override(
+     module_name = "remoteapis",
+diff --git a/tools/cpp/bsd_cc_toolchain_config.bzl b/tools/cpp/bsd_cc_toolchain_config.bzl
+index 8dbecd9..7f5ab3e 100755
+--- a/tools/cpp/bsd_cc_toolchain_config.bzl
++++ b/tools/cpp/bsd_cc_toolchain_config.bzl
+@@ -149,7 +149,7 @@ def _impl(ctx):
+                     flag_group(
+                         flags = [
+                             "-g0",
+-                            "-O2",
++                            "-O0",
+                             "-DNDEBUG",
+                             "-ffunction-sections",
+                             "-fdata-sections",
+diff --git a/tools/cpp/unix_cc_configure.bzl b/tools/cpp/unix_cc_configure.bzl
+index bbbba7e..d2b37ee 100755
+--- a/tools/cpp/unix_cc_configure.bzl
++++ b/tools/cpp/unix_cc_configure.bzl
+@@ -688,10 +688,7 @@ def configure_unix_toolchain(repository_ctx, cpu_value, overriden_tools):
+                     # handling in Bazel.
+                     "-g0",
+ 
+-                    # Conservative choice for -O
+-                    # -O3 can increase binary size and even slow down the resulting binaries.
+-                    # Profile first and / or use FDO if you need better performance than this.
+-                    "-O2",
++                    "-O0",
+ 
+                     # Security hardening on by default.
+                     # Conservative choice; -D_FORTIFY_SOURCE=2 may be unsafe in some cases.

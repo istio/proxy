@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "race",
+    srcs = [
+        "race_no.go",
+        "race_yes.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/test/race",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":race",
+    visibility = ["//:__subpackages__"],
+)

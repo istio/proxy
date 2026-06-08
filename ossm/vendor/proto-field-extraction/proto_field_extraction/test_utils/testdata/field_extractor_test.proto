@@ -1,0 +1,233 @@
+// Copyright 2023 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.protobuf.field_extraction.testing;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+enum TestEnum {
+  TEST_ENUM_UNSPECIFIED = 0;
+  ALPHA = 1;
+  BETA = 2;
+  GAMMA = 3;
+}
+
+message SingularFieldTestMessage {
+  string string_field = 1;
+
+  bytes byte_field = 2;
+
+  TestEnum enum_field = 3;
+
+  double double_field = 4;
+
+  float float_field = 5;
+
+  int64 int64_field = 6;
+
+  uint64 uint64_field = 7;
+
+  int32 int32_field = 8;
+
+  fixed64 fixed64_field = 9;
+
+  fixed32 fixed32_field = 10;
+
+  bool bool_field = 11;
+
+  uint32 uint32_field = 12;
+
+  sfixed64 sfixed64_field = 13;
+
+  sfixed32 sfixed32_field = 14;
+
+  sint32 sint32_field = 15;
+
+  sint64 sint64_field = 16;
+
+  google.protobuf.Timestamp timestamp_field = 17;
+}
+
+message FieldExtractorTestMessage {
+  string id = 1;
+
+  // Test field paths with all nodes as singular fields.
+  SingularFieldTestMessage singular_field = 2;
+
+  // Test field paths with only leaf node as repeated field.
+  RepeatedField repeated_field_leaf = 3;
+
+  // Test field paths with only non-leaf node as repeated field.
+  repeated SingularFieldTestMessage repeated_singular_fields = 4;
+
+  // Test field paths with all nodes as repeated or map fields (nested
+  // repeated).
+  repeated RepeatedField repeated_field = 5;
+
+  // Test field paths with map as non-leaf node.
+  map<string, SingularFieldTestMessage> map_singular_field = 6;
+
+  // Test field paths with nested map fields as non-leaf node.
+  map<string, MapField> repeated_map_field = 7;
+
+  // Test field paths with only leaf node as repeated unpacked field.
+  RepeatedFieldLeafUnpack repeated_field_leaf_unpack = 8;
+
+  // Test field paths with singular Any node.
+  google.protobuf.Any singular_any_field = 9;
+
+  // Test field paths with repeated Any node.
+  repeated google.protobuf.Any repeated_any_fields = 10;
+
+  // Test field paths with repeated Any node as map value.
+  map<string, google.protobuf.Any> map_any_fields = 11;
+}
+
+message RepeatedField {
+  string name = 1;
+
+  repeated string repeated_string = 2;
+
+  map<string, string> map_string = 3;
+
+  repeated bytes repeated_byte = 4;
+
+  repeated TestEnum repeated_enum = 5;
+
+  repeated double repeated_double = 6;
+
+  repeated float repeated_float = 7;
+
+  repeated int64 repeated_int64 = 8;
+
+  repeated uint64 repeated_uint64 = 9;
+
+  repeated int32 repeated_int32 = 10;
+
+  repeated fixed64 repeated_fixed64 = 11;
+
+  repeated fixed32 repeated_fixed32 = 12;
+
+  repeated bool repeated_bool = 13;
+
+  repeated uint32 repeated_uint32 = 14;
+
+  repeated sfixed64 repeated_sfixed64 = 15;
+
+  repeated sfixed32 repeated_sfixed32 = 16;
+
+  repeated sint32 repeated_sint32 = 17;
+
+  repeated sint64 repeated_sint64 = 18;
+
+  repeated RepeatedField repeated_field = 19;
+
+  map<string, RepeatedField> map_field = 20;
+
+  repeated google.protobuf.Timestamp repeated_timestamp = 21;
+
+  map<string, double> map_double = 24;
+
+  map<string, float> map_float = 25;
+
+  map<string, int64> map_int64 = 26;
+
+  map<string, uint64> map_uint64 = 27;
+
+  map<string, int32> map_int32 = 28;
+
+  map<string, fixed64> map_fixed64 = 29;
+
+  map<string, fixed32> map_fixed32 = 30;
+
+  map<string, uint32> map_uint32 = 32;
+
+  map<string, sfixed64> map_sfixed64 = 33;
+
+  map<string, sfixed32> map_sfixed32 = 34;
+
+  map<string, sint32> map_sint32 = 35;
+
+  map<string, sint64> map_sint64 = 36;
+
+  map<bool, bool> map_bool_bool = 37;
+
+  map<int64, int64> map_int64_int64 = 39;
+
+  map<uint64, uint64> map_uint64_uint64 = 40;
+
+  map<int32, int32> map_int32_int32 = 41;
+
+  map<fixed64, fixed64> map_fixed64_fixed64 = 42;
+
+  map<fixed32, fixed32> map_fixed32_fixed32 = 43;
+
+  map<uint32, uint32> map_uint32_uint32 = 44;
+
+  map<sfixed64, sfixed64> map_sfixed64_sfixed64 = 45;
+
+  map<sfixed32, sfixed32> map_sfixed32_sfixed32 = 46;
+
+  map<sint32, sint32> map_sint32_sint32 = 47;
+
+  map<sint64, sint64> map_sint64_sint64 = 48;
+}
+
+message RepeatedFieldLeafUnpack {
+  repeated double repeated_double = 1 [packed = false];
+
+  repeated float repeated_float = 2 [packed = false];
+
+  repeated int64 repeated_int64 = 3 [packed = false];
+
+  repeated uint64 repeated_uint64 = 4 [packed = false];
+
+  repeated int32 repeated_int32 = 5 [packed = false];
+
+  repeated fixed64 repeated_fixed64 = 6 [packed = false];
+
+  repeated fixed32 repeated_fixed32 = 7 [packed = false];
+
+  repeated uint32 repeated_uint32 = 8 [packed = false];
+
+  repeated sfixed64 repeated_sfixed64 = 9 [packed = false];
+
+  repeated sfixed32 repeated_sfixed32 = 10 [packed = false];
+
+  repeated sint32 repeated_sint32 = 11 [packed = false];
+
+  repeated sint64 repeated_sint64 = 12 [packed = false];
+}
+
+message MapField {
+  string name = 1;
+
+  repeated string repeated_string = 2;
+
+  map<string, MapField> map_field = 3;
+}
+
+service FieldExtractorTestService {
+  // 1
+  rpc TrivialFieldExtractorTestMessage(FieldExtractorTestMessage)
+      returns (google.protobuf.Empty);
+
+  // 2
+  rpc SingularFieldExtractorTestMessage(SingularFieldTestMessage)
+      returns (google.protobuf.Empty);
+}

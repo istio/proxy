@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "copy_directory_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/bazel-contrib/bazel-lib/tools/copy_directory",
+    visibility = ["//visibility:public"],
+    deps = ["//tools/common"],
+)
+
+go_binary(
+    name = "copy_directory",
+    embed = [":copy_directory_lib"],
+    visibility = ["//visibility:public"],
+)

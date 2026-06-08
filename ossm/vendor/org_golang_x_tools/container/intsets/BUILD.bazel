@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "intsets",
+    srcs = ["sparse.go"],
+    importpath = "golang.org/x/tools/container/intsets",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":intsets",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "intsets_test",
+    srcs = [
+        "export_test.go",
+        "sparse_test.go",
+    ],
+    embed = [":intsets"],
+)

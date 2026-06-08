@@ -1,0 +1,76 @@
+version: 0.1
+cli:
+  version: 1.15.0
+plugins:
+  sources:
+    - id: trunk
+      ref: v1.2.3
+      uri: https://github.com/trunk-io/plugins
+runtimes:
+  enabled:
+    - go@1.21.0
+    - node@18.12.1
+    - python@3.10.8
+lint:
+  definitions:
+    - name: buildifier
+      files: [starlark, bazel-build, bazel-workspace]
+      tools: [buildifier]
+      commands:
+        - name: fix
+          run: buildifier --lint=fix "${target}"
+          output: rewrite
+          cache_results: true
+          formatter: true
+          in_place: true
+          batch: true
+          success_codes: [0]
+        - name: warn
+          run: buildifier --lint=warn --format=json --mode=check "${target}"
+          # Custom parser type defined in the trunk cli to handle buildifier's JSON output.
+          output: buildifier
+          cache_results: true
+          batch: true
+          success_codes: [0]
+      suggest_if: files_present
+      direct_configs:
+        - .buildifier.json
+        # Not a native buildifier construct, but useful for 'addTables', see test file
+        - .buildifier-tables.json
+      environment:
+        - name: PATH
+          list: ["${linter}"]
+      known_good_version: 7.1.0
+      version_command:
+        parse_regex: ${semver}
+        run: buildifier --version
+    # Default shfmt config uses -s flag to simplify code but this can cause
+    # unwanted semantic changes
+    - name: shfmt
+      commands:
+        - name: format
+          output: shfmt
+          run: shfmt -w ${target}
+          success_codes: [0, 1]
+          cache_results: true
+          formatter: true
+          batch: true
+          in_place: true
+  enabled:
+    - actionlint@1.7.8
+    - buildifier@7.1.0
+    - checkov@2.4.9
+    - git-diff-check
+    - markdownlint@0.36.0
+    - prettier@3.0.3
+    - shellcheck@0.9.0
+    - shfmt@3.6.0
+    - trivy@0.45.0
+    - trufflehog@3.55.1
+    - yamllint@1.32.0
+actions:
+  enabled:
+    - trunk-announce
+    - trunk-check-pre-push
+    - trunk-fmt-pre-commit
+    - trunk-upgrade-available

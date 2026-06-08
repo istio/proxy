@@ -1,0 +1,85 @@
+load("@aspect_bazel_lib//lib:docs.bzl", "stardoc_with_diff_test", "update_docs")
+
+stardoc_with_diff_test(
+    name = "js_binary",
+    bzl_library_target = "//js/private:js_binary",
+)
+
+stardoc_with_diff_test(
+    name = "js_library",
+    bzl_library_target = "//js/private:js_library",
+)
+
+stardoc_with_diff_test(
+    name = "js_run_binary",
+    bzl_library_target = "//js/private:js_run_binary",
+)
+
+stardoc_with_diff_test(
+    name = "js_run_devserver",
+    bzl_library_target = "//js/private:js_run_devserver",
+    symbol_names = ["js_run_devserver"],
+)
+
+stardoc_with_diff_test(
+    name = "js_filegroup",
+    bzl_library_target = "//js/private:js_filegroup",
+)
+
+stardoc_with_diff_test(
+    name = "js_image_layer",
+    bzl_library_target = "//js/private:js_image_layer",
+)
+
+stardoc_with_diff_test(
+    name = "npm_package",
+    bzl_library_target = "//npm/private:npm_package",
+)
+
+stardoc_with_diff_test(
+    name = "npm_link_package",
+    bzl_library_target = "//npm/private:npm_link_package",
+)
+
+stardoc_with_diff_test(
+    name = "npm_link_all_packages",
+    bzl_library_target = "//npm/private:npm_translate_lock_generate.docs",
+)
+
+stardoc_with_diff_test(
+    name = "npm_import",
+    bzl_library_target = "//npm/private:npm_import",
+    symbol_names = [
+        "npm_import",
+    ],
+)
+
+stardoc_with_diff_test(
+    name = "npm_translate_lock",
+    bzl_library_target = "//npm/private:npm_translate_lock",
+    symbol_names = [
+        "list_patches",
+        "npm_translate_lock",
+    ],
+)
+
+update_docs(
+    name = "update",
+)
+
+# Demonstration delivery target for Aspect Workflows.
+# In the future this could be wired up to push to a demonstration S3 bucket.
+sh_binary(
+    name = "docs_delivery_only_on_change",
+    srcs = ["delivery.sh"],
+    data = glob(["*.md"]),
+    tags = ["deliverable"],
+)
+
+# Demonstration delivery target for Aspect Workflows.
+# In the future this could be wired up to push to a demonstration S3 bucket.
+sh_binary(
+    name = "docs_delivery",
+    srcs = ["delivery.sh"],
+    data = glob(["*.md"]),
+)

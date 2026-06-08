@@ -1,0 +1,36 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_test")
+
+# Test that tools are built in the exec configuration.
+cargo_build_script(
+    name = "tools_exec_build_rs",
+    srcs = ["build.rs"],
+    build_script_env = {
+        # Note that cargo_build_script working directories are not
+        # guaranteed to be the execroot. Thus, the expanded value
+        # is resolved to an absolute path with the help of it's
+        # process wrapper resolving `${pwd}`.
+        "EXPANDED_TOOLCHAIN_VAR": "$${pwd}/$(RUSTC)",
+        "TOOL": "$(execpath :tool)",
+    },
+    edition = "2018",
+    links = "beep",
+    # Add a flag to test that they're exposed to the build script
+    rustc_flags = ["--cfg=foo=\"bar\""],
+    toolchains = ["//rust/toolchain:current_rust_toolchain"],
+    tools = [":tool"],
+)
+
+write_file(
+    name = "tool",
+    out = "tool-file",
+    content = [""],
+)
+
+rust_test(
+    name = "tools_exec",
+    srcs = ["tools_exec.rs"],
+    edition = "2018",
+    deps = [":tools_exec_build_rs"],
+)

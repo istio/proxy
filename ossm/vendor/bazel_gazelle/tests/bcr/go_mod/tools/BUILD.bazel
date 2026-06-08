@@ -1,0 +1,20 @@
+# Verify that the tools builds.
+alias(
+    name = "gqlgen",
+    actual = "@gqlgen",
+)
+
+alias(
+    name = "buildifier",
+    actual = "@buildtools//buildifier",
+)
+
+alias(
+    name = "staticcheck",
+    actual = "@co_honnef_go_tools//cmd/staticcheck",
+)
+
+alias(
+    name = "gofumpt",
+    actual = "@cc_mvdan_gofumpt//:gofumpt",
+)

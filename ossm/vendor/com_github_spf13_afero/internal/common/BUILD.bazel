@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "common",
+    srcs = ["adapters.go"],
+    importpath = "github.com/spf13/afero/internal/common",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":common",
+    visibility = ["//:__subpackages__"],
+)

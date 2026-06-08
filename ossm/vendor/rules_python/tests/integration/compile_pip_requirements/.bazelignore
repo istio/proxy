@@ -1,0 +1,4 @@
+# While normally ignored by default, it must be explicitly
+# specified so that compile_pip_requirements_test_from_external_workspace
+# properly ignores it
+bazel-compile_pip_requirements

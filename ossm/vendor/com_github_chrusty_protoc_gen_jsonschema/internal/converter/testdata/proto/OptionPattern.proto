@@ -1,0 +1,8 @@
+syntax = "proto3";
+package samples;
+import "options.proto";
+
+message OptionPattern {
+  string query = 1 [(protoc.gen.jsonschema.field_options).pattern = "^(\\([0-9]{3}\\))?[0-9]{3}-[0-9]{4}$",  (protoc.gen.jsonschema.field_options).required = true];
+  int32 result_per_page = 3;
+}

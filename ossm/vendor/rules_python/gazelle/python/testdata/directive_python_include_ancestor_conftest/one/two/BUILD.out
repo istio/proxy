@@ -1,0 +1,16 @@
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
+# gazelle:python_include_ancestor_conftest false
+
+py_library(
+    name = "conftest",
+    testonly = True,
+    srcs = ["conftest.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_test(
+    name = "my_test",
+    srcs = ["my_test.py"],
+    deps = [":conftest"],
+)

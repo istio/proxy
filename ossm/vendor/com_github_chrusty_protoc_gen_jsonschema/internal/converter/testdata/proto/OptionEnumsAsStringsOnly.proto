@@ -1,0 +1,11 @@
+syntax = "proto3";
+package samples;
+import "options.proto";
+
+enum Currency {
+    option (protoc.gen.jsonschema.enum_options).enums_as_strings_only = true;
+    NOT_SPECIFIED = 0;
+    USD = 1;
+    GBP = 2;
+    EUR = 3;
+}

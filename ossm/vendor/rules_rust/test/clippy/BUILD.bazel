@@ -1,0 +1,172 @@
+load(
+    "@rules_rust//rust:defs.bzl",
+    "rust_binary",
+    "rust_clippy",
+    "rust_library",
+    "rust_proc_macro",
+    "rust_shared_library",
+    "rust_static_library",
+    "rust_test",
+)
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
+package(default_visibility = ["//test/unit/clippy:__pkg__"])
+
+# Declaration of passing targets.
+
+rust_binary(
+    name = "ok_binary",
+    srcs = ["src/main.rs"],
+    edition = "2018",
+)
+
+rust_library(
+    name = "ok_library",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+)
+
+rust_shared_library(
+    name = "ok_shared_library",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+)
+
+rust_static_library(
+    name = "ok_static_library",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+)
+
+rust_test(
+    name = "ok_test",
+    srcs = ["src/lib.rs"],
+    edition = "2018",
+)
+
+rust_proc_macro(
+    name = "ok_proc_macro",
+    srcs = ["src/proc_macro.rs"],
+    edition = "2018",
+)
+
+# Clippy analysis of passing targets.
+
+rust_clippy(
+    name = "ok_binary_clippy",
+    deps = [":ok_binary"],
+)
+
+rust_clippy(
+    name = "ok_library_clippy",
+    deps = [":ok_library"],
+)
+
+rust_clippy(
+    name = "ok_shared_library_clippy",
+    deps = [":ok_shared_library"],
+)
+
+rust_clippy(
+    name = "ok_static_library_clippy",
+    deps = [":ok_static_library"],
+)
+
+rust_clippy(
+    name = "ok_test_clippy",
+    testonly = True,
+    deps = [":ok_test"],
+)
+
+rust_clippy(
+    name = "ok_proc_macro_clippy",
+    deps = [":ok_proc_macro"],
+)
+
+# Declaration of failing targets.
+
+rust_binary(
+    name = "bad_binary",
+    srcs = ["bad_src/main.rs"],
+    edition = "2018",
+    tags = ["noclippy"],
+)
+
+rust_library(
+    name = "bad_library",
+    srcs = ["bad_src/lib.rs"],
+    edition = "2018",
+    tags = ["noclippy"],
+)
+
+rust_library(
+    name = "bad_shared_library",
+    srcs = ["bad_src/lib.rs"],
+    edition = "2018",
+    tags = ["noclippy"],
+)
+
+rust_library(
+    name = "bad_static_library",
+    srcs = ["bad_src/lib.rs"],
+    edition = "2018",
+    tags = ["noclippy"],
+)
+
+rust_test(
+    name = "bad_test",
+    srcs = ["bad_src/lib.rs"],
+    edition = "2018",
+    tags = ["noclippy"],
+)
+
+rust_proc_macro(
+    name = "bad_proc_macro",
+    srcs = ["bad_src/proc_macro.rs"],
+    edition = "2018",
+    tags = ["noclippy"],
+)
+
+# Clippy analysis of failing targets.
+
+rust_clippy(
+    name = "bad_binary_clippy",
+    tags = ["manual"],
+    deps = [":bad_binary"],
+)
+
+rust_clippy(
+    name = "bad_library_clippy",
+    tags = ["manual"],
+    deps = [":bad_library"],
+)
+
+rust_clippy(
+    name = "bad_shared_library_clippy",
+    tags = ["manual"],
+    deps = [":bad_shared_library"],
+)
+
+rust_clippy(
+    name = "bad_static_library_clippy",
+    tags = ["manual"],
+    deps = [":bad_static_library"],
+)
+
+rust_clippy(
+    name = "bad_test_clippy",
+    testonly = True,
+    tags = ["manual"],
+    deps = [":bad_test"],
+)
+
+rust_clippy(
+    name = "bad_proc_macro_clippy",
+    tags = ["manual"],
+    deps = [":bad_proc_macro"],
+)
+
+sh_binary(
+    name = "clippy_failure_tester",
+    srcs = ["clippy_failure_tester.sh"],
+)

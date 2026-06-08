@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "catalog",
+    srcs = [
+        "catalog.go",
+        "dict.go",
+        "go19.go",
+        "gopre19.go",
+    ],
+    importpath = "golang.org/x/text/message/catalog",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal",
+        "//internal/catmsg",
+        "//language",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":catalog",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "catalog_test",
+    srcs = ["catalog_test.go"],
+    embed = [":catalog"],
+    deps = [
+        "//internal/catmsg",
+        "//language",
+    ],
+)

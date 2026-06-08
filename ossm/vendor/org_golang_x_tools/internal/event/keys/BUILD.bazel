@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "keys",
+    srcs = [
+        "keys.go",
+        "standard.go",
+    ],
+    importpath = "golang.org/x/tools/internal/event/keys",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/event/label"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":keys",
+    visibility = ["//:__subpackages__"],
+)

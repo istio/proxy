@@ -1,0 +1,7 @@
+# See MODULE.bazel's additive_build_file tag.
+# Extra build file content from file
+
+alias(
+    name = "cargo_toml",
+    actual = "Cargo.toml",
+)

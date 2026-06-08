@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "defval",
+    srcs = ["default.go"],
+    importpath = "google.golang.org/protobuf/internal/encoding/defval",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/encoding/text",
+        "//internal/errors",
+        "//reflect/protoreflect",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":defval",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "defval_test",
+    srcs = ["default_test.go"],
+    deps = [
+        ":defval",
+        "//internal/filedesc",
+        "//reflect/protoreflect",
+    ],
+)

@@ -1,0 +1,6 @@
+repo(
+    default_package_metadata = [
+        "//:gazelle_generated_package_info",
+        "//:package_metadata",
+    ],
+)

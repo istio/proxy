@@ -1,0 +1,62 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "protodesc",
+    srcs = [
+        "desc.go",
+        "desc_init.go",
+        "desc_resolve.go",
+        "desc_validate.go",
+        "editions.go",
+        "proto.go",
+    ],
+    importpath = "google.golang.org/protobuf/reflect/protodesc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding/protowire",
+        "//internal/editiondefaults",
+        "//internal/editionssupport",
+        "//internal/encoding/defval",
+        "//internal/errors",
+        "//internal/filedesc",
+        "//internal/flags",
+        "//internal/genid",
+        "//internal/pragma",
+        "//internal/strs",
+        "//proto",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+        "//types/descriptorpb",
+        "//types/gofeaturespb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protodesc",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "protodesc_test",
+    srcs = [
+        "editions_test.go",
+        "file_test.go",
+        "proto_test.go",
+    ],
+    embed = [":protodesc"],
+    deps = [
+        "//encoding/prototext",
+        "//internal/filedesc",
+        "//internal/flags",
+        "//internal/genid",
+        "//proto",
+        "//reflect/protoreflect",
+        "//reflect/protoregistry",
+        "//testing/protocmp",
+        "//types/descriptorpb",
+        "//types/dynamicpb",
+        "//types/gofeaturespb",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+    ],
+)

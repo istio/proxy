@@ -1,0 +1,16 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# python_visibility directives that happen either before _or_ after the
+# NONE reset both get applied.
+# gazelle:python_visibility //foo:bar
+# gazelle:python_default_visibility NONE
+# gazelle:python_visibility //bar:baz
+
+py_library(
+    name = "test7_none_label_with_extra_vis",
+    srcs = ["test7.py"],
+    visibility = [
+        "//bar:baz",
+        "//foo:bar",
+    ],
+)

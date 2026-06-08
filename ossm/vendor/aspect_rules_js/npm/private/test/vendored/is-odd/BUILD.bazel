@@ -1,0 +1,11 @@
+load("@aspect_rules_js//npm:defs.bzl", "npm_package")
+
+npm_package(
+    name = "is-odd",
+    srcs = [
+        "index.js",
+        "package.json",
+    ],
+    include_runfiles = False,
+    visibility = ["//visibility:public"],
+)

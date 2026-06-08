@@ -1,0 +1,34 @@
+# Optional local setup for a git pre-commit hook to automatically format/lint.
+# This avoids sending a red PR and having to find the buildifier output on the CI results page.
+# See https://pre-commit.com for more information on installing pre-commit.
+# See https://pre-commit.com/hooks.html for more hooks.
+
+repos:
+    # Check formatting and lint for starlark code
+    - repo: https://github.com/keith/pre-commit-buildifier
+      rev: 8.0.0
+      hooks:
+          - id: buildifier
+          - id: buildifier-lint
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v5.0.0
+      hooks:
+        - id: check-toml
+        - id: destroyed-symlinks
+        - id: detect-private-key
+        - id: end-of-file-fixer
+          exclude: |
+            (?x)^(
+              tests/testdata/|
+              docs/
+            )
+        - id: trailing-whitespace
+    - repo: https://github.com/crate-ci/typos
+      rev: v1.29.4
+      hooks:
+        - id: typos
+          exclude: |
+            (?x)^(
+              CHANGELOG.md|
+              tests/testdata/
+            )

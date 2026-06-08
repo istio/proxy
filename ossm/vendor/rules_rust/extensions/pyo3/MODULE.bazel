@@ -1,0 +1,62 @@
+"""rules_rust_pyo3"""
+
+module(
+    name = "rules_rust_pyo3",
+    version = "0.69.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.69.0")
+bazel_dep(name = "rules_python", version = "1.6.3")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "platforms", version = "1.0.0")
+
+rust_ext = use_extension("//private:internal_extensions.bzl", "rust_ext")
+use_repo(
+    rust_ext,
+    "rpyo3c",
+    "rpyo3c__pyo3-0.26.0",
+    "rpyo3c__pyo3-ffi-0.26.0",
+    "rpyo3c__pyo3-introspection-0.26.0",
+)
+
+register_toolchains(
+    "//toolchains:toolchain",
+    "//toolchains:rust_toolchain",
+    dev_dependency = True,
+)
+
+bazel_dep(name = "bazel_ci_rules", version = "1.0.0", dev_dependency = True)
+bazel_dep(name = "rules_cc", version = "0.2.4", dev_dependency = True)
+
+rust_ext_dev = use_extension(
+    "//private:internal_extensions_dev.bzl",
+    "rust_ext_dev",
+    dev_dependency = True,
+)
+use_repo(
+    rust_ext_dev,
+    "buildkite_config",
+)
+
+bazel_dep(name = "rules_venv", version = "0.7.0", dev_dependency = True)
+bazel_dep(name = "rules_req_compile", version = "1.0.0rc38", dev_dependency = True)
+
+requirements = use_extension("@rules_req_compile//extensions:python.bzl", "requirements", dev_dependency = True)
+requirements.parse(
+    name = "pip_deps",
+    requirements_locks = {
+        "//tools/requirements:requirements_linux_aarch64.txt": "@@//tools/requirements:linux_aarch64",
+        "//tools/requirements:requirements_linux_x86_64.txt": "@@//tools/requirements:linux_x86_64",
+        "//tools/requirements:requirements_macos_aarch64.txt": "@@//tools/requirements:macos_aarch64",
+        "//tools/requirements:requirements_windows_x86_64.txt": "@@//tools/requirements:windows_x86_64",
+    },
+)
+use_repo(requirements, "pip_deps")
+
+register_toolchains(
+    "//tools/toolchains:black_toolchain",
+    "//tools/toolchains:isort_toolchain",
+    "//tools/toolchains:mypy_toolchain",
+    "//tools/toolchains:pylint_toolchain",
+    dev_dependency = True,
+)

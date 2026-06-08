@@ -1,0 +1,64 @@
+load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_python//python:packaging.bzl", py_wheel = "py_wheel_rule")
+load("//:defs.bzl", "pyo3_extension")
+
+pyo3_extension(
+    name = "string_sum",
+    srcs = ["string_sum.rs"],
+    edition = "2021",
+    visibility = ["//test:__subpackages__"],
+)
+
+# Package some specific py_library targets, without their dependencies
+py_wheel(
+    name = "rust_wheel",
+    distribution = "string_sum",
+    python_tag = "py3",
+    version = "0.0.1",
+    deps = [
+        ":string_sum",
+    ],
+)
+
+py_test(
+    name = "venv_test",
+    srcs = ["venv_test.py"],
+    data = [":rust_wheel"],
+    env = {
+        "IMPORT_STR": "from test.wheel.string_sum import sum_as_string",
+        "RUST_WHEEL": "$(rlocationpath :rust_wheel)",
+    },
+    deps = ["@rules_python//python/runfiles"],
+)
+
+pyo3_extension(
+    name = "string_sum_import",
+    srcs = ["string_sum_import.rs"],
+    edition = "2021",
+    imports = ["."],
+    visibility = ["//test:__subpackages__"],
+)
+
+# Package some specific py_library targets, without their dependencies
+py_wheel(
+    name = "rust_wheel_import",
+    distribution = "string_sum_import",
+    python_tag = "py3",
+    strip_path_prefixes = ["test/wheel"],
+    version = "0.0.1",
+    deps = [
+        ":string_sum_import",
+    ],
+)
+
+py_test(
+    name = "venv_import_test",
+    srcs = ["venv_test.py"],
+    data = [":rust_wheel_import"],
+    env = {
+        "IMPORT_STR": "from string_sum_import import sum_as_string",
+        "RUST_WHEEL": "$(rlocationpath :rust_wheel_import)",
+    },
+    main = "venv_test.py",
+    deps = ["@rules_python//python/runfiles"],
+)

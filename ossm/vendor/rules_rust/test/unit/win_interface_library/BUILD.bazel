@@ -1,0 +1,4 @@
+load(":win_interface_library_analysis_test.bzl", "win_interface_library_analysis_test_suite")
+
+############################ UNIT TESTS #############################
+win_interface_library_analysis_test_suite(name = "win_interface_library_analysis_test_suite")

@@ -1,0 +1,94 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
+load("//python:py_library.bzl", "py_library")
+load("//tests/support:copy_file.bzl", "copy_file_to_dir")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "increment_impl",
+    srcs = ["increment.c"],
+    deps = [":increment_headers"],
+)
+
+cc_library(
+    name = "increment_headers",
+    hdrs = ["increment.h"],
+)
+
+cc_shared_library(
+    name = "increment",
+    user_link_flags = select({
+        "@platforms//os:osx": [
+            # Needed so that DT_NEEDED=libincrement.dylib can find
+            # this shared library
+            "-Wl,-install_name,@rpath/libincrement.dylib",
+        ],
+        "//conditions:default": [],
+    }),
+    deps = [":increment_impl"],
+)
+
+cc_library(
+    name = "adder_impl",
+    srcs = ["adder.c"],
+    deps = [
+        ":increment_headers",
+        "@rules_python//python/cc:current_py_cc_headers",
+    ],
+)
+
+cc_shared_library(
+    name = "adder",
+    # Necessary for several reasons:
+    # 1. Ensures the output doesn't include increment itself (avoids ODRs)
+    # 2. Adds -lincrement (DT_NEEDED for libincrement.so)
+    # 3. Ensures libincrement.so is available at link time to satisfy (2)
+    dynamic_deps = [":increment"],
+    shared_lib_name = "adder.so",
+    tags = ["manual"],
+    # NOTE: cc_shared_library adds Bazelized rpath entries, too.
+    user_link_flags = [
+    ] + select({
+        "@platforms//os:osx": [
+            "-Wl,-rpath,@loader_path/libs",
+            "-undefined",
+            "dynamic_lookup",
+            "-Wl,-exported_symbol",
+            "-Wl,_PyInit_adder",
+        ],
+        # Assume linux default
+        "//conditions:default": [
+            "-Wl,-rpath,$ORIGIN/libs",
+        ],
+    }),
+    deps = [":adder_impl"],
+)
+
+copy_file_to_dir(
+    name = "relocate_adder",
+    src = ":adder",
+    out_dir = "site-packages/ext_with_libs",
+    tags = ["manual"],
+)
+
+copy_file_to_dir(
+    name = "relocate_increment",
+    src = ":increment",
+    out_dir = "site-packages/ext_with_libs/libs",
+    tags = ["manual"],
+)
+
+py_library(
+    name = "ext_with_libs",
+    srcs = glob(["site-packages/**/*.py"]),
+    data = [
+        ":relocate_adder",
+        ":relocate_increment",
+    ],
+    experimental_venvs_site_packages = "//python/config_settings:venvs_site_packages",
+    imports = ["site-packages"],
+    tags = ["manual"],
+)

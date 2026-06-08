@@ -1,0 +1,14 @@
+load("//python:py_library.bzl", "py_library")
+
+package(
+    default_visibility = ["//:__subpackages__"],
+)
+
+# NOTE: This provides the library on its own, not its dependencies.
+py_library(
+    name = "sphinx_bzl",
+    srcs = glob(["*.py"]),
+    imports = [".."],
+    # Allow depending on it in sphinx_binary targets
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "sub2",
+    srcs = ["a.pb.go"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/import_public/sub2",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sub2",
+    visibility = ["//visibility:public"],
+)

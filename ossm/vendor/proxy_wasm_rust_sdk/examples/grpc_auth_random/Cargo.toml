@@ -1,0 +1,21 @@
+[package]
+publish = false
+name = "proxy-wasm-example-grpc-auth-random"
+version = "0.0.1"
+description = "Proxy-Wasm plugin example: gRPC auth (random)"
+license = "Apache-2.0"
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+log = "0.4"
+proxy-wasm = { path = "../../" }
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
+panic = "abort"
+strip = "debuginfo"

@@ -1,0 +1,4 @@
+Wheel-Version: 1.0
+Generator: rules_python_whl_from_dir_repo
+Root-Is-Purelib: true
+Tag: py3-none-any

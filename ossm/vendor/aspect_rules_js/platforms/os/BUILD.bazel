@@ -1,0 +1,17 @@
+alias(
+    name = "osx",
+    actual = "@platforms//os:osx",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "linux",
+    actual = "@platforms//os:linux",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "windows",
+    actual = "@platforms//os:windows",
+    visibility = ["//visibility:public"],
+)

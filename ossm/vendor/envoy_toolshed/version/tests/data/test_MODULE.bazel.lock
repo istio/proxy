@@ -1,0 +1,11 @@
+{
+  "lockFileVersion": 13,
+  "registryFileHashes": {
+    "https://bcr.bazel.build/bazel_registry.json": "8a28e4aff06ee60aed2a8c281907fb8bcbf3b753c91fb5a5c57da3215d5b3497",
+    "https://bcr.bazel.build/modules/aspect_bazel_lib/2.21.2/MODULE.bazel": "7fe0191f047d4fe4a4a46c1107e2350cbb58a8fc2e10913aa4322d3190dec0bf",
+    "https://bcr.bazel.build/modules/rules_python/1.7.0/MODULE.bazel": "9f142c03e348f6d263719f5074b21ef3adf0b139ee4c5133e2aa35664da041dc",
+    "https://bcr.bazel.build/modules/bazel_skylib/1.8.0/MODULE.bazel": "88ade7293becda963e0e3ea33e7d54d3425127e0a326e0d17da085a5f1f03ff6",
+    "https://bcr.bazel.build/modules/platforms/1.0.0/MODULE.bazel": "f05feb42b48f1b3c225e4ccf351f367be0371411a803198ec34a2be471e7a7bb"
+  },
+  "moduleDepGraph": {}
+}

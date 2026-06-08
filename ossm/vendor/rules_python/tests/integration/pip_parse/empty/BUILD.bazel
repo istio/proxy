@@ -1,0 +1,12 @@
+load("@pip_empty//:requirements.bzl", "all_data_requirements", "all_requirements", "all_whl_requirements")
+load("@rules_python//python:py_test.bzl", "py_test")
+
+py_test(
+    name = "test_empty",
+    srcs = ["test_empty.py"],
+    env = {
+        "REQUIREMENTS": ",".join(all_requirements),
+        "REQUIREMENTS_DATA": ",".join(all_data_requirements),
+        "REQUIREMENTS_WHL": ",".join(all_whl_requirements),
+    },
+)

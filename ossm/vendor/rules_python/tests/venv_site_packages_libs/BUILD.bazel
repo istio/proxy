@@ -1,0 +1,70 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//python:py_library.bzl", "py_library")
+load("//tests/support:py_reconfig.bzl", "py_reconfig_test")
+load(
+    "//tests/support:support.bzl",
+    "NOT_WINDOWS",
+    "SUPPORTS_BOOTSTRAP_SCRIPT",
+)
+
+py_library(
+    name = "user_lib",
+    deps = ["@other//simple_v1"],
+)
+
+py_library(
+    name = "closer_lib",
+    deps = [
+        ":user_lib",
+        "@other//simple_v2",
+    ],
+)
+
+sh_test(
+    name = "py_binary_other_module_test",
+    srcs = [
+        "py_binary_other_module_test.sh",
+    ],
+    data = [
+        "@other//:venv_bin",
+    ],
+    env = {
+        "VENV_BIN": "$(rootpath @other//:venv_bin)",
+    },
+    target_compatible_with = NOT_WINDOWS,
+)
+
+py_reconfig_test(
+    name = "venvs_site_packages_libs_test",
+    srcs = ["bin.py"],
+    bootstrap_impl = "script",
+    main = "bin.py",
+    target_compatible_with = SUPPORTS_BOOTSTRAP_SCRIPT,
+    venvs_site_packages = "yes",
+    deps = [
+        ":closer_lib",
+        "//tests/venv_site_packages_libs/nested_with_pth",
+        "//tests/venv_site_packages_libs/nspkg_alpha",
+        "//tests/venv_site_packages_libs/nspkg_beta",
+        "//tests/venv_site_packages_libs/pkgutil_top",
+        "//tests/venv_site_packages_libs/pkgutil_top_sub",
+        "@other//nspkg_delta",
+        "@other//nspkg_gamma",
+        "@other//nspkg_single",
+        "@other//with_external_data",
+    ],
+)
+
+py_reconfig_test(
+    name = "shared_lib_loading_test",
+    srcs = ["shared_lib_loading_test.py"],
+    bootstrap_impl = "script",
+    main = "shared_lib_loading_test.py",
+    target_compatible_with = NOT_WINDOWS,
+    venvs_site_packages = "yes",
+    deps = [
+        "//tests/venv_site_packages_libs/ext_with_libs",
+        "@dev_pip//macholib",
+        "@dev_pip//pyelftools",
+    ],
+)

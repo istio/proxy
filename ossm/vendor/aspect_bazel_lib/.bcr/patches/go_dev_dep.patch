@@ -1,0 +1,35 @@
+diff --git a/MODULE.bazel b/MODULE.bazel
+index e63fa5b..9d78a88 100644
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -52,26 +52,26 @@ use_repo(host, "aspect_bazel_lib_host")
+ bazel_dep(
+     name = "gazelle",
+     version = "0.40.0",
+-    # In released versions: dev_dependency = True
++    dev_dependency = True,
+ )
+ bazel_dep(
+     name = "rules_go",
+     version = "0.55.0",
+     repo_name = "io_bazel_rules_go",
+-    # In released versions: dev_dependency = True
++    dev_dependency = True,
+ )
+
+ go_sdk = use_extension(
+     "@io_bazel_rules_go//go:extensions.bzl",
+     "go_sdk",
+-    # In released versions: dev_dependency = True
++    dev_dependency = True,
+ )
+ go_sdk.from_file(go_mod = "//:go.mod")
+
+ go_deps = use_extension(
+     "@gazelle//:extensions.bzl",
+     "go_deps",
+-    # In released versions: dev_dependency = True
++    dev_dependency = True,
+ )
+ go_deps.from_file(go_mod = "//:go.mod")
+ use_repo(

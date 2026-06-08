@@ -1,0 +1,16 @@
+load("@rules_proto_grpc//scala:defs.bzl", "scala_proto_compile")
+
+scala_proto_compile(
+    name = "person_scala_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+)
+
+scala_proto_compile(
+    name = "place_scala_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+)
+
+scala_proto_compile(
+    name = "thing_scala_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

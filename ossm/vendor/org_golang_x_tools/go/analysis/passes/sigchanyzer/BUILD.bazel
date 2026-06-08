@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sigchanyzer",
+    srcs = ["sigchanyzer.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/sigchanyzer",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/inspect",
+        "//go/ast/inspector",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sigchanyzer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "sigchanyzer_test",
+    srcs = ["sigchanyzer_test.go"],
+    deps = [
+        ":sigchanyzer",
+        "//go/analysis/analysistest",
+    ],
+)

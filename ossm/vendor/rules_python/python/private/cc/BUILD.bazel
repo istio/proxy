@@ -1,0 +1,20 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//python/private:visibility.bzl", "NOT_ACTUALLY_PUBLIC")
+
+package(
+    default_visibility = ["//:__subpackages__"],
+)
+
+licenses(["notice"])
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+)
+
+# An empty cc target for use when a cc target is needed to satisfy
+# Bazel, but its contents don't matter.
+cc_library(
+    name = "empty",
+    visibility = NOT_ACTUALLY_PUBLIC,
+)

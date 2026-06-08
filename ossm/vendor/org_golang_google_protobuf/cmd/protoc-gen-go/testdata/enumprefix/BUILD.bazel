@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "enumprefix",
+    srcs = ["enumprefix.pb.go"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/enumprefix",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/gofeaturespb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":enumprefix",
+    visibility = ["//visibility:public"],
+)

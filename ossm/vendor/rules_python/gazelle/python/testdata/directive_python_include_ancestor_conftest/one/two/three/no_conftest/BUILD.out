@@ -1,0 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
+py_test(
+    name = "my_test",
+    srcs = ["my_test.py"],
+    deps = [
+        "//:conftest",
+        "//one:conftest",
+        "//one/two:conftest",
+        "//one/two/three:conftest",
+    ],
+)

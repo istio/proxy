@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "b_lib",
+    srcs = ["b.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/lostcancel/testdata/src/b",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "b",
+    embed = [":b_lib"],
+    visibility = ["//visibility:public"],
+)

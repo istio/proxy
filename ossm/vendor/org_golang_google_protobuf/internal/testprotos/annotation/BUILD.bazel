@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "annotation",
+    srcs = ["annotation.pb.go"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/annotation",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/descriptorpb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":annotation",
+    visibility = ["//:__subpackages__"],
+)

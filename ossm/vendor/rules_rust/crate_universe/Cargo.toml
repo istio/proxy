@@ -1,0 +1,101 @@
+[workspace]
+members = ["tools/cross_installer", "tools/urls_generator"]
+exclude = [
+    "test_data/metadata/abspath",
+    "test_data/metadata/aliases",
+    "test_data/metadata/build_scripts",
+    "test_data/metadata/build_scripts_deps",
+    "test_data/metadata/common",
+    "test_data/metadata/crate_combined_features",
+    "test_data/metadata/crate_optional_deps_disabled_build_dep_enabled",
+    "test_data/metadata/crate_optional_deps_disabled",
+    "test_data/metadata/crate_optional_deps_enabled",
+    "test_data/metadata/crate_renamed_optional_deps_disabled",
+    "test_data/metadata/crate_renamed_optional_deps_enabled",
+    "test_data/metadata/crate_types",
+    "test_data/metadata/example_proc_macro_dep",
+    "test_data/metadata/git_repos",
+    "test_data/metadata/has_package_metadata",
+    "test_data/metadata/host_specific_build_deps",
+    "test_data/metadata/multi_cfg_dep",
+    "test_data/metadata/multi_kind_proc_macro_dep",
+    "test_data/metadata/nested_build_dependencies",
+    "test_data/metadata/no_deps",
+    "test_data/metadata/path_patching",
+    "test_data/metadata/resolver_2_deps",
+    "test_data/metadata/target_cfg_features",
+    "test_data/metadata/target_features",
+    "test_data/metadata/tree_data",
+    "test_data/metadata/workspace_path",
+    "test_data/metadata/workspace_path/child_a",
+    "test_data/metadata/workspace_path/child_b",
+    "test_data/metadata/workspace",
+    "test_data/metadata/workspace/child",
+    "test_data/test_data_passing_crate",
+    "test_data/workspace_examples/non-ws",
+    "test_data/workspace_examples/symlinked",
+    "test_data/workspace_examples/ws1",
+    "test_data/workspace_examples/ws1/ws1c1",
+    "test_data/workspace_examples/ws1/ws1c1/ws1c1c1",
+    "test_data/workspace_examples/ws1/ws1c2",
+    "test_data/workspace_examples/ws2",
+    "test_data/workspace_examples/ws2/ws2c1",
+    "test_data/workspace_examples/ws2/ws2excluded",
+    "test_data/workspace_examples/ws2/ws2excluded/ws2excluded2",
+    "test_data/workspace_examples/ws2/ws2excluded/ws2included",
+]
+
+[package]
+name = "cargo-bazel"
+version = "0.17.0"
+authors = ["Andre Brisco - andre.brisco@protonmail.com"]
+categories = ["development-tools"]
+description = "A collection of tools which use Cargo to generate build targets for Bazel"
+edition = "2021"
+keywords = ["bazel"]
+license = "Apache-2.0"
+repository = "https://github.com/bazelbuild/rules_rust"
+
+[features]
+cargo = []
+default = ["cargo"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.98"
+camino = "1.1.9"
+cargo_metadata = "0.19.2"
+cargo_toml = "0.22.1"
+cargo-lock = "10.1.0"
+cargo-platform = "0.1.9"
+cfg-expr = "0.18.0"
+clap = { version = "4.5.37", features = ["derive", "env"] }
+crates-index = { version = "3.7.0", default-features = false, features = [
+    "git",
+] }
+hex = "0.4.3"
+indoc = "2.0.6"
+itertools = "0.14.0"
+normpath = "1.3.0"
+once_cell = "1.21.3"
+pathdiff = "0.2.3"
+regex = "1.11.1"
+semver = "1.0.26"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+serde_starlark = "0.1.17"
+sha2 = "0.10.8"
+spdx = "0.10.8"
+tempfile = "3.19.1"
+tera = { version = "1.20.0", default-features = false }
+textwrap = "0.16.2"
+toml = "0.8.21"
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+url = "2.5.4"
+walkdir = "2.5.0"
+glob = "0.3.2"
+
+[dev-dependencies]
+maplit = "1.0.2"

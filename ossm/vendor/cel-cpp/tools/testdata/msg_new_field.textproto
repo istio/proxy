@@ -1,0 +1,52 @@
+# proto-file: google3/google/api/expr/checked.proto
+# proto-message: CheckedExpr
+# msg.new_field
+reference_map: {
+  key: 1
+  value: {
+    name: "msg"
+  }
+}
+type_map: {
+  key: 1
+  value: {
+    map_type: {
+      key_type: {
+        primitive: STRING
+      }
+      value_type: {
+        primitive: STRING
+      }
+    }
+  }
+}
+type_map: {
+  key: 2
+  value: {
+    primitive: STRING
+  }
+}
+source_info: {
+  location: "<input>"
+  line_offsets: 10
+  positions: {
+    key: 1
+    value: 0
+  }
+  positions: {
+    key: 2
+    value: 3
+  }
+}
+expr: {
+  id: 2
+  select_expr: {
+    operand: {
+      id: 1
+      ident_expr: {
+        name: "msg"
+      }
+    }
+    field: "new_field"
+  }
+}

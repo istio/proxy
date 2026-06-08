@@ -1,0 +1,59 @@
+module(
+    name = "rules_rust_test_cc_common_link_with_global_alloc",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../..",
+)
+
+bazel_dep(name = "rules_cc", version = "0.2.4")
+bazel_dep(name = "platforms", version = "1.0.0")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2018",
+    target_settings = [
+        "@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols_off",
+    ],
+)
+# Generate a toolchain to be used for rust-based allocator symbols.
+
+# A recent enough version of rustc that mangles the internal allocator symbols.
+VERSION = "nightly/2025-04-08"
+
+rust.repository_set(
+    name = "rust_with_alloc_mangling_linux_x86_64",
+    allocator_library = "@rules_rust//ffi/rs:empty",
+    edition = "2021",
+    exec_triple = "x86_64-unknown-linux-gnu",
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    target_settings = [
+        "@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols_on",
+    ],
+    target_triple = "x86_64-unknown-linux-gnu",
+    versions = [VERSION],
+)
+rust.repository_set(
+    name = "rust_with_alloc_mangling_macos_aarch64",
+    allocator_library = "@rules_rust//ffi/rs:empty",
+    edition = "2021",
+    exec_triple = "aarch64-apple-darwin",
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:macos",
+    ],
+    target_settings = [
+        "@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols_on",
+    ],
+    target_triple = "aarch64-apple-darwin",
+    versions = [VERSION],
+)
+use_repo(rust, "rust_toolchains")
+
+register_toolchains("@rust_toolchains//:all")

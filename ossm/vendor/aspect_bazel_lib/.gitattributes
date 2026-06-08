@@ -1,0 +1,21 @@
+# In code review, collapse generated files
+docs/*.md   linguist-generated=true
+docs/jq.md  linguist-generated=false
+docs/tar.md linguist-generated=false
+docs/yq.md  linguist-generated=false
+
+
+#################################
+# Configuration for 'git archive'
+# see https://git-scm.com/docs/git-archive#ATTRIBUTES
+
+# Omit folders that users don't need, making the distribution artifact smaller
+lib/tests export-ignore
+
+# Omit the .bazeliskrc file for the smoke test that runs on the Bazel Central
+# Registry ci because we test on Windows but do not publish Aspect CLI Windows
+# binaries.
+e2e/smoke/.bazeliskrc export-ignore
+
+# Substitution for the _VERSION_PRIVATE placeholder
+tools/version.bzl export-subst

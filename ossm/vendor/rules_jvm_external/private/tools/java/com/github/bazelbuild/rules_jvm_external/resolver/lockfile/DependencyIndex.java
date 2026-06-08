@@ -1,0 +1,168 @@
+// Copyright 2024 The Bazel Authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.github.bazelbuild.rules_jvm_external.resolver.lockfile;
+
+import com.github.bazelbuild.rules_jvm_external.Coordinates;
+import com.github.bazelbuild.rules_jvm_external.resolver.DependencyInfo;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+/**
+ * Renders a dependency index containing class-level information for each artifact. This is stored
+ * separately from the lock file since class information can be large and is not needed for
+ * resolution.
+ *
+ * <p>To minimize file size:
+ *
+ * <ul>
+ *   <li>Packages that appear in only one artifact are listed in the "packages" section (just
+ *       package names)
+ *   <li>Packages that appear in multiple artifacts (collisions) are listed in the "classes" section
+ *       with full class listings
+ * </ul>
+ *
+ * <p>Example:
+ *
+ * <pre>
+ * {
+ *   "version": 1,
+ *   "packages": {
+ *     "com.google.guava:guava": ["com.google.common.base", "com.google.common.collect"]
+ *   },
+ *   "classes": {
+ *     "com.google.guava:guava": {
+ *       "javax.annotation": ["Nullable"]
+ *     },
+ *     "com.google.code.findbugs:jsr305": {
+ *       "javax.annotation": ["Nonnull", "Nullable"]
+ *     }
+ *   }
+ * }
+ * </pre>
+ */
+public class DependencyIndex {
+
+  private static final int VERSION = 1;
+
+  private final Set<DependencyInfo> infos;
+
+  public DependencyIndex(Set<DependencyInfo> infos) {
+    this.infos = infos;
+  }
+
+  public Map<String, Object> render() {
+    // Step 1: Collect all data and track which packages appear in multiple artifacts
+    // Map: package -> set of artifact keys that contain this package
+    Map<String, Set<String>> packageToArtifacts = new TreeMap<>();
+    // Map: artifact key -> (package -> set of simple class names)
+    Map<String, Map<String, Set<String>>> artifactToPackageToClasses = new TreeMap<>();
+
+    for (DependencyInfo info : infos) {
+      // Skip sources and javadoc artifacts - they don't have classes
+      String classifier = info.getCoordinates().getClassifier();
+      if ("sources".equals(classifier) || "javadoc".equals(classifier)) {
+        continue;
+      }
+
+      Set<String> infoClasses = info.getClasses();
+      if (infoClasses == null || infoClasses.isEmpty()) {
+        continue;
+      }
+
+      String artifactKey = asKey(info.getCoordinates());
+      Map<String, Set<String>> packageToClasses = new TreeMap<>();
+
+      for (String fqcn : infoClasses) {
+        String packageName = extractPackage(fqcn);
+        String simpleClassName = extractSimpleClassName(fqcn);
+
+        packageToClasses.computeIfAbsent(packageName, k -> new TreeSet<>()).add(simpleClassName);
+        packageToArtifacts.computeIfAbsent(packageName, k -> new TreeSet<>()).add(artifactKey);
+      }
+
+      artifactToPackageToClasses.put(artifactKey, packageToClasses);
+    }
+
+    // Step 2: Identify colliding packages (appear in more than one artifact)
+    Set<String> collidingPackages = new TreeSet<>();
+    for (Map.Entry<String, Set<String>> entry : packageToArtifacts.entrySet()) {
+      if (entry.getValue().size() > 1) {
+        collidingPackages.add(entry.getKey());
+      }
+    }
+
+    // Step 3: Build the packages and classes sections
+    // packages: artifact -> [package names] (for unique packages)
+    Map<String, Set<String>> packages = new TreeMap<>();
+    // classes: artifact -> {package -> [class names]} (for colliding packages)
+    Map<String, Map<String, Set<String>>> classes = new TreeMap<>();
+
+    for (Map.Entry<String, Map<String, Set<String>>> entry :
+        artifactToPackageToClasses.entrySet()) {
+      String artifactKey = entry.getKey();
+      Map<String, Set<String>> pkgToClasses = entry.getValue();
+
+      Set<String> uniquePackages = new TreeSet<>();
+      Map<String, Set<String>> collidingClasses = new TreeMap<>();
+
+      for (Map.Entry<String, Set<String>> pkgEntry : pkgToClasses.entrySet()) {
+        String pkg = pkgEntry.getKey();
+        if (collidingPackages.contains(pkg)) {
+          collidingClasses.put(pkg, pkgEntry.getValue());
+        } else {
+          uniquePackages.add(pkg);
+        }
+      }
+
+      if (!uniquePackages.isEmpty()) {
+        packages.put(artifactKey, uniquePackages);
+      }
+      if (!collidingClasses.isEmpty()) {
+        classes.put(artifactKey, collidingClasses);
+      }
+    }
+
+    Map<String, Object> index = new TreeMap<>();
+    index.put(
+        "__AUTOGENERATED_FILE_DO_NOT_MODIFY_THIS_FILE_MANUALLY", "THERE_IS_NO_DATA_ONLY_ZUUL");
+    index.put("split_package_classes", classes);
+    index.put("packages", packages);
+    index.put("version", VERSION);
+
+    return index;
+  }
+
+  private static String asKey(Coordinates coords) {
+    return coords.asKey().toString();
+  }
+
+  private static String extractPackage(String fqcn) {
+    int lastDot = fqcn.lastIndexOf('.');
+    if (lastDot == -1) {
+      return "";
+    }
+    return fqcn.substring(0, lastDot);
+  }
+
+  private static String extractSimpleClassName(String fqcn) {
+    int lastDot = fqcn.lastIndexOf('.');
+    if (lastDot == -1) {
+      return fqcn;
+    }
+    return fqcn.substring(lastDot + 1);
+  }
+}

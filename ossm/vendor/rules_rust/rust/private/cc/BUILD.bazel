@@ -1,0 +1,24 @@
+load(":cc_utils.bzl", "cc_empty_library")
+
+cc_empty_library(
+    name = "empty",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "malloc",
+    actual = select({
+        "//rust/settings:experimental_use_cc_common_link_on": "@bazel_tools//tools/cpp:malloc",
+        "//conditions:default": ":empty",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "global_allocator_library",
+    actual = select({
+        "//rust/settings:experimental_use_global_allocator_on": "//ffi/cc/global_allocator_library",
+        "//conditions:default": ":empty",
+    }),
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,62 @@
+workspace(name = "pip_repository_annotations_example")
+
+local_repository(
+    name = "rules_python",
+    path = "../..",
+)
+
+load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
+
+py_repositories()
+
+python_register_toolchains(
+    name = "python39",
+    python_version = "3.9",
+)
+
+load("@rules_python//python:pip.bzl", "package_annotation", "pip_parse")
+
+# Here we can see an example of annotations being applied to an arbitrary
+# package. For details on `package_annotation` and it's uses, see the
+# docs at @rules_python//docs:pip.md`.
+ANNOTATIONS = {
+    # This annotation verifies that annotations work correctly for pip packages with extras
+    # specified, in this case requests[security].
+    "requests": package_annotation(
+        additive_build_content = """\
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+write_file(
+    name = "generated_file",
+    out = "generated_file.txt",
+    content = ["Hello world from requests"],
+)
+""",
+        data = [":generated_file"],
+    ),
+    "wheel": package_annotation(
+        additive_build_content = """\
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+write_file(
+    name = "generated_file",
+    out = "generated_file.txt",
+    content = ["Hello world from build content file"],
+)
+""",
+        copy_executables = {"@pip_repository_annotations_example//:data/copy_executable.py": "copied_content/executable.py"},
+        copy_files = {"@pip_repository_annotations_example//:data/copy_file.txt": "copied_content/file.txt"},
+        data = [":generated_file"],
+        data_exclude_glob = ["site-packages/*.dist-info/WHEEL"],
+    ),
+}
+
+# For a more thorough example of `pip_parse`. See `@rules_python//examples/pip_parse`
+pip_parse(
+    name = "pip",
+    annotations = ANNOTATIONS,
+    python_interpreter_target = "@python39_host//:python",
+    requirements_lock = "//:requirements.txt",
+)
+
+load("@pip//:requirements.bzl", "install_deps")
+
+install_deps()

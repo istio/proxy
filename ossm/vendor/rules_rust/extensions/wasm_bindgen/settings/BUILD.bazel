@@ -1,0 +1,36 @@
+load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+
+string_flag(
+    name = "test_browser",
+    build_setting_default = "chrome",
+    values = [
+        "chrome",
+        "firefox",
+        "safari",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "test_browser_chrome",
+    flag_values = {
+        ":test_browser": "chrome",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "test_browser_firefox",
+    flag_values = {
+        ":test_browser": "firefox",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "test_browser_safari",
+    flag_values = {
+        ":test_browser": "safari",
+    },
+    visibility = ["//visibility:public"],
+)

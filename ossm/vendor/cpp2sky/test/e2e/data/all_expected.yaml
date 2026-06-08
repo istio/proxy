@@ -1,0 +1,154 @@
+segmentItems:
+- segmentSize: 2
+  segments:
+  # Segment from provider in [consumer -> provider] case.
+  - segmentId: not null
+    spans:
+    - componentId: 9000
+      endTime: gt 0
+      isError: false
+      operationName: /pong
+      parentSpanId: -1
+      peer: ''
+      refs:
+      - networkAddress: provider:8081
+        parentEndpoint: /ping
+        parentService: consumer
+        parentServiceInstance: node_0
+        parentSpanId: 1
+        parentTraceSegmentId: not null
+        refType: CrossProcess
+        traceId: not null
+      skipAnalysis: false
+      spanId: 0
+      spanLayer: Http
+      spanType: Entry
+      startTime: gt 0
+  # Segment from provider in [consumer -> bridge -> provider] case.
+  - segmentId: not null
+    spans:
+    - componentId: 9000
+      endTime: gt 0
+      isError: false
+      operationName: /pong2
+      parentSpanId: -1
+      peer: ''
+      refs:
+      - networkAddress: provider:8081
+        parentEndpoint: /pong2
+        parentService: bridge
+        parentServiceInstance: not null
+        parentSpanId: 1
+        parentTraceSegmentId: not null
+        refType: CrossProcess
+        traceId: not null
+      skipAnalysis: false
+      spanId: 0
+      spanLayer: Http
+      spanType: Entry
+      startTime: gt 0
+  serviceName: provider
+- segmentSize: 1
+  segments:
+  # Segment from bridge in [consumer -> bridge -> provider] case.
+  - segmentId: not null
+    spans:
+    - componentId: 7002
+      endTime: gt 0
+      isError: false
+      operationName: /pong2
+      parentSpanId: 0
+      peer: provider:8081
+      skipAnalysis: false
+      spanId: 1
+      spanLayer: Http
+      spanType: Exit
+      startTime: gt 0
+      tags:
+      - key: http.method
+        value: GET
+      - key: http.url
+        value: http://provider:8081/pong2
+      - key: http.status_code
+        value: '200'
+    - componentId: 7001
+      endTime: gt 0
+      isError: false
+      operationName: /users
+      parentSpanId: -1
+      peer: not null
+      refs:
+      - networkAddress: bridge:8082
+        parentEndpoint: /ping2
+        parentService: consumer
+        parentServiceInstance: node_0
+        parentSpanId: 1
+        parentTraceSegmentId: not null
+        refType: CrossProcess
+        traceId: not null
+      skipAnalysis: false
+      spanId: 0
+      spanLayer: Http
+      spanType: Entry
+      startTime: gt 0
+      tags:
+      - key: http.method
+        value: GET
+      - key: http.url
+        value: http://bridge:8082/users
+      - key: http.status_code
+        value: '200'
+  serviceName: bridge
+- segmentSize: 2
+  segments:
+  # Segment from consumer [consumer -> provider] case.
+  - segmentId: not null
+    spans:
+    - componentId: 9000
+      endTime: gt 0
+      isError: false
+      operationName: /ping
+      parentSpanId: -1
+      peer: ''
+      skipAnalysis: false
+      spanId: 0
+      spanLayer: Http
+      spanType: Entry
+      startTime: gt 0
+    - componentId: 9000
+      endTime: gt 0
+      isError: false
+      operationName: /pong
+      parentSpanId: 0
+      peer: provider:8081
+      skipAnalysis: false
+      spanId: 1
+      spanLayer: Http
+      spanType: Exit
+      startTime: gt 0
+  # Segment from consumer [consumer ->  bridge -> provider] case.
+  - segmentId: not null
+    spans:
+    - componentId: 9000
+      endTime: gt 0
+      isError: false
+      operationName: /ping2
+      parentSpanId: -1
+      peer: ''
+      skipAnalysis: false
+      spanId: 0
+      spanLayer: Http
+      spanType: Entry
+      startTime: gt 0
+    - componentId: 9000
+      endTime: gt 0
+      isError: false
+      operationName: /users
+      parentSpanId: 0
+      peer: bridge:8082
+      skipAnalysis: false
+      spanId: 1
+      spanLayer: Http
+      spanType: Exit
+      startTime: gt 0
+  serviceName: consumer

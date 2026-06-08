@@ -1,0 +1,33 @@
+alias(
+    name = "chrome_macos",
+    actual = select({
+        "@platforms//cpu:x86_64": "@chrome_mac_x64",
+        "//conditions:default": "@chrome_mac_arm64",
+    }),
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+alias(
+    name = "chrome_linux",
+    actual = "@chrome_linux64",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+alias(
+    name = "chrome_windows",
+    actual = select({
+        "@platforms//cpu:i386": "@chrome_win32",
+        "//conditions:default": "@chrome_win64",
+    }),
+    target_compatible_with = ["@platforms//os:windows"],
+)
+
+alias(
+    name = "chrome",
+    actual = select({
+        "@platforms//os:linux": ":chrome_linux",
+        "@platforms//os:macos": ":chrome_macos",
+        "@platforms//os:windows": ":chrome_windows",
+    }),
+    visibility = ["//visibility:public"],
+)

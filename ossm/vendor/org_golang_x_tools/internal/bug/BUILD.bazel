@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "bug",
+    srcs = ["bug.go"],
+    importpath = "golang.org/x/tools/internal/bug",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":bug",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "bug_test",
+    srcs = ["bug_test.go"],
+    embed = [":bug"],
+)

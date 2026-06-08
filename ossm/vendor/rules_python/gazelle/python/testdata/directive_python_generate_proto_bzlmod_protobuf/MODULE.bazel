@@ -1,0 +1,1 @@
+bazel_dep(name = "protobuf", version = "29.3")

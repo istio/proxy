@@ -1,0 +1,13 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+py_binary(
+    name = "foo",
+    srcs = ["foo.py"],
+    visibility = ["//:__subpackages__"],
+)
+
+py_library(
+    name = "keep_binary",
+    srcs = ["foo.py"],
+    visibility = ["//:__subpackages__"],
+)

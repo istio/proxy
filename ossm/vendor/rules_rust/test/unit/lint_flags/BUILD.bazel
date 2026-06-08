@@ -1,0 +1,5 @@
+load(":lint_flags_test.bzl", "lint_flags_test_suite")
+
+lint_flags_test_suite(
+    name = "lint_flags_test_suite",
+)

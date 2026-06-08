@@ -1,0 +1,23 @@
+{
+  "homepage": "https://github.com/bazel-contrib/toolchains_llvm",
+  "maintainers": [
+    {
+      "email": "fabian@meumertzhe.im",
+      "github": "fmeum",
+      "name": "Fabian Meumertzheim"
+    },
+    {
+      "email": "james.sharpe@zenotech.com",
+      "github": "jsharpe",
+      "name": "James Sharpe"
+    },
+    {
+      "email": "rrbutani@users.noreply.github.com",
+      "github": "rrbutani",
+      "name": "Rahul Butani"
+    }
+  ],
+  "repository": ["github:bazel-contrib/toolchains_llvm"],
+  "versions": [],
+  "yanked_versions": {}
+}

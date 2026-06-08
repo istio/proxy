@@ -1,0 +1,59 @@
+load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
+load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library", "cc_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_static_library")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+rust_static_library(
+    name = "rust_lib",
+    srcs = ["lib.rs"],
+    edition = "2021",
+)
+
+cc_library(
+    name = "c_lib",
+    srcs = ["lib.c"],
+    hdrs = ["lib.h"],
+    deps = [":rust_lib"],
+)
+
+# Tests that cc_shared_library correctly traverses into
+# `rust_static_library` when linking.
+cc_shared_library(
+    name = "shared",
+    deps = [":c_lib"],
+)
+
+cc_test(
+    name = "test",
+    srcs = ["main.c"],
+    dynamic_deps = [":shared"],
+    linkstatic = True,
+    deps = [":c_lib"],
+)
+
+NOT_WINDOWS = select({
+    "@platforms//os:linux": [],
+    "@platforms//os:macos": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+})
+
+cc_import(
+    name = "shared_import",
+    shared_library = ":shared",
+    target_compatible_with = NOT_WINDOWS,
+)
+
+rust_binary(
+    name = "linked_against_shared",
+    srcs = ["linked_against_shared.rs"],
+    edition = "2018",
+    target_compatible_with = NOT_WINDOWS,
+    deps = [":shared_import"],
+)
+
+sh_test(
+    name = "runfiles_contains_shared",
+    srcs = ["runfiles_contains_shared.sh"],
+    data = [":linked_against_shared"],
+    target_compatible_with = NOT_WINDOWS,
+)

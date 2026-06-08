@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "lazy",
+    srcs = [
+        "lazy_extension_normalized_wire_test.pb.go",
+        "lazy_extension_test.pb.go",
+        "lazy_normalized_wire_test.pb.go",
+        "lazy_tree.pb.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/testprotos/lazy",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/messageset/messagesetpb",
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":lazy",
+    visibility = ["//:__subpackages__"],
+)

@@ -1,0 +1,36 @@
+{
+  "version": 8,
+  "$schema": "https://cmake.org/cmake/help/latest/_downloads/3e2d73bff478d88a7de0de736ba5e361/schema.json",
+  "configurePresets": [
+    {
+      "name": "ci-windows",
+      "displayName": "CI Windows",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_COMPILE_WARNING_AS_ERROR": "1",
+        "BUILD_SHARED_LIBS": "OFF",
+        "DD_TRACE_STATIC_CRT": "1",
+        "DD_TRACE_BUILD_TESTING": "1"
+      }
+    },
+    {
+      "name": "ci-codeql",
+      "displayName": "CI CodeQL",
+      "cacheVariables": {
+        "CMAKE_POLICY_VERSION_MINIMUM": "3.5"
+      }
+    },
+    {
+      "name": "dev",
+      "displayName": "Development",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "DD_TRACE_ENABLE_SANITIZE": "OFF",
+        "DD_TRACE_BUILD_TESTING": "ON",
+        "DD_TRACE_BUILD_EXAMPLES": "ON",
+        "DD_TRACE_BUILD_FUZZERS": "OFF"
+      }
+    }
+  ]
+}

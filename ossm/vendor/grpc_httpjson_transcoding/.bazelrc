@@ -1,0 +1,64 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Copied from bazel rules_fuzzing.
+# https://github.com/bazelbuild/rules_fuzzing/blob/f6062a88d83463e2900e47bc218547ba046dad44/.bazelrc
+
+# Force the use of Clang for all builds.
+build --action_env=CC=clang-14
+build --action_env=CXX=clang++-14
+
+build --cxxopt=-std=c++20
+build --host_cxxopt=-std=c++20
+
+# The ASAN configuration suitable for C++ unit tests.
+build:asan --copt=-fsanitize=address
+build:asan --linkopt=-fsanitize=address
+
+# LibFuzzer + ASAN
+build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:libfuzzer
+build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
+build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan
+
+# LibFuzzer + MSAN
+build:msan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:libfuzzer
+build:msan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
+build:msan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=msan
+
+# LibFuzzer + MSAN (reproduction mode)
+build:msan-libfuzzer-repro --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:libfuzzer
+build:msan-libfuzzer-repro --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
+build:msan-libfuzzer-repro --@rules_fuzzing//fuzzing:cc_engine_sanitizer=msan-origin-tracking
+
+# Honggfuzz + ASAN
+build:asan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:honggfuzz
+build:asan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine_instrumentation=honggfuzz
+build:asan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan
+
+# Honggfuzz + MSAN
+build:msan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:honggfuzz
+build:msan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine_instrumentation=honggfuzz
+build:msan-honggfuzz --@rules_fuzzing//fuzzing:cc_engine_sanitizer=msan
+
+# Replay + ASAN
+build:asan-replay --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:replay
+build:asan-replay --@rules_fuzzing//fuzzing:cc_engine_instrumentation=none
+build:asan-replay --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan
+
+build:oss-fuzz --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing_oss_fuzz//:oss_fuzz_engine
+build:oss-fuzz --@rules_fuzzing//fuzzing:cc_engine_instrumentation=oss-fuzz
+build:oss-fuzz --@rules_fuzzing//fuzzing:cc_engine_sanitizer=none
+
+# Default build parameters so that `bazel build //...` can always find them.
+build --define=PUSH_REGISTRY=gcr.io --define=PUSH_PROJECT=project-id --define=PUSH_TAG=latest

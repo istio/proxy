@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "proto3",
+    srcs = ["ext3.pb.go"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/extensions/proto3",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/descriptorpb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":proto3",
+    visibility = ["//visibility:public"],
+)

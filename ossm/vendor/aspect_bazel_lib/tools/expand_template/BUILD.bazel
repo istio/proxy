@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "expand_template_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/bazel-contrib/bazel-lib/tools/expand_template",
+    visibility = ["//visibility:public"],
+    deps = ["@org_golang_x_exp//maps"],
+)
+
+go_binary(
+    name = "expand_template",
+    embed = [":expand_template_lib"],
+    visibility = ["//visibility:public"],
+)

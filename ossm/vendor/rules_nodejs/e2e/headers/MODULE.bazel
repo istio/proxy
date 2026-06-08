@@ -1,0 +1,10 @@
+bazel_dep(name = "rules_nodejs", version = "0.0.0", dev_dependency = True)
+local_path_override(
+    module_name = "rules_nodejs",
+    path = "../..",
+)
+
+bazel_dep(name = "platforms", version = "0.0.10", dev_dependency = True)
+
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node", dev_dependency = True)
+node.toolchain(include_headers = True)

@@ -1,0 +1,5 @@
+{
+  "integrity": "**leave this alone**",
+  "strip_prefix": "{REPO}-{TAG}",
+  "url": "https://github.com/{OWNER}/{REPO}/releases/download/{TAG}/toolchains_llvm-{TAG}.tar.gz"
+}

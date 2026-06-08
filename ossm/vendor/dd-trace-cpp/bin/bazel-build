@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -e
+
+cd "$(dirname "$0")"/..
+
+if [ "$1" = '--absl' ]; then
+  rcfile=.bazelrc.absl
+elif [ "$1" = '--std' ]; then
+  rcfile=.bazelrc.std
+elif [ $# -ne 1 ]; then
+  >&2 printf '%s: Specify one of "--absl" or "--std" build modes.\n' "$0"
+  exit 1
+fi
+
+bazelisk --bazelrc="$rcfile" build dd_trace_cpp

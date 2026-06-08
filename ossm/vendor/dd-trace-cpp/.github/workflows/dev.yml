@@ -1,0 +1,170 @@
+name: "Development"
+on: [pull_request, workflow_dispatch, workflow_call]
+
+jobs:
+  format:
+    runs-on: ubuntu-22.04-arm
+    container:
+      image: datadog/docker-library:dd-trace-cpp-ci-23768e9-arm64
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Check format
+        run: bin/check-format
+      - name: Shellcheck
+        run: find bin/ -executable -type f -print0 | xargs -0 shellcheck
+
+  build-linux-cmake:
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: ["gnu", "llvm"]
+        arch: ["arm64", "x64"]
+        include:
+          - runner: ubuntu-22.04-arm
+            arch: arm64
+            docker-arch: arm64
+          - runner: ubuntu-22.04
+            arch: x64
+            docker-arch: amd64
+    needs: format
+    runs-on: ${{ matrix.runner }}
+    container:
+      image: datadog/docker-library:dd-trace-cpp-ci-23768e9-${{matrix.docker-arch}}
+    environment:
+      name: dev
+    permissions:
+      contents: read
+      packages: read
+    env:
+      BUILD_DIR: .build
+      DD_API_KEY: ${{ secrets.DD_CI_VIS_API_KEY }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure
+        run: bin/with-toolchain ${{ matrix.toolchain }} cmake . -B .build -DCMAKE_BUILD_TYPE=Debug -DDD_TRACE_BUILD_TESTING=1  
+      - name: Build
+        run: cmake --build ${BUILD_DIR} -j -v
+      - name: Test
+        run: cd ${BUILD_DIR} && test/tests -r junit -o report.xml
+      - name: Upload test report to Datadog
+        run: |
+          curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_linux-${{ matrix.arch }}" --output "/usr/local/bin/datadog-ci" && chmod +x /usr/local/bin/datadog-ci
+          datadog-ci junit upload --service dd-trace-cpp --tags test.source.file:test/*.cpp .build/report.xml
+
+  build-linux-bazel:
+    needs: format
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: ["gnu", "llvm"]
+        arch: ["arm64", "x64"]
+        bazelrc: [".bazelrc.absl", ".bazelrc.std"]
+        include:
+          - runner: ubuntu-22.04-arm
+            arch: arm64
+            docker-arch: arm64
+          - runner: ubuntu-22.04
+            arch: x64
+            docker-arch: amd64
+    runs-on: ${{ matrix.runner }}
+    container:
+      image: datadog/docker-library:dd-trace-cpp-ci-23768e9-${{matrix.docker-arch}}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Build
+        run: bin/with-toolchain ${{ matrix.toolchain }} bazelisk --bazelrc=${{ matrix.bazelrc }} build dd_trace_cpp
+
+  build-windows-bazel:
+    needs: format
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: powershell
+    strategy:
+      matrix:
+        bazelrc: [".bazelrc.absl", ".bazelrc.std"]
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Install Dependency Manager (scoop)
+        run: |
+          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+          Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+          Join-Path (Resolve-Path ~).Path "scoop\shims" >> $Env:GITHUB_PATH
+      - name: Install Dependencies
+        run: scoop install main/cmake@4.0.1 main/ninja main/bazelisk
+      - name: Build
+        run: bazelisk.exe --bazelrc=${{ matrix.bazelrc }} build dd_trace_cpp
+
+  build-windows-cmake:
+    needs: format
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: ["arm64", "amd64"]
+        include:
+          - runner: windows-11-arm 
+            arch: arm64
+          - runner: windows-2022
+            arch: amd64
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: powershell
+    environment:
+      name: dev
+    permissions:
+      contents: read
+      packages: read
+    env:
+      DD_API_KEY: ${{ secrets.DD_CI_VIS_API_KEY }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Install Dependency Manager (scoop)
+        run: |
+          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+          Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+          Join-Path (Resolve-Path ~).Path "scoop\shims" >> $Env:GITHUB_PATH
+      - name: Install Dependencies
+        run: scoop install main/cmake@4.0.1 main/ninja
+      - name: Build
+        run: |
+          & 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\Common7\\Tools\\Launch-VsDevShell.ps1' -arch ${{ matrix.arch }} 
+          cmake --preset=ci-windows -B build -DCMAKE_BUILD_TYPE=Debug .
+          cmake --build build -j $env:MAKE_JOB_COUNT -v
+      - name: Test
+        run: |
+          & 'C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\Common7\\Tools\\Launch-VsDevShell.ps1' -arch ${{ matrix.arch }}
+          .\build\test\tests.exe -r junit -o report.xml
+      - name: Upload test report to Datadog
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_win-x64" -OutFile "datadog-ci.exe"
+          ./datadog-ci.exe junit upload --service dd-trace-cpp --tags test.source.file:test/*.cpp  report.xml
+
+  coverage:
+    needs: build-linux-cmake 
+    runs-on: ubuntu-22.04-arm
+    container:
+      image: datadog/docker-library:dd-trace-cpp-ci-23768e9-arm64
+    environment:
+      name: dev
+    permissions:
+      contents: read
+      packages: read
+    env:
+      DD_API_KEY: ${{ secrets.DD_CI_VIS_API_KEY }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - run: bin/test --coverage --verbose
+      - name: Report Datadog coverage
+        run: |
+          curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_linux-arm64" --output "/usr/local/bin/datadog-ci" && chmod +x /usr/local/bin/datadog-ci
+          cd .coverage
+          cp filtered.info lcov.info
+          datadog-ci coverage upload lcov.info
+      - uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
+        with:
+          fail_ci_if_error: true
+          files: .coverage/filtered.info
+          disable_search: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true

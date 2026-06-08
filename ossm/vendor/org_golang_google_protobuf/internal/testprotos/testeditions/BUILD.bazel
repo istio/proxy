@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testeditions",
+    srcs = [
+        "test.pb.go",
+        "test_extension.pb.go",
+        "test_extension2.pb.go",
+        "test_import.pb.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/testprotos/testeditions",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/enums",
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testeditions",
+    visibility = ["//:__subpackages__"],
+)

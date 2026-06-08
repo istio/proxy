@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_binary")
+load("//:defs.bzl", "proto_plugin")
+
+proto_plugin(
+    name = "scala_plugin",
+    out = "{name}.jar",
+    tool = ":scala_pb_plugin_bin",
+    use_built_in_shell_environment = True,
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "grpc_scala_plugin",
+    out = "{name}.jar",
+    options = [
+        "grpc",
+    ],
+    tool = ":scala_pb_plugin_bin",
+    use_built_in_shell_environment = True,
+    visibility = ["//visibility:public"],
+)
+
+java_binary(
+    name = "scala_pb_plugin_bin",
+    main_class = "scalapb.ScalaPbCodeGenerator",
+    runtime_deps = [
+        "@rules_proto_grpc_scala_maven//:com_thesamet_scalapb_compilerplugin_2_12",
+    ],
+)

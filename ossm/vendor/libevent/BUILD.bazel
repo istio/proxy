@@ -1,0 +1,2 @@
+filegroup(name = "all", srcs = glob(["**"], exclude=[]), visibility = ["//visibility:public"])
+alias(name = "libevent", actual = ":all", visibility = ["//visibility:public"])

@@ -1,0 +1,126 @@
+{
+  "packages": [
+    {
+      "name": "child_a",
+      "version": "1.4.2",
+      "id": "path+file:///usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching/child_a#1.4.2",
+      "license": null,
+      "license_file": null,
+      "description": null,
+      "source": null,
+      "dependencies": [],
+      "targets": [
+        {
+          "kind": ["lib"],
+          "crate_types": ["lib"],
+          "name": "child_a",
+          "src_path": "/usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching/child_a/lib.rs",
+          "edition": "2018",
+          "doc": true,
+          "doctest": true,
+          "test": true
+        }
+      ],
+      "features": {},
+      "manifest_path": "/usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching/child_a/Cargo.toml",
+      "metadata": null,
+      "publish": null,
+      "authors": [],
+      "categories": [],
+      "keywords": [],
+      "readme": null,
+      "repository": null,
+      "homepage": null,
+      "documentation": null,
+      "edition": "2018",
+      "links": null,
+      "default_run": null,
+      "rust_version": null
+    },
+    {
+      "name": "path_patching",
+      "version": "0.1.0",
+      "id": "path+file:///usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching#0.1.0",
+      "license": null,
+      "license_file": null,
+      "description": null,
+      "source": null,
+      "dependencies": [
+        {
+          "name": "child_a",
+          "source": "registry+https://github.com/rust-lang/crates.io-index",
+          "req": "^1.4.2",
+          "kind": null,
+          "rename": null,
+          "optional": false,
+          "uses_default_features": true,
+          "features": [],
+          "target": null,
+          "registry": null
+        }
+      ],
+      "targets": [
+        {
+          "kind": ["lib"],
+          "crate_types": ["lib"],
+          "name": "path_patching",
+          "src_path": "/usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching/lib.rs",
+          "edition": "2018",
+          "doc": true,
+          "doctest": true,
+          "test": true
+        }
+      ],
+      "features": {},
+      "manifest_path": "/usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching/Cargo.toml",
+      "metadata": null,
+      "publish": null,
+      "authors": [],
+      "categories": [],
+      "keywords": [],
+      "readme": null,
+      "repository": null,
+      "homepage": null,
+      "documentation": null,
+      "edition": "2018",
+      "links": null,
+      "default_run": null,
+      "rust_version": null
+    }
+  ],
+  "workspace_members": [
+    "path+file:///usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching#0.1.0"
+  ],
+  "workspace_default_members": [
+    "path+file:///usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching#0.1.0"
+  ],
+  "resolve": {
+    "nodes": [
+      {
+        "id": "path+file:///usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching/child_a#1.4.2",
+        "dependencies": [],
+        "deps": [],
+        "features": []
+      },
+      {
+        "id": "path+file:///usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching#0.1.0",
+        "dependencies": [
+          "path+file:///usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching/child_a#1.4.2"
+        ],
+        "deps": [
+          {
+            "name": "child_a",
+            "pkg": "path+file:///usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching/child_a#1.4.2",
+            "dep_kinds": [{ "kind": null, "target": null }]
+          }
+        ],
+        "features": []
+      }
+    ],
+    "root": "path+file:///usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching#0.1.0"
+  },
+  "target_directory": "/usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching/target",
+  "version": 1,
+  "workspace_root": "/usr/local/google/home/jayzhuang/fuchsia/third_party/bazel_rules_rust/crate_universe/test_data/metadata/path_patching",
+  "metadata": null
+}

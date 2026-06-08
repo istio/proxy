@@ -1,0 +1,25 @@
+# This describes the object ownership relationships among the components
+# in the tracer library.
+#
+# Each vertex (node) is a component, while each edge is a relationship.
+# Edges are labeled by the kind of "smart pointer" that describes the
+# relationship, e.g. "Tracer holds a shared_ptr to SpanSampler," or
+# "Span holds a raw pointer to SpanData."
+#
+# Vertices labeled with a 🔒 are protected by a mutex.
+#
+digraph {
+    rankdir=LR;
+
+    Tracer -> "Collector 🔒" [label=" shared", fontsize=8];
+    Tracer -> "SpanSampler 🔒" [label=" shared", fontsize=8];
+    Tracer -> "TraceSampler 🔒" [label=" shared", fontsize=8];
+
+    Span -> "TraceSegment 🔒" [label=" shared", fontsize=8];
+    Span -> SpanData [label=< <B> raw</B> >, fontsize=8];
+
+    "TraceSegment 🔒" -> SpanData [label=< <B> unique</B> >, fontsize=8];
+    "TraceSegment 🔒" -> "Collector 🔒" [label=" shared", fontsize=8];
+    "TraceSegment 🔒" -> "SpanSampler 🔒" [label=" shared", fontsize=8];
+    "TraceSegment 🔒" -> "TraceSampler 🔒" [label=" shared", fontsize=8];
+}

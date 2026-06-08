@@ -1,0 +1,12 @@
+load("@rules_proto_grpc//fsharp:defs.bzl", "fsharp_grpc_library")
+
+fsharp_grpc_library(
+    name = "thing_fsharp_grpc.dll",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)
+
+fsharp_grpc_library(
+    name = "greeter_fsharp_grpc.dll",
+    protos = ["@rules_proto_grpc//example/proto:greeter_grpc"],
+    deps = ["thing_fsharp_grpc.dll"],
+)

@@ -1,0 +1,1 @@
+/work/Makefile.core.mk

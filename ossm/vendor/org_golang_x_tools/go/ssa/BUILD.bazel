@@ -1,0 +1,123 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ssa",
+    srcs = [
+        "block.go",
+        "blockopt.go",
+        "builder.go",
+        "const.go",
+        "coretype.go",
+        "create.go",
+        "doc.go",
+        "dom.go",
+        "emit.go",
+        "func.go",
+        "identical.go",
+        "identical_17.go",
+        "instantiate.go",
+        "lift.go",
+        "lvalue.go",
+        "methods.go",
+        "mode.go",
+        "parameterized.go",
+        "print.go",
+        "sanity.go",
+        "source.go",
+        "ssa.go",
+        "subst.go",
+        "util.go",
+        "wrappers.go",
+    ],
+    importpath = "golang.org/x/tools/go/ssa",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/ast/astutil",
+        "//go/types/typeutil",
+        "//internal/typeparams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ssa",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "ssa_test",
+    srcs = [
+        "builder_generic_test.go",
+        "builder_go117_test.go",
+        "builder_go120_test.go",
+        "builder_test.go",
+        "const_test.go",
+        "coretype_test.go",
+        "example_test.go",
+        "identical_test.go",
+        "instantiate_test.go",
+        "methods_test.go",
+        "parameterized_test.go",
+        "source_test.go",
+        "stdlib_test.go",
+        "subst_test.go",
+        "testhelper_test.go",
+    ],
+    embed = [":ssa"],
+    deps = [
+        "//go/ast/astutil",
+        "//go/buildutil",
+        "//go/expect",
+        "//go/loader",
+        "//go/ssa/ssautil",
+        "//internal/testenv",
+        "//internal/typeparams",
+    ] + select({
+        "@io_bazel_rules_go//go/platform:aix": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:darwin": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:dragonfly": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:freebsd": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:illumos": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:ios": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:js": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:linux": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:netbsd": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:openbsd": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:osx": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:plan9": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:qnx": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:solaris": [
+            "//go/packages",
+        ],
+        "@io_bazel_rules_go//go/platform:windows": [
+            "//go/packages",
+        ],
+        "//conditions:default": [],
+    }),
+)

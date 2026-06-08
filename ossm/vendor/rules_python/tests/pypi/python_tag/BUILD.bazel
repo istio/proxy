@@ -1,0 +1,3 @@
+load(":python_tag_tests.bzl", "python_tag_test_suite")
+
+python_tag_test_suite(name = "python_tag_tests")

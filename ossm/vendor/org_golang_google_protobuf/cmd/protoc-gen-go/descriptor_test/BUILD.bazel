@@ -1,0 +1,11 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "descriptor_test_test",
+    srcs = ["descriptor_test.go"],
+    deps = [
+        "//internal/testprotos/test",
+        "//internal/testprotos/testeditions/testeditions_hybrid",
+        "//internal/testprotos/testeditions/testeditions_opaque",
+    ],
+)

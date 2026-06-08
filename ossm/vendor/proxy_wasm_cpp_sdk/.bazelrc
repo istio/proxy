@@ -1,0 +1,11 @@
+# NOTE: incompatible_enable_cc_toolchain_resolution is set by default on Bazel
+# versions 7.0+, see https://github.com/bazelbuild/bazel/issues/7260.
+#
+# emsdk documentation asks to set this flag (see
+# https://github.com/emscripten-core/emsdk/blob/main/bazel/README.md). And even
+# though things seem to work even without this flag, given that this flag
+# enables improved Bazel C++ toolchain resolution method that became the
+# default in newer Bazel version and does not cause problems, we keep it.
+build --incompatible_enable_cc_toolchain_resolution
+# Enable Bzlmod for every Bazel command
+common --enable_bzlmod

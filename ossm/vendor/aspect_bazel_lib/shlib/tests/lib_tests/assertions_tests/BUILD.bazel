@@ -1,0 +1,41 @@
+load("@rules_shell//shell:sh_library.bzl", "sh_library")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+sh_library(
+    name = "assert_fail",
+    testonly = True,
+    srcs = ["assert_fail.sh"],
+)
+
+sh_test(
+    name = "assert_equal_test",
+    size = "small",
+    srcs = ["assert_equal_test.sh"],
+    deps = [
+        ":assert_fail",
+        "//shlib/lib:assertions",
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)
+
+sh_test(
+    name = "assert_match_test",
+    size = "small",
+    srcs = ["assert_match_test.sh"],
+    deps = [
+        ":assert_fail",
+        "//shlib/lib:assertions",
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)
+
+sh_test(
+    name = "assert_no_match_test",
+    size = "small",
+    srcs = ["assert_no_match_test.sh"],
+    deps = [
+        ":assert_fail",
+        "//shlib/lib:assertions",
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)

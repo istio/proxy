@@ -1,0 +1,13 @@
+load(
+    "//test/unit/proc_macro:leaks_deps/proc_macro_does_not_leak_deps.bzl",
+    "proc_macro_does_not_leak_deps_test_suite",
+)
+load(":proc_macro_test.bzl", "proc_macro_test_suite")
+
+proc_macro_test_suite(
+    name = "proc_macro_test_suite",
+)
+
+proc_macro_does_not_leak_deps_test_suite(
+    name = "proc_macro_does_not_leak_deps_test_suite",
+)

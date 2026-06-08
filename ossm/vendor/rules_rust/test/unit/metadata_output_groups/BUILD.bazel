@@ -1,0 +1,4 @@
+load(":metadata_output_groups.bzl", "metadata_output_groups_test_suite")
+
+############################ UNIT TESTS #############################
+metadata_output_groups_test_suite(name = "metadata_output_groups_test_suite")

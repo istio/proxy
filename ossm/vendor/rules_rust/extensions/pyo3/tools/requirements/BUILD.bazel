@@ -1,0 +1,82 @@
+load("@rules_req_compile//:defs.bzl", "py_reqs_compiler", "py_reqs_solution_test")
+
+config_setting(
+    name = "linux_aarch64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "linux_x86_64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "macos_aarch64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "macos_x86_64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:x86_64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "windows_x86_64",
+    constraint_values = [
+        "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+PLATFORMS = [
+    "linux_aarch64",
+    "linux_x86_64",
+    "macos_aarch64",
+    "windows_x86_64",
+]
+
+[
+    py_reqs_compiler(
+        name = "requirements.{}.update".format(platform),
+        requirements_in = "requirements.in",
+        requirements_txt = "requirements_{}.txt".format(platform),
+        target_compatible_with = select({
+            ":{}".format(platform): [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }),
+    )
+    for platform in PLATFORMS
+]
+
+[
+    py_reqs_solution_test(
+        name = "requirements_{}_test".format(platform),
+        compiler = ":requirements.{}.update".format(platform),
+    )
+    for platform in PLATFORMS
+]
+
+alias(
+    name = "update",
+    actual = select({
+        ":{}".format(platform): ":requirements.{}.update".format(platform)
+        for platform in PLATFORMS
+    }),
+)

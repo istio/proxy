@@ -1,0 +1,52 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c33b211e..d04d0cc8 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -178,8 +178,6 @@ set (WAMR_PUBLIC_HEADERS
+ )
+ set_target_properties (vmlib PROPERTIES PUBLIC_HEADER "${WAMR_PUBLIC_HEADERS}")
+ 
+-set_version_info (vmlib)
+-
+ install (TARGETS vmlib
+   EXPORT iwasmTargets
+   LIBRARY DESTINATION lib
+diff --git a/build-scripts/config_common.cmake b/build-scripts/config_common.cmake
+index cb15b8b0..41c32f79 100644
+--- a/build-scripts/config_common.cmake
++++ b/build-scripts/config_common.cmake
+@@ -103,14 +103,20 @@ if (WAMR_BUILD_JIT EQUAL 1)
+   if (NOT DEFINED LLVM_DIR)
+     set (LLVM_SRC_ROOT "${WAMR_ROOT_DIR}/core/deps/llvm")
+     set (LLVM_BUILD_ROOT "${LLVM_SRC_ROOT}/build")
+-    if (NOT EXISTS "${LLVM_BUILD_ROOT}")
+-        message (FATAL_ERROR "Cannot find LLVM dir: ${LLVM_BUILD_ROOT}")
+-    endif ()
+     set (CMAKE_PREFIX_PATH "${LLVM_BUILD_ROOT};${CMAKE_PREFIX_PATH}")
+     set (LLVM_DIR ${LLVM_BUILD_ROOT}/lib/cmake/llvm)
+   endif ()
+-  find_package(LLVM REQUIRED CONFIG)
+-  include_directories(${LLVM_INCLUDE_DIRS})
++  # Skip LLVM CMake detection when BAZEL_BUILD is set (Bazel provides LLVM)
++  if (NOT DEFINED BAZEL_BUILD)
++    find_package(LLVM REQUIRED CONFIG)
++    include_directories(${LLVM_INCLUDE_DIRS})
++    message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
++    message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
++  else()
++    # Bazel build: LLVM headers from hermetic toolchain, libs via cc_library
++    message(STATUS "Bazel build: Skipping LLVM find_package")
++    include_directories(${LLVM_INCLUDE_DIR})
++  endif()
+   add_definitions(${LLVM_DEFINITIONS})
+   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+   message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+@@ -140,7 +146,7 @@ else ()
+ endif ()
+ 
+ # Version
+-include (${WAMR_ROOT_DIR}/build-scripts/version.cmake)
++# include (${WAMR_ROOT_DIR}/build-scripts/version.cmake)
+ 
+ # Package
+ include (${WAMR_ROOT_DIR}/build-scripts/package.cmake)

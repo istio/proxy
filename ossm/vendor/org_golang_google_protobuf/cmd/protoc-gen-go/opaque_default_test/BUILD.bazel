@@ -1,0 +1,10 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "opaque_default_test_test",
+    srcs = ["opaque_default_test.go"],
+    deps = [
+        "//internal/testprotos/enums/enums_opaque",
+        "//internal/testprotos/testeditions/testeditions_opaque",
+    ],
+)

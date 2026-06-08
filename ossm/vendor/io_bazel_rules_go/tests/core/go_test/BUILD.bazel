@@ -1,0 +1,312 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@io_bazel_rules_go//go/tools/bazel_testing:def.bzl", "go_bazel_test")
+
+test_suite(
+    name = "go_test",
+)
+
+go_library(
+    name = "lib",
+    srcs = ["lib.go"],
+    cgo = True,
+    importpath = "lib",
+)
+
+go_test(
+    name = "internal_test",
+    size = "small",
+    srcs = ["internal_test.go"],
+    embed = [":lib"],
+    x_defs = {
+        "Got": "Internal",
+        "Expect": "Internal",
+    },
+)
+
+go_test(
+    name = "external_test",
+    size = "small",
+    srcs = ["external_test.go"],
+    embed = [":lib"],
+    x_defs = {
+        "Got": "External",
+        "Expect": "External",
+    },
+)
+
+go_test(
+    name = "combined_test",
+    size = "small",
+    srcs = [
+        "external_test.go",
+        "internal_test.go",
+    ],
+    embed = [":lib"],
+    x_defs = {
+        "Got": "Combined",
+        "Expect": "Combined",
+    },
+)
+
+go_test(
+    name = "flag_test",
+    size = "small",
+    srcs = [
+        "flag_test.go",
+    ],
+    args = [
+        "-aflag",
+        "somevalue",
+    ],
+)
+
+go_test(
+    name = "example_test",
+    size = "small",
+    srcs = ["example_test.go"],
+    embed = [":lib"],
+    x_defs = {
+        "Got": "Example",
+        "Expected": "Example",
+    },
+)
+
+go_test(
+    name = "only_testmain_test",
+    size = "small",
+    srcs = ["only_testmain_test.go"],
+)
+
+go_test(
+    name = "external_importmap_test",
+    size = "small",
+    srcs = ["external_importmap_test.go"],
+    embed = [":external_importmap_lib"],
+    deps = [":external_importmap_dep"],
+)
+
+go_library(
+    name = "external_importmap_lib",
+    srcs = ["external_importmap_lib.go"],
+    importmap = "x/github.com/bazelbuild/rules_go/tests/core/go_test/external_importmap",
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_test/external_importmap",
+)
+
+go_library(
+    name = "external_importmap_dep",
+    srcs = ["external_importmap_dep.go"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_test/external_importmap_dep",
+    deps = [":external_importmap_lib"],
+)
+
+go_test(
+    name = "pwd_test",
+    size = "small",
+    srcs = ["pwd_test.go"],
+)
+
+go_test(
+    name = "testmain_pwd_test",
+    size = "small",
+    srcs = ["testmain_pwd_test.go"],
+)
+
+go_test(
+    name = "data_test",
+    size = "small",
+    embed = [":data_test_lib"],
+)
+
+go_library(
+    name = "data_test_lib",
+    srcs = [":data_test_srcs"],
+    data = ["x"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_test/data_test",
+    deps = [":data_test_dep"],
+)
+
+filegroup(
+    name = "data_test_srcs",
+    srcs = ["data_test.go"],
+)
+
+go_library(
+    name = "data_test_dep",
+    srcs = ["data_test_dep.go"],
+    data = ["y"],
+    embed = [":data_test_embed"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_test/data_test_dep",
+)
+
+go_library(
+    name = "data_test_embed",
+    srcs = ["data_test_embed.go"],
+    data = ["z"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_test/data_test_dep",
+)
+
+go_bazel_test(
+    name = "test_fail_fast_test",
+    srcs = ["test_fail_fast_test.go"],
+)
+
+go_bazel_test(
+    name = "test_filter_test",
+    srcs = ["test_filter_test.go"],
+)
+
+go_bazel_test(
+    name = "xmlreport_test",
+    srcs = ["xmlreport_test.go"],
+)
+
+go_test(
+    name = "testmain_import_test",
+    srcs = [
+        "testmain_import_indirect_test.go",
+        "testmain_import_main_test.go",
+    ],
+    importpath = "example.com/imports/test_main",
+)
+
+go_test(
+    name = "tags_test",
+    srcs = [
+        "tags_bad_test.go",
+        "tags_good_test.go",
+    ],
+    gotags = ["good"],
+)
+
+go_test(
+    name = "indirect_import_test",
+    srcs = [
+        "indirect_import_i_test.go",
+        "indirect_import_x_test.go",
+    ],
+    embed = [":indirect_import_lib"],
+    deps = [":indirect_import_dep"],
+)
+
+go_library(
+    name = "indirect_import_lib",
+    srcs = ["indirect_import_lib.go"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_test/indirect_import",
+)
+
+go_library(
+    name = "indirect_import_dep",
+    srcs = ["indirect_import_dep.go"],
+    importpath = "github.com/bazelbuild/rules_go/tests/core/go_test/indirect_import_dep",
+    deps = [":indirect_import_lib"],
+)
+
+[
+    go_test(
+        name = "same_package_{}_test".format(i),
+        srcs = ["same_package_test.go"],
+    )
+    for i in range(1, 80)
+]
+
+test_suite(
+    name = "same_package_test",
+    tests = ["same_package_{}_test".format(i) for i in range(1, 80)],
+)
+
+# Verifies that testing.Testing() is true in a `go_test`.
+go_test(
+    name = "testing_testing_test",
+    srcs = ["testing_testing_test.go"],
+)
+
+go_bazel_test(
+    name = "testmain_without_exit_test",
+    srcs = ["testmain_without_exit_test.go"],
+)
+
+go_test(
+    name = "wrapper_test",
+    srcs = ["wrapper_test.go"],
+    args = ["$(location :wrapped_test)"],
+    data = [":wrapped_test"],
+    rundir = ".",
+)
+
+go_test(
+    name = "wrapped_test",
+    srcs = ["wrapped_test.go"],
+    tags = ["manual"],
+)
+
+go_test(
+    name = "fuzz_test",
+    srcs = ["fuzz_test.go"],
+)
+
+go_test(
+    name = "env_test",
+    srcs = ["env_test.go"],
+    data = ["@go_sdk//:lib/time/zoneinfo.zip"],
+    env = {
+        "ZONEINFO": "$(rlocationpath @go_sdk//:lib/time/zoneinfo.zip)",
+    },
+    deps = [
+        "//go/runfiles",
+    ],
+)
+
+go_test(
+    name = "sharding_test",
+    srcs = ["sharding_test.go"],
+    shard_count = 2,
+)
+
+go_test(
+    name = "sigterm_handler_test",
+    srcs = ["sigterm_handler_test.go"],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+go_bazel_test(
+    name = "env_inherit_test",
+    srcs = ["env_inherit_test.go"],
+)
+
+go_bazel_test(
+    name = "binary_env_test",
+    srcs = ["binary_env_test.go"],
+)
+
+go_bazel_test(
+    name = "filter_test_cases_test",
+    srcs = ["filter_test_cases_test.go"],
+)
+
+go_bazel_test(
+    name = "timeout_test",
+    srcs = ["timeout_test.go"],
+)
+
+go_bazel_test(
+    name = "xml_panic_test",
+    srcs = ["xml_panic_test.go"],
+)
+
+# Tests using .syso files in go_binary both transitively and directly.
+go_test(
+    name = "syso_transitive_test",
+    srcs = ["syso_transitive_test.go"],
+    deps = ["//tests/core/go_library:use_syso_lib"],
+)
+
+go_test(
+    name = "syso_direct_test",
+    srcs = [
+        "syso_direct_test.go",
+        "//tests/core/go_library:use_syso_srcs",
+    ],
+)

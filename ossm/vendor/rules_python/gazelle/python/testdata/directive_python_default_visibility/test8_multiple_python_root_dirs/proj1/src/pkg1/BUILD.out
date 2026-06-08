@@ -1,0 +1,14 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# proj1 depends on proj2
+# We can leave the default visibility.
+
+py_library(
+    name = "pkg1",
+    srcs = ["file1.py"],
+    imports = [".."],
+    visibility = [
+        "//test8_multiple_python_root_dirs/proj1/src:__subpackages__",
+        "//tests:__pkg__",
+    ],
+)

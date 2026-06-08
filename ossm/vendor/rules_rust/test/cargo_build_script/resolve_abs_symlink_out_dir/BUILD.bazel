@@ -1,0 +1,25 @@
+load("//cargo:defs.bzl", "cargo_build_script")
+load("//rust:defs.bzl", "rust_test")
+
+# We are testing the cargo build script behavior that it correctly resolves absolute
+# path symlinks in the out_dir. Additionally, it keeps out_dir relative symlinks intact.
+
+cargo_build_script(
+    name = "symlink_build_rs",
+    srcs = ["build.rs"],
+    data = ["data.txt"],
+    edition = "2018",
+    # TODO: Fix flake on windows.
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+rust_test(
+    name = "test",
+    srcs = ["test.rs"],
+    data = [":symlink_build_rs"],
+    edition = "2018",
+    deps = [":symlink_build_rs"],
+)

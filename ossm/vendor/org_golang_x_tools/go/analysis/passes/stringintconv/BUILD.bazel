@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "stringintconv",
+    srcs = ["string.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/stringintconv",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/inspect",
+        "//go/ast/inspector",
+        "//internal/typeparams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":stringintconv",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "stringintconv_test",
+    srcs = ["string_test.go"],
+    deps = [
+        ":stringintconv",
+        "//go/analysis/analysistest",
+        "//internal/typeparams",
+    ],
+)

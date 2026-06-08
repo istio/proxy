@@ -1,0 +1,27 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+index 53501454..e85849d6 100644
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -29,6 +29,7 @@
+ # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #
+ #   Bazel Build for Google C++ Testing Framework(Google Test)
++load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+diff --git a/MODULE.bazel b/MODULE.bazel
+index 5cb0b156..683bf92b 100644
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -51,6 +51,10 @@ bazel_dep(
+     name = "re2",
+     version = "2024-07-02.bcr.1",
+ )
++bazel_dep(
++    name = "rules_cc",
++    version = "0.2.8",
++)
+ 
+ bazel_dep(
+     name = "rules_python",

@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "grpc",
+    srcs = ["grpc.go"],
+    importpath = "github.com/golang/protobuf/protoc-gen-go/grpc",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//protoc-gen-go/descriptor",
+        "//protoc-gen-go/generator",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":grpc",
+    visibility = ["//visibility:public"],
+)

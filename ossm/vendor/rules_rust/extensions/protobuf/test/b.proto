@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+import "a.proto";
+
+message B {
+    A a = 1;
+}

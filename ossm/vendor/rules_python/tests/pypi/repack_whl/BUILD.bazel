@@ -1,0 +1,8 @@
+load("//python:py_test.bzl", "py_test")
+
+py_test(
+    name = "repack_whl_test",
+    size = "small",
+    srcs = ["repack_whl_test.py"],
+    deps = ["//python/private/pypi:repack_whl"],
+)

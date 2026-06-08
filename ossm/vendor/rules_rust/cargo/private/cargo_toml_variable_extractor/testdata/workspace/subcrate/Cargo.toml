@@ -1,0 +1,10 @@
+[package]
+name = "subcrate"
+authors = { workspace = true }
+description = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+readme = { workspace = true }
+repository = { workspace = true }
+rust-version = { workspace = true }
+version = { workspace = true }

@@ -1,0 +1,15 @@
+load("//:defs.bzl", "proto_plugin")
+
+proto_plugin(
+    name = "java_plugin",
+    out = "{name}.jar",
+    protoc_plugin_name = "java",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "grpc_java_plugin",
+    out = "{name}_grpc.jar",
+    tool = "@io_grpc_grpc_java//compiler:grpc_java_plugin",
+    visibility = ["//visibility:public"],
+)

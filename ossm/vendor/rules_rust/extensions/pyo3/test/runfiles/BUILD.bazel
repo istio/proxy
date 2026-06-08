@@ -1,0 +1,19 @@
+load("@rules_python//python:defs.bzl", "py_test")
+load("//:defs.bzl", "pyo3_extension")
+
+pyo3_extension(
+    name = "reader",
+    srcs = ["reader.rs"],
+    data = ["data.txt"],
+    edition = "2021",
+    deps = ["@rules_rust//tools/runfiles"],
+)
+
+py_test(
+    name = "reader_test",
+    srcs = ["reader_test.py"],
+    deps = [
+        ":reader",
+        "@rules_python//python/runfiles",
+    ],
+)

@@ -1,0 +1,17 @@
+syntax = "proto3";
+package samples;
+import "options.proto";
+
+// This is an enum
+enum ImportedEnum {
+  option (protoc.gen.jsonschema.enum_options).enums_as_constants = true;
+
+  // Zero
+  VALUE_0 = 0;
+  // One
+  VALUE_1 = 1;
+  // Two
+  VALUE_2 = 2;
+  //Three
+  VALUE_3 = 3;
+}

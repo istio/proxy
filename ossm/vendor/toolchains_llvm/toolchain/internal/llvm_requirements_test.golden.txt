@@ -1,0 +1,120 @@
+[aarch64,darwin,'latest:<=20.1.0']: 20.1.0 = LLVM-20.1.0-macOS-ARM64.tar.xz
+[aarch64,darwin,'latest:<=20.1.0,>17.0.4,!=19.1.7']: 20.1.0 = LLVM-20.1.0-macOS-ARM64.tar.xz
+[aarch64,darwin,'latest:<20.1.0,>17.0.4,!=19.1.7']: 19.1.6 = LLVM-19.1.6-macOS-ARM64.tar.xz
+[aarch64,darwin,'latest:<20.1.0,>17.0.4']: 19.1.7 = LLVM-19.1.7-macOS-ARM64.tar.xz
+[aarch64,darwin,'latest:>=15.0.6,<16']: 15.0.7 = clang+llvm-15.0.7-arm64-apple-darwin22.0.tar.xz
+[aarch64,darwin,'first:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-arm64-apple-darwin21.0.tar.xz
+[aarch64,darwin,'latest']: 20.1.3 = LLVM-20.1.3-macOS-ARM64.tar.xz
+[aarch64,darwin,'first']: 14.0.6 = clang+llvm-14.0.6-arm64-apple-darwin22.3.0.tar.xz
+[aarch64,linux,ubuntu,0,'latest:<=20.1.0']: 20.1.0 = LLVM-20.1.0-Linux-ARM64.tar.xz
+[aarch64,linux,ubuntu,0,'latest:<=20.1.0,>17.0.4,!=19.1.7']: 20.1.0 = LLVM-20.1.0-Linux-ARM64.tar.xz
+[aarch64,linux,ubuntu,0,'latest:<20.1.0,>17.0.4,!=19.1.7']: 19.1.6 = clang+llvm-19.1.6-aarch64-linux-gnu.tar.xz
+[aarch64,linux,ubuntu,0,'latest:<20.1.0,>17.0.4']: 19.1.7 = clang+llvm-19.1.7-aarch64-linux-gnu.tar.xz
+[aarch64,linux,ubuntu,0,'latest:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-aarch64-linux-gnu.tar.xz
+[aarch64,linux,ubuntu,0,'first:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-aarch64-linux-gnu.tar.xz
+[aarch64,linux,ubuntu,0,'latest']: 20.1.3 = LLVM-20.1.3-Linux-ARM64.tar.xz
+[aarch64,linux,ubuntu,0,'first']: 6.0.0 = clang+llvm-6.0.0-aarch64-linux-gnu.tar.xz
+[aarch64,linux,raspbian,0,'latest:<=20.1.0']: 20.1.0 = LLVM-20.1.0-Linux-ARM64.tar.xz
+[aarch64,linux,raspbian,0,'latest:<=20.1.0,>17.0.4,!=19.1.7']: 20.1.0 = LLVM-20.1.0-Linux-ARM64.tar.xz
+[aarch64,linux,raspbian,0,'latest:<20.1.0,>17.0.4,!=19.1.7']: 19.1.6 = clang+llvm-19.1.6-aarch64-linux-gnu.tar.xz
+[aarch64,linux,raspbian,0,'latest:<20.1.0,>17.0.4']: 19.1.7 = clang+llvm-19.1.7-aarch64-linux-gnu.tar.xz
+[aarch64,linux,raspbian,0,'latest:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-aarch64-linux-gnu.tar.xz
+[aarch64,linux,raspbian,0,'first:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-aarch64-linux-gnu.tar.xz
+[aarch64,linux,raspbian,0,'latest']: 20.1.3 = LLVM-20.1.3-Linux-ARM64.tar.xz
+[aarch64,linux,raspbian,0,'first']: 6.0.0 = clang+llvm-6.0.0-aarch64-linux-gnu.tar.xz
+[aarch64,linux,rhel,0,'latest:<=20.1.0']: 20.1.0 = LLVM-20.1.0-Linux-ARM64.tar.xz
+[aarch64,linux,rhel,0,'latest:<=20.1.0,>17.0.4,!=19.1.7']: 20.1.0 = LLVM-20.1.0-Linux-ARM64.tar.xz
+[aarch64,linux,rhel,0,'latest:<20.1.0,>17.0.4,!=19.1.7']: 19.1.6 = clang+llvm-19.1.6-aarch64-linux-gnu.tar.xz
+[aarch64,linux,rhel,0,'latest:<20.1.0,>17.0.4']: 19.1.7 = clang+llvm-19.1.7-aarch64-linux-gnu.tar.xz
+[aarch64,linux,rhel,0,'latest:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-aarch64-linux-gnu.tar.xz
+[aarch64,linux,rhel,0,'first:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-aarch64-linux-gnu.tar.xz
+[aarch64,linux,rhel,0,'latest']: 20.1.3 = LLVM-20.1.3-Linux-ARM64.tar.xz
+[aarch64,linux,rhel,0,'first']: 6.0.0 = clang+llvm-6.0.0-aarch64-linux-gnu.tar.xz
+[aarch64,windows,'latest:<=20.1.0']: 20.1.0 = clang+llvm-20.1.0-aarch64-pc-windows-msvc.tar.xz
+[aarch64,windows,'latest:<=20.1.0,>17.0.4,!=19.1.7']: 20.1.0 = clang+llvm-20.1.0-aarch64-pc-windows-msvc.tar.xz
+[aarch64,windows,"latest:<20.1.0,>17.0.4,!=19.1.7"]: ERROR: No matching distribution found.
+[aarch64,windows,"latest:<20.1.0,>17.0.4"]: ERROR: No matching distribution found.
+[aarch64,windows,"latest:>=15.0.6,<16"]: ERROR: No matching distribution found.
+[aarch64,windows,"first:>=15.0.6,<16"]: ERROR: No matching distribution found.
+[aarch64,windows,'latest']: 20.1.3 = clang+llvm-20.1.3-aarch64-pc-windows-msvc.tar.xz
+[aarch64,windows,'first']: 20.1.0 = clang+llvm-20.1.0-aarch64-pc-windows-msvc.tar.xz
+[armv7a,darwin,"latest:<=20.1.0"]: ERROR: No matching distribution found.
+[armv7a,darwin,"latest:<=20.1.0,>17.0.4,!=19.1.7"]: ERROR: No matching distribution found.
+[armv7a,darwin,"latest:<20.1.0,>17.0.4,!=19.1.7"]: ERROR: No matching distribution found.
+[armv7a,darwin,"latest:<20.1.0,>17.0.4"]: ERROR: No matching distribution found.
+[armv7a,darwin,"latest:>=15.0.6,<16"]: ERROR: No matching distribution found.
+[armv7a,darwin,"first:>=15.0.6,<16"]: ERROR: No matching distribution found.
+[armv7a,darwin,"latest"]: ERROR: No matching distribution found.
+[armv7a,darwin,"first"]: ERROR: No matching distribution found.
+[armv7a,linux,ubuntu,0,'latest:<=20.1.0']: 20.1.0 = clang+llvm-20.1.0-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,ubuntu,0,'latest:<=20.1.0,>17.0.4,!=19.1.7']: 20.1.0 = clang+llvm-20.1.0-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,ubuntu,0,'latest:<20.1.0,>17.0.4,!=19.1.7']: 19.1.6 = clang+llvm-19.1.6-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,ubuntu,0,'latest:<20.1.0,>17.0.4']: 19.1.7 = clang+llvm-19.1.7-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,ubuntu,0,'latest:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-armv7a-linux-gnueabihf.tar.xz
+[armv7a,linux,ubuntu,0,'first:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-armv7a-linux-gnueabihf.tar.xz
+[armv7a,linux,ubuntu,0,'latest']: 20.1.3 = clang+llvm-20.1.3-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,ubuntu,0,'first']: 6.0.0 = clang+llvm-6.0.0-armv7a-linux-gnueabihf.tar.xz
+[armv7a,linux,raspbian,0,'latest:<=20.1.0']: 20.1.0 = clang+llvm-20.1.0-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,raspbian,0,'latest:<=20.1.0,>17.0.4,!=19.1.7']: 20.1.0 = clang+llvm-20.1.0-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,raspbian,0,'latest:<20.1.0,>17.0.4,!=19.1.7']: 19.1.6 = clang+llvm-19.1.6-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,raspbian,0,'latest:<20.1.0,>17.0.4']: 19.1.7 = clang+llvm-19.1.7-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,raspbian,0,'latest:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-armv7a-linux-gnueabihf.tar.xz
+[armv7a,linux,raspbian,0,'first:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-armv7a-linux-gnueabihf.tar.xz
+[armv7a,linux,raspbian,0,'latest']: 20.1.3 = clang+llvm-20.1.3-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,raspbian,0,'first']: 6.0.0 = clang+llvm-6.0.0-armv7a-linux-gnueabihf.tar.xz
+[armv7a,linux,rhel,0,'latest:<=20.1.0']: 20.1.0 = clang+llvm-20.1.0-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,rhel,0,'latest:<=20.1.0,>17.0.4,!=19.1.7']: 20.1.0 = clang+llvm-20.1.0-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,rhel,0,'latest:<20.1.0,>17.0.4,!=19.1.7']: 19.1.6 = clang+llvm-19.1.6-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,rhel,0,'latest:<20.1.0,>17.0.4']: 19.1.7 = clang+llvm-19.1.7-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,rhel,0,'latest:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-armv7a-linux-gnueabihf.tar.xz
+[armv7a,linux,rhel,0,'first:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-armv7a-linux-gnueabihf.tar.xz
+[armv7a,linux,rhel,0,'latest']: 20.1.3 = clang+llvm-20.1.3-armv7a-linux-gnueabihf.tar.gz
+[armv7a,linux,rhel,0,'first']: 6.0.0 = clang+llvm-6.0.0-armv7a-linux-gnueabihf.tar.xz
+[armv7a,windows,"latest:<=20.1.0"]: ERROR: No matching distribution found.
+[armv7a,windows,"latest:<=20.1.0,>17.0.4,!=19.1.7"]: ERROR: No matching distribution found.
+[armv7a,windows,"latest:<20.1.0,>17.0.4,!=19.1.7"]: ERROR: No matching distribution found.
+[armv7a,windows,"latest:<20.1.0,>17.0.4"]: ERROR: No matching distribution found.
+[armv7a,windows,"latest:>=15.0.6,<16"]: ERROR: No matching distribution found.
+[armv7a,windows,"first:>=15.0.6,<16"]: ERROR: No matching distribution found.
+[armv7a,windows,"latest"]: ERROR: No matching distribution found.
+[armv7a,windows,"first"]: ERROR: No matching distribution found.
+[x86_64,darwin,'latest:<=20.1.0']: 19.1.7 = LLVM-19.1.7-macOS-X64.tar.xz
+[x86_64,darwin,'latest:<=20.1.0,>17.0.4,!=19.1.7']: 19.1.6 = LLVM-19.1.6-macOS-X64.tar.xz
+[x86_64,darwin,'latest:<20.1.0,>17.0.4,!=19.1.7']: 19.1.6 = LLVM-19.1.6-macOS-X64.tar.xz
+[x86_64,darwin,'latest:<20.1.0,>17.0.4']: 19.1.7 = LLVM-19.1.7-macOS-X64.tar.xz
+[x86_64,darwin,'latest:>=15.0.6,<16']: 15.0.7 = clang+llvm-15.0.7-x86_64-apple-darwin21.0.tar.xz
+[x86_64,darwin,'first:>=15.0.6,<16']: 15.0.7 = clang+llvm-15.0.7-x86_64-apple-darwin21.0.tar.xz
+[x86_64,darwin,'latest']: 20.1.3 = LLVM-20.1.3-macOS-X64.tar.xz
+[x86_64,darwin,'first']: 6.0.0 = clang+llvm-6.0.0-x86_64-apple-darwin.tar.xz
+[x86_64,linux,ubuntu,0,'latest:<=20.1.0']: 20.1.0 = LLVM-20.1.0-Linux-X64.tar.xz
+[x86_64,linux,ubuntu,0,'latest:<=20.1.0,>17.0.4,!=19.1.7']: 20.1.0 = LLVM-20.1.0-Linux-X64.tar.xz
+[x86_64,linux,ubuntu,0,'latest:<20.1.0,>17.0.4,!=19.1.7']: 19.1.6 = LLVM-19.1.6-Linux-X64.tar.xz
+[x86_64,linux,ubuntu,0,'latest:<20.1.0,>17.0.4']: 19.1.7 = LLVM-19.1.7-Linux-X64.tar.xz
+[x86_64,linux,ubuntu,0,'latest:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+[x86_64,linux,ubuntu,0,'first:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+[x86_64,linux,ubuntu,0,'latest']: 20.1.3 = LLVM-20.1.3-Linux-X64.tar.xz
+[x86_64,linux,ubuntu,0,'first']: 6.0.0 = clang+llvm-6.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz
+[x86_64,linux,raspbian,0,'latest:<=20.1.0']: 20.1.0 = LLVM-20.1.0-Linux-X64.tar.xz
+[x86_64,linux,raspbian,0,'latest:<=20.1.0,>17.0.4,!=19.1.7']: 20.1.0 = LLVM-20.1.0-Linux-X64.tar.xz
+[x86_64,linux,raspbian,0,'latest:<20.1.0,>17.0.4,!=19.1.7']: 19.1.6 = LLVM-19.1.6-Linux-X64.tar.xz
+[x86_64,linux,raspbian,0,'latest:<20.1.0,>17.0.4']: 19.1.7 = LLVM-19.1.7-Linux-X64.tar.xz
+[x86_64,linux,"latest:>=15.0.6,<16"]: ERROR: No matching distribution found.
+[x86_64,linux,"first:>=15.0.6,<16"]: ERROR: No matching distribution found.
+[x86_64,linux,raspbian,0,'latest']: 20.1.3 = LLVM-20.1.3-Linux-X64.tar.xz
+[x86_64,linux,raspbian,0,'first']: 19.1.0 = LLVM-19.1.0-Linux-X64.tar.xz
+[x86_64,linux,rhel,0,'latest:<=20.1.0']: 20.1.0 = LLVM-20.1.0-Linux-X64.tar.xz
+[x86_64,linux,rhel,0,'latest:<=20.1.0,>17.0.4,!=19.1.7']: 20.1.0 = LLVM-20.1.0-Linux-X64.tar.xz
+[x86_64,linux,rhel,0,'latest:<20.1.0,>17.0.4,!=19.1.7']: 19.1.6 = LLVM-19.1.6-Linux-X64.tar.xz
+[x86_64,linux,rhel,0,'latest:<20.1.0,>17.0.4']: 19.1.7 = LLVM-19.1.7-Linux-X64.tar.xz
+[x86_64,linux,rhel,0,'latest:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+[x86_64,linux,rhel,0,'first:>=15.0.6,<16']: 15.0.6 = clang+llvm-15.0.6-x86_64-linux-gnu-ubuntu-18.04.tar.xz
+[x86_64,linux,rhel,0,'latest']: 20.1.3 = LLVM-20.1.3-Linux-X64.tar.xz
+[x86_64,linux,rhel,0,'first']: 6.0.0 = clang+llvm-6.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz
+[x86_64,windows,'latest:<=20.1.0']: 20.1.0 = clang+llvm-20.1.0-x86_64-pc-windows-msvc.tar.xz
+[x86_64,windows,'latest:<=20.1.0,>17.0.4,!=19.1.7']: 20.1.0 = clang+llvm-20.1.0-x86_64-pc-windows-msvc.tar.xz
+[x86_64,windows,'latest:<20.1.0,>17.0.4,!=19.1.7']: 19.1.6 = clang+llvm-19.1.6-x86_64-pc-windows-msvc.tar.xz
+[x86_64,windows,'latest:<20.1.0,>17.0.4']: 19.1.7 = clang+llvm-19.1.7-x86_64-pc-windows-msvc.tar.xz
+[x86_64,windows,"latest:>=15.0.6,<16"]: ERROR: No matching distribution found.
+[x86_64,windows,"first:>=15.0.6,<16"]: ERROR: No matching distribution found.
+[x86_64,windows,'latest']: 20.1.3 = clang+llvm-20.1.3-x86_64-pc-windows-msvc.tar.xz
+[x86_64,windows,'first']: 18.1.0 = clang+llvm-18.1.0-x86_64-pc-windows-msvc.tar.xz

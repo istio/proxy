@@ -1,0 +1,31 @@
+load(":channel.bzl", "rust_toolchain_channel_flag")
+
+rust_toolchain_channel_flag(
+    name = "channel",
+    build_setting_default = "stable",
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "beta",
+    flag_values = {
+        ":channel": "beta",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "nightly",
+    flag_values = {
+        ":channel": "nightly",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "stable",
+    flag_values = {
+        ":channel": "stable",
+    },
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,127 @@
+###############################################################################
+## Bazel Configuration Flags
+##
+## `.bazelrc` is a Bazel configuration file.
+## https://bazel.build/docs/best-practices#bazelrc-file
+###############################################################################
+
+# https://bazel.build/reference/command-line-reference#flag--enable_platform_specific_config
+common --enable_platform_specific_config
+
+# Enable the only currently supported report type
+# https://bazel.build/reference/command-line-reference#flag--combined_report
+coverage --combined_report=lcov
+
+# Avoid fully cached builds reporting no coverage and failing CI
+# https://bazel.build/reference/command-line-reference#flag--experimental_fetch_all_coverage_outputs
+coverage --experimental_fetch_all_coverage_outputs
+
+# Disable network access in the sandbox by default.
+build --sandbox_default_allow_network=false
+
+# Do not use the host detected python toolchain. Always use one explicitly
+# registered in the WORKSPACE.
+common --repo_env=BAZEL_DO_NOT_DETECT_PYTHON_TOOLCHAIN=1
+
+###############################################################################
+## Configuration Flags
+###############################################################################
+
+# Enable black for all targets in the workspace
+build --aspects=@rules_venv//python/black:defs.bzl%py_black_aspect
+build:black --output_groups=+py_black_checks
+build:no_black --output_groups=-py_black_checks
+
+# Enable isort for all targets in the workspace
+build --aspects=@rules_venv//python/isort:defs.bzl%py_isort_aspect
+build --@rules_venv//python/isort:config=//:.isort.cfg
+build:isort --output_groups=+py_isort_checks
+build:no_isort --output_groups=-py_isort_checks
+
+# Enable mypy for all targets in the workspace
+build --aspects=@rules_venv//python/mypy:defs.bzl%py_mypy_aspect
+build --@rules_venv//python/mypy:config=//:.mypy.ini
+build:mypy --output_groups=+py_mypy_checks
+build:no_mypy --output_groups=-py_mypy_checks
+
+# Enable pylint for all targets in the workspace
+build --aspects=@rules_venv//python/pylint:defs.bzl%py_pylint_aspect
+build --@rules_venv//python/pylint:config=//:.pylintrc.toml
+build:pylint --output_groups=+py_pylint_checks
+build:no_pylint --output_groups=-py_pylint_checks
+
+# Enable rustfmt for all targets in the workspace
+build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
+build:rustfmt --output_groups=+rustfmt_checks
+build:no_rustfmt --output_groups=-rustfmt_checks
+
+# Enable clippy for all targets in the workspace
+build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+build:clippy --output_groups=+clippy_checks
+build:no_clippy --output_groups=-clippy_checks
+
+# Enable unpretty for all targets in the workspace
+build:unpretty --aspects=@rules_rust//rust:defs.bzl%rust_unpretty_aspect
+build:unpretty --output_groups=+rust_unpretty
+
+# `unpretty` requires the nightly toolchain. See tracking issue:
+# https://github.com/rust-lang/rust/issues/43364
+build:unpretty --config=nightly
+
+# Convenience configs for enabling linting and formatting
+build:strict --config=rustfmt
+build:strict --config=clippy
+build:strict --config=black
+build:strict --config=isort
+build:strict --config=pylint
+build:strict --config=mypy
+build:no_strict --config=no_rustfmt
+build:no_strict --config=no_clippy
+build:no_strict --config=no_black
+build:no_strict --config=no_isort
+build:no_strict --config=no_pylint
+build:no_strict --config=no_mypy
+
+# When running test enable all linters and formatters
+test --config=strict
+
+###############################################################################
+## Incompatibility flags
+###############################################################################
+
+# https://github.com/bazelbuild/bazel/issues/8195
+build --incompatible_disallow_empty_glob=true
+
+# https://github.com/bazelbuild/bazel/issues/12821
+build --nolegacy_external_runfiles
+
+# Required for cargo_build_script support before Bazel 7
+build --incompatible_merge_fixed_and_default_shell_env
+
+# Disable legacy __init__.py behavior which is known to conflict with
+# modern python versions (3.9+)
+build --incompatible_default_to_explicit_init_py
+
+###############################################################################
+## Bzlmod
+###############################################################################
+
+# A configuration for disabling bzlmod.
+common:no-bzlmod --noenable_bzlmod --enable_workspace
+
+# Disable the bzlmod lockfile, so we don't accidentally commit MODULE.bazel.lock
+common --lockfile_mode=off
+
+# Allow bazel configuration flags to locate the core rules to avoid adding local
+# override paths to the `MODULE.bazel` file and breaking downstream consumers.
+# common --override_module=rules_rust=../../
+
+###############################################################################
+## Custom user flags
+##
+## This should always be the last thing in the `.bazelrc` file to ensure
+## consistent behavior when setting flags in that file as `.bazelrc` files are
+## evaluated top to bottom.
+###############################################################################
+
+try-import %workspace%/user.bazelrc

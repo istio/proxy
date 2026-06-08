@@ -1,0 +1,78 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+syntax = "proto3";
+package skywalking.v10;
+
+option java_multiple_files = true;
+option java_package = "org.apache.skywalking.apm.network.language.asyncprofiler.v10";
+option csharp_namespace = "SkyWalking.NetworkProtocol.V10";
+option go_package = "skywalking.apache.org/repo/goapi/collect/language/asyncprofiler/v10";
+
+import "common/Command.proto";
+
+service AsyncProfilerTask {
+  // collect sends JFR data to the OAP server
+  rpc collect(stream AsyncProfilerData) returns (stream AsyncProfilerCollectionResponse);
+  // getAsyncProfilerTaskCommands sends query to the OAP server for all AsyncProfiler tasks to be executed for the given Java Agent instance
+  rpc getAsyncProfilerTaskCommands (AsyncProfilerTaskCommandQuery) returns (skywalking.v3.Commands);
+}
+
+message AsyncProfilerData {
+  // metaData of the AsyncProfiler task and its result data, only sent in the first request.
+  AsyncProfilerMetaData metaData = 1;
+
+  oneof result {
+    string errorMessage = 2;
+    // JFR binary content
+    bytes content = 3;
+  }
+}
+
+message AsyncProfilerCollectionResponse {
+  AsyncProfilingStatus type = 1;
+}
+
+enum AsyncProfilingStatus {
+  // PROFILING_SUCCESS indicates the Java Agent has finished the execution
+  PROFILING_SUCCESS = 0;
+  // EXECUTION_TASK_ERROR indicates a potential execution error caused by the Java Agent, such as an error in the task parameters that were sent.
+  EXECUTION_TASK_ERROR = 1;
+  // TERMINATED_BY_OVERSIZE means that the server cannot receive the JFR file because the size of the file is over the limitation.
+  TERMINATED_BY_OVERSIZE = 2;
+}
+
+message AsyncProfilerMetaData {
+  string service = 1;
+  string serviceInstance = 2;
+  // async-profiler task id
+  string taskId = 3;
+  // AsyncProfilerCollectType indicates the overall status of the AsyncProfiler task, i.e. success or failure
+  AsyncProfilingStatus type = 4;
+  // if type is success then it will be the size of the JFR file, otherwise it will be 0
+  int32 contentSize = 5;
+}
+
+message AsyncProfilerTaskCommandQuery {
+  // service name of the Java process
+  string service = 1;
+  string serviceInstance = 2;
+
+  // lastCommandTime is the timestamp of the last AsyncProfiler task received
+  int64 lastCommandTime = 3;
+}

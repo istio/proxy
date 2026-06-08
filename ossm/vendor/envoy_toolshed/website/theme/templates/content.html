@@ -1,0 +1,22 @@
+{% extends "default.html" %}
+
+{% block page_content %}
+<div id="default-page">
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-12 content-area">
+        <header class="post-header">
+          <h1 class="heading-big text-purple text-uppercase"
+              itemprop="name headline">
+            {%- block page_title %}{{ active_page | upper }}{% endblock -%}
+          </h1>
+        </header>
+        <div class="page-content">
+          {% block content %}
+          {% endblock %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock page_content %}

@@ -1,0 +1,29 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+    visibility = ["//python:__pkg__"],
+)
+
+bzl_library(
+    name = "py_zipapp_binary_bzl",
+    srcs = ["py_zipapp_binary.bzl"],
+    deps = [
+        "//python/private:util_bzl",
+        "//python/private/zipapp:py_zipapp_rule_bzl",
+    ],
+)
+
+bzl_library(
+    name = "py_zipapp_test_bzl",
+    srcs = ["py_zipapp_test.bzl"],
+    deps = [
+        "//python/private:util_bzl",
+        "//python/private/zipapp:py_zipapp_rule_bzl",
+    ],
+)

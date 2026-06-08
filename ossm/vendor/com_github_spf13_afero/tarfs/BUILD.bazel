@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tarfs",
+    srcs = [
+        "file.go",
+        "fs.go",
+    ],
+    importpath = "github.com/spf13/afero/tarfs",
+    visibility = ["//visibility:public"],
+    deps = ["//:afero"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tarfs",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "tarfs_test",
+    srcs = ["tarfs_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":tarfs"],
+    deps = ["//:afero"],
+)

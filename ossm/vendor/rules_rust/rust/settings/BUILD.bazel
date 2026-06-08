@@ -1,0 +1,139 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load(
+    ":settings.bzl",
+    "always_enable_metadata_output_groups",
+    "capture_clippy_output",
+    "clippy_error_format",
+    "clippy_flag",
+    "clippy_flags",
+    "clippy_output_diagnostics",
+    "clippy_toml",
+    "codegen_units",
+    "collect_cfgs",
+    "default_allocator_library",
+    "error_format",
+    "experimental_link_std_dylib",
+    "experimental_per_crate_rustc_flag",
+    "experimental_use_allocator_libraries_with_mangled_symbols",
+    "experimental_use_cc_common_link",
+    "experimental_use_coverage_metadata_files",
+    "experimental_use_global_allocator",
+    "experimental_use_sh_toolchain_for_bootstrap_process_wrapper",
+    "extra_exec_rustc_env",
+    "extra_exec_rustc_flag",
+    "extra_exec_rustc_flags",
+    "extra_rustc_env",
+    "extra_rustc_flag",
+    "extra_rustc_flags",
+    "incompatible_change_clippy_error_format",
+    "incompatible_change_rust_test_compilation_output_directory",
+    "incompatible_do_not_include_data_in_compile_data",
+    "lto",
+    "no_std",
+    "pipelined_compilation",
+    "rename_first_party_crates",
+    "require_explicit_unstable_features",
+    "rustc_output_diagnostics",
+    "rustfmt_toml",
+    "third_party_dir",
+    "toolchain_generated_sysroot",
+    "toolchain_linker_preference",
+    "unpretty",
+    "use_real_import_macro",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    ".clippy.toml",
+    ".rustfmt.toml",
+    "settings.bzl",
+])
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["*.bzl"]),
+    visibility = ["//rust:__pkg__"],
+    deps = [
+        "//rust/private:bzl_lib",
+        "@bazel_skylib//rules:common_settings",
+    ],
+)
+
+always_enable_metadata_output_groups()
+
+capture_clippy_output()
+
+clippy_flag()
+
+clippy_flags()
+
+clippy_output_diagnostics()
+
+clippy_toml()
+
+codegen_units()
+
+collect_cfgs()
+
+default_allocator_library()
+
+error_format()
+
+clippy_error_format()
+
+experimental_link_std_dylib()
+
+experimental_per_crate_rustc_flag()
+
+experimental_use_cc_common_link()
+
+experimental_use_coverage_metadata_files()
+
+experimental_use_global_allocator()
+
+experimental_use_allocator_libraries_with_mangled_symbols()
+
+experimental_use_sh_toolchain_for_bootstrap_process_wrapper()
+
+extra_exec_rustc_env()
+
+extra_exec_rustc_flag()
+
+extra_exec_rustc_flags()
+
+extra_rustc_env()
+
+extra_rustc_flag()
+
+extra_rustc_flags()
+
+incompatible_change_clippy_error_format()
+
+incompatible_change_rust_test_compilation_output_directory()
+
+incompatible_do_not_include_data_in_compile_data()
+
+lto()
+
+no_std()
+
+pipelined_compilation()
+
+rename_first_party_crates()
+
+require_explicit_unstable_features()
+
+rustc_output_diagnostics()
+
+rustfmt_toml()
+
+third_party_dir()
+
+toolchain_generated_sysroot()
+
+toolchain_linker_preference()
+
+unpretty()
+
+use_real_import_macro()

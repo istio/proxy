@@ -1,0 +1,1 @@
+echo a_script

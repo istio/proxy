@@ -1,0 +1,1 @@
+workspace(name = "rules_rust_test_cc_common_link")

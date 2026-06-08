@@ -1,0 +1,281 @@
+# Copyright 2023 The Bazel Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+module(name = "toolchains_llvm_tests")
+
+bazel_dep(name = "toolchains_llvm", version = "0.0.0")
+local_path_override(
+    module_name = "toolchains_llvm",
+    path = "..",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.17")
+bazel_dep(name = "rules_foreign_cc", version = "0.15.1")
+bazel_dep(name = "rules_go", version = "0.60.0", repo_name = "io_bazel_rules_go")
+bazel_dep(name = "rules_license", version = "1.0.0")
+bazel_dep(name = "rules_rust", version = "0.67.0")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "abseil-cpp", version = "20250814.2", repo_name = "com_google_absl")
+bazel_dep(name = "boringssl", version = "0.20251124.0")
+
+# TODO: Remove when protobuf is released with a version of rules_python that supports 8.x
+bazel_dep(name = "rules_python", version = "1.9.0")
+
+go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(
+    version = "1.25.4",
+)
+use_repo(go_sdk, "go_toolchains")
+
+register_toolchains("@go_toolchains//:all")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2023")
+use_repo(
+    rust,
+    "rust_toolchains",
+)
+
+register_toolchains("@rust_toolchains//:all")
+
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+
+# When updating this version, also update the versions associated with
+# llvm_toolchain below, sys_paths_test in the workflows file, and xcompile_test
+# through the `llvm_toolchain_with_sysroot` toolchain.
+# We use C++17 and the first LLVM version with full support is 16.0.0.
+# We also use C++20 which has reasonable wide support starting with LLVM 17.0.0.
+# MacOS X86 does not exist for LLVM 17 or 18, so we allow 19 as well.
+# We also allow to override this with a environment LLVM_VERSION for testing.
+LLVM_VERSIONS = {
+    "": "getenv(LLVM_VERSION,latest:>=17.0.0,<20)",
+    "darwin-x86_64": "15.0.7",  # Verify this works as opposed to using one version.
+}
+
+llvm.toolchain(
+    name = "llvm_toolchain",
+    cxx_standard = {"": "c++17"},
+    llvm_versions = LLVM_VERSIONS,
+)
+llvm.extra_target_compatible_with(
+    name = "llvm_toolchain",
+    constraints = ["@//:cxx17"],
+)
+use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
+
+register_toolchains("@llvm_toolchain//:all")
+
+llvm.toolchain(
+    name = "llvm_toolchain_cxx20",
+    cxx_standard = {"": "c++20"},
+    llvm_versions = LLVM_VERSIONS,
+)
+llvm.extra_target_compatible_with(
+    name = "llvm_toolchain_cxx20",
+    constraints = ["//:cxx20"],
+)
+use_repo(llvm, "llvm_toolchain_cxx20")
+
+register_toolchains("@llvm_toolchain_cxx20//:all")
+
+# Example toolchain with user provided URLs.
+# TODO(siddharthab): Add test.
+llvm.toolchain(
+    name = "llvm_toolchain_with_urls",
+    llvm_versions = {
+        "": "15.0.6",
+        "darwin-aarch64": "15.0.7",
+        "darwin-x86_64": "15.0.7",
+    },
+    sha256 = {
+        "": "38bc7f5563642e73e69ac5626724e206d6d539fbef653541b34cae0ba9c3f036",
+        "darwin-aarch64": "867c6afd41158c132ef05a8f1ddaecf476a26b91c85def8e124414f9a9ba188d",
+        "darwin-x86_64": "d16b6d536364c5bec6583d12dd7e6cf841b9f508c4430d9ee886726bd9983f1c",
+    },
+    strip_prefix = {
+        "": "clang+llvm-15.0.6-x86_64-linux-gnu-ubuntu-18.04",
+        "darwin-aarch64": "clang+llvm-15.0.7-arm64-apple-darwin22.0",
+        "darwin-x86_64": "clang+llvm-15.0.7-x86_64-apple-darwin21.0",
+    },
+    urls = {
+        "": ["https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.6/clang+llvm-15.0.6-x86_64-linux-gnu-ubuntu-18.04.tar.xz"],
+        "darwin-aarch64": ["https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.7/clang+llvm-15.0.7-arm64-apple-darwin22.0.tar.xz"],
+        "darwin-x86_64": ["https://github.com/llvm/llvm-project/releases/download/llvmorg-15.0.7/clang+llvm-15.0.7-x86_64-apple-darwin21.0.tar.xz"],
+    },
+)
+use_repo(llvm, "llvm_toolchain_with_urls")
+
+# This is the last known LLVM version with zlib support in ld.lld. Without zlib
+# support, if the installed gcc toolchain has compressed sections in its object
+# files, then ld.lld won't be able to process them. Example is archlinux docker
+# image base-devel as of the time of this writing (23 May 2022).
+llvm.toolchain(
+    name = "llvm_toolchain_13_0_0",
+    llvm_version = "13.0.0",
+)
+use_repo(llvm, "llvm_toolchain_13_0_0")
+
+# Toolchain example with absolute paths; tested in GitHub CI.
+llvm.toolchain(
+    name = "llvm_toolchain_with_absolute_paths",
+    absolute_paths = True,
+    llvm_versions = LLVM_VERSIONS,
+)
+
+# We can share the downloaded LLVM distribution with the first configuration.
+llvm.toolchain_root(
+    name = "llvm_toolchain_with_absolute_paths",
+    label = "@llvm_toolchain_llvm//:BUILD",
+)
+use_repo(llvm, "llvm_toolchain_with_absolute_paths")
+
+# Toolchain example with system LLVM; tested in GitHub CI.
+# The llvm_version must match the version specified in .github/workflows/tests.yml: sys_paths_test
+llvm.toolchain(
+    name = "llvm_toolchain_with_system_llvm",
+    llvm_versions = {"": "16.0.0"},
+)
+
+# For this toolchain to work, the LLVM distribution archive would need to be unpacked here.
+llvm.toolchain_root(
+    name = "llvm_toolchain_with_system_llvm",
+    path = "/opt/llvm-16",
+)
+use_repo(llvm, "llvm_toolchain_with_system_llvm")
+
+# Toolchain example with a sysroot.
+llvm.toolchain(
+    name = "llvm_toolchain_with_sysroot",
+    llvm_versions = LLVM_VERSIONS,
+)
+
+# We can share the downloaded LLVM distribution with the first configuration.
+llvm.toolchain_root(
+    name = "llvm_toolchain_with_sysroot",
+    label = "@llvm_toolchain_llvm//:BUILD",
+)
+llvm.sysroot(
+    name = "llvm_toolchain_with_sysroot",
+    label = "@org_chromium_sysroot_linux_x64//sysroot",
+    targets = ["linux-x86_64"],
+)
+use_repo(llvm, "llvm_toolchain_with_sysroot")
+llvm.toolchain(
+    name = "llvm_toolchain_linux_exec",
+    exec_arch = "amd64",
+    # Option 2:
+    # distribution = "clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz",
+    exec_os = "linux",
+    llvm_version = "17.0.6",
+    # Option 1:
+    sha256 = {"": "884ee67d647d77e58740c1e645649e29ae9e8a6fe87c1376be0f3a30f3cc9ab3"},
+    strip_prefix = {"": "clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04"},
+    urls = {"": ["https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.6/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz"]},
+)
+use_repo(llvm, "llvm_toolchain_linux_exec")
+
+# Toolchain example for WebAssembly wasm* targets.
+llvm.toolchain(
+    name = "llvm_toolchain_wasm",
+    libclang_rt = {
+        "@libclang_rt_wasm32//:libclang_rt.builtins-wasm32.a": "wasm32-unknown-unknown/libclang_rt.builtins.a",
+    },
+    # WebAssembly tests use a separate (newer) version of LLVM to exercise
+    # support for experimental features such as wasm64.
+    llvm_versions = {
+        # The most recent LLVM as of 2024-10-17
+        "": "19.1.0",
+    },
+    stdlib = {
+        "wasm32": "libc",
+        "wasm64": "none",
+    },
+)
+llvm.sysroot(
+    name = "llvm_toolchain_wasm",
+    label = "@wasi_sdk_sysroots//wasm32-wasip2",
+    targets = ["wasm32"],
+)
+llvm.sysroot(
+    name = "llvm_toolchain_wasm",
+    label = "@wasi_sdk_sysroots//empty",
+    targets = ["wasm64"],
+)
+use_repo(llvm, "llvm_toolchain_wasm")
+
+register_toolchains("@llvm_toolchain_wasm//:all")
+
+# Toolchain example for WebAssembly wasm*-wasi* targets.
+llvm.toolchain(
+    name = "llvm_toolchain_wasm_wasi",
+    libclang_rt = {
+        "@libclang_rt_wasm32//:libclang_rt.builtins-wasm32.a": "wasm32-unknown-wasip1/libclang_rt.builtins.a",
+    },
+    # WebAssembly tests use a separate (newer) version of LLVM to exercise
+    # support for experimental features such as wasm64.
+    llvm_versions = {
+        # The most recent LLVM as of 2024-10-17
+        "": "19.1.0",
+    },
+    stdlib = {
+        "wasip1-wasm32": "libc",
+    },
+)
+llvm.sysroot(
+    name = "llvm_toolchain_wasm_wasi",
+    label = "@wasi_sdk_sysroots//wasm32-wasip1",
+    targets = ["wasip1-wasm32"],
+)
+use_repo(llvm, "llvm_toolchain_wasm_wasi")
+
+register_toolchains("@llvm_toolchain_wasm_wasi//:all")
+
+wasi_sdk_sysroots = use_repo_rule("//wasm:wasi_sdk.bzl", "wasi_sdk_sysroots")
+
+wasi_sdk_sysroots(name = "wasi_sdk_sysroots")
+
+libclang_rt_wasm32 = use_repo_rule("//wasm:wasi_sdk.bzl", "libclang_rt_wasm32")
+
+libclang_rt_wasm32(name = "libclang_rt_wasm32")
+
+sysroot = use_repo_rule("@toolchains_llvm//toolchain:sysroot.bzl", "sysroot")
+
+# This sysroot is used by github.com/vsco/bazel-toolchains.
+sysroot(
+    name = "org_chromium_sysroot_linux_x64",
+    sha256 = "84656a6df544ecef62169cfe3ab6e41bb4346a62d3ba2a045dc5a0a2ecea94a3",
+    urls = ["https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/2202c161310ffde63729f29d27fe7bb24a0bc540/debian_stretch_amd64_sysroot.tar.xz"],
+)
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "pcre",
+    build_file_content = """\
+filegroup(
+    name = "all_srcs",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
+""",
+    sha256 = "0b8e7465dc5e98c757cc3650a20a7843ee4c3edf50aaf60bb33fd879690d2c73",
+    strip_prefix = "pcre-8.43",
+    urls = [
+        "https://mirror.bazel.build/ftp.pcre.org/pub/pcre/pcre-8.43.tar.gz",
+        "https://ftp.pcre.org/pub/pcre/pcre-8.43.tar.gz",
+    ],
+)
+

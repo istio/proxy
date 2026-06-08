@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "objectpath",
+    srcs = ["objectpath.go"],
+    importpath = "golang.org/x/tools/go/types/objectpath",
+    visibility = ["//visibility:public"],
+    deps = ["//internal/typeparams"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":objectpath",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "objectpath_test",
+    srcs = [
+        "objectpath_go118_test.go",
+        "objectpath_test.go",
+    ],
+    deps = [
+        ":objectpath",
+        "//go/buildutil",
+        "//go/gcexportdata",
+        "//go/loader",
+    ],
+)

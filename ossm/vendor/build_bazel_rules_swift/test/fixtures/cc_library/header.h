@@ -1,0 +1,8 @@
+#ifndef RULES_SWIFT_TEST_FIXTURES_CC_LIBRARY_HEADER_H_
+#define RULES_SWIFT_TEST_FIXTURES_CC_LIBRARY_HEADER_H_
+
+typedef struct {
+  int field;
+} some_structure;
+
+#endif  // RULES_SWIFT_TEST_FIXTURES_CC_LIBRARY_HEADER_H_

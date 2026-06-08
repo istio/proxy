@@ -1,0 +1,110 @@
+# Envoy specific Bazel build/test options.
+
+build --workspace_status_command=bazel/get_workspace_status
+build --action_env=BAZEL_LINKLIBS=-l%:libstdc++.a
+build --action_env=BAZEL_LINKOPTS=-lm
+
+# We already have absl in the build, define absl=1 to tell googletest to use absl for backtrace.
+build --define absl=1
+
+# Pass PATH, CC and CXX variables from the environment.
+build --action_env=CC
+build --action_env=CXX
+build --action_env=PATH
+build --enable_platform_specific_config
+
+# All warnings as errors.
+build --copt="-Werror"
+
+# Linux
+build:linux --cxxopt=-std=c++17
+
+# windows
+build:windows --cxxopt=/std:c++17
+
+# Common flags for sanitizers
+build:sanitizer --linkopt -ldl
+build:sanitizer --build_tag_filters=-no_san
+build:sanitizer --test_tag_filters=-no_san
+
+# Common flags for Clang
+build:clang --action_env=BAZEL_COMPILER=clang
+build:clang --action_env=CC=clang --action_env=CXX=clang++
+build:clang --linkopt=-fuse-ld=lld
+
+# Basic ASAN/UBSAN that works for gcc
+build:asan --config=sanitizer
+# ASAN install its signal handler, disable ours so the stacktrace will be printed by ASAN
+build:asan --copt -fsanitize=address,undefined
+build:asan --linkopt -fsanitize=address,undefined
+# TODO(lizan): vptr and function requires C++ UBSAN runtime which we're not currently linking to.
+# Enable them when bazel has better support for that or with explicit linker options.
+build:asan --copt -fno-sanitize=vptr,function
+build:asan --linkopt -fno-sanitize=vptr,function
+build:asan --copt -DADDRESS_SANITIZER=1
+build:asan --copt -D__SANITIZE_ADDRESS__
+build:asan --test_env=ASAN_OPTIONS=handle_abort=1:allow_addr2line=true:check_initialization_order=true:strict_init_order=true:detect_odr_violation=1
+build:asan --test_env=UBSAN_OPTIONS=halt_on_error=true:print_stacktrace=1
+build:asan --test_env=ASAN_SYMBOLIZER_PATH
+
+# Clang ASAN/UBSAN
+build:clang-asan --config=asan
+build:clang-asan --linkopt -fuse-ld=lld
+
+# macOS ASAN/UBSAN
+build:macos-asan --config=asan
+# Workaround, see https://github.com/bazelbuild/bazel/issues/6932
+build:macos-asan --copt -Wno-macro-redefined
+build:macos-asan --copt -D_FORTIFY_SOURCE=0
+# Workaround, see https://github.com/bazelbuild/bazel/issues/4341
+build:macos-asan --copt -DGRPC_BAZEL_BUILD
+# Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
+build:macos-asan --dynamic_mode=off
+
+# Clang TSAN
+build:clang-tsan --config=sanitizer
+build:clang-tsan --copt -fsanitize=thread
+build:clang-tsan --linkopt -fsanitize=thread
+build:clang-tsan --linkopt -fuse-ld=lld
+# Needed due to https://github.com/libevent/libevent/issues/777
+build:clang-tsan --copt -DEVENT__DISABLE_DEBUG_MODE
+
+# Clang MSAN - broken today since we need to rebuild lib[std]c++ and external deps with MSAN
+# support (see https://github.com/envoyproxy/envoy/issues/443).
+build:clang-msan --config=sanitizer
+build:clang-msan --copt -fsanitize=memory
+build:clang-msan --linkopt -fsanitize=memory
+build:clang-msan --copt -fsanitize-memory-track-origins=2
+
+# Clang with libc++
+# TODO(cmluciano) fix and re-enable _LIBCPP_VERSION testing for TCMALLOC in Envoy::Stats::TestUtil::hasDeterministicMallocStats
+# and update stats_integration_test with appropriate m_per_cluster value
+build:libc++ --config=clang
+build:libc++ --action_env=CXXFLAGS=-stdlib=libc++
+build:libc++ --action_env=BAZEL_CXXOPTS=-stdlib=libc++
+build:libc++ --action_env=BAZEL_LINKLIBS=-l%:libc++.a:-l%:libc++abi.a:-lm
+build:libc++ --define force_libcpp=enabled
+
+# Optimize build for binary size reduction.
+build:sizeopt -c opt --copt -Os
+
+# Coverage options
+coverage --config=coverage
+coverage --build_tests_only
+build:coverage --config=clang
+build:coverage --action_env=BAZEL_USE_LLVM_NATIVE_COVERAGE=1
+build:coverage --action_env=GCOV=llvm-profdata
+build:coverage --combined_report=lcov
+build:coverage --experimental_use_llvm_covmap
+build:coverage --experimental_generate_llvm_lcov
+build:coverage --collect_code_coverage
+build:coverage --instrumentation_filter="//hessian2[/:]"
+build:coverage --coverage_support=@hessian2-codec//bazel/coverage:coverage_support
+build:coverage --test_env=CC_CODE_COVERAGE_SCRIPT=external/bazel_tools/tools/test/collect_cc_coverage.sh
+build:coverage --strategy=TestRunner=local
+build:coverage --strategy=CoverageReport=local
+build:coverage --experimental_use_llvm_covmap
+build:coverage --collect_code_coverage
+build:coverage --test_tag_filters=-nocoverage
+
+common --enable_bzlmod

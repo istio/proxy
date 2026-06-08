@@ -1,0 +1,36 @@
+# Copyright 2019 The TCMalloc Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+build --cxxopt='-std=c++17'
+
+# Flip incompatible_disallow_empty_glob to avoid breaking forward compatibility, see
+# https://github.com/bazelbuild/bazel/pull/15327 for details.
+build --incompatible_disallow_empty_glob
+
+# Flip incompatible_config_setting_private_default_visibility to avoid breaking
+# forward compatibility. See https://github.com/bazelbuild/bazel/issues/12933
+# for details.
+common --incompatible_config_setting_private_default_visibility
+
+# Link Google Test against Abseil and RE2.
+build --define='absl=1'
+
+# AllocationGuard.CooperativeDeathTest checks for "SIGABRT received"
+# message printed by this signal handler.
+test --test_env="GTEST_INSTALL_FAILURE_SIGNAL_HANDLER=1"
+
+# Define the --config=asan-libfuzzer configuration.
+build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine=@rules_fuzzing//fuzzing/engines:libfuzzer
+build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_instrumentation=libfuzzer
+build:asan-libfuzzer --@rules_fuzzing//fuzzing:cc_engine_sanitizer=asan

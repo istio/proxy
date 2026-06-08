@@ -1,0 +1,58 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("//:transitions.bzl", "transition_binary_to_platform")
+
+build_test(
+    name = "wasm_targets_test",
+    targets = [
+        ":wasm32_strlen",
+        ":wasm32_strlen_nolibc",
+        ":wasm64_strlen_nolibc",
+        ":wasm32_wasip1_strlen",
+    ],
+)
+
+cc_binary(
+    name = "wasm_strlen",
+    srcs = ["wasm_strlen.c"],
+    linkopts = ["-Wl,--no-entry"],
+    tags = ["manual"],
+)
+
+transition_binary_to_platform(
+    name = "wasm32_strlen",
+    bin = ":wasm_strlen",
+    platform = "@toolchains_llvm//platforms:wasm32",
+)
+
+cc_binary(
+    name = "wasm_strlen_nolibc",
+    srcs = ["wasm_strlen_nolibc.c"],
+    linkopts = ["-Wl,--no-entry"],
+    tags = ["manual"],
+)
+
+transition_binary_to_platform(
+    name = "wasm32_strlen_nolibc",
+    bin = ":wasm_strlen_nolibc",
+    platform = "@toolchains_llvm//platforms:wasm32",
+)
+
+transition_binary_to_platform(
+    name = "wasm64_strlen_nolibc",
+    bin = ":wasm_strlen_nolibc",
+    platform = "@toolchains_llvm//platforms:wasm64",
+)
+
+cc_binary(
+    name = "wasm_strlen_wasi",
+    srcs = ["wasm_strlen_wasi.c"],
+    linkopts = ["-Wl,--no-entry"],
+    tags = ["manual"],
+)
+
+transition_binary_to_platform(
+    name = "wasm32_wasip1_strlen",
+    bin = ":wasm_strlen_wasi",
+    platform = "@toolchains_llvm//platforms:wasip1-wasm32",
+)

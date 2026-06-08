@@ -1,0 +1,8 @@
+bazel-bin
+bazel-gazelle
+bazel-out
+bazel-testlogs
+examples/bzlmod_build_file_generation/bazel-bin
+examples/bzlmod_build_file_generation/bazel-bzlmod_build_file_generation
+examples/bzlmod_build_file_generation/bazel-out
+examples/bzlmod_build_file_generation/bazel-testlog

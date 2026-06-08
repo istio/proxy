@@ -1,0 +1,3 @@
+# False positive in V8 worker shutdown
+race:v8::platform::DefaultJobHandle::Join
+race:v8::platform::DefaultJobHandle::Cancel

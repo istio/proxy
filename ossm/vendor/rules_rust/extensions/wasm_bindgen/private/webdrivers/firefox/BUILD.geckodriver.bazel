@@ -1,0 +1,27 @@
+alias(
+    name = "geckodriver_macos",
+    actual = select({
+        "@platforms//cpu:x86_64": "@geckodriver_macos",
+        "//conditions:default": "@geckodriver_macos_aarch64",
+    }),
+    target_compatible_with = ["@platforms//os:macos"],
+)
+
+alias(
+    name = "geckodriver_linux",
+    actual = select({
+        "@platforms//cpu:aarch64": "@geckodriver_linux_aarch64",
+        "//conditions:default": "@geckodriver_linux64",
+    }),
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+alias(
+    name = "geckodriver",
+    actual = select({
+        "@platforms//os:linux": ":geckodriver_linux",
+        "@platforms//os:macos": ":geckodriver_macos",
+        "@platforms//os:windows": "@geckodriver_win64",
+    }),
+    visibility = ["//visibility:public"],
+)

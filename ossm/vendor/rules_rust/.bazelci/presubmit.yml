@@ -1,0 +1,1244 @@
+---
+minimum_bazel_version: &minimum_bazel_version "7.4.1"
+minimum_bazel_shell_commands: &minimum_bazel_shell_commands
+  - echo "build --build_runfile_links" >> user.bazelrc
+no_bzlmod_bazel_version: &no_bzlmod_bazel_version "7.4.1"
+no_bzlmod_shell_commands: &no_bzlmod_shell_commands
+  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
+  - echo "build --build_runfile_links" >> user.bazelrc
+  - echo "7.4.1" > .bazelversion
+no_bzlmod_rbe_shell_commands: &no_bzlmod_rbe_shell_commands
+  - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+  - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+  - echo "common --noenable_bzlmod --enable_workspace" >> user.bazelrc
+  - echo "build --build_runfile_links" >> user.bazelrc
+  - echo "7.4.1" > .bazelversion
+aspects_flags: &aspects_flags
+  - "--config=rustfmt"
+  - "--config=clippy"
+min_rust_version_shell_commands: &min_rust_version_shell_commands
+  - sed -i 's|^rust_register_toolchains(|rust_register_toolchains(versions = ["1.74.0"],\n|' WORKSPACE.bazel
+  - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ["1.74.0"],\n|' MODULE.bazel
+nightly_flags: &nightly_flags
+  - "--//rust/toolchain/channel=nightly"
+nightly_aspects_flags: &nightly_aspects_flags
+  - "--//rust/toolchain/channel=nightly"
+  - "--config=rustfmt"
+  - "--config=clippy"
+bzlmod_flags: &bzlmod_flags
+  - "--lockfile_mode=error"
+bzlmod_plus_repo_names_flags: &bzlmod_plus_repo_names_flags
+  # `--lockfile_mode=error` is omitted because the repo names leak into the lock file.
+  - "--incompatible_use_plus_in_repo_names"
+single_rust_channel_targets: &single_rust_channel_targets
+  - "--"
+  - "//..."
+  # TODO: Remove this and replace `cargo_bootstrap_repository` with a
+  # http_archive for a release: https://github.com/cross-rs/cross/issues/1356
+  - "-//crate_universe/tools/cross_installer/..."
+  # These tests are expected to fail as they require both a nightly and stable toolchain.
+  - "-//test/unit/channel_transitions/..."
+  - "-//test/unpretty/..."
+single_rust_channel_min_version_targets: &single_rust_channel_min_version_targets
+  # START - Copied from 'single_rust_channel_targets'.
+  # TODO: Figure out how to do proper list inheritance.
+  - "--"
+  - "//..."
+  # TODO: Remove this and replace `cargo_bootstrap_repository` with a
+  # http_archive for a release: https://github.com/cross-rs/cross/issues/1356
+  - "-//crate_universe/tools/cross_installer/..."
+  # These tests are expected to fail as they require both a nightly and stable toolchain.
+  - "-//test/unit/channel_transitions/..."
+  - "-//test/unpretty/..."
+  # END - Copied from 'single_rust_channel_targets'.
+  #
+  # These tests exercise behavior only available versions of Rust >1.80
+  - "-//test/unit/lint_flags/..."
+default_linux_targets: &default_linux_targets
+  - "--"
+  - "//..."
+default_rbe_targets: &default_rbe_targets
+  - "--"
+  - "//..."
+  # These require the upstream tools wrapper to include a stdlib, which doesn't currently work on RBE.
+  # We should fix this. See https://github.com/bazelbuild/rules_rust/issues/3252
+  - "-//cargo/private/cargo_toml_variable_extractor/testdata/..."
+default_macos_targets: &default_macos_targets
+  - "--"
+  - "//..."
+  # Not sure why this doesn't work on bazelci, it does locally on macOS.
+  - "-//test/unit/remap_path_prefix:integration_test"
+default_windows_targets: &default_windows_targets
+  - "--" # Allows negative patterns; hack for https://github.com/bazelbuild/continuous-integration/pull/245
+  - "//..."
+  # Panic backtraces appear not to work well on Windows.
+  - "-//test/unit/remap_path_prefix:integration_test"
+crate_universe_vendor_example_targets: &crate_universe_vendor_example_targets
+  - "//vendor_external:crates_vendor"
+  - "//vendor_local_manifests:crates_vendor"
+  - "//vendor_local_pkgs:crates_vendor"
+  - "//vendor_local_patching:crates_vendor"
+  - "//vendor_remote_manifests:crates_vendor"
+  - "//vendor_remote_pkgs:crates_vendor"
+  - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+coverage_validation_post_shell_commands: &coverage_validation_post_shell_commands
+  - |
+    grep -q '^SF:.*\.rs$' bazel-out/_coverage/_coverage_report.dat \
+    || { 1>&2 echo "Failed to find any Rust coverage" \
+      ; 1>&2 cat bazel-out/_coverage/_coverage_report.dat \
+      ; exit 1 \
+      ; }
+split_coverage_postprocessing_shell_commands: &split_coverage_postprocessing_shell_commands
+  - echo "coverage --experimental_fetch_all_coverage_outputs" >> user.bazelrc
+  - echo "coverage --experimental_split_coverage_postprocessing" >> user.bazelrc
+  - echo "build --//rust/settings:experimental_use_coverage_metadata_files" >> user.bazelrc
+tasks:
+  ubuntu2204:
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+    run_targets:
+      - //test:query_test_binary
+  rbe_ubuntu2204:
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
+  macos:
+    platform: macos_arm64
+    build_targets: *default_macos_targets
+    test_targets: *default_macos_targets
+    coverage_targets: *default_macos_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  windows:
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
+  ubuntu2204_no_bzlmod:
+    name: No Bzlmod
+    platform: ubuntu2204
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+    run_targets:
+      - //test:query_test_binary
+  rbe_ubuntu2204_no_bzlmod:
+    name: No Bzlmod
+    platform: rbe_ubuntu2204
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_rbe_shell_commands
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
+  macos_no_bzlmod:
+    name: No Bzlmod
+    platform: macos_arm64
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
+    build_targets: *default_macos_targets
+    test_targets: *default_macos_targets
+    coverage_targets: *default_macos_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  windows_no_bzlmod:
+    name: No Bzlmod
+    platform: windows
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
+  windows_with_runfiles:
+    name: With Runfiles
+    platform: windows
+    batch_commands:
+      - echo startup --windows_enable_symlinks > user.bazelrc
+      - echo common --noenable_runfiles >> user.bazelrc
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
+  ubuntu2204_split_coverage_postprocessing:
+    name: Split Coverage Postprocessing
+    platform: ubuntu2204
+    shell_commands: *split_coverage_postprocessing_shell_commands
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  macos_split_coverage_postprocessing:
+    name: Split Coverage Postprocessing
+    platform: macos_arm64
+    shell_commands: *split_coverage_postprocessing_shell_commands
+    coverage_targets: *default_macos_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  ubuntu2204_opt:
+    name: Opt Mode
+    platform: ubuntu2204
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    build_flags:
+      - "--compilation_mode=opt"
+    test_flags:
+      - "--compilation_mode=opt"
+  macos_opt:
+    name: Opt Mode
+    platform: macos_arm64
+    build_targets: *default_macos_targets
+    test_targets: *default_macos_targets
+    build_flags:
+      - "--compilation_mode=opt"
+    test_flags:
+      - "--compilation_mode=opt"
+  windows_opt:
+    name: Opt Mode
+    platform: windows
+    build_flags:
+      - "--compilation_mode=opt"
+    test_flags:
+      - "--compilation_mode=opt"
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
+  ubuntu2204_with_aspects:
+    name: With Aspects
+    platform: ubuntu2204
+    build_flags: *aspects_flags
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  rbe_ubuntu2204_with_aspects:
+    name: With Aspects
+    platform: rbe_ubuntu2204
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
+  rbe_ubuntu2204_rolling_with_aspects:
+    name: RBE Rolling Bazel Version With Aspects
+    platform: rbe_ubuntu2204
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_targets: *default_rbe_targets
+    test_targets: *default_rbe_targets
+    build_flags: *aspects_flags
+    soft_fail: yes
+    bazel: "rolling"
+  macos_with_aspects:
+    name: With Aspects
+    platform: macos_arm64
+    build_flags: *aspects_flags
+    build_targets: *default_macos_targets
+    test_targets: *default_macos_targets
+    coverage_targets: *default_macos_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  macos_rolling_with_aspects:
+    name: "Macos Rolling Bazel Version With Aspects"
+    platform: macos_arm64
+    build_flags: *aspects_flags
+    build_targets: *default_macos_targets
+    test_targets: *default_macos_targets
+    coverage_targets: *default_macos_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+    soft_fail: yes
+    bazel: "rolling"
+  windows_with_aspects:
+    name: With Aspects
+    platform: windows
+    build_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
+  windows_no_runfiles_with_aspects:
+    name: With Runfiles With Aspects
+    platform: windows
+    batch_commands:
+      - echo startup --windows_enable_symlinks > user.bazelrc
+      - echo common --noenable_runfiles >> user.bazelrc
+    build_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+    test_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
+  windows_rolling_with_aspects:
+    name: "Windows Rolling Bazel Version With Aspects"
+    platform: windows
+    build_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+    build_targets: *default_windows_targets
+    test_targets: *default_windows_targets
+    soft_fail: yes
+    bazel: "rolling"
+  ubuntu2204_unpretty:
+    name: Unpretty
+    platform: ubuntu2204
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    build_flags:
+      - "--config=unpretty"
+  ubuntu2204_bzlmod_only:
+    name: With bzlmod
+    platform: ubuntu2204
+    # See https://bazel.build/external/migration#migration-process
+    # When WORKSPACE.bzlmod is provided, the workspace file is ignored.
+    shell_commands:
+      - "touch WORKSPACE.bzlmod"
+    build_flags:
+      - "--enable_bzlmod"
+    build_targets:
+      - "//crate_universe:cargo_bazel_bin"
+      - "//rust/runfiles"
+      - "//util/import"
+  ubuntu2204_clang:
+    name: With Clang
+    platform: ubuntu2204
+    build_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+      - "--repo_env=CC=clang"
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+  ubuntu2204_clang_lld:
+    name: With Clang and LLD
+    platform: ubuntu2204
+    shell_commands:
+      - "sudo apt -y update && sudo apt -y install lld"
+    build_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+      - "--repo_env=CC=clang"
+      - "--linkopt=-fuse-ld=lld"
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+  ubuntu2204_rolling_clang:
+    name: Rolling Bazel Version With Clang
+    platform: ubuntu2204
+    build_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+      - "--repo_env=CC=clang"
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    soft_fail: yes
+    bazel: "rolling"
+  ubuntu1804:
+    name: "Min Bazel Version"
+    # If updating the minimum bazel version, please also update /docs/index.md
+    bazel: *minimum_bazel_version
+    platform: ubuntu1804
+    shell_commands: *minimum_bazel_shell_commands
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  ubuntu1804_with_aspects:
+    name: "Min Bazel Version With Aspects"
+    bazel: *minimum_bazel_version
+    platform: ubuntu1804
+    shell_commands: *minimum_bazel_shell_commands
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    build_flags: *aspects_flags
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  ubuntu2204_min_rust_version:
+    name: "Min Rust Version"
+    platform: ubuntu2204
+    shell_commands: *min_rust_version_shell_commands
+    build_targets: *single_rust_channel_min_version_targets
+    test_targets: *single_rust_channel_min_version_targets
+  ubuntu2204_min_rust_version_with_aspects:
+    name: "Min Rust Version With Aspects"
+    platform: ubuntu2204
+    shell_commands: *min_rust_version_shell_commands
+    build_flags: *aspects_flags
+    build_targets: *single_rust_channel_min_version_targets
+    test_flags: *aspects_flags
+    test_targets: *single_rust_channel_min_version_targets
+  ubuntu2204_stable_toolchain:
+    name: "Only Stable Toolchain"
+    platform: ubuntu2204
+    # Test rules while only registering a nightly toolchain
+    shell_commands:
+      - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_RUST_VERSION")\nrust_register_toolchains(versions = [DEFAULT_RUST_VERSION],\n|' WORKSPACE.bazel
+      - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ['$(awk '$0 ~ /^DEFAULT_RUST_VERSION = / {print $3}' rust/private/common.bzl)'],\n|' MODULE.bazel
+    build_targets: *single_rust_channel_targets
+    test_targets: *single_rust_channel_targets
+  ubuntu2204_stable_with_aspects:
+    name: "Only Stable Toolchain With Aspects"
+    platform: ubuntu2204
+    # Test rules while only registering a nightly toolchain
+    shell_commands:
+      - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_RUST_VERSION")\nrust_register_toolchains(versions = [DEFAULT_RUST_VERSION],\n|' WORKSPACE.bazel
+      - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ['$(awk '$0 ~ /^DEFAULT_RUST_VERSION = / {print $3}' rust/private/common.bzl)'],\n|' MODULE.bazel
+    build_flags: *aspects_flags
+    build_targets: *single_rust_channel_targets
+    test_flags: *aspects_flags
+    test_targets: *single_rust_channel_targets
+  ubuntu2204_nightly_toolchain:
+    name: "Only Nightly Toolchain"
+    platform: ubuntu2204
+    # Test rules while only registering a nightly toolchain
+    shell_commands:
+      - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")\nrust_register_toolchains(versions = ["nightly/" + DEFAULT_NIGHTLY_ISO_DATE],\n|' WORKSPACE.bazel
+      - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ["nightly/'$(awk -F '"' '$0 ~ /^DEFAULT_NIGHTLY_ISO_DATE = / {print $2}' rust/private/common.bzl)'"],\n|' MODULE.bazel
+    build_flags: *nightly_flags
+    build_targets: *single_rust_channel_targets
+    test_flags: *nightly_flags
+    test_targets: *single_rust_channel_targets
+  ubuntu2204_nightly_with_aspects:
+    name: "Only Nightly Toolchain With Aspects"
+    platform: ubuntu2204
+    # Test rules while only registering a nightly toolchain
+    shell_commands:
+      - sed -i 's|^rust_register_toolchains(|load("//rust/private:common.bzl", "DEFAULT_NIGHTLY_ISO_DATE")\nrust_register_toolchains(versions = ["nightly/" + DEFAULT_NIGHTLY_ISO_DATE],\n|' WORKSPACE.bazel
+      - sed -i 's|^rust\.toolchain(|rust.toolchain(versions = ["nightly/'$(awk -F '"' '$0 ~ /^DEFAULT_NIGHTLY_ISO_DATE = / {print $2}' rust/private/common.bzl)'"],\n|' MODULE.bazel
+    build_flags: *nightly_aspects_flags
+    build_targets: *single_rust_channel_targets
+    test_flags: *nightly_aspects_flags
+    test_targets: *single_rust_channel_targets
+  ubuntu2204_rolling_with_aspects:
+    name: "Rolling Bazel Version With Aspects"
+    bazel: "rolling"
+    platform: ubuntu2204
+    build_flags: *aspects_flags
+    soft_fail: yes
+    build_targets: *default_linux_targets
+    test_targets: *default_linux_targets
+    coverage_targets: *default_linux_targets
+    post_shell_commands: *coverage_validation_post_shell_commands
+  linux_docs:
+    name: Docs
+    platform: ubuntu2204
+    working_directory: docs
+    build_targets:
+      - //...
+    run_targets:
+      - "//:publish_book"
+  clippy_failure:
+    name: Negative Clippy Tests
+    platform: ubuntu2204
+    run_targets:
+      - "//test/clippy:clippy_failure_tester"
+  rustfmt_failure:
+    name: Negative Rustfmt Tests
+    platform: ubuntu2204
+    run_targets:
+      - "//test/rustfmt:rustfmt_failure_tester"
+  rust_analyzer_tests_linux:
+    name: Rust-Analyzer Linux Tests
+    platform: ubuntu2204
+    run_targets:
+      - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
+      - "//test/rust_analyzer:rust_analyzer_test"
+  rust_analyzer_tests_macos:
+    name: Rust-Analyzer Macos Tests
+    platform: macos_arm64
+    run_targets:
+      - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
+      - "//test/rust_analyzer:rust_analyzer_test"
+  rust_analyzer_tests_windows:
+    name: Rust-Analyzer Windows Tests
+    platform: windows
+    run_targets:
+      - "//tools/rust_analyzer:gen_rust_project"
+      - "//tools/rust_analyzer:discover_bazel_rust_project"
+  ide_integration_vscode_tests_linux:
+    name: IDE VSCode Tests
+    platform: ubuntu2204
+    run_targets:
+      - "//tools/vscode:gen_launch_json"
+      - "//test/vscode:vscode_test"
+  ide_integration_vscode_tests_macos:
+    name: IDE VSCode Tests
+    platform: macos_arm64
+    run_targets:
+      - "//tools/vscode:gen_launch_json"
+      - "//test/vscode:vscode_test"
+  ide_integration_vscode_tests_windows:
+    name: IDE VSCode Tests
+    platform: windows
+    run_targets:
+      - "//tools/vscode:gen_launch_json"
+  crate_universe_examples_ubuntu2204:
+    name: Crate Universe Examples
+    platform: ubuntu2204
+    working_directory: examples/crate_universe
+    run_targets: *crate_universe_vendor_example_targets
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags: *aspects_flags
+  crate_universe_rbe_ubuntu2204:
+    name: Crate Universe Examples
+    platform: rbe_ubuntu2204
+    working_directory: examples/crate_universe
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    run_targets: *crate_universe_vendor_example_targets
+    build_targets:
+      - "--"
+      - "//..."
+      # TODO: Fix boringssl on RBE
+      - "-//complicated_dependencies/..."
+    test_targets:
+      - "--"
+      - "//..."
+      # TODO: Fix boringssl on RBE
+      - "-//complicated_dependencies/..."
+    build_flags: *aspects_flags
+  crate_universe_examples_macos:
+    name: Crate Universe Examples
+    platform: macos_arm64
+    working_directory: examples/crate_universe
+    run_targets: *crate_universe_vendor_example_targets
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags: *aspects_flags
+  crate_universe_local_path_external:
+    name: Crate Universe Local Path External
+    platform: ubuntu2204
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_edit_test_out_of_tree"
+  crate_universe_local_path_in_tree:
+    name: Crate Universe Local Path In Tree
+    platform: ubuntu2204
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_edit_test_in_tree"
+  crate_universe_local_path_external_no_bzlmod:
+    name: Crate Universe Local Path External (No Bzlmod)
+    platform: ubuntu2204
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_edit_test_out_of_tree_nobzlmod"
+  crate_universe_local_path_in_tree_no_bzlmod:
+    name: Crate Universe Local Path In Tree (No Bzlmod)
+    platform: ubuntu2204
+    bazel: *no_bzlmod_bazel_version
+    shell_commands: *no_bzlmod_shell_commands
+    working_directory: examples/crate_universe_local_path
+    run_targets:
+      - "//:vendor_edit_test_in_tree_nobzlmod"
+  example_bindgen_toolchain:
+    name: Example custom bindgen toolchain registration
+    platform: ubuntu2204
+    working_directory: examples/bindgen_toolchain
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+# See https://github.com/bazelbuild/rules_rust/issues/2186 about re-enabling these.
+#  crate_universe_examples_windows:
+#    name: Crate Universe Examples
+#    platform: windows
+#    working_directory: examples/crate_universe
+#    run_targets: *crate_universe_vendor_example_targets
+#    build_flags: *aspects_flags
+#    build_targets:
+#      - "//..."
+#    test_targets:
+#      - "//..."
+  cc_common_link_ubuntu2204:
+    name: Build via cc_common.link
+    platform: ubuntu2204
+    working_directory: test/integration/cc_common_link
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cc_common_link_macos:
+    name: Build via cc_common.link
+    platform: macos_arm64
+    working_directory: test/integration/cc_common_link
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cc_common_link_with_global_alloc_ubuntu2204:
+    name: Build via cc_common.link using a global allocator
+    platform: ubuntu2204
+    working_directory: test/integration/cc_common_link_with_global_alloc
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cc_common_link_with_global_alloc_macos:
+    name: Build via cc_common.link using a global allocator
+    platform: macos_arm64
+    working_directory: test/integration/cc_common_link_with_global_alloc
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cc_common_link_no_std_ubuntu2204:
+    name: Build with no_std + alloc using cc_common.link infrastructure for linking
+    platform: ubuntu2204
+    working_directory: test/integration/no_std
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--config=no_std_alloc_using_cc_common_link"
+    test_flags:
+      - "--config=no_std_alloc_using_cc_common_link"
+  no_std_ubuntu2204:
+    name: Build with no_std + alloc
+    platform: ubuntu2204
+    working_directory: test/integration/no_std
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    build_flags:
+      - "--config=no_std_alloc"
+    test_flags:
+      - "--config=no_std_alloc"
+  bzlmod_repo_mapping_runfiles:
+    name: bzlmod repo mapping test
+    platform: ubuntu2204
+    working_directory: test/integration/bzlmod_repo_mapping/module_a
+    test_targets:
+      - "//..."
+  aliased_toolchains:
+    name: aliased toolchains test
+    platform: ubuntu2204
+    working_directory: test/integration/aliased_toolchains
+    build_targets:
+      - "@rust_toolchains//:all"
+      - "//..."
+  android_examples_ubuntu2204:
+    name: Android Examples
+    platform: ubuntu2204
+    working_directory: examples/android
+    build_flags:
+      - "--incompatible_enable_android_toolchain_resolution"
+      - "--android_platforms=//:arm64-v8a"
+    build_targets:
+      - "//:android_app"
+    environment:
+      # This ndk version matches with rules_android_ndk repo's CI
+      # https://github.com/bazelbuild/rules_android_ndk/blob/877c68ef34c9f3353028bf490d269230c1990483/.bazelci/presubmit.yml#L37
+      # The ndk is installed by this script
+      # https://github.com/bazelbuild/continuous-integration/blob/ba56013373821feadd9f2eaa6b81eb19528795f0/macos/mac-android.sh
+      ANDROID_NDK_HOME: /opt/android-ndk-r25b
+  android_examples_macos:
+    name: Android Examples
+    platform: macos_arm64
+    working_directory: examples/android
+    build_flags:
+      - "--incompatible_enable_android_toolchain_resolution"
+      - "--android_platforms=//:arm64-v8a"
+    build_targets:
+      - "//:android_app"
+    environment:
+      # This ndk version matches with rules_android_ndk repo's CI
+      # https://github.com/bazelbuild/rules_android_ndk/blob/877c68ef34c9f3353028bf490d269230c1990483/.bazelci/presubmit.yml#L42
+      # The ndk is installed by this script
+      # https://github.com/bazelbuild/continuous-integration/blob/ba56013373821feadd9f2eaa6b81eb19528795f0/macos/mac-android.sh
+      ANDROID_NDK_HOME: /Users/buildkite/android-ndk-r25b
+  ios_examples:
+    name: iOS Examples
+    platform: macos_arm64
+    working_directory: examples/ios
+    build_targets:
+      - "//..."
+  ios_build:
+    name: iOS build script cross compile test
+    platform: macos_arm64
+    working_directory: examples/ios_build
+    test_flags:
+      - "--cpu=ios_x86_64"
+      - "--apple_platform_type=ios"
+    test_targets:
+      - "//..."
+  bzlmod_all_crate_deps:
+    name: Cargo dependencies with bzlmod
+    platform: ubuntu2204
+    working_directory: examples/all_crate_deps
+    build_targets:
+      - "//..."
+  bzlmod_all_deps_vendor:
+    name: Vendored dependencies with bzlmod
+    platform: ubuntu2204
+    working_directory: examples/all_deps_vendor
+    run_targets:
+      - "//basic/3rdparty:crates_vendor"
+    build_targets:
+      - "//..."
+  bzlmod_compile_opt:
+    name: Compiler optimization with bzlmod
+    platform: ubuntu2204
+    working_directory: examples/compile_opt
+    build_targets:
+      - "//..."
+  # TODO: This test requires musl or for rustc to provide necessary gnu libraries for
+  # linking gnu libraries.
+  # https://github.com/bazelbuild/rules_rust/issues/390
+  # cross_compile_linux:
+  #   name: Cross compile example on Linux without cc_toolchain
+  #   platform: ubuntu2204
+  #   working_directory: examples/cross_compile
+  #   shell_commands:
+  #     - sed -i 's/_FORCE_DISABLE_CC_TOOLCHAIN = False/_FORCE_DISABLE_CC_TOOLCHAIN = True/' ../../rust/private/utils.bzl
+  #   test_flags:
+  #     - "--keep_going"
+  #   test_targets:
+  #     - "//..."
+  cross_compile_macos:
+    name: Cross compile example on MacOS without cc_toolchain
+    platform: macos_arm64
+    working_directory: examples/cross_compile
+    shell_commands:
+      - sed -i '' 's/_FORCE_DISABLE_CC_TOOLCHAIN = False/_FORCE_DISABLE_CC_TOOLCHAIN = True/' ../../rust/private/utils.bzl
+    test_flags:
+      - "--keep_going"
+    test_targets:
+      - "//..."
+  cross_compile_windows:
+    name: Cross compile example on Windows without cc_toolchain
+    platform: windows
+    working_directory: examples/cross_compile
+    batch_commands:
+      - powershell -Command "(Get-Content rust/private/utils.bzl) -replace '_FORCE_DISABLE_CC_TOOLCHAIN = False', '_FORCE_DISABLE_CC_TOOLCHAIN = True' | Set-Content ../../rust/private/utils.bzl"
+    test_flags:
+      - "--keep_going"
+    test_targets:
+      - "//..."
+  cross_compile_musl_macos_to_linux:
+    name: Cross compile example Musl from macOS to Linux
+    platform: macos_arm64
+    working_directory: examples/cross_compile_musl
+    test_targets:
+      - "//..."
+  cross_compile_musl_linux_to_linux:
+    name: Cross compile example Musl from Linux to Linux
+    platform: ubuntu2204
+    working_directory: examples/cross_compile_musl
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  cross_compile_nix:
+    name: Cross compile example with Nix
+    platform: ubuntu2204
+    working_directory: examples/cross_compile_nix
+    setup:
+      - curl -L https://nixos.org/nix/install | bash
+      - sudo cp ~/.nix-profile/bin/nix* /usr/local/bin/
+    build_targets:
+      # Root `build_test` target is called directly to catch missing platforms
+      # that would otherwise be quietly skipped due to `target_compatible_with`.
+      - "//:nix_cross_compiling"
+    test_targets:
+      - "//..."
+  cross_compile_llvm_linux:
+    name: Cross compile example with LLVM on Linux
+    platform: ubuntu2204
+    working_directory: examples/cross_compile_llvm
+    build_targets:
+      - "//:all"
+    test_targets:
+      - "//..."
+  cross_compile_llvm_macos:
+    name: Cross compile example with LLVM on MacOS
+    platform: macos_arm64
+    working_directory: examples/cross_compile_llvm
+    build_targets:
+      - "//:all"
+    test_targets:
+      - "//..."
+  # TODO: https://github.com/bazelbuild/rules_rust/issues/2075
+  # cross_compile_zig:
+  #   name: Cross compile example with Zig
+  #   platform: ubuntu2204
+  #   working_directory: examples/cross_compile_zig
+  #   build_targets:
+  #     - "//..."
+  example_ffi_linux:
+    platform: ubuntu2204
+    working_directory: examples/ffi
+    name: FFI Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  # TODO: https://github.com/bazelbuild/bazel/issues/9987
+  # example_ffi_linux_rbe:
+  #   platform: rbe_ubuntu2204
+  #   working_directory: examples/ffi
+  #   name: FFI Example
+  #   build_targets:
+  #     - "//..."
+  #   test_targets:
+  #     - "//..."
+  example_ffi_macos:
+    platform: macos_arm64
+    working_directory: examples/ffi
+    name: FFI Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  example_ffi_windows:
+    platform: windows
+    working_directory: examples/ffi
+    name: FFI Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  example_runfiles:
+    name: Runfiles example
+    platform: ubuntu2204
+    working_directory: examples/runfiles
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+    run_targets:
+      - "//pkg_a:pkg_a_binary"
+      - "//pkg_b:pkg_b_binary"
+  ubuntu2204_bzlmod_bcr:
+    name: bzlmod BCR presubmit
+    platform: ubuntu2204
+    working_directory: examples/hello_world
+    test_flags: *bzlmod_flags
+    run_targets:
+      - "//third-party-in-workspace:vendor"
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+    test_targets:
+      - "//..."
+  ubuntu2204_bzlmod_minimum_bazel_bcr:
+    name: bzlmod BCR presubmit minimal bazel
+    bazel: *minimum_bazel_version
+    platform: ubuntu2204
+    working_directory: examples/hello_world
+    shell_commands:
+      - "rm MODULE.bazel.lock"
+    run_targets:
+      - "//third-party-in-workspace:vendor"
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+    test_targets:
+      - "//..."
+  macos_bzlmod_bcr:
+    name: bzlmod BCR presubmit
+    platform: macos_arm64
+    working_directory: examples/hello_world
+    test_flags: *bzlmod_flags
+    run_targets:
+      - "//third-party-in-workspace:vendor"
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+    test_targets:
+      - "//..."
+  windows_bzlmod_bcr:
+    name: bzlmod BCR presubmit
+    platform: windows
+    working_directory: examples/hello_world
+    test_flags: *bzlmod_flags
+    run_targets:
+      - "//third-party-in-workspace:vendor"
+    build_targets:
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+    test_targets:
+      - "//..."
+  example_sys_linux:
+    platform: ubuntu2204
+    working_directory: examples/sys
+    name: Sys Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  example_sys_linux_rbe:
+    platform: ubuntu2204
+    working_directory: examples/sys
+    name: Sys Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  example_sys_macos:
+    platform: macos_arm64
+    working_directory: examples/sys
+    name: Sys Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  example_sys_windows:
+    platform: windows
+    working_directory: examples/sys
+    name: Sys Example
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  ubuntu2204_bzlmod_plus_repo_names_bcr:
+    name: bzlmod BCR presubmit w/ incompatible flags
+    # A newer version than is specified in the .bazel_version file is needed for
+    # --incompatible_use_plus_in_repo_names'
+    bazel: *minimum_bazel_version
+    platform: ubuntu2204
+    working_directory: examples/hello_world
+    test_flags: *bzlmod_plus_repo_names_flags
+    run_targets:
+      - "//third-party-in-workspace:vendor"
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+    test_targets:
+      - "//..."
+  macos_bzlmod_plus_repo_names_bcr:
+    name: bzlmod BCR presubmit w/ incompatible flags
+    # A newer version than is specified in the .bazel_version file is needed for
+    # --incompatible_use_plus_in_repo_names'
+    bazel: *minimum_bazel_version
+    platform: macos_arm64
+    working_directory: examples/hello_world
+    test_flags: *bzlmod_plus_repo_names_flags
+    run_targets:
+      - "//third-party-in-workspace:vendor"
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+    test_targets:
+      - "//..."
+  windows_bzlmod_plus_repo_names_bcr:
+    name: bzlmod BCR presubmit w/ incompatible flags
+    # A newer version than is specified in the .bazel_version file is needed for
+    # --incompatible_use_plus_in_repo_names'
+    bazel: *minimum_bazel_version
+    platform: windows
+    working_directory: examples/hello_world
+    test_flags: *bzlmod_plus_repo_names_flags
+    run_targets:
+      - "//third-party-in-workspace:vendor"
+    build_targets:
+      - "@rules_rust//tools/rust_analyzer:gen_rust_project"
+    test_targets:
+      - "//..."
+  bzlmod_no_cargo:
+    name: Cargo-less bzlmod
+    platform: ubuntu2204
+    working_directory: examples/hello_world_no_cargo
+    build_targets:
+      - "//..."
+  bzlmod_override_targets:
+    name: Override Targets bzlmod
+    platform: ubuntu2204
+    working_directory: examples/override_target
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  bzlmod_proto:
+    name: Proto and Prost with bzlmod
+    platform: ubuntu2204
+    working_directory: examples/proto
+    build_targets:
+      - "//..."
+  bzlmod_protoc:
+    name: Proto and Prost with prebuilt protoc with bzlmod
+    platform: ubuntu2204
+    working_directory: examples/proto_with_toolchain
+    build_targets:
+      - "//..."
+  compile_one_dependency:
+    name: --compile_one_dependency flag
+    platform: ubuntu2204
+    build_flags:
+      - "--compile_one_dependency"
+    build_targets:
+      - "tools/rust_analyzer/bin/gen_rust_project.rs"
+  extensions_bindgen_linux:
+    platform: ubuntu2204
+    name: Extensions Bindgen
+    working_directory: extensions/bindgen
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_bindgen_linux_rbe:
+    platform: rbe_ubuntu2204
+    name: Extensions Bindgen
+    working_directory: extensions/bindgen
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_bindgen_macos:
+    platform: macos_arm64
+    name: Extensions Bindgen
+    working_directory: extensions/bindgen
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  # # TODO: https://github.com/bazelbuild/rules_rust/issues/2009
+  # # The bindgen rules are currently broken on windows
+  # extensions_bindgen_windows:
+  #   platform: windows
+  #   name: Extensions Bindgen
+  #   working_directory: extensions/bindgen
+  #   build_flags: *aspects_flags
+  #   test_flags: *aspects_flags
+  #   build_targets:
+  #     - "--"
+  #     - "//..."
+  #   test_targets:
+  #     - "--"
+  #     - "//..."
+  extensions_mdbook_linux:
+    platform: ubuntu2204
+    name: Extensions MdBook
+    working_directory: extensions/mdbook
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_mdbook_linux_rbe:
+    platform: rbe_ubuntu2204
+    name: Extensions MdBook
+    working_directory: extensions/mdbook
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_mdbook_macos:
+    platform: macos_arm64
+    name: Extensions MdBook
+    working_directory: extensions/mdbook
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_mdbook_windows:
+    platform: windows
+    name: Extensions MdBook
+    working_directory: extensions/mdbook
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_prost_linux:
+    platform: ubuntu2204
+    name: Extensions Prost
+    working_directory: extensions/prost
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_prost_linux_rbe:
+    platform: rbe_ubuntu2204
+    name: Extensions Prost
+    working_directory: extensions/prost
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_prost_macos:
+    platform: macos_arm64
+    name: Extensions Prost
+    working_directory: extensions/prost
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_prost_windows:
+    platform: windows
+    name: Extensions Prost
+    working_directory: extensions/prost
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_protobuf_linux:
+    platform: ubuntu2204
+    name: Extensions Protobuf
+    working_directory: extensions/protobuf
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_protobuf_linux_rbe:
+    platform: rbe_ubuntu2204
+    name: Extensions Protobuf
+    working_directory: extensions/protobuf
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_protobuf_macos:
+    platform: macos_arm64
+    name: Extensions Protobuf
+    working_directory: extensions/protobuf
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_protobuf_windows:
+    platform: windows
+    name: Extensions Protobuf
+    working_directory: extensions/protobuf
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_pyo3_linux:
+    platform: ubuntu2204
+    name: Extensions PyO3
+    working_directory: extensions/pyo3
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_pyo3_linux_rbe:
+    platform: rbe_ubuntu2204
+    name: Extensions PyO3
+    working_directory: extensions/pyo3
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+      - "--config=no_mypy"
+      - "--config=no_black"
+      - "--config=no_pylint"
+      - "--config=no_isort"
+    test_flags:
+      - "--config=rustfmt"
+      - "--config=clippy"
+      - "--config=no_mypy"
+      - "--config=no_black"
+      - "--config=no_pylint"
+      - "--config=no_isort"
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_pyo3_macos:
+    platform: macos_arm64
+    name: Extensions PyO3
+    working_directory: extensions/pyo3
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_pyo3_windows:
+    platform: windows
+    name: Extensions PyO3
+    working_directory: extensions/pyo3
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_wasm_bindgen_linux:
+    platform: ubuntu2204
+    name: Extensions wasm-bindgen
+    working_directory: extensions/wasm_bindgen
+    shell_commands:
+      - "bash ./test/bazelci_unix_setup.sh"
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."
+  extensions_wasm_bindgen_linux_rbe:
+    platform: rbe_ubuntu2204
+    name: Extensions wasm-bindgen
+    working_directory: extensions/wasm_bindgen
+    shell_commands:
+      - sed -i 's/^# load("@bazel_ci_rules/load("@bazel_ci_rules/' WORKSPACE.bazel
+      - sed -i 's/^# rbe_preconfig/rbe_preconfig/' WORKSPACE.bazel
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
+    # test_targets:
+    #   - "//..."
+  extensions_wasm_bindgen_macos:
+    platform: macos_arm64
+    name: Extensions wasm-bindgen
+    working_directory: extensions/wasm_bindgen
+    shell_commands:
+      - "bash ./test/bazelci_unix_setup.sh"
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    # TODO: https://github.com/bazelbuild/rules_rust/issues/3039
+    # test_targets:
+    #   - "//..."
+  extensions_wasm_bindgen_windows:
+    platform: windows
+    name: Extensions wasm-bindgen
+    working_directory: extensions/wasm_bindgen
+    build_flags: *aspects_flags
+    test_flags: *aspects_flags
+    build_targets:
+      - "//..."
+    test_targets:
+      - "//..."

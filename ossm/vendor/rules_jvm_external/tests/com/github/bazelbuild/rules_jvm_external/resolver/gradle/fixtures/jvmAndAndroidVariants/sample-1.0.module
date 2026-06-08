@@ -1,0 +1,52 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.example",
+    "module": "sample",
+    "version": "1.0",
+    "attributes": { "org.gradle.status": "release" }
+  },
+  "variants": [
+    {
+      "name": "commonMainMetadataElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.platform.type": "common"
+      },
+      "files": [
+        { "name": "sample-1.0-metadata.jar", "url": "sample-1.0-metadata.jar" }
+      ]
+    },
+    {
+      "name": "jvmRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm",
+        "org.gradle.libraryelements": "jar"
+      },
+      "available-at": {
+        "group": "com.example",
+        "module": "sample-jvm",
+        "version": "1.0",
+        "url": "../../sample-jvm/1.0/sample-jvm-1.0.module"
+      }
+    },
+    {
+      "name": "androidReleaseRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "androidJvm",
+        "org.gradle.libraryelements": "aar"
+      },
+      "available-at": {
+        "group": "com.example",
+        "module": "sample-android",
+        "version": "1.0",
+        "url": "../../sample-android/1.0/sample-android-1.0.module"
+      }
+    }
+  ]
+}

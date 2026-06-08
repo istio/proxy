@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "subtests",
+    srcs = ["subtest.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/loopclosure/testdata/src/subtests",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":subtests",
+    visibility = ["//visibility:public"],
+)

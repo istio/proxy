@@ -1,0 +1,23 @@
+{
+  "homepage": "https://docs.aspect.build/rules/aspect_bazel_lib",
+  "maintainers": [
+    {
+      "name": "Alex Eagle",
+      "email": "alex@aspect.build",
+      "github": "alexeagle"
+    },
+    {
+      "name": "Derek Cormier",
+      "email": "derek@aspect.build",
+      "github": "kormide"
+    },
+    {
+      "name": "Jason Bedard",
+      "email": "jason@aspect.build",
+      "github": "jbedard"
+    }
+  ],
+  "repository": ["github:bazel-contrib/bazel-lib"],
+  "versions": [],
+  "yanked_versions": {}
+}

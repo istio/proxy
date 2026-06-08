@@ -1,0 +1,41 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+write_file(
+    name = "generated_rs",
+    out = "generated.rs",
+    content = [
+        "pub fn forty_two() -> i32 { 42 }",
+        "",
+    ],
+)
+
+rust_library(
+    name = "generated_srcs",
+    srcs = [
+        "lib.rs",
+        ":generated.rs",
+    ],
+    edition = "2021",
+)
+
+rust_test(
+    name = "generated_srcs_test",
+    crate = ":generated_srcs",
+)
+
+rust_test(
+    name = "rust_project_json_test",
+    srcs = ["rust_project_json_test.rs"],
+    data = [":rust-project.json"],
+    edition = "2021",
+    env = {"RUST_PROJECT_JSON": "$(rootpath :rust-project.json)"},
+    # This target is tagged as manual since it's not expected to pass in
+    # contexts outside of `//test/rust_analyzer:rust_analyzer_test`. Run
+    # that target to execute this test.
+    tags = ["manual"],
+    deps = [
+        "//test/rust_analyzer/3rdparty/crates:serde",
+        "//test/rust_analyzer/3rdparty/crates:serde_json",
+    ],
+)

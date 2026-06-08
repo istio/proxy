@@ -1,0 +1,78 @@
+name: CI
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  build-appleclang:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ver: [17, 20]
+    env:
+      CC: clang
+      CXX: clang++
+      # Unlike GCC and upstream Clang, AppleClang still defaults to `-std=c++98`
+      # for some reason. Also, the macOS image on GitHub Actions provides wildly
+      # numbered Xcode versions. Thus, rather than varying the compiler version,
+      # we set the `-std` flag explicitly in order to vary the language version.
+      # (The other two flags are the default provided for CXXFLAGS in Makefile.)
+      CXXFLAGS: -O3 -g -std=c++${{ matrix.ver }}
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - name: Install Abseil, GoogleTest and Benchmark
+        run: |
+          brew update
+          brew install abseil googletest google-benchmark
+        shell: bash
+      - run: make && make test
+        shell: bash
+  build-clang:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ver: [16, 17, 18]
+    env:
+      CC: clang-${{ matrix.ver }}
+      CXX: clang++-${{ matrix.ver }}
+      PKG_CONFIG_PATH: /usr/local/share/vcpkg/installed/x64-linux/lib/pkgconfig
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - name: Install Clang ${{ matrix.ver }}
+        run: |
+          # Avoid `Conflicts: python3-lldb-x.y` between packages.
+          sudo apt purge -y python3-lldb-14
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x ./llvm.sh
+          sudo ./llvm.sh ${{ matrix.ver }}
+        shell: bash
+      - name: Install Abseil, GoogleTest and Benchmark
+        run: |
+          vcpkg update
+          vcpkg install abseil gtest benchmark
+        shell: bash
+      - run: make && make test
+        shell: bash
+  build-gcc:
+    # TODO(junyer): Switch back to `ubuntu-latest` when this becomes that.
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        ver: [12, 13, 14]
+    env:
+      CC: gcc-${{ matrix.ver }}
+      CXX: g++-${{ matrix.ver }}
+      PKG_CONFIG_PATH: /usr/local/share/vcpkg/installed/x64-linux/lib/pkgconfig
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - name: Install Abseil, GoogleTest and Benchmark
+        run: |
+          vcpkg update
+          vcpkg install abseil gtest benchmark
+        shell: bash
+      - run: make && make test
+        shell: bash

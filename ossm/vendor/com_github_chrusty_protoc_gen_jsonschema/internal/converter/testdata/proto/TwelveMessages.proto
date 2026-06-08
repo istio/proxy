@@ -1,0 +1,109 @@
+syntax = "proto3";
+package samples;
+
+message MessageKind1 {
+  string name       = 1;
+  string timestamp  = 2;
+  int32 id          = 3;
+  float rating      = 4;
+  bool complete     = 5;
+}
+
+message MessageKind2 {
+  string name       = 1;
+  string timestamp  = 2;
+  int32 id          = 3;
+  float rating      = 4;
+  bool complete     = 5;
+  bool isa = 6;
+  bool hasa = 7;
+}
+
+message MessageKind3 {
+  string name       = 1;
+  string timestamp  = 2;
+  int32 id          = 3;
+  float rating      = 4;
+  bool complete     = 5;
+  string someProp = 6;
+}
+
+message MessageKind4 {
+  string name       = 1;
+  string timestamp  = 2;
+  int32 id          = 3;
+  float rating      = 4;
+  bool complete     = 5;
+  string special = 6;
+}
+
+message MessageKind5 {
+  string name       = 1;
+  string timestamp  = 2;
+  int32 id          = 3;
+  float rating      = 4;
+  bool complete     = 5;
+  double foo = 6;
+}
+
+message MessageKind6 {
+  string name       = 1;
+  string timestamp  = 2;
+  int32 id          = 3;
+  float rating      = 4;
+  bool complete     = 5;
+  string bar = 6;
+}
+
+message MessageKind7 {
+  string name       = 1;
+  string timestamp  = 2;
+  int32 id          = 3;
+  float rating      = 4;
+  bool complete     = 5;
+  int64 baz = 6;
+}
+
+message MessageKind8 {
+  string name       = 1;
+  string timestamp  = 2;
+  int32 id          = 3;
+  float rating      = 4;
+  bool complete     = 5;
+}
+
+message MessageKind9 {
+  string name       = 1;
+  string timestamp  = 2;
+  int32 id          = 3;
+  float rating      = 4;
+  bool complete     = 5;
+}
+
+message MessageKind10 {
+  string name       = 1;
+  string timestamp  = 2;
+  int32 id          = 3;
+  float rating      = 4;
+  bool complete     = 5;
+}
+
+message MessageKind11 {
+  string name       = 1;
+  repeated MessageKind1 ones = 2;
+  oneof iface {
+    MessageKind2 kind2 = 3;
+    MessageKind3 kind3 = 4;
+    MessageKind4 kind4 = 5;
+  }
+}
+
+message MessageKind12 {
+  string name       = 1;
+  MessageKind11 f = 2;
+  oneof iface {
+    MessageKind5 kind5 = 3;
+    MessageKind6 kind6 = 4;
+    MessageKind7 kind7 = 5;
+  }
+}

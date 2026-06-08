@@ -1,0 +1,67 @@
+name: "Main"
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  call-dev-workflow:
+    uses: ./.github/workflows/dev.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: write
+
+  system-tests:
+    uses: DataDog/system-tests/.github/workflows/system-tests.yml@main
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: write
+    with:
+      library: cpp
+      binaries_artifact: binaries
+      desired_execution_time: 300  # 5 minutes
+      scenarios: PARAMETRIC
+      skip_empty_scenarios: true
+      _system_tests_dev_mode: true
+      display_summary: true
+
+  # Ensure the main job is run to completion
+  check-system-tests:
+    needs: system-tests
+    name: Check system tests success
+    runs-on: ubuntu-latest
+    steps:
+    - run: exit 0
+
+  fuzz-testing:
+    needs: call-dev-workflow
+    runs-on: ubuntu-22.04-arm
+    container:
+      image: datadog/docker-library:dd-trace-cpp-ci-23768e9-arm64
+    env:
+      DURATION_SEC: 300 # 5min
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure
+        run: bin/with-toolchain llvm cmake . -B .build -DCMAKE_BUILD_TYPE=Debug -DDD_TRACE_BUILD_FUZZERS=1 -DDD_TRACE_ENABLE_SANITIZE=1 -DDD_TRACE_TRANSPORT=none
+      - name: Build
+        run: cmake --build .build -j --target dd_trace_cpp-fuzzers
+      - name: Run W3C propagation fuzzer
+        uses: ./.github/actions/fuzzer
+        with:
+          binary: ./.build/fuzz/w3c-propagation/w3c-propagation-fuzz
+          duration_seconds: ${DURATION_SEC}
+      - name: Run Base64 fuzzer
+        uses: ./.github/actions/fuzzer
+        with:
+          binary: ./.build/fuzz/base64/base64-fuzz
+          duration_seconds: ${DURATION_SEC}
+      - name: Run Remote Configuration fuzzer
+        uses: ./.github/actions/fuzzer
+        with:
+          binary: ./.build/fuzz/remote-configuration/remote-config-fuzz
+          duration_seconds: ${DURATION_SEC}
+

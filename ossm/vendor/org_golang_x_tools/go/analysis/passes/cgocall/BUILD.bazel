@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cgocall",
+    srcs = ["cgocall.go"],
+    importpath = "golang.org/x/tools/go/analysis/passes/cgocall",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go/analysis",
+        "//go/analysis/passes/internal/analysisutil",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cgocall",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "cgocall_test",
+    srcs = ["cgocall_test.go"],
+    deps = [
+        ":cgocall",
+        "//go/analysis/analysistest",
+        "//internal/typeparams",
+    ],
+)

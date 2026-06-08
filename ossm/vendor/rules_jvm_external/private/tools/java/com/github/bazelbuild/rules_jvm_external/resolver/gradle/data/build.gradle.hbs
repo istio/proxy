@@ -1,0 +1,62 @@
+apply plugin: 'java'
+
+repositories {
+{{~#if isUsingM2Local}}
+    mavenLocal()
+{{~/if}}
+{{~#each repositories}}
+    maven {
+        url "{{url}}"
+        allowInsecureProtocol = {{allowInsecureProtocol}}
+{{~#if requiresAuth}}
+        credentials {
+            def u = findProperty("{{usernameProperty}}")
+            if (u == null) throw new GradleException("Missing {{usernameProperty}}")
+            username = u
+            def p = findProperty("{{passwordProperty}}")
+            if (p == null) throw new GradleException("Missing {{passwordProperty}}")
+            password = p
+        }
+{{~/if}}
+    }
+{{~/each}}
+}
+
+dependencies {
+{{~#each boms}}
+    implementation platform("{{group}}:{{artifact}}:{{version}}")
+{{~/each}}
+{{~#each dependencies}}
+    implementation("{{group}}:{{artifact}}{{version}}{{~#if classifier}}{{classifier}}{{~/if}}{{~#if extension}}{{extension}}{{~/if}}"){{~#if exclusions}}{{~#if forceVersion}} {
+{{~#each exclusions}}
+        exclude group: "{{group}}", module: "{{module}}"
+{{~/each}}
+        version { strictly("{{versionOnly}}") }
+    }{{~else}} {
+{{~#each exclusions}}
+        exclude group: "{{group}}", module: "{{module}}"
+{{~/each}}
+    }{{~/if}}{{~else}}{{~#if forceVersion}} {
+        version { strictly("{{versionOnly}}") }
+    }{{~/if}}{{~/if}}
+{{~/each}}
+}
+
+configurations.all {
+{{~#if globalExclusions}}
+{{~#each globalExclusions}}
+    exclude group: "{{group}}", module: "{{module}}"
+{{~/each}}
+{{~/if}}
+    resolutionStrategy {
+{{~#each dependencies}}
+{{~#if forceVersion}}
+        force("{{group}}:{{artifact}}:{{versionOnly}}")
+{{~/if}}
+{{~/each}}
+        eachDependency { details ->
+{{~#each dependencies}}
+{{~/each}}
+        }
+    }
+}

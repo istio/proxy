@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+proto_library(
+    name = "mapped_proto",
+    srcs = ["mapped.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_proto_library(
+    name = "mapped_go_proto",
+    importpath = "./",
+    proto = ":mapped_proto",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "mapped",
+    embed = [":mapped_go_proto"],
+    importpath = "./",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mapped",
+    visibility = ["//visibility:public"],
+)

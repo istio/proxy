@@ -1,0 +1,28 @@
+# Override http_archive for local testing
+local_repository(
+    name = "jq.bzl",
+    path = "../..",
+)
+
+#---SNIP--- Below here is re-used in the workspace snippet published on releases
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+######################
+# jq.bzl setup #
+######################
+http_archive(
+    name = "aspect_bazel_lib",
+    sha256 = "2be8a5df0b20b0ed37604b050da01dbf7ad45ad44768c0d478b64779b9f58412",
+    strip_prefix = "bazel-lib-2.15.3",
+    url = "https://github.com/bazel-contrib/bazel-lib/releases/download/v2.15.3/bazel-lib-v2.15.3.tar.gz",
+)
+
+load("@aspect_bazel_lib//lib:repositories.bzl", "aspect_bazel_lib_dependencies", "aspect_bazel_lib_register_toolchains")
+
+# Required bazel-lib dependencies
+
+aspect_bazel_lib_dependencies()
+
+# Register bazel-lib toolchains
+
+aspect_bazel_lib_register_toolchains()

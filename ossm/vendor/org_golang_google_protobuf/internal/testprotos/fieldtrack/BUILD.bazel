@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "fieldtrack",
+    srcs = ["fieldtrack.pb.go"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/fieldtrack",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/annotation",
+        "//internal/testprotos/test",
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fieldtrack",
+    visibility = ["//:__subpackages__"],
+)

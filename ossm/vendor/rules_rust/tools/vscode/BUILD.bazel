@@ -1,0 +1,47 @@
+load("//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+
+alias(
+    name = "get_binary_path",
+    actual = select({
+        "@platforms//os:windows": "get_binary_path.bat",
+        "//conditions:default": "get_binary_path.sh",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+rust_library(
+    name = "vscode",
+    srcs = [
+        "src/lib.rs",
+    ],
+    edition = "2021",
+    deps = [
+        "//tools/rust_analyzer/3rdparty/crates:anyhow",
+        "//tools/rust_analyzer/3rdparty/crates:camino",
+        "//tools/rust_analyzer/3rdparty/crates:log",
+        "//tools/rust_analyzer/3rdparty/crates:serde",
+        "//tools/rust_analyzer/3rdparty/crates:serde_json",
+        "//util/label",
+    ],
+)
+
+rust_test(
+    name = "vscode_test",
+    crate = ":vscode",
+)
+
+rust_binary(
+    name = "gen_launch_json",
+    srcs = ["src/bin/gen_launch_json.rs"],
+    edition = "2021",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":vscode",
+        "//tools/rust_analyzer/3rdparty/crates:anyhow",
+        "//tools/rust_analyzer/3rdparty/crates:camino",
+        "//tools/rust_analyzer/3rdparty/crates:clap",
+        "//tools/rust_analyzer/3rdparty/crates:env_logger",
+        "//tools/rust_analyzer/3rdparty/crates:log",
+        "//tools/rust_analyzer/3rdparty/crates:serde_json",
+    ],
+)

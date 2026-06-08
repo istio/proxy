@@ -1,0 +1,4 @@
+load(":transitive_crate_outputs_test.bzl", "transitive_crate_outputs_test_suite")
+
+############################ UNIT TESTS #############################
+transitive_crate_outputs_test_suite(name = "transitive_crate_outputs_test_suite")

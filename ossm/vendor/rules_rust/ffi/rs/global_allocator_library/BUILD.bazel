@@ -1,0 +1,21 @@
+load("@rules_rust//rust:defs.bzl", "rust_library")
+
+package(
+    default_visibility = ["@rules_rust//ffi/rs:__subpackages__"],
+)
+
+srcs = select({
+    # Windows doesn't support weak symbol linkage.
+    # If someone can make this work on Windows, please do!
+    # For now we will silently not supply any symbols, because it would be very messy to conditionally define the global allocator library on toolchains depending on the platform.
+    "@platforms//os:windows": ["empty.rs"],
+    "//conditions:default": ["global_allocator_library.rs"],
+})
+
+rust_library(
+    name = "global_allocator_library",
+    srcs = srcs,
+    allocator_libraries = "@rules_rust//ffi/rs:empty_allocator_libraries",
+    edition = "2021",
+    tags = ["manual"],
+)

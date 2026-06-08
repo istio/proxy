@@ -1,0 +1,67 @@
+# This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
+## For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
+
+name: Maven Manual Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to release"
+        required: true
+      version:
+        description: "Maven version to release (without 'v' prefix)"
+        required: true
+      deployArgs:
+        description: "Additional Maven deploy arguments (e.g. '--debug -DautoReleaseAfterClose=false')"
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      MAVEN_OPTS: "--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.desktop/java.awt.font=ALL-UNNAMED"
+      REF_NAME: ${{ inputs.ref }}
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-go@v6
+        with:
+          go-version: 'stable'
+      - name: Set VERSION variable from tag
+        run: |
+          echo "VERSION=${{ inputs.VERSION }}" >> $GITHUB_ENV
+
+      - name: Configure GIT
+        run: |
+          git config --global user.email "envoy-bot@users.noreply.github.com"
+          git config --global user.name "envoy-bot"
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+          server-id: central
+          server-username: SONATYPE_USERNAME
+          server-password: SONATYPE_PASSWORD
+
+      - name: Update version in pom
+        working-directory: ${{ github.workspace }}/java
+        run: ./mvnw -B versions:set -DnewVersion=${{ env.VERSION }} -DgenerateBackupPoms=false
+
+      - name: Publish to Maven Packages Apache Maven
+        working-directory: ${{ github.workspace }}/java
+        run: |
+          ./mvnw -B ${{ inputs.deployArgs }} clean deploy \
+          -P release \
+          -DreleaseVersion=${{ env.VERSION }} \
+          -DdevelopmentVersion=${{ env.VERSION }}-SNAPSHOT
+        env:
+          MAVEN_GPG_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

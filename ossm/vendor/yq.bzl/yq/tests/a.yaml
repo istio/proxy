@@ -1,0 +1,7 @@
+foo: bar
+value: 123
+moo:
+  - 1
+  - 2
+  - 3
+a: true

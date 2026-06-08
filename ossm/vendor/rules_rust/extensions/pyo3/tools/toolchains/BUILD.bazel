@@ -1,0 +1,52 @@
+load("@rules_venv//python/black:defs.bzl", "py_black_toolchain")
+load("@rules_venv//python/isort:defs.bzl", "py_isort_toolchain")
+load("@rules_venv//python/mypy:defs.bzl", "py_mypy_toolchain")
+load("@rules_venv//python/pylint:defs.bzl", "py_pylint_toolchain")
+
+py_black_toolchain(
+    name = "py_black_toolchain",
+    black = "@pip_deps//:black",
+)
+
+toolchain(
+    name = "black_toolchain",
+    toolchain = ":py_black_toolchain",
+    toolchain_type = "@rules_venv//python/black:toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+py_isort_toolchain(
+    name = "py_isort_toolchain",
+    isort = "@pip_deps//:isort",
+)
+
+toolchain(
+    name = "isort_toolchain",
+    toolchain = ":py_isort_toolchain",
+    toolchain_type = "@rules_venv//python/isort:toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+py_mypy_toolchain(
+    name = "py_mypy_toolchain",
+    mypy = "@pip_deps//:mypy",
+)
+
+toolchain(
+    name = "mypy_toolchain",
+    toolchain = ":py_mypy_toolchain",
+    toolchain_type = "@rules_venv//python/mypy:toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+py_pylint_toolchain(
+    name = "py_pylint_toolchain",
+    pylint = "@pip_deps//:pylint",
+)
+
+toolchain(
+    name = "pylint_toolchain",
+    toolchain = ":py_pylint_toolchain",
+    toolchain_type = "@rules_venv//python/pylint:toolchain_type",
+    visibility = ["//visibility:public"],
+)

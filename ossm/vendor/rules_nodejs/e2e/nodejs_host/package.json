@@ -1,0 +1,7 @@
+{
+  "dependencies": {},
+  "scripts": {
+    "postinstall": "REPLACED DURING YARN_INSTALL",
+    "test": "bazel test ..."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "homepage": "https://github.com/aignas/rules_shellcheck",
+  "maintainers": [
+    {
+      "email": "240938+aignas@users.noreply.github.com",
+      "github": "aignas",
+      "name": "Ignas Anikevicius"
+    }
+  ],
+  "repository": ["github:aignas/rules_shellcheck"],
+  "versions": [],
+  "yanked_versions": {}
+}

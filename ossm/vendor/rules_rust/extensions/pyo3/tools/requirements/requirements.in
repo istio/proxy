@@ -1,0 +1,6 @@
+# Development requirements
+
+black
+isort
+mypy
+pylint

@@ -1,0 +1,13 @@
+syntax = "proto3";
+package samples;
+
+message ArrayOfEnums {
+    string description = 1;
+    enum inline {
+        FOO = 0;
+        BAR = 1;
+        FIZZ = 2;
+        BUZZ = 3;
+    }
+    repeated inline stuff = 2;
+}

@@ -1,0 +1,17 @@
+{
+  "homepage": "https://github.com/bazelbuild/rules_proto",
+  "maintainers": [
+    {
+      "github": "googleberg",
+      "name": "Jerry Berg"
+    },
+    {
+      "github": "zhangskz"
+    }
+  ],
+  "versions": [],
+  "yanked_versions": {},
+  "repository": [
+    "github:bazelbuild/rules_proto"
+  ]
+}

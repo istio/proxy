@@ -1,0 +1,36 @@
+load("//python:py_library.bzl", "py_library")
+load("//python/private:py_interpreter_program.bzl", "py_interpreter_program")  # buildifier: disable=bzl-visibility
+
+package(
+    default_visibility = ["//:__subpackages__"],
+)
+
+py_interpreter_program(
+    name = "zipper",
+    main = "zipper.py",
+    visibility = [
+        # Not actually public. Only public so rules_python-generated toolchains
+        # are able to reference it.
+        "//visibility:public",
+    ],
+)
+
+py_library(
+    name = "zipper_lib",
+    srcs = ["zipper.py"],
+)
+
+py_interpreter_program(
+    name = "exe_zip_maker",
+    main = "exe_zip_maker.py",
+    visibility = [
+        # Not actually public. Only public so rules_python-generated toolchains
+        # are able to reference it.
+        "//visibility:public",
+    ],
+)
+
+py_library(
+    name = "exe_zip_maker_lib",
+    srcs = ["exe_zip_maker.py"],
+)

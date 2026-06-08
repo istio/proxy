@@ -1,0 +1,43 @@
+load("//:defs.bzl", "proto_plugin")
+
+proto_plugin(
+    name = "go_plugin",
+    exclusions = [
+        "google/api",
+        "google/protobuf",
+    ],
+    options = ["paths=source_relative"],
+    outputs = ["{protopath}.pb.go"],
+    tool = "@org_golang_google_protobuf//cmd/protoc-gen-go",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "grpc_go_plugin",
+    empty_template = "empty.template",
+    exclusions = [
+        "google/api",
+        "google/protobuf",
+    ],
+    options = ["paths=source_relative"],
+    outputs = ["{protopath}_grpc.pb.go"],
+    tool = "@org_golang_google_grpc_cmd_protoc_gen_go_grpc//:protoc-gen-go-grpc",
+    visibility = ["//visibility:public"],
+)
+
+proto_plugin(
+    name = "validate_go_plugin",
+    exclusions = [
+        "google/protobuf",
+        "validate",
+    ],
+    options = [
+        "lang=go",
+        "paths=source_relative",
+    ],
+    outputs = [
+        "{protopath}.pb.validate.go",
+    ],
+    tool = "@com_github_envoyproxy_protoc_gen_validate//:protoc-gen-validate",
+    visibility = ["//visibility:public"],
+)

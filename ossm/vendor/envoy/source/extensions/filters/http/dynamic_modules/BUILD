@@ -1,0 +1,74 @@
+load(
+    "//bazel:envoy_build_system.bzl",
+    "envoy_cc_extension",
+    "envoy_cc_library",
+    "envoy_extension_package",
+)
+
+licenses(["notice"])  # Apache 2
+
+envoy_extension_package()
+
+envoy_cc_library(
+    name = "filter_config_lib",
+    srcs = ["filter_config.cc"],
+    hdrs = ["filter_config.h"],
+    deps = [
+        "//source/extensions/dynamic_modules:dynamic_modules_lib",
+        "//source/extensions/filters/http/common:pass_through_filter_lib",
+    ],
+)
+
+envoy_cc_library(
+    name = "filter_lib",
+    srcs = ["filter.cc"],
+    hdrs = ["filter.h"],
+    deps = [
+        ":filter_config_lib",
+        "//source/common/tracing:null_span_lib",
+        "//source/extensions/filters/http/common:pass_through_filter_lib",
+    ],
+)
+
+envoy_cc_library(
+    name = "factory_lib",
+    srcs = ["factory.cc"],
+    hdrs = ["factory.h"],
+    deps = [
+        ":abi_impl",
+        ":filter_config_lib",
+        ":filter_lib",
+        "//source/extensions/common/wasm:remote_async_datasource_lib",
+        "//source/extensions/dynamic_modules:background_fetch_manager_lib",
+        "//source/extensions/dynamic_modules:dynamic_modules_lib",
+        "//source/extensions/filters/http/common:factory_base_lib",
+        "@envoy_api//envoy/extensions/filters/http/dynamic_modules/v3:pkg_cc_proto",
+    ],
+)
+
+envoy_cc_extension(
+    name = "factory_registration",
+    srcs = ["factory_registration.cc"],
+    deps = [
+        ":factory_lib",
+    ],
+)
+
+envoy_cc_library(
+    name = "abi_impl",
+    srcs = ["abi_impl.cc"],
+    deps = [
+        ":filter_lib",
+        "//envoy/registry",
+        "//source/common/http:utility_lib",
+        "//source/common/network:upstream_socket_options_filter_state_lib",
+        "//source/common/router:string_accessor_lib",
+        "//source/common/tracing:null_span_lib",
+        "//source/common/tracing:tracer_lib",
+        "//source/extensions/dynamic_modules:abi_impl",
+        "//source/extensions/dynamic_modules:dynamic_modules_lib",
+        "//source/extensions/filters/http/common:pass_through_filter_lib",
+        "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+    ],
+    alwayslink = True,
+)

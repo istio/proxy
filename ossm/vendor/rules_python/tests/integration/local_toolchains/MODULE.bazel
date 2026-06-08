@@ -1,0 +1,98 @@
+# Copyright 2024 The Bazel Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+module(name = "module_under_test")
+
+bazel_dep(name = "rules_python", version = "0.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "rules_cc", version = "0.1.5")
+
+local_path_override(
+    module_name = "rules_python",
+    path = "../../..",
+)
+
+# Step 1: Define the python runtime
+local_runtime_repo = use_repo_rule("@rules_python//python/local_toolchains:repos.bzl", "local_runtime_repo")
+
+local_runtime_toolchains_repo = use_repo_rule("@rules_python//python/local_toolchains:repos.bzl", "local_runtime_toolchains_repo")
+
+# This will use `python3` from the environment
+local_runtime_repo(
+    name = "local_python3",
+    interpreter_path = "python3",
+    on_failure = "fail",
+)
+
+pbs_archive = use_repo_rule("//:pbs_archive.bzl", "pbs_archive")
+
+pbs_archive(
+    name = "pbs_runtime",
+    sha256 = {
+        "linux": "0a01bad99fd4a165a11335c29eb43015dfdb8bd5ba8e305538ebb54f3bf3146d",
+        "mac os x": "7f5ec658219bdb1d1142c6abab89680322166c78350a017fb0af3c869dceee41",
+        "windows": "005cb2abf4cfa4aaa48fb10ce4e33fe4335ea4d1f55202dbe4e20c852e45e0f9",
+    },
+    urls = {
+        "linux": "https://github.com/astral-sh/python-build-standalone/releases/download/20250918/cpython-3.13.7+20250918-x86_64-unknown-linux-gnu-install_only.tar.gz",
+        "mac os x": "https://github.com/astral-sh/python-build-standalone/releases/download/20250918/cpython-3.13.7+20250918-aarch64-apple-darwin-install_only.tar.gz",
+        "windows server 2022": "https://github.com/astral-sh/python-build-standalone/releases/download/20250918/cpython-3.13.7+20250918-x86_64-pc-windows-msvc-install_only.tar.gz",
+    },
+)
+
+# This will use Python from the `pbs_runtime` repository.
+# The pbs_runtime is just an example; the repo just needs to be a valid Python
+# installation.
+local_runtime_repo(
+    name = "repo_python3",
+    interpreter_target = "@pbs_runtime//:python/bin/python",
+    on_failure = "fail",
+)
+
+# Step 2: Create toolchains for the runtimes
+# Below, we configure them to only activate if the `//:py` flag has particular
+# values.
+local_runtime_toolchains_repo(
+    name = "local_toolchains",
+    runtimes = [
+        "local_python3",
+        "repo_python3",
+    ],
+    target_compatible_with = {
+        "local_python3": [
+            "HOST_CONSTRAINTS",
+        ],
+        "repo_python3": [
+            "HOST_CONSTRAINTS",
+        ],
+    },
+    target_settings = {
+        "local_python3": [
+            "@//:is_py_local",
+        ],
+        "repo_python3": [
+            "@//:is_py_repo",
+        ],
+    },
+)
+
+config = use_extension("@rules_python//python/extensions:config.bzl", "config")
+config.add_transition_setting(setting = "//:py")
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(python_version = "3.13")
+use_repo(python, "rules_python_bzlmod_debug")
+
+# Step 3: Register the toolchains
+register_toolchains("@local_toolchains//:all")

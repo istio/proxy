@@ -1,0 +1,3 @@
+# gazelle:python_generation_mode file
+# gazelle:python_resolve_sibling_imports false
+# gazelle:python_experimental_allow_relative_imports true

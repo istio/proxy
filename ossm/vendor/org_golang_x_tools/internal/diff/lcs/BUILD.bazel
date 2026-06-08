@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "lcs",
+    srcs = [
+        "common.go",
+        "doc.go",
+        "labels.go",
+        "old.go",
+        "sequence.go",
+    ],
+    importpath = "golang.org/x/tools/internal/diff/lcs",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":lcs",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "lcs_test",
+    srcs = [
+        "common_test.go",
+        "old_test.go",
+    ],
+    embed = [":lcs"],
+)

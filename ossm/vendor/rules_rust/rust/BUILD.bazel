@@ -1,0 +1,31 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "known_shas.bzl",
+    "repositories.bzl",
+    "defs.bzl",
+    "toolchain.bzl",
+])
+
+toolchain_type(
+    name = "toolchain_type",
+)
+
+alias(
+    name = "toolchain",
+    actual = "toolchain_type",
+    deprecation = "instead use `@rules_rust//rust:toolchain_type`",
+    tags = ["manual"],
+)
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["**/*.bzl"]),
+    deps = [
+        "//rust/platform:bzl_lib",
+        "//rust/private:bzl_lib",
+        "//rust/settings:bzl_lib",
+    ],
+)

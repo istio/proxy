@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "import_option",
+    srcs = ["import_option.pb.go"],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/import_option",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/descriptorpb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":import_option",
+    visibility = ["//visibility:public"],
+)

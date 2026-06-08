@@ -1,0 +1,14 @@
+[package]
+name = "cargo_toml_variable_extractor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cargo-util-schemas = "0.3.1"
+pathdiff = "0.1.0"
+semver = "1"
+toml = "0.8.14"
+
+[[bin]]
+name = "cargo_toml_variable_extractor"
+path = "main.rs"

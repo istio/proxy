@@ -1,0 +1,40 @@
+###############################################################################
+## Bazel Configuration Flags
+###############################################################################
+
+build --@rules_rust//rust/settings:experimental_use_cc_common_link=True
+build --@rules_rust//rust/settings:experimental_use_global_allocator=True
+build --@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols=True
+
+###############################################################################
+
+# Enable rustfmt for all targets in the workspace
+build:rustfmt --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
+build:rustfmt --output_groups=+rustfmt_checks
+
+# Enable clippy for all targets in the workspace
+build:clippy --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+build:clippy --output_groups=+clippy_checks
+
+###############################################################################
+## Incompatibility flags
+###############################################################################
+
+# https://github.com/bazelbuild/bazel/issues/8195
+build --incompatible_disallow_empty_glob=true
+
+# https://github.com/bazelbuild/bazel/issues/12821
+build --nolegacy_external_runfiles
+
+# https://github.com/bazelbuild/bazel/issues/23043.
+build --incompatible_autoload_externally=
+
+###############################################################################
+## Bzlmod
+###############################################################################
+
+# A configuration for disabling bzlmod.
+common:no-bzlmod --noenable_bzlmod --enable_workspace
+
+# Disable the bzlmod lockfile, so we don't accidentally commit MODULE.bazel.lock
+common --lockfile_mode=off

@@ -1,0 +1,437 @@
+load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
+load("@aspect_bazel_lib//lib:diff_test.bzl", "diff_test")
+load("@aspect_bazel_lib//lib:testing.bzl", "assert_contains")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//yq:yq.bzl", "yq")
+
+exports_files(
+    [
+        "a.yaml",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# TODO(alex): fix these tests
+not_windows = select({
+    "@platforms//os:windows": ["@platforms//:incompatible"],
+    "//conditions:default": [],
+})
+
+copy_file(
+    name = "yaml_otherextension",
+    src = "a.yaml",
+    out = "a.whatever",
+)
+
+copy_file(
+    name = "json_otherextension",
+    src = "//yq/tests:a_pretty.json",
+    out = "a.dealerschoice",
+)
+
+# Identity (dot) expression produces identical yaml
+yq(
+    name = "case_dot_expression",
+    srcs = ["a.yaml"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_dot_expression_test",
+    file1 = "a.yaml",
+    file2 = ":case_dot_expression",
+)
+
+yq(
+    name = "case_dot_expression_otherextension",
+    srcs = ["a.whatever"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_dot_expression_otherextension_test",
+    file1 = "a.whatever",
+    file2 = ":case_dot_expression_otherextension",
+)
+
+# No expression same as dot expression
+yq(
+    name = "case_no_expression",
+    srcs = ["a.yaml"],
+)
+
+diff_test(
+    name = "case_no_expression_test",
+    file1 = "a.yaml",
+    file2 = ":case_no_expression",
+)
+
+yq(
+    name = "case_no_expression_otherextension",
+    srcs = ["a.whatever"],
+)
+
+diff_test(
+    name = "case_no_expression_otherextension_test",
+    file1 = "a.whatever",
+    file2 = ":case_no_expression",
+)
+
+# Output json, no out declared
+yq(
+    name = "case_json_output_no_out",
+    srcs = ["a.yaml"],
+    args = ["-o=json"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_json_output_no_out_test",
+    file1 = "//yq/tests:a_pretty.json",
+    file2 = "case_json_output_no_out.json",
+)
+
+yq(
+    name = "case_json_output_no_out_otherextension",
+    srcs = ["a.whatever"],
+    args = ["-o=json"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_json_output_no_out_otherextension_test",
+    file1 = "//yq/tests:a_pretty.json",
+    file2 = "case_json_output_no_out.json",
+)
+
+# Output json, outs has ".json" extension but "-o=json" not set
+yq(
+    name = "case_json_output_no_arg",
+    srcs = ["a.yaml"],
+    outs = ["case_json_output_no_arg.json"],
+    args = [],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_json_output_no_arg_test",
+    file1 = "//yq/tests:a_pretty.json",
+    file2 = ":case_json_output_no_arg",
+)
+
+# Convert json to yaml
+yq(
+    name = "case_convert_json_to_yaml",
+    srcs = ["//yq/tests:a_pretty.json"],
+    args = ["-P"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_convert_json_to_yaml_test",
+    file1 = "a.yaml",
+    file2 = ":case_convert_json_to_yaml",
+)
+
+yq(
+    name = "case_convert_json_to_yaml_otherextension",
+    srcs = ["a.dealerschoice"],
+    args = ["-P"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_convert_json_to_yaml_otherextension_test",
+    file1 = "a.yaml",
+    file2 = ":case_convert_json_to_yaml",
+)
+
+# No srcs, output is a generated expression
+yq(
+    name = "case_generate_from_expression",
+    srcs = [],
+    expression = ".a.b.c = \"cat\"",
+)
+
+diff_test(
+    name = "case_generate_from_expression_test",
+    file1 = "generated-from-expression.yaml",
+    file2 = ":case_generate_from_expression",
+)
+
+# No sources produces empty file (equivalent to --null-input)
+yq(
+    name = "case_no_sources",
+    srcs = [],
+    expression = ".",
+)
+
+write_file(
+    name = "empty",
+    out = "empty.yaml",
+    content = [
+        "",
+        "",
+    ],
+)
+
+diff_test(
+    name = "case_no_sources_test",
+    file1 = ":case_no_sources",
+    file2 = "empty.yaml",
+)
+
+# Merge two documents together
+yq(
+    name = "case_merge_expression",
+    srcs = [
+        "a.yaml",
+        "b.yaml",
+    ],
+    expression = "select(fileIndex == 0) * select(fileIndex == 1)",
+)
+
+diff_test(
+    name = "case_merge_expression_test",
+    file1 = "a_b_merged.yaml",
+    file2 = ":case_merge_expression",
+)
+
+# Merge two documents together (alt syntax)
+yq(
+    name = "case_merge_expression_alt",
+    srcs = [
+        "a.yaml",
+        "b.yaml",
+    ],
+    expression = ". as $item ireduce ({}; . * $item )",
+)
+
+diff_test(
+    name = "case_merge_expression_alt_test",
+    file1 = "a_b_merged.yaml",
+    file2 = ":case_merge_expression_alt",
+)
+
+# Split into multiple documents
+yq(
+    name = "case_split_expression",
+    srcs = ["multidoc.yaml"],
+    outs = [
+        "test_doc1.yml",
+        "test_doc2.yml",
+    ],
+    args = [
+        "-s '.a'",
+        "--no-doc",
+    ],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_split_expression_test_1",
+    file1 = "split1.yaml",
+    file2 = "test_doc1.yml",
+)
+
+diff_test(
+    name = "case_split_expression_test_2",
+    file1 = "split2.yaml",
+    file2 = "test_doc2.yml",
+)
+
+# Outputs properties file
+yq(
+    name = "case_output_properties",
+    srcs = ["a.yaml"],
+    outs = ["case_output_properties.properties"],
+    args = ["-o=props"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_output_properties_test",
+    file1 = "a.properties",
+    file2 = ":case_output_properties",
+)
+
+# Outputs properties file, outs not declared
+yq(
+    name = "case_output_properties_no_outs",
+    srcs = ["a.yaml"],
+    args = ["-o=props"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_output_properties_no_outs_test",
+    file1 = "a.properties",
+    file2 = ":case_output_properties_no_outs",
+)
+
+# Outputs csv file
+yq(
+    name = "case_output_csv",
+    srcs = ["array.yaml"],
+    outs = ["case_output_csv.csv"],
+    args = ["-o=c"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_output_csv_test",
+    file1 = "array.csv",
+    file2 = ":case_output_csv",
+)
+
+# Outputs csv file, outs not declared
+yq(
+    name = "case_output_csv_no_outs",
+    srcs = ["array.yaml"],
+    args = ["-o=c"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_output_csv_no_outs_test",
+    file1 = "array.csv",
+    file2 = ":case_output_csv_no_outs",
+)
+
+# Outputs tsv file
+yq(
+    name = "case_output_tsv",
+    srcs = ["array.yaml"],
+    outs = ["case_output_tsv.tsv"],
+    args = ["-o=t"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_output_tsv_test",
+    file1 = "array.tsv",
+    file2 = ":case_output_tsv",
+)
+
+# Outputs tsv file, outs not declared
+yq(
+    name = "case_output_tsv_no_outs",
+    srcs = ["array.yaml"],
+    args = ["-o=t"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_output_tsv_no_outs_test",
+    file1 = "array.tsv",
+    file2 = ":case_output_tsv_no_outs",
+)
+
+# Convert xml to yaml
+yq(
+    name = "case_convert_xml_to_yaml",
+    srcs = ["sample.xml"],
+    args = ["-p=xml"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_convert_xml_to_yaml_test",
+    file1 = "sample.yaml",
+    file2 = ":case_convert_xml_to_yaml",
+)
+
+# Outputs xml file
+yq(
+    name = "case_output_xml",
+    srcs = ["a.yaml"],
+    outs = ["case_output_xml.xml"],
+    args = ["-o=xml"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_output_xml_test",
+    file1 = "a.xml",
+    file2 = ":case_output_xml",
+)
+
+# Outputs xml file, outs not declared
+yq(
+    name = "case_output_xml_no_outs",
+    srcs = ["a.yaml"],
+    args = ["-o=xml"],
+    expression = ".",
+)
+
+diff_test(
+    name = "case_output_xml_no_outs_test",
+    file1 = "a.xml",
+    file2 = ":case_output_xml_no_outs",
+)
+
+# Merge two json documents together
+yq(
+    name = "case_merge_expression_json",
+    srcs = [
+        "//yq/tests:a.json",
+        "//yq/tests:b.json",
+    ],
+    args = ["-P"],
+    expression = ". as $item ireduce ({}; . * $item )",
+)
+
+diff_test(
+    name = "case_merge_expression_json_test",
+    file1 = "a_b_merged.yaml",
+    file2 = ":case_merge_expression_json",
+)
+
+# Expression that uses a stamp variable
+[
+    yq(
+        name = ("" if stamp else "un") + "stamped",
+        srcs = ["a.yaml"],
+        expression = "|".join([
+            "load(strenv(STAMP)) as $stamp",
+            # Provide a default using the "alternative operator"
+            ".foo = ($stamp.BUILD_EMBED_LABEL // \"<unstamped>\")",
+            ".value = ($stamp.BUILD_TIMESTAMP // 1 | @yamld)",
+        ]),
+        stamp = stamp,
+    )
+    for stamp in [
+        0,
+        1,
+    ]
+]
+
+assert_contains(
+    name = "check_stamped",
+    actual = "stamped.yaml",
+    # v1.2.3 comes from the --embed_label flag in .bazelrc
+    expected = """foo: v1.2.3""",
+    target_compatible_with = not_windows,
+)
+
+assert_contains(
+    name = "check_unstamped",
+    actual = "unstamped.yaml",
+    expected = """foo: <unstamped>""",
+    target_compatible_with = not_windows,
+)
+
+# Call yq within a genrule
+genrule(
+    name = "case_genrule",
+    srcs = ["a.yaml"],
+    outs = ["genrule_output.yaml"],
+    cmd = "$(YQ_BIN) '.' $(location a.yaml) > $@",
+    toolchains = ["@yq_toolchains//:resolved_toolchain"],
+)
+
+diff_test(
+    name = "case_genrule_test",
+    file1 = "genrule_output.yaml",
+    file2 = "a.yaml",
+)

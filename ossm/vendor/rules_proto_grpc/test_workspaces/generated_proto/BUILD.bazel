@@ -1,0 +1,38 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_proto_grpc//python:defs.bzl", "python_proto_library")
+
+package(default_visibility = ["//visibility:private"])
+
+# Test that generated proto files are handled correctly
+
+genrule(
+    name = "generate_proto",
+    srcs = ["generated.proto.template"],
+    outs = ["generated.proto"],
+    cmd = "cp '$(location generated.proto.template)' '$@'",
+)
+
+proto_library(
+    name = "proto_lib",
+    srcs = [
+        "generated.proto",
+        "static.proto",
+    ],
+    deps = ["@another_workspace//:proto_lib"],
+)
+
+python_proto_library(
+    name = "py_lib",
+    protos = ["proto_lib"],
+)
+
+py_test(
+    name = "test",
+    srcs = ["main.py"],
+    main = "main.py",
+    deps = [
+        "py_lib",
+        "@another_workspace//:py_lib",
+    ],
+)

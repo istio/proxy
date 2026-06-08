@@ -1,0 +1,8 @@
+# Do not use the default toolchain.
+build --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
+# Cross compile on macOS to avoid needing a macOS sysroot
+build --enable_platform_specific_config
+build:macos --platforms=//:linux_x86_64
+
+build:gcc --//toolchains:compiler_kind=gcc

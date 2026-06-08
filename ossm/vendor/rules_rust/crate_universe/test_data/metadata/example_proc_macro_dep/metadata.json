@@ -1,0 +1,2033 @@
+{
+    "metadata": null,
+    "packages": [
+        {
+            "authors": [],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "proc-macro-rules",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "=0.4.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                }
+            ],
+            "description": null,
+            "documentation": null,
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "path+file://{TEMP_DIR}/example_proc_macro_dep#example-proc-macro-dep@0.1.0",
+            "keywords": [],
+            "license": null,
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{TEMP_DIR}/example_proc_macro_dep/Cargo.toml",
+            "metadata": null,
+            "name": "example-proc-macro-dep",
+            "publish": null,
+            "readme": null,
+            "repository": null,
+            "rust_version": null,
+            "source": null,
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "example_proc_macro_dep",
+                    "src_path": "{TEMP_DIR}/example_proc_macro_dep/lib.rs",
+                    "test": true
+                }
+            ],
+            "version": "0.1.0"
+        },
+        {
+            "authors": [
+                "Aleksey Kladov <aleksey.kladov@gmail.com>"
+            ],
+            "categories": [
+                "rust-patterns",
+                "memory-management"
+            ],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "critical-section",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "parking_lot_core",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.9.3",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": false
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "portable-atomic",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "std"
+                    ],
+                    "kind": "dev",
+                    "name": "critical-section",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.1.1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "regex",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.2.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                }
+            ],
+            "description": "Single assignment cells and lazy values.",
+            "documentation": "https://docs.rs/once_cell",
+            "edition": "2021",
+            "features": {
+                "alloc": [
+                    "race"
+                ],
+                "atomic-polyfill": [
+                    "critical-section"
+                ],
+                "critical-section": [
+                    "dep:critical-section",
+                    "portable-atomic"
+                ],
+                "default": [
+                    "std"
+                ],
+                "parking_lot": [
+                    "dep:parking_lot_core"
+                ],
+                "portable-atomic": [
+                    "dep:portable-atomic"
+                ],
+                "race": [],
+                "std": [
+                    "alloc"
+                ],
+                "unstable": []
+            },
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#once_cell@1.19.0",
+            "keywords": [
+                "lazy",
+                "static"
+            ],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/once_cell-1.19.0/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "all-features": true,
+                        "rustdoc-args": [
+                            "--generate-link-to-definition"
+                        ]
+                    }
+                }
+            },
+            "name": "once_cell",
+            "publish": null,
+            "readme": "README.md",
+            "repository": "https://github.com/matklad/once_cell",
+            "rust_version": "1.60",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2021",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "once_cell",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/once_cell-1.19.0/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "bench",
+                    "required-features": [
+                        "std"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/once_cell-1.19.0/examples/bench.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "bench_acquire",
+                    "required-features": [
+                        "std"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/once_cell-1.19.0/examples/bench_acquire.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "lazy_static",
+                    "required-features": [
+                        "std"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/once_cell-1.19.0/examples/lazy_static.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "reentrant_init_deadlocks",
+                    "required-features": [
+                        "std"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/once_cell-1.19.0/examples/reentrant_init_deadlocks.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "regex",
+                    "required-features": [
+                        "std"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/once_cell-1.19.0/examples/regex.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "test_synchronization",
+                    "required-features": [
+                        "std"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/once_cell-1.19.0/examples/test_synchronization.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "it",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/once_cell-1.19.0/tests/it/main.rs",
+                    "test": true
+                }
+            ],
+            "version": "1.19.0"
+        },
+        {
+            "authors": [
+                "Nick Cameron <nrc@ncameron.org>"
+            ],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "proc-macro-rules-macros",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.4",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "proc-macro2",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0.56",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "full",
+                        "extra-traits"
+                    ],
+                    "kind": null,
+                    "name": "syn",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^2.0.15",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "quote",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0.26",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                }
+            ],
+            "description": "Emulate macro-rules pattern matching in procedural macros",
+            "documentation": null,
+            "edition": "2021",
+            "features": {},
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#proc-macro-rules@0.4.0",
+            "keywords": [],
+            "license": "Apache-2.0/MIT",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro-rules-0.4.0/Cargo.toml",
+            "metadata": null,
+            "name": "proc-macro-rules",
+            "publish": null,
+            "readme": "README.md",
+            "repository": "https://github.com/nrc/proc-macro-rules",
+            "rust_version": null,
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2021",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "proc_macro_rules",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro-rules-0.4.0/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "proc-macro"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "example"
+                    ],
+                    "name": "macro_rules",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro-rules-0.4.0/examples/macro_rules.rs",
+                    "test": false
+                }
+            ],
+            "version": "0.4.0"
+        },
+        {
+            "authors": [
+                "Nick Cameron <nrc@ncameron.org>"
+            ],
+            "categories": [],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "once_cell",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.17.1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "proc-macro2",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0.56",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "quote",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0.26",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "full",
+                        "extra-traits"
+                    ],
+                    "kind": null,
+                    "name": "syn",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^2.0.15",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                }
+            ],
+            "description": "Emulate macro-rules pattern matching in procedural macros",
+            "documentation": null,
+            "edition": "2021",
+            "features": {},
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#proc-macro-rules-macros@0.4.0",
+            "keywords": [],
+            "license": "Apache-2.0/MIT",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro-rules-macros-0.4.0/Cargo.toml",
+            "metadata": null,
+            "name": "proc-macro-rules-macros",
+            "publish": null,
+            "readme": "README.md",
+            "repository": "https://github.com/nrc/proc-macro-rules",
+            "rust_version": null,
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "proc-macro"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2021",
+                    "kind": [
+                        "proc-macro"
+                    ],
+                    "name": "proc_macro_rules_macros",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro-rules-macros-0.4.0/src/lib.rs",
+                    "test": true
+                }
+            ],
+            "version": "0.4.0"
+        },
+        {
+            "authors": [
+                "David Tolnay <dtolnay@gmail.com>",
+                "Alex Crichton <alex@alexcrichton.com>"
+            ],
+            "categories": [
+                "development-tools::procedural-macro-helpers"
+            ],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "unicode-ident",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "flate2",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "quote",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": false
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "rayon",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "rustversion",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "tar",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.4",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                }
+            ],
+            "description": "A substitute implementation of the compiler's `proc_macro` API to decouple token-based libraries from the procedural macro use case.",
+            "documentation": "https://docs.rs/proc-macro2",
+            "edition": "2021",
+            "features": {
+                "default": [
+                    "proc-macro"
+                ],
+                "nightly": [],
+                "proc-macro": [],
+                "span-locations": []
+            },
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.79",
+            "keywords": [
+                "macros",
+                "syn"
+            ],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.79/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "rustc-args": [
+                            "--cfg",
+                            "procmacro2_semver_exempt"
+                        ],
+                        "rustdoc-args": [
+                            "--cfg",
+                            "procmacro2_semver_exempt",
+                            "--cfg",
+                            "doc_cfg",
+                            "--generate-link-to-definition"
+                        ],
+                        "targets": [
+                            "x86_64-unknown-linux-gnu"
+                        ]
+                    }
+                },
+                "playground": {
+                    "features": [
+                        "span-locations"
+                    ]
+                }
+            },
+            "name": "proc-macro2",
+            "publish": null,
+            "readme": "README.md",
+            "repository": "https://github.com/dtolnay/proc-macro2",
+            "rust_version": "1.56",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2021",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "proc_macro2",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.79/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "features",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.79/tests/features.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.79/tests/test.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_size",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.79/tests/test_size.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_fmt",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.79/tests/test_fmt.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "comments",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.79/tests/comments.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "marker",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.79/tests/marker.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "custom-build"
+                    ],
+                    "name": "build-script-build",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/proc-macro2-1.0.79/build.rs",
+                    "test": false
+                }
+            ],
+            "version": "1.0.79"
+        },
+        {
+            "authors": [
+                "David Tolnay <dtolnay@gmail.com>"
+            ],
+            "categories": [
+                "development-tools::procedural-macro-helpers"
+            ],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "proc-macro2",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0.74",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": false
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "rustversion",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "diff"
+                    ],
+                    "kind": "dev",
+                    "name": "trybuild",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0.66",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                }
+            ],
+            "description": "Quasi-quoting macro quote!(...)",
+            "documentation": "https://docs.rs/quote/",
+            "edition": "2018",
+            "features": {
+                "default": [
+                    "proc-macro"
+                ],
+                "proc-macro": [
+                    "proc-macro2/proc-macro"
+                ]
+            },
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.35",
+            "keywords": [
+                "macros",
+                "syn"
+            ],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/quote-1.0.35/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "rustdoc-args": [
+                            "--generate-link-to-definition"
+                        ],
+                        "targets": [
+                            "x86_64-unknown-linux-gnu"
+                        ]
+                    }
+                }
+            },
+            "name": "quote",
+            "publish": null,
+            "readme": "README.md",
+            "repository": "https://github.com/dtolnay/quote",
+            "rust_version": "1.56",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "quote",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/quote-1.0.35/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/quote-1.0.35/tests/test.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "compiletest",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/quote-1.0.35/tests/compiletest.rs",
+                    "test": true
+                }
+            ],
+            "version": "1.0.35"
+        },
+        {
+            "authors": [
+                "David Tolnay <dtolnay@gmail.com>"
+            ],
+            "categories": [
+                "development-tools::procedural-macro-helpers",
+                "parser-implementations"
+            ],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "proc-macro2",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0.75",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": false
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "quote",
+                    "optional": true,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1.0.35",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": false
+                },
+                {
+                    "features": [],
+                    "kind": null,
+                    "name": "unicode-ident",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "anyhow",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "automod",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "flate2",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "insta",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "rayon",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "ref-cast",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "blocking"
+                    ],
+                    "kind": "dev",
+                    "name": "reqwest",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.12",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "rustversion",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "syn-test-suite",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "tar",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.4.16",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "termcolor",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "walkdir",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^2.3.2",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                }
+            ],
+            "description": "Parser for Rust source code",
+            "documentation": "https://docs.rs/syn",
+            "edition": "2021",
+            "features": {
+                "clone-impls": [],
+                "default": [
+                    "derive",
+                    "parsing",
+                    "printing",
+                    "clone-impls",
+                    "proc-macro"
+                ],
+                "derive": [],
+                "extra-traits": [],
+                "fold": [],
+                "full": [],
+                "parsing": [],
+                "printing": [
+                    "dep:quote"
+                ],
+                "proc-macro": [
+                    "proc-macro2/proc-macro",
+                    "quote?/proc-macro"
+                ],
+                "test": [
+                    "syn-test-suite/all-features"
+                ],
+                "visit": [],
+                "visit-mut": []
+            },
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.57",
+            "keywords": [
+                "macros",
+                "syn"
+            ],
+            "license": "MIT OR Apache-2.0",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "all-features": true,
+                        "rustdoc-args": [
+                            "--cfg",
+                            "doc_cfg",
+                            "--generate-link-to-definition"
+                        ],
+                        "targets": [
+                            "x86_64-unknown-linux-gnu"
+                        ]
+                    }
+                },
+                "playground": {
+                    "features": [
+                        "full",
+                        "visit",
+                        "visit-mut",
+                        "fold",
+                        "extra-traits"
+                    ]
+                }
+            },
+            "name": "syn",
+            "publish": null,
+            "readme": "README.md",
+            "repository": "https://github.com/dtolnay/syn",
+            "rust_version": "1.60",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2021",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "syn",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_should_parse",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_should_parse.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_visibility",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_visibility.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_stmt",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_stmt.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_round_trip",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_round_trip.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_size",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_size.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_shebang",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_shebang.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_pat",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_pat.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_receiver",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_receiver.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_precedence",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_precedence.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_lit",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_lit.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "regression",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/regression.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_parse_stream",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_parse_stream.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_grouping",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_grouping.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_ident",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_ident.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_iterators",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_iterators.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_parse_buffer",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_parse_buffer.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_asyncness",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_asyncness.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_token_trees",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_token_trees.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_ty",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_ty.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "zzz_stable",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/zzz_stable.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_parse_quote",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_parse_quote.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_meta",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_meta.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_expr",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_expr.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_item",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_item.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_path",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_path.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_derive_input",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_derive_input.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_generics",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_generics.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "test_attribute",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/tests/test_attribute.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "bench"
+                    ],
+                    "name": "rust",
+                    "required-features": [
+                        "full",
+                        "parsing"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/benches/rust.rs",
+                    "test": false
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2021",
+                    "kind": [
+                        "bench"
+                    ],
+                    "name": "file",
+                    "required-features": [
+                        "full",
+                        "parsing"
+                    ],
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/syn-2.0.57/benches/file.rs",
+                    "test": false
+                }
+            ],
+            "version": "2.0.57"
+        },
+        {
+            "authors": [
+                "David Tolnay <dtolnay@gmail.com>"
+            ],
+            "categories": [
+                "development-tools::procedural-macro-helpers",
+                "no-std",
+                "no-std::no-alloc"
+            ],
+            "default_run": null,
+            "dependencies": [
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "criterion",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.5",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": false
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "fst",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.4",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [
+                        "small_rng"
+                    ],
+                    "kind": "dev",
+                    "name": "rand",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.8",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "roaring",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.10",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "ucd-trie",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.1",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": false
+                },
+                {
+                    "features": [],
+                    "kind": "dev",
+                    "name": "unicode-xid",
+                    "optional": false,
+                    "registry": null,
+                    "rename": null,
+                    "req": "^0.2.4",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index",
+                    "target": null,
+                    "uses_default_features": true
+                }
+            ],
+            "description": "Determine whether characters have the XID_Start or XID_Continue properties according to Unicode Standard Annex #31",
+            "documentation": "https://docs.rs/unicode-ident",
+            "edition": "2018",
+            "features": {},
+            "homepage": null,
+            "id": "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.12",
+            "keywords": [
+                "unicode",
+                "xid"
+            ],
+            "license": "(MIT OR Apache-2.0) AND Unicode-DFS-2016",
+            "license_file": null,
+            "links": null,
+            "manifest_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-ident-1.0.12/Cargo.toml",
+            "metadata": {
+                "docs": {
+                    "rs": {
+                        "rustdoc-args": [
+                            "--generate-link-to-definition"
+                        ],
+                        "targets": [
+                            "x86_64-unknown-linux-gnu"
+                        ]
+                    }
+                }
+            },
+            "name": "unicode-ident",
+            "publish": null,
+            "readme": "README.md",
+            "repository": "https://github.com/dtolnay/unicode-ident",
+            "rust_version": "1.31",
+            "source": "registry+https://github.com/rust-lang/crates.io-index",
+            "targets": [
+                {
+                    "crate_types": [
+                        "lib"
+                    ],
+                    "doc": true,
+                    "doctest": true,
+                    "edition": "2018",
+                    "kind": [
+                        "lib"
+                    ],
+                    "name": "unicode_ident",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-ident-1.0.12/src/lib.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "static_size",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-ident-1.0.12/tests/static_size.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "test"
+                    ],
+                    "name": "compare",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-ident-1.0.12/tests/compare.rs",
+                    "test": true
+                },
+                {
+                    "crate_types": [
+                        "bin"
+                    ],
+                    "doc": false,
+                    "doctest": false,
+                    "edition": "2018",
+                    "kind": [
+                        "bench"
+                    ],
+                    "name": "xid",
+                    "src_path": "{CARGO_HOME}/registry/src/index.crates.io-6f17d22bba15001f/unicode-ident-1.0.12/benches/xid.rs",
+                    "test": false
+                }
+            ],
+            "version": "1.0.12"
+        }
+    ],
+    "resolve": {
+        "nodes": [
+            {
+                "dependencies": [
+                    "registry+https://github.com/rust-lang/crates.io-index#proc-macro-rules@0.4.0"
+                ],
+                "deps": [
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "proc_macro_rules",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#proc-macro-rules@0.4.0"
+                    }
+                ],
+                "features": [],
+                "id": "path+file://{TEMP_DIR}/example_proc_macro_dep#example-proc-macro-dep@0.1.0"
+            },
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [
+                    "alloc",
+                    "default",
+                    "race",
+                    "std"
+                ],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#once_cell@1.19.0"
+            },
+            {
+                "dependencies": [
+                    "registry+https://github.com/rust-lang/crates.io-index#proc-macro-rules-macros@0.4.0",
+                    "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.79",
+                    "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.57"
+                ],
+                "deps": [
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "proc_macro_rules_macros",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#proc-macro-rules-macros@0.4.0"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "proc_macro2",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.79"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "syn",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.57"
+                    }
+                ],
+                "features": [],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#proc-macro-rules@0.4.0"
+            },
+            {
+                "dependencies": [
+                    "registry+https://github.com/rust-lang/crates.io-index#once_cell@1.19.0",
+                    "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.79",
+                    "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.35",
+                    "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.57"
+                ],
+                "deps": [
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "once_cell",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#once_cell@1.19.0"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "proc_macro2",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.79"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "quote",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.35"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "syn",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.57"
+                    }
+                ],
+                "features": [],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#proc-macro-rules-macros@0.4.0"
+            },
+            {
+                "dependencies": [
+                    "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.12"
+                ],
+                "deps": [
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "unicode_ident",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.12"
+                    }
+                ],
+                "features": [
+                    "default",
+                    "proc-macro"
+                ],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.79"
+            },
+            {
+                "dependencies": [
+                    "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.79"
+                ],
+                "deps": [
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "proc_macro2",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.79"
+                    }
+                ],
+                "features": [
+                    "default",
+                    "proc-macro"
+                ],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.35"
+            },
+            {
+                "dependencies": [
+                    "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.79",
+                    "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.35",
+                    "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.12"
+                ],
+                "deps": [
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "proc_macro2",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#proc-macro2@1.0.79"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "quote",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#quote@1.0.35"
+                    },
+                    {
+                        "dep_kinds": [
+                            {
+                                "kind": null,
+                                "target": null
+                            }
+                        ],
+                        "name": "unicode_ident",
+                        "pkg": "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.12"
+                    }
+                ],
+                "features": [
+                    "clone-impls",
+                    "default",
+                    "derive",
+                    "extra-traits",
+                    "full",
+                    "parsing",
+                    "printing",
+                    "proc-macro"
+                ],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#syn@2.0.57"
+            },
+            {
+                "dependencies": [],
+                "deps": [],
+                "features": [],
+                "id": "registry+https://github.com/rust-lang/crates.io-index#unicode-ident@1.0.12"
+            }
+        ],
+        "root": "path+file://{TEMP_DIR}/example_proc_macro_dep#example-proc-macro-dep@0.1.0"
+    },
+    "target_directory": "{TEMP_DIR}/example_proc_macro_dep/target",
+    "version": 1,
+    "workspace_default_members": [
+        "path+file://{TEMP_DIR}/example_proc_macro_dep#example-proc-macro-dep@0.1.0"
+    ],
+    "workspace_members": [
+        "path+file://{TEMP_DIR}/example_proc_macro_dep#example-proc-macro-dep@0.1.0"
+    ],
+    "workspace_root": "{TEMP_DIR}/example_proc_macro_dep"
+}

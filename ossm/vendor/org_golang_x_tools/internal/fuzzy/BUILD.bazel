@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "fuzzy",
+    srcs = [
+        "input.go",
+        "matcher.go",
+        "symbol.go",
+    ],
+    importpath = "golang.org/x/tools/internal/fuzzy",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fuzzy",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "fuzzy_test",
+    srcs = [
+        "input_test.go",
+        "matcher_test.go",
+        "symbol_test.go",
+    ],
+    deps = [":fuzzy"],
+)

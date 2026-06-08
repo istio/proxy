@@ -1,0 +1,4 @@
+{
+    "targets": "eyJzaWduZWQiOiB7InZlcnNpb24iOiAyLCAidGFyZ2V0cyI6IHsiZm9vIjoge30sICJiYXIiOiB7fX0sImN1c3RvbSI6IHsib3BhcXVlX2JhY2tlbmRfc3RhdGUiOiAiMTUifX19",
+    "client_configs": ["employee/APM_TRACING/missing_client_entry/conf"]
+}

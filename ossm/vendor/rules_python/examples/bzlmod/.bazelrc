@@ -1,0 +1,26 @@
+# Starting with Bazel 8, Windows requires this flag in order
+# for symlinks to work properly (namely, so that sh_test with
+# py_binary as a data dependency gets symlinks that are executable)
+startup --windows_enable_symlinks
+
+common --enable_bzlmod
+common --lockfile_mode=update
+# This adds an implicit --config=<osname>
+# See docs for osname values
+# https://bazel.build/reference/command-line-reference#common_options-flag--enable_platform_specific_config
+common --enable_platform_specific_config
+
+common:windows --cxxopt=/std:c++17
+common:windows --host_cxxopt=/std:c++17
+common:linux --cxxopt=-std=c++17
+common:linux --host_cxxopt=-std=c++17
+common:macos --cxxopt=-std=c++17
+common:macos --host_cxxopt=-std=c++17
+
+coverage --java_runtime_version=remotejdk_11
+
+test --test_output=errors --enable_runfiles
+
+# Windows requires these for multi-python support:
+build --enable_runfiles
+common:bazel7.x --incompatible_python_disallow_native_rules

@@ -1,0 +1,10 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+exports_files(glob(["*.bzl"]))
+
+bzl_library(
+    name = "yq",
+    srcs = ["yq.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["//yq/private:yq"],
+)

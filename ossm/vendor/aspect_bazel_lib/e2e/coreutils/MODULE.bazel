@@ -1,0 +1,8 @@
+bazel_dep(name = "aspect_bazel_lib", version = "0.0.0", dev_dependency = True)
+local_path_override(
+    module_name = "aspect_bazel_lib",
+    path = "../..",
+)
+
+bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains", dev_dependency = True)
+use_repo(bazel_lib_toolchains, "coreutils_toolchains")

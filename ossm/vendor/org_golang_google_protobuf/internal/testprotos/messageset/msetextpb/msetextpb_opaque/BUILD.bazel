@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "msetextpb_opaque",
+    srcs = ["msetextpb.opaque.pb.go"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/messageset/msetextpb/msetextpb_opaque",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/messageset/messagesetpb/messagesetpb_opaque",
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/gofeaturespb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":msetextpb_opaque",
+    visibility = ["//:__subpackages__"],
+)

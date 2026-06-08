@@ -1,0 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_ignore_files some_other.py
+
+py_library(
+    name = "python_ignore_files_directive",
+    srcs = [
+        "__init__.py",
+        "setup.py",
+    ],
+    visibility = ["//:__subpackages__"],
+)

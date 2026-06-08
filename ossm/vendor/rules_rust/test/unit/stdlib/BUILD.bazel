@@ -1,0 +1,4 @@
+load(":stdlib.bzl", "stdlib_suite")
+
+############################ UNIT TESTS #############################
+stdlib_suite(name = "stdlib_suite")

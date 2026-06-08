@@ -1,0 +1,8 @@
+cargo
+clippy
+llvm-tools
+rust
+rust-std
+rustc
+rustfmt
+rust-analyzer

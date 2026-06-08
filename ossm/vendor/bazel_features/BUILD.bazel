@@ -1,0 +1,41 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("//private:docs.bzl", "starlark_doc_extract__maybe")
+
+filegroup(
+    name = "bzl_files",
+    srcs = glob(["*.bzl"]) + [
+        "//private:bzl_files",
+        "@bazel_features_globals//:globals.bzl",
+        "@bazel_features_version//:version.bzl",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+exports_files(["features.bzl"])
+
+bzl_library(
+    name = "features",
+    srcs = ["features.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//private:util",
+        "@bazel_features_globals//:globals",
+    ],
+)
+
+starlark_doc_extract__maybe(
+    name = "features.doc_extract",
+    src = "features.bzl",
+    deps = ["features"],
+)
+
+bzl_library(
+    name = "deps",
+    srcs = ["deps.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//private:repos",
+        "@bazel_tools//tools/build_defs/repo:http.bzl",
+        "@bazel_tools//tools/build_defs/repo:utils.bzl",
+    ],
+)

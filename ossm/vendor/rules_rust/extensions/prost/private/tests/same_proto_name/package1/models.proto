@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package package1;
+import "package2/models.proto";
+import "package3/models.proto";
+
+message Model {
+    package2.Model model = 1;
+}

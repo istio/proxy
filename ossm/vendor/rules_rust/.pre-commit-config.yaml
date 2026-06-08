@@ -1,0 +1,40 @@
+default_stages: [pre-commit]
+repos:
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes
+  - repo: https://github.com/Warchant/pre-commit-buildifier
+    rev: 0.1.5
+    hooks:
+      - id: buildifier
+        args: [--version, "v8.2.0"]
+      - id: buildifier-lint
+        args: [--version, "v8.2.0", --warnings=all]
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.38.1
+    hooks:
+      - id: typos
+        exclude: |
+          (?x)^(
+            crate_universe/test_data
+          )
+        exclude_types:
+          - diff
+  - repo: https://github.com/psf/black
+    rev: 25.9.0
+    hooks:
+      - id: black
+  - repo: https://github.com/PyCQA/isort
+    rev: 7.0.0
+    hooks:
+      - id: isort
+        args: [--profile, black]
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    # See supported types: https://github.com/pre-commit/mirrors-clang-format/blob/v14.0.6/.pre-commit-hooks.yaml#L6
+    rev: v21.1.2
+    hooks:
+      - id: clang-format
+        exclude_types:
+          - json
+          - javascript

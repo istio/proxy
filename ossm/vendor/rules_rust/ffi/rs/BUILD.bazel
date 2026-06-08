@@ -1,0 +1,40 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+# buildifier: disable=bzl-visibility
+load("@rules_rust//rust/private:rust_allocator_libraries.bzl", "rust_allocator_libraries")
+
+rust_allocator_libraries(
+    name = "allocator_libraries_with_mangling_support",
+    allocator_library = "@rules_rust//ffi/rs/allocator_library",
+    global_allocator_library = "@rules_rust//ffi/rs/global_allocator_library",
+    visibility = ["//visibility:public"],
+)
+
+rust_allocator_libraries(
+    name = "empty_allocator_libraries",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "default_allocator_libraries",
+    actual = select({
+        "@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols_on": ":allocator_libraries_with_mangling_support",
+        "//conditions:default": ":empty_allocator_libraries",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "empty",
+    visibility = ["//visibility:public"],
+)
+
+# Allocator libraries used while bootstrapping the process wrapper.
+rust_allocator_libraries(
+    name = "allocator_libraries_with_mangling_support_without_process_wrapper",
+    allocator_library = "@rules_rust//ffi/rs/allocator_library:allocator_library_without_process_wrapper",
+    # no need for a global allocator library, since the process wrapper
+    # is always bootstrapped in exec mode, which always uses the default
+    # allocator.
+    visibility = ["@rules_rust//util/process_wrapper:__subpackages__"],
+)

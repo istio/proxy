@@ -1,0 +1,76 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_doc")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "hello_world_from_workspace_transient",
+    srcs = ["src/main.rs"],
+    deps = [
+        "@crates_in_workspace//:anyhow",
+    ],
+)
+
+rust_binary(
+    name = "hello_world_from_workspace_vendored",
+    srcs = ["src/main.rs"],
+    deps = [
+        "//third-party-in-workspace/crates:anyhow",
+    ],
+)
+
+rust_binary(
+    name = "hello_world_without_workspace_transient",
+    srcs = ["src/main.rs"],
+    deps = [
+        "@crates_without_workspace//:anyhow",
+    ],
+)
+
+[
+    rust_doc(
+        name = "hello_world_{}_doc".format(target),
+        crate = ":hello_world_{}".format(target),
+    )
+    for target in [
+        "from_workspace_transient",
+        "from_workspace_vendored",
+        "without_workspace_transient",
+    ]
+]
+
+[
+    sh_test(
+        name = "hello_world_{}_test".format(target),
+        srcs = ["hello_world_test.sh"],
+        args = [
+            "$(rlocationpath :hello_world_{})".format(target),
+        ],
+        data = [
+            ":hello_world_{}".format(target),
+        ],
+        deps = [
+            "@bazel_tools//tools/bash/runfiles",
+        ],
+    )
+    for target in [
+        "from_workspace_transient",
+        "from_workspace_vendored",
+        "without_workspace_transient",
+    ]
+]
+
+build_test(
+    name = "gen_rust_project",
+    targets = [
+        "@rules_rust//tools/rust_analyzer:gen_rust_project",
+    ],
+)
+
+build_test(
+    name = "rust_fmt",
+    targets = [
+        "@rules_rust//:rustfmt",
+    ],
+)

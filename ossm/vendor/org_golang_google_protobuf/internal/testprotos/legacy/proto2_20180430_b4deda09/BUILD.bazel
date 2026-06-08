@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "proto2_20180430_b4deda09",
+    srcs = ["test.pb.go"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/legacy/proto2_20180430_b4deda09",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/protolegacy"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":proto2_20180430_b4deda09",
+    visibility = ["//:__subpackages__"],
+)

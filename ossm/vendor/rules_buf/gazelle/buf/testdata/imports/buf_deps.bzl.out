@@ -1,0 +1,9 @@
+load("@rules_buf//buf:defs.bzl", "buf_dependencies")
+
+def buf_deps():
+    buf_dependencies(
+        name = "buf_deps_petapis",
+        modules = [
+            "buf.build/envoyproxy/protoc-gen-validate:dc09a417d27241f7b069feae2cd74a0e",
+        ],
+    )

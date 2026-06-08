@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "buildutil",
+    srcs = [
+        "allpackages.go",
+        "fakecontext.go",
+        "overlay.go",
+        "tags.go",
+        "util.go",
+    ],
+    importpath = "golang.org/x/tools/go/buildutil",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":buildutil",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "buildutil_test",
+    srcs = [
+        "allpackages_test.go",
+        "overlay_test.go",
+        "tags_test.go",
+        "util_test.go",
+        "util_windows_test.go",
+    ],
+    deps = [
+        ":buildutil",
+        "//go/packages/packagestest",
+    ],
+)

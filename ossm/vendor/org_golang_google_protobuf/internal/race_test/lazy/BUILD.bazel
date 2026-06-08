@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "lazy_test",
+    srcs = ["lazy_race_test.go"],
+    deps = [
+        "//internal/impl",
+        "//internal/test/race",
+        "//internal/testprotos/mixed",
+        "//internal/testprotos/testeditions/testeditions_opaque",
+        "//proto",
+    ],
+)

@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "strs",
+    srcs = [
+        "strings.go",
+        "strings_unsafe.go",
+    ],
+    importpath = "google.golang.org/protobuf/internal/strs",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/flags",
+        "//reflect/protoreflect",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":strs",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "strs_test",
+    srcs = ["strings_test.go"],
+    embed = [":strs"],
+)

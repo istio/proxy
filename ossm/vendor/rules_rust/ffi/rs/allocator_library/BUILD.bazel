@@ -1,0 +1,31 @@
+load("@rules_rust//rust:defs.bzl", "rust_static_library")
+
+# buildifier: disable=bzl-visibility
+load(
+    "@rules_rust//rust/private:rust.bzl",
+    "rust_static_library_without_process_wrapper",
+)
+
+package(
+    default_visibility = ["@rules_rust//ffi/rs:__subpackages__"],
+)
+
+# When building a staticlib crate, rustc injects the default allocator
+# redirections (e.g., __rust_alloc -> __rdl_alloc).
+# So we use an empty static library to provide these.
+
+rust_static_library(
+    name = "allocator_library",
+    srcs = ["empty.rs"],
+    allocator_libraries = "@rules_rust//ffi/rs:empty_allocator_libraries",
+    edition = "2021",
+    tags = ["manual"],
+)
+
+rust_static_library_without_process_wrapper(
+    name = "allocator_library_without_process_wrapper",
+    srcs = ["empty.rs"],
+    allocator_libraries = "@rules_rust//ffi/rs:empty_allocator_libraries",
+    edition = "2021",
+    tags = ["manual"],
+)

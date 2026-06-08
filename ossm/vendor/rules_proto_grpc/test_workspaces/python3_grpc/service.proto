@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+import "no_service.proto";
+
+service Demo {
+    rpc Demo (demo) returns (demo);
+}

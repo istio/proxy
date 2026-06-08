@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "build",
+    srcs = [
+        "builder.go",
+        "colelem.go",
+        "contract.go",
+        "order.go",
+        "table.go",
+        "trie.go",
+    ],
+    importpath = "golang.org/x/text/collate/build",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/colltab",
+        "//language",
+        "//unicode/norm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":build",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "build_test",
+    srcs = [
+        "builder_test.go",
+        "colelem_test.go",
+        "contract_test.go",
+        "order_test.go",
+        "trie_test.go",
+    ],
+    embed = [":build"],
+    deps = ["//internal/colltab"],
+)

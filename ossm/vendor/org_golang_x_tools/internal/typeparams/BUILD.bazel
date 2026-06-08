@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "typeparams",
+    srcs = [
+        "common.go",
+        "coretype.go",
+        "enabled_go117.go",
+        "enabled_go118.go",
+        "normalize.go",
+        "termlist.go",
+        "typeparams_go117.go",
+        "typeparams_go118.go",
+        "typeterm.go",
+    ],
+    importpath = "golang.org/x/tools/internal/typeparams",
+    visibility = ["//:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":typeparams",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "typeparams_test",
+    srcs = [
+        "common_test.go",
+        "coretype_test.go",
+        "normalize_test.go",
+        "typeparams_test.go",
+    ],
+    deps = [
+        ":typeparams",
+        "//internal/apidiff",
+        "//internal/testenv",
+    ],
+)

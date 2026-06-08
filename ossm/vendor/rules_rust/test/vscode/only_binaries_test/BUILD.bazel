@@ -1,0 +1,13 @@
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+
+rust_binary(
+    name = "binary1",
+    srcs = ["binary1.rs"],
+    edition = "2021",
+)
+
+rust_binary(
+    name = "binary2",
+    srcs = ["binary2.rs"],
+    edition = "2021",
+)

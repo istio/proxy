@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "execabs",
+    srcs = [
+        "execabs.go",
+        "execabs_go118.go",
+        "execabs_go119.go",
+    ],
+    importpath = "golang.org/x/sys/execabs",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":execabs",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "execabs_test",
+    srcs = ["execabs_test.go"],
+    embed = [":execabs"],
+)

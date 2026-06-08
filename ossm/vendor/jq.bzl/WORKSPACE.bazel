@@ -1,0 +1,2 @@
+# Marker that this is the root of a Bazel workspace.
+# Required for testing on Bazel 6

@@ -1,0 +1,13 @@
+load("//python:py_test.bzl", "py_test")
+
+py_test(
+    name = "zipper_test",
+    srcs = ["zipper_test.py"],
+    deps = ["//tools/private/zipapp:zipper_lib"],
+)
+
+py_test(
+    name = "exe_zip_maker_test",
+    srcs = ["exe_zip_maker_test.py"],
+    deps = ["//tools/private/zipapp:exe_zip_maker_lib"],
+)

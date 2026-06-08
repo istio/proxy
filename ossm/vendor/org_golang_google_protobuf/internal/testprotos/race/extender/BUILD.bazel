@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "extender",
+    srcs = ["test.pb.go"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/race/extender",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/testprotos/race/message",
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":extender",
+    visibility = ["//:__subpackages__"],
+)

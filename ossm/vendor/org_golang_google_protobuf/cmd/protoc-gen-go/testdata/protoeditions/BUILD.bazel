@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "protoeditions",
+    srcs = [
+        "enum.pb.go",
+        "fields.pb.go",
+        "legacy_enum.pb.go",
+        "maps_and_delimited.pb.go",
+        "nested_messages.pb.go",
+    ],
+    importpath = "google.golang.org/protobuf/cmd/protoc-gen-go/testdata/protoeditions",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/gofeaturespb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protoeditions",
+    visibility = ["//visibility:public"],
+)

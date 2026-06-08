@@ -1,0 +1,3 @@
+load(":generate_group_library_build_bazel_tests.bzl", "generate_group_library_build_bazel_test_suite")
+
+generate_group_library_build_bazel_test_suite(name = "generate_group_library_build_bazel_tests")

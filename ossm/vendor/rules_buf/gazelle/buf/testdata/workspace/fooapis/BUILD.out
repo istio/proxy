@@ -1,0 +1,10 @@
+load("@rules_buf//buf:defs.bzl", "buf_breaking_test")
+
+# gazelle:buf_breaking_against //:against_file
+
+buf_breaking_test(
+    name = "buf_breaking",
+    against = "//:against_file",
+    config = "//fooapis:buf.yaml",
+    targets = ["//fooapis/foo/v1:foo_v1_proto"],
+)

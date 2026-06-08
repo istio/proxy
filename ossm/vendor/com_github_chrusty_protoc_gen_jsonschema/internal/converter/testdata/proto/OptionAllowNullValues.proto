@@ -1,0 +1,10 @@
+syntax = "proto3";
+package samples;
+import "options.proto";
+
+message OptionAllowNullValues {
+    option (protoc.gen.jsonschema.message_options).allow_null_values = true;
+    string name2       = 1;
+    int32 id2          = 2;
+    bool complete2     = 3;
+}

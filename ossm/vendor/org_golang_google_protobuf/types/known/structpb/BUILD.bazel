@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "structpb",
+    srcs = ["struct.pb.go"],
+    importpath = "google.golang.org/protobuf/types/known/structpb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//encoding/protojson",
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":structpb",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "structpb_test",
+    srcs = ["struct_test.go"],
+    deps = [
+        ":structpb",
+        "//reflect/protoreflect",
+        "//testing/protocmp",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp/cmpopts:go_default_library",
+    ],
+)

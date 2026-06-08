@@ -1,0 +1,14 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+exports_files(["parse_status_file.jq"])
+
+bzl_library(
+    name = "jq",
+    srcs = ["jq.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@aspect_bazel_lib//lib:expand_make_vars",
+        "@aspect_bazel_lib//lib:stamping",
+        "@aspect_bazel_lib//lib:strings",
+    ],
+)

@@ -1,0 +1,9 @@
+{
+    "name": "js_run_devserver_test",
+    "version": "0.0.0",
+    "private": true,
+    "dependencies": {
+        "@types/node": "16.18.11",
+        "jasmine": "5.1.0"
+    }
+}

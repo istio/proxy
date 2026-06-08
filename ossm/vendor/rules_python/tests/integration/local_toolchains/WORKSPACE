@@ -1,0 +1,76 @@
+workspace(
+    name = "module_under_test",
+)
+
+local_repository(
+    name = "rules_python",
+    path = "../../..",
+)
+
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories(
+    transition_settings = [
+        "@//:py",
+    ],
+)
+
+load("@rules_python//python/local_toolchains:repos.bzl", "local_runtime_repo", "local_runtime_toolchains_repo")
+
+# Step 1: Define the python runtime.
+local_runtime_repo(
+    name = "local_python3",
+    interpreter_path = "python3",
+    on_failure = "fail",
+    # or interpreter_path = "C:\\path\\to\\python.exe"
+)
+
+load("//:pbs_archive.bzl", "pbs_archive")
+
+pbs_archive(
+    name = "pbs_runtime",
+    sha256 = {
+        "linux": "0a01bad99fd4a165a11335c29eb43015dfdb8bd5ba8e305538ebb54f3bf3146d",
+        "mac os x": "4fb42ffc8aad2a42ca7646715b8926bc6b2e0d31f13d2fec25943dc236a6fd60",
+        "windows": "005cb2abf4cfa4aaa48fb10ce4e33fe4335ea4d1f55202dbe4e20c852e45e0f9",
+    },
+    urls = {
+        "linux": "https://github.com/astral-sh/python-build-standalone/releases/download/20250918/cpython-3.13.7+20250918-x86_64-unknown-linux-gnu-install_only.tar.gz",
+        "mac os x": "https://github.com/astral-sh/python-build-standalone/releases/download/20250918/cpython-3.13.7+20250918-x86_64-apple-darwin-install_only.tar.gz",
+        "windows server 2022": "https://github.com/astral-sh/python-build-standalone/releases/download/20250918/cpython-3.13.7+20250918-x86_64-pc-windows-msvc-install_only.tar.gz",
+    },
+)
+
+local_runtime_repo(
+    name = "repo_python3",
+    interpreter_target = "@pbs_runtime//:python/bin/python3",
+    on_failure = "fail",
+)
+
+# Step 2: Create toolchains for the runtimes
+local_runtime_toolchains_repo(
+    name = "local_toolchains",
+    runtimes = [
+        "local_python3",
+        "repo_python3",
+    ],
+    target_compatible_with = {
+        "local_python3": [
+            "HOST_CONSTRAINTS",
+        ],
+        "repo_python3": [
+            "HOST_CONSTRAINTS",
+        ],
+    },
+    target_settings = {
+        "local_python3": [
+            "@//:is_py_local",
+        ],
+        "repo_python3": [
+            "@//:is_py_repo",
+        ],
+    },
+)
+
+# Step 3: Register the toolchains
+register_toolchains("@local_toolchains//:all")

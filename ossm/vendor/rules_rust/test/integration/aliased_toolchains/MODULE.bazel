@@ -1,0 +1,22 @@
+module(name = "aliased_toolchains")
+
+bazel_dep(name = "rules_rust", version = "0.0.0")
+local_path_override(
+    module_name = "rules_rust",
+    path = "../../..",
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    aliases = {
+        "rust_linux_x86_64__x86_64-unknown-linux-gnu__stable": "rust_linux",
+        "rustfmt_nightly-2024-10-17__x86_64-pc-windows-msvc": "rustfmt_win",
+    },
+    edition = "2021",
+    rustfmt_version = "nightly/2024-10-17",
+)
+
+# Ensure the repos can be used directly and via the hub.
+use_repo(rust, "rust_linux", "rust_toolchains", "rustfmt_win")
+
+register_toolchains("@rust_toolchains//:rust_linux", "@rust_toolchains//:rustfmt_win")

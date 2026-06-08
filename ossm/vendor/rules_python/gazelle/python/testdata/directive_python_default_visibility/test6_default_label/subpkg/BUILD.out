@@ -1,0 +1,10 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# Reset the default visibility to the default for all child packages.
+# gazelle:python_default_visibility DEFAULT
+
+py_library(
+    name = "subpkg",
+    srcs = ["test6_sub.py"],
+    visibility = ["//:__subpackages__"],
+)

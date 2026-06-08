@@ -1,0 +1,8 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+py_library(
+    name = "import_nested_var",
+    srcs = ["__init__.py"],
+    visibility = ["//:__subpackages__"],
+    deps = ["//foo/bar:baz"],
+)

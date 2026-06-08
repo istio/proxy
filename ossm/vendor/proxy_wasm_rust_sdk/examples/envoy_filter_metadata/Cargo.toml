@@ -1,0 +1,21 @@
+[package]
+publish = false
+name = "proxy-wasm-example-envoy-filter-metadata"
+version = "0.0.1"
+authors = ["Martijn Swaagma <martijn@swaagman.online>"]
+description = "Proxy-Wasm plugin example: Envoy filter metadata"
+license = "Apache-2.0"
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+proxy-wasm = { path = "../../" }
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
+panic = "abort"
+strip = "debuginfo"

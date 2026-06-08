@@ -1,0 +1,7 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "messageset_extension_init_test",
+    srcs = ["race_test.go"],
+    deps = ["//internal/testprotos/messageset/msetextpb"],
+)

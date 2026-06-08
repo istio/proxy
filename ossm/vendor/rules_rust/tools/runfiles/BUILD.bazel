@@ -1,0 +1,5 @@
+alias(
+    name = "runfiles",
+    actual = "//rust/runfiles",
+    visibility = ["//visibility:public"],
+)

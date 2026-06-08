@@ -1,0 +1,16 @@
+load("@rules_proto_grpc//objc:defs.bzl", "objc_proto_compile")
+
+objc_proto_compile(
+    name = "person_objc_proto",
+    protos = ["@rules_proto_grpc//example/proto:person_proto"],
+)
+
+objc_proto_compile(
+    name = "place_objc_proto",
+    protos = ["@rules_proto_grpc//example/proto:place_proto"],
+)
+
+objc_proto_compile(
+    name = "thing_objc_proto",
+    protos = ["@rules_proto_grpc//example/proto:thing_proto"],
+)

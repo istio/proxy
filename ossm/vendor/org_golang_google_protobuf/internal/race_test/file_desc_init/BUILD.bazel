@@ -1,0 +1,11 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "file_desc_init_test",
+    srcs = ["race_test.go"],
+    deps = [
+        "//internal/testprotos/race/extender",
+        "//internal/testprotos/race/message",
+        "//proto",
+    ],
+)

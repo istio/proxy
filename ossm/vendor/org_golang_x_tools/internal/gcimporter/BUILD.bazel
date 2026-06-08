@@ -1,0 +1,60 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gcimporter",
+    srcs = [
+        "bexport.go",
+        "bimport.go",
+        "exportdata.go",
+        "gcimporter.go",
+        "iexport.go",
+        "iimport.go",
+        "newInterface10.go",
+        "newInterface11.go",
+        "support_go117.go",
+        "support_go118.go",
+        "unified_no.go",
+        "ureader_no.go",
+        "ureader_yes.go",
+    ],
+    importpath = "golang.org/x/tools/internal/gcimporter",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/pkgbits",
+        "//internal/tokeninternal",
+        "//internal/typeparams",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gcimporter",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "gcimporter_test",
+    srcs = [
+        "bexport_test.go",
+        "gcimporter_test.go",
+        "iexport_common_test.go",
+        "iexport_go118_test.go",
+        "iexport_test.go",
+        "israce_test.go",
+        "shallow_test.go",
+        "stdlib_test.go",
+    ],
+    embed = [":gcimporter"],
+    deps = [
+        "//go/ast/inspector",
+        "//go/buildutil",
+        "//go/gcexportdata",
+        "//go/loader",
+        "//go/packages",
+        "//internal/goroot",
+        "//internal/testenv",
+        "//internal/typeparams",
+        "//internal/typeparams/genericfeatures",
+        "@org_golang_x_sync//errgroup:go_default_library",
+    ],
+)

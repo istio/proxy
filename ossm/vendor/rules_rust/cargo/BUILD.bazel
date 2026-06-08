@@ -1,0 +1,16 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+exports_files([
+    "defs.bzl",
+    "Cargo.toml",
+])
+
+bzl_library(
+    name = "bzl_lib",
+    srcs = glob(["*.bzl"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cargo/private:bzl_lib",
+        "//cargo/settings:bzl_lib",
+    ],
+)

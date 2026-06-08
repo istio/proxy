@@ -1,0 +1,103 @@
+# Load various rules so that we can have bazel download
+# various rulesets and dependencies.
+# The `load` statement imports the symbol for the rule, in the defined
+# ruleset. When the symbol is loaded you can use the rule.
+load("@bazel_gazelle//:def.bzl", "gazelle")
+load("@pip//:requirements.bzl", "all_whl_requirements")
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
+load("@rules_python//python:py_binary.bzl", "py_binary")
+load("@rules_python//python:py_library.bzl", "py_library")
+load("@rules_python//python:py_test.bzl", "py_test")
+load("@rules_python_gazelle_plugin//manifest:defs.bzl", "gazelle_python_manifest")
+load("@rules_python_gazelle_plugin//modules_mapping:def.bzl", "modules_mapping")
+
+compile_pip_requirements(
+    name = "requirements",
+    src = "requirements.in",
+    requirements_txt = "requirements_lock.txt",
+    requirements_windows = "requirements_windows.txt",
+)
+
+# This repository rule fetches the metadata for python packages we
+# depend on. That data is required for the gazelle_python_manifest
+# rule to update our manifest file.
+# To see what this rule does, try `bazel run @modules_map//:print`
+modules_mapping(
+    name = "modules_map",
+    exclude_patterns = [
+        "^_|(\\._)+",  # This is the default.
+        "(\\.tests)+",  # Add a custom one to get rid of the psutil tests.
+    ],
+    wheels = all_whl_requirements,
+)
+
+# Gazelle python extension needs a manifest file mapping from
+# an import to the installed package that provides it.
+# This macro produces two targets:
+# - //:gazelle_python_manifest.update can be used with `bazel run`
+#   to recalculate the manifest
+# - //:gazelle_python_manifest.test is a test target ensuring that
+#   the manifest doesn't need to be updated
+gazelle_python_manifest(
+    name = "gazelle_python_manifest",
+    modules_mapping = ":modules_map",
+    pip_repository_name = "pip",
+    # NOTE: We can pass a list just like in `bzlmod_build_file_generation` example
+    # but we keep a single target here for regression testing.
+    requirements = "//:requirements_lock.txt",
+)
+
+# Our gazelle target points to the python gazelle binary.
+# This is the simple case where we only need one language supported.
+# If you also had proto, go, or other gazelle-supported languages,
+# you would also need a gazelle_binary rule.
+# See https://github.com/bazelbuild/bazel-gazelle/blob/master/extend.rst#example
+gazelle(
+    name = "gazelle",
+    gazelle = "@rules_python_gazelle_plugin//python:gazelle_binary",
+)
+
+# This rule is auto-generated and managed by Gazelle,
+# because it found the __init__.py file in this folder.
+# See: https://bazel.build/reference/be/python#py_library
+py_library(
+    name = "build_file_generation",
+    srcs = ["__init__.py"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//random_number_generator",
+        "@pip//flask",
+        "@pip//sphinx",
+    ],
+)
+
+# A py_binary is an executable Python program consisting of a collection of .py source files.
+# See: https://bazel.build/reference/be/python#py_binary
+#
+# This rule is auto-generated and managed by Gazelle,
+# because it found the __main__.py file in this folder.
+# This rule creates a target named //:build_file_generation_bin and you can use
+# bazel to run the target:
+# `bazel run //:build_file_generation_bin`
+py_binary(
+    name = "build_file_generation_bin",
+    srcs = ["__main__.py"],
+    main = "__main__.py",
+    visibility = ["//:__subpackages__"],
+    deps = [":build_file_generation"],
+)
+
+# A py_test is a Python unit test.
+# See: https://bazel.build/reference/be/python#py_test
+#
+# This rule is auto-generated and managed by Gazelle,
+# because it found the __test__.py file in this folder.
+# This rule creates a target named //:build_file_generation_test and you can use
+# bazel to run the target:
+# `bazel test //:build_file_generation_test`
+py_test(
+    name = "build_file_generation_test",
+    srcs = ["__test__.py"],
+    main = "__test__.py",
+    deps = [":build_file_generation"],
+)

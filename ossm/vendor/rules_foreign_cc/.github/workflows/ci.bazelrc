@@ -1,0 +1,8 @@
+# This file contains Bazel settings to apply on release CI only.
+# It is referenced with a --bazelrc option in the call to bazel in ci.yaml
+
+# Don't rely on test logs being easily accessible from the test runner,
+# though it makes the log noisier.
+test --test_output=errors
+# Allows tests to run bazelisk-in-bazel, since this is the cache folder used
+test --test_env=XDG_CACHE_HOME

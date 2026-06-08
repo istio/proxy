@@ -1,0 +1,45 @@
+# Tag a new release
+# This is easier than having to run manual `git` operations on a local clone.
+# It also runs on a schedule so we don't leave commits unreleased indefinitely
+# (avoiding users having to ping "hey could someone cut a release").
+
+name: Tag a Release
+on:
+  # Allow devs to tag manually through the GitHub UI.
+  # For example after landing a fix that customers are waiting for.
+  workflow_dispatch:
+
+  # Run at 2PM UTC (7AM PST) on the 2nd and 17th of each month.
+  # This is a trade-off between making too many releases,
+  # which overwhelms BCR maintainers and over-notifies users,
+  # and releasing too infrequently which delays delivery of bugfixes and features.
+  schedule:
+    - cron: "0 14 2,17 * *"
+
+jobs:
+  tag:
+    permissions:
+      contents: write # allow create tag
+    runs-on: ubuntu-latest
+    outputs:
+      new-tag: ${{ steps.ccv.outputs.new-tag }}
+      new-tag-version: ${{steps.ccv.outputs.new-tag-version}}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need enough history to find the prior release tag
+          fetch-depth: 0
+      - name: Bump tag if necessary
+        id: ccv
+        uses: smlx/ccv@7318e2f25a52dcd550e75384b84983973251a1f8 # v0.10.0
+  release:
+    needs: tag
+    uses: ./.github/workflows/release.yml
+    with:
+      tag_name: ${{ needs.tag.outputs.new-tag-version }}
+    if: needs.tag.outputs.new-tag == 'true' && needs.tag.outputs.new-tag-version-type != 'major'
+    secrets: inherit
+    permissions:
+      contents: write
+      attestations: write
+      id-token: write

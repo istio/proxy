@@ -1,0 +1,3 @@
+file.cpp:1:1: error: expected ';' after expression [clang-diagnostic-error]
+  return 0
+  ^

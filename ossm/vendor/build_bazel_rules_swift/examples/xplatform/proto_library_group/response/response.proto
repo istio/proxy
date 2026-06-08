@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package response;
+
+import "examples/xplatform/proto_library_group/request/request.proto";
+
+message Response {
+  request.Request request = 1;
+}

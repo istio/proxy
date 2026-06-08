@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "a",
+    srcs = [
+        "misplaced.s",
+        "p.go",
+    ],
+    importpath = "golang.org/x/tools/go/analysis/passes/directive/testdata/src/a",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":a",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "a_test",
+    srcs = ["misplaced_test.go"],
+)

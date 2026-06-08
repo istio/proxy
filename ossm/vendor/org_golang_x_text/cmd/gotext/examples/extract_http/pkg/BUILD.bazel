@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pkg",
+    srcs = ["pkg.go"],
+    importpath = "golang.org/x/text/cmd/gotext/examples/extract_http/pkg",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//language",
+        "//message",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pkg",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
+# gazelle:python_generation_mode file
+# gazelle:python_generation_mode_per_file_include_init true

@@ -1,0 +1,57 @@
+load("//python/private:interpreter.bzl", _interpreter_binary = "interpreter_binary")
+load("//python/private:repl.bzl", "py_repl_binary")
+
+filegroup(
+    name = "distribution",
+    srcs = glob(["**"]),
+    visibility = ["//:__subpackages__"],
+)
+
+_interpreter_binary(
+    name = "python",
+    binary = ":python_src",
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+# The user can modify this flag to source different interpreters for the
+# `python` target above.
+label_flag(
+    name = "python_src",
+    build_setting_default = "//python:none",
+)
+
+py_repl_binary(
+    name = "repl",
+    stub = ":repl_stub",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":repl_dep",
+        ":repl_stub_dep",
+    ],
+)
+
+# The user can replace this with their own stub. E.g. they can use this to
+# import ipython instead of the default shell.
+label_flag(
+    name = "repl_stub",
+    build_setting_default = "repl_stub.py",
+)
+
+# The user can modify this flag to make an interpreter shell library available
+# for the stub. E.g. if they switch the stub for an ipython-based one, then they
+# can point this at their version of ipython.
+label_flag(
+    name = "repl_stub_dep",
+    build_setting_default = "//python/private:empty",
+)
+
+# The user can modify this flag to make arbitrary PyInfo targets available for
+# import on the REPL.
+label_flag(
+    name = "repl_dep",
+    build_setting_default = "//python/private:empty",
+)

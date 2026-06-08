@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package com.github.bazelcontrib.rules_jvm_external.example;
+option java_package = "com.github.bazelcontrib.rules_jvm_external.example";
+
+message Parent {
+    string name = 1;
+}

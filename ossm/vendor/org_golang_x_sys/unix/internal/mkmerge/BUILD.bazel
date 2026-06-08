@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "mkmerge_lib",
+    srcs = ["mkmerge.go"],
+    importpath = "golang.org/x/sys/unix/internal/mkmerge",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "mkmerge",
+    embed = [":mkmerge_lib"],
+    visibility = ["//unix:__subpackages__"],
+)
+
+go_test(
+    name = "mkmerge_test",
+    srcs = ["mkmerge_test.go"],
+    embed = [":mkmerge_lib"],
+)

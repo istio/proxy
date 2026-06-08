@@ -1,0 +1,15 @@
+[package]
+name = "path_patching"
+version = "0.1.0"
+edition = "2018"
+
+# Required to satisfy cargo but no `lib.rs` is expected to
+# exist within test data.
+[lib]
+path = "lib.rs"
+
+[dependencies]
+child_a = "1.4.2"
+
+[patch.crates-io]
+child_a = { path = "child_a" }

@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "timestamppb",
+    srcs = ["timestamp.pb.go"],
+    importpath = "google.golang.org/protobuf/types/known/timestamppb",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":timestamppb",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "timestamppb_test",
+    srcs = ["timestamp_test.go"],
+    deps = [
+        ":timestamppb",
+        "//internal/detrand",
+        "//testing/protocmp",
+        "@com_github_google_go_cmp//cmp:go_default_library",
+        "@com_github_google_go_cmp//cmp/cmpopts:go_default_library",
+    ],
+)

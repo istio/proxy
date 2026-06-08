@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$ref": "#/definitions/GoogleInt64ValueDisallowString",
+    "definitions": {
+        "GoogleInt64ValueDisallowString": {
+            "properties": {
+                "big_number": {
+                    "additionalProperties": true,
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Google Int 64 Value Disallow String"
+        }
+    }
+}

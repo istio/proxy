@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "textpbeditions_hybrid",
+    srcs = ["test2.hybrid.pb.go"],
+    importpath = "google.golang.org/protobuf/internal/testprotos/textpbeditions/textpbeditions_hybrid",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//reflect/protoreflect",
+        "//runtime/protoimpl",
+        "//types/gofeaturespb",
+        "//types/known/anypb",
+        "//types/known/durationpb",
+        "//types/known/emptypb",
+        "//types/known/fieldmaskpb",
+        "//types/known/structpb",
+        "//types/known/timestamppb",
+        "//types/known/wrapperspb",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":textpbeditions_hybrid",
+    visibility = ["//:__subpackages__"],
+)

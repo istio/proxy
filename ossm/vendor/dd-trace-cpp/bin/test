@@ -1,0 +1,78 @@
+#!/bin/sh
+
+set -e
+
+MAKE_JOB_COUNT=${MAKE_JOB_COUNT:-$(nproc)}
+
+if [ "$1" = '--coverage' ]; then
+    coverage_flags=-DDD_TRACE_ENABLE_COVERAGE=1
+    shift
+else
+    coverage_flags=''
+fi
+
+if [ "$1" = '--verbose' ]; then
+    verbosity_flags='VERBOSE=1'
+    shift
+else
+    verbosity_flags=''
+fi
+
+if [ "$1" = '--show-coverage' ]; then
+    # implies --coverage
+    coverage_flags=-DDD_TRACE_ENABLE_COVERAGE=1
+    show_coverage=1
+    shift
+else
+    show_coverage=0
+fi
+
+if [ "$1" = '--build-only' ]; then
+    build_only=1
+else
+    build_only=0
+fi
+
+cd "$(dirname "$0")"/..
+
+mkdir -p .build
+cd .build
+# shellcheck disable=SC2086
+cmake .. $coverage_flags -DDD_TRACE_BUILD_TESTING=1
+# Clean up any code coverage artifacts.
+find . -type f -name '*.gcda' -print0 | xargs -0 rm -f
+# shellcheck disable=SC2086
+make -j "$MAKE_JOB_COUNT" $verbosity_flags
+
+if [ "$build_only" -eq 1 ]; then
+    exit
+fi
+
+echo 'Running tests...'
+./test/tests "$@"
+
+if [ "$coverage_flags" != '' ]; then
+    printf 'Generating Code Coverage Report ... '
+    cd ../
+    rm -rf .coverage
+    mkdir -p .coverage
+    # Compile the .gcdo files into an intermediate format.
+    # Use the faster JSON Perl module, JSON:XS, to speed things up.
+    lcov --quiet --capture --directory .build --output-file .coverage/raw.info --rc geninfo_json_module=JSON::XS
+    # Filter out system headers and test drivers.
+    lcov --quiet --remove .coverage/raw.info -o .coverage/filtered.info '/usr/*' "$(pwd)/test/*" '*json.hpp'
+
+    echo 'Done.'
+fi
+
+if [ "$show_coverage" -eq 1 ]; then
+    # Generate an HTML coverage report at ".coverage/report/index.html".
+    genhtml --quiet --dark-mode .coverage/filtered.info --output-directory .coverage/report
+
+    index='.coverage/report/index.html'
+    case "$(uname -s)" in
+      Darwin) open "$index" ;;
+      Windows*|CYGWIN*) explorer "$index" ;;
+      *) xdg-open "$index" ;;
+    esac
+fi

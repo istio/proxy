@@ -1,0 +1,20 @@
+# Copyright 2022 The RE2 Authors.  All Rights Reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
+# Enable layering check features. Useful on Clang only.
+build --features=layering_check
+# Enable parse headers features. Enforcing that headers are self-contained.
+build --features=parse_headers
+
+# Abseil requires C++14 at minimum.
+build --enable_platform_specific_config
+build:linux --cxxopt=-std=c++14
+build:macos --cxxopt=-std=c++14
+build:windows --cxxopt=/std:c++14
+
+# Print test logs for failed tests.
+test --test_output=errors
+
+# https://bazel.build/configure/best-practices#bazelrc-file
+try-import %workspace%/user.bazelrc
