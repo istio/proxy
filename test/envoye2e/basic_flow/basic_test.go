@@ -22,6 +22,7 @@ import (
 
 	"istio.io/proxy/test/envoye2e"
 	"istio.io/proxy/test/envoye2e/driver"
+	"istio.io/proxy/test/envoye2e/env"
 )
 
 var ProtocolOptions = []struct {
@@ -32,10 +33,15 @@ var ProtocolOptions = []struct {
 		Name: "h2",
 		Quic: false,
 	},
-	{
-		Name: "quic",
-		Quic: true,
-	},
+}
+
+func init() {
+	if env.IsHTTP3Enabled() {
+		ProtocolOptions = append(ProtocolOptions, struct {
+			Name string
+			Quic bool
+		}{Name: "quic", Quic: true})
+	}
 }
 
 func TestBasicTCPFlow(t *testing.T) {
