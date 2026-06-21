@@ -11,9 +11,11 @@ ENVOY_EXTENSIONS = {
     "envoy.access_loggers.http_grpc":                   "//source/extensions/access_loggers/grpc:http_config",
     "envoy.access_loggers.tcp_grpc":                    "//source/extensions/access_loggers/grpc:tcp_config",
     "envoy.access_loggers.open_telemetry":              "//source/extensions/access_loggers/open_telemetry:config",
+    "envoy.access_loggers.stats":                       "//source/extensions/access_loggers/stats:config",
     "envoy.access_loggers.stdout":                      "//source/extensions/access_loggers/stream:config",
     "envoy.access_loggers.stderr":                      "//source/extensions/access_loggers/stream:config",
     "envoy.access_loggers.wasm":                        "//source/extensions/access_loggers/wasm:config",
+    "envoy.access_loggers.dynamic_modules":             "//source/extensions/access_loggers/dynamic_modules:config",
 
     #
     # Clusters
@@ -28,6 +30,7 @@ ENVOY_EXTENSIONS = {
     "envoy.clusters.strict_dns":                        "//source/extensions/clusters/strict_dns:strict_dns_cluster_lib",
     "envoy.clusters.original_dst":                      "//source/extensions/clusters/original_dst:original_dst_cluster_lib",
     "envoy.clusters.logical_dns":                       "//source/extensions/clusters/logical_dns:logical_dns_cluster_lib",
+    "envoy.clusters.dynamic_modules":                   "//source/extensions/clusters/dynamic_modules:cluster",
 
     #
     # Compression
@@ -51,6 +54,7 @@ ENVOY_EXTENSIONS = {
     #
 
     "envoy.bootstrap.wasm":                             "//source/extensions/bootstrap/wasm:config",
+    "envoy.bootstrap.dynamic_modules":                  "//source/extensions/bootstrap/dynamic_modules:config",
 
     #
     # Health checkers
@@ -67,6 +71,7 @@ ENVOY_EXTENSIONS = {
 
     "envoy.matching.matchers.consistent_hashing":       "//source/extensions/matching/input_matchers/consistent_hashing:config",
     "envoy.matching.matchers.ip":                       "//source/extensions/matching/input_matchers/ip:config",
+    "envoy.matching.matchers.dynamic_modules":          "//source/extensions/matching/input_matchers/dynamic_modules:config",
 
     #
     # Network Matchers
@@ -82,6 +87,7 @@ ENVOY_EXTENSIONS = {
     "envoy.matching.inputs.source_type":                "//source/extensions/matching/network/common:inputs_lib",
     "envoy.matching.inputs.server_name":                "//source/extensions/matching/network/common:inputs_lib",
     "envoy.matching.inputs.transport_protocol":         "//source/extensions/matching/network/common:inputs_lib",
+    "envoy.matching.inputs.dynamic_module_data_input":  "//source/extensions/matching/http/dynamic_modules:data_input_lib",
 
     #
     # Generic Inputs
@@ -154,6 +160,7 @@ ENVOY_EXTENSIONS = {
     "envoy.filters.http.tap":                           "//source/extensions/filters/http/tap:config",
     "envoy.filters.http.wasm":                          "//source/extensions/filters/http/wasm:config",
     "envoy.filters.http.stateful_session":              "//source/extensions/filters/http/stateful_session:config",
+    "envoy.filters.http.dynamic_modules":               "//source/extensions/filters/http/dynamic_modules:factory_registration",
 
     #
     # Listener filters
@@ -168,6 +175,7 @@ ENVOY_EXTENSIONS = {
     #       configured on the listener. Do not remove it in that case or configs will fail to load.
     "envoy.filters.listener.proxy_protocol":            "//source/extensions/filters/listener/proxy_protocol:config",
     "envoy.filters.listener.tls_inspector":             "//source/extensions/filters/listener/tls_inspector:config",
+    "envoy.filters.listener.dynamic_modules":           "//source/extensions/filters/listener/dynamic_modules:config",
 
     #
     # Network filters
@@ -191,6 +199,7 @@ ENVOY_EXTENSIONS = {
     "envoy.filters.network.sni_dynamic_forward_proxy":            "//source/extensions/filters/network/sni_dynamic_forward_proxy:config",
     "envoy.filters.network.wasm":                                 "//source/extensions/filters/network/wasm:config",
     "envoy.filters.network.zookeeper_proxy":                      "//source/extensions/filters/network/zookeeper_proxy:config",
+    "envoy.filters.network.dynamic_modules":                      "//source/extensions/filters/network/dynamic_modules:config",
 
     #
     # UDP filters
@@ -198,6 +207,7 @@ ENVOY_EXTENSIONS = {
 
     "envoy.filters.udp.dns_filter":                     "//source/extensions/filters/udp/dns_filter:config",
     "envoy.filters.udp_listener.udp_proxy":             "//source/extensions/filters/udp/udp_proxy:config",
+    "envoy.filters.udp_listener.dynamic_modules":      "//source/extensions/filters/udp/dynamic_modules:config",
 
     #
     # Resource monitors
@@ -238,6 +248,7 @@ ENVOY_EXTENSIONS = {
     "envoy.tracers.xray":                               "//source/extensions/tracers/xray:config",
     "envoy.tracers.skywalking":                         "//source/extensions/tracers/skywalking:config",
     "envoy.tracers.opentelemetry":                      "//source/extensions/tracers/opentelemetry:config",
+    "envoy.tracers.dynamic_modules":                    "//source/extensions/tracers/dynamic_modules:config",
 
     #
     # OpenTelemetry Resource Detectors
@@ -300,6 +311,7 @@ ENVOY_EXTENSIONS = {
 
     "envoy.upstreams.http.http":                        "//source/extensions/upstreams/http/http:config",
     "envoy.upstreams.http.tcp":                         "//source/extensions/upstreams/http/tcp:config",
+    "envoy.upstreams.http.dynamic_modules":             "//source/extensions/upstreams/http/dynamic_modules:config",
 
     #
     # Watchdog actions
@@ -334,6 +346,7 @@ ENVOY_EXTENSIONS = {
     #
 
     "envoy.tls.cert_validator.spiffe":                  "//source/extensions/transport_sockets/tls/cert_validator/spiffe:config",
+    "envoy.tls.cert_validator.dynamic_modules":         "//source/extensions/transport_sockets/tls/cert_validator/dynamic_modules:config",
 
     #
     # HTTP header formatters
@@ -413,14 +426,16 @@ ENVOY_EXTENSIONS = {
     #
     # Load balancing policies for upstream
     #
-    "envoy.load_balancing_policies.least_request":     "//source/extensions/load_balancing_policies/least_request:config",
-    "envoy.load_balancing_policies.random":            "//source/extensions/load_balancing_policies/random:config",
-    "envoy.load_balancing_policies.round_robin":       "//source/extensions/load_balancing_policies/round_robin:config",
-    "envoy.load_balancing_policies.maglev":            "//source/extensions/load_balancing_policies/maglev:config",
-    "envoy.load_balancing_policies.ring_hash":         "//source/extensions/load_balancing_policies/ring_hash:config",
-    "envoy.load_balancing_policies.subset":            "//source/extensions/load_balancing_policies/subset:config",
-    "envoy.load_balancing_policies.cluster_provided":  "//source/extensions/load_balancing_policies/cluster_provided:config",
-    "envoy.load_balancing_policies.override_host":     "//source/extensions/load_balancing_policies/override_host:config",
+    "envoy.load_balancing_policies.least_request":                     "//source/extensions/load_balancing_policies/least_request:config",
+    "envoy.load_balancing_policies.random":                            "//source/extensions/load_balancing_policies/random:config",
+    "envoy.load_balancing_policies.round_robin":                       "//source/extensions/load_balancing_policies/round_robin:config",
+    "envoy.load_balancing_policies.maglev":                            "//source/extensions/load_balancing_policies/maglev:config",
+    "envoy.load_balancing_policies.ring_hash":                         "//source/extensions/load_balancing_policies/ring_hash:config",
+    "envoy.load_balancing_policies.subset":                            "//source/extensions/load_balancing_policies/subset:config",
+    "envoy.load_balancing_policies.cluster_provided":                  "//source/extensions/load_balancing_policies/cluster_provided:config",
+    "envoy.load_balancing_policies.override_host":                     "//source/extensions/load_balancing_policies/override_host:config",
+    "envoy.load_balancing_policies.client_side_weighted_round_robin":  "//source/extensions/load_balancing_policies/client_side_weighted_round_robin:config",
+    "envoy.load_balancing_policies.dynamic_modules":                   "//source/extensions/load_balancing_policies/dynamic_modules:config",
 
     #
     # HTTP Early Header Mutation
@@ -445,6 +460,7 @@ ENVOY_EXTENSIONS = {
     #
 
     "envoy.router.cluster_specifier_plugin.lua": "//source/extensions/router/cluster_specifiers/lua:config",
+    "envoy.router.cluster_specifier_plugin.matcher": "//source/extensions/router/cluster_specifiers/matcher:config",
 
     #
     # Injected credentials
@@ -505,6 +521,12 @@ ENVOY_CONTRIB_EXTENSIONS = {
     #
 
     "envoy.network.connection_balance.dlb":                     "//contrib/dlb/source:connection_balancer",
+
+    #
+    # Peak EWMA Loadbalancer
+    #
+    "envoy.load_balancing_policies.peak_ewma":                  "//contrib/peak_ewma/load_balancing_policies/source:config",
+    "envoy.filters.http.peak_ewma":                             "//contrib/peak_ewma/filters/http/source:config",
 }
 
 
@@ -520,15 +542,22 @@ ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.filters.network.postgres_proxy",
     "envoy.filters.network.sip_proxy",
     "envoy.filters.sip.router",
-    "envoy.tls.key_providers.cryptomb",
-    # "envoy.tls.key_providers.qat",
-    "envoy.network.connection_balance.dlb",
-    # Extensions that contributed by Istio.
+    # FIXME: https://github.com/istio/istio/issues/60485
+    # "envoy.network.connection_balance.dlb",
+    "envoy.load_balancing_policies.peak_ewma",
+    "envoy.filters.http.peak_ewma",
     "envoy.filters.network.metadata_exchange",
     "envoy.filters.http.alpn",
     "envoy.filters.http.peer_metadata",
     "envoy.filters.http.istio_stats",
 ]
+
+OPENSSL_INCOMPATIBLE_CONTRIB_EXTENSIONS = [
+    "envoy.tls.key_providers.cryptomb",
+    "envoy.tls.key_providers.qat",
+]
+
+OPENSSL_INCOMPATIBLE_CONTRIB_DEPS = ["@envoy" + v + "_envoy_extension" for k, v in ENVOY_CONTRIB_EXTENSIONS.items() if k in OPENSSL_INCOMPATIBLE_CONTRIB_EXTENSIONS]
 
 EXTENSIONS = dict([(k,v) for k,v in ENVOY_EXTENSIONS.items() if not k in ISTIO_DISABLED_EXTENSIONS] +
                   [(k,v) for k, v in ENVOY_CONTRIB_EXTENSIONS.items() if k in ISTIO_ENABLED_CONTRIB_EXTENSIONS])

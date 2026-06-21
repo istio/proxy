@@ -35,7 +35,10 @@ envoy_cc_binary(
     repository = "@envoy",
     deps = [
         "@envoy//source/exe:envoy_main_entry_lib",
-    ],
+    ] + select({
+        "@envoy//bazel:using_openssl": [],
+        "//conditions:default": OPENSSL_INCOMPATIBLE_CONTRIB_DEPS,
+    }),
 )
 
 pkg_tar(

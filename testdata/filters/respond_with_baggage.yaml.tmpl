@@ -1,0 +1,12 @@
+- name: envoy.filters.http.header_mutation
+  typed_config:
+    "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+    type_url: type.googleapis.com/envoy.extensions.filters.http.header_mutation.v3.HeaderMutation
+    value:
+      mutations:
+        response_mutations:
+        - append:
+            header:
+              key: "request-baggage"
+              value: "%FILTER_STATE(io.istio.baggage:PLAIN)%"
+            append_action: OVERWRITE_IF_EXISTS_OR_ADD

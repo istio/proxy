@@ -16,7 +16,8 @@
 #
 ################################################################################
 #
-set -ex
+set -e
+set +x
 
 # Use clang for the release builds.
 export PATH=/usr/lib/llvm/bin:$PATH
@@ -94,9 +95,23 @@ if [ -n "${DST}" ]; then
   # If binary already exists skip.
   # Use the name of the last artifact to make sure that everything was uploaded.
   BINARY_NAME="${HOME}/istio-proxy-debug-${SHA}.deb"
-  gsutil stat "${DST}/${BINARY_NAME}" \
-    && { echo 'Binary already exists'; exit 0; } \
-    || echo 'Building a new binary.'
+  R2_DST="${DST/gs:\/\//s3:\/\/}"
+  R2_ENDPOINT="https://${CF_ACCOUNT_ID}.r2.cloudflarestorage.com"
+
+  GCS_EXISTS=0
+  gsutil stat "${DST}/${BINARY_NAME}" && GCS_EXISTS=1
+
+  R2_EXISTS=0
+  AWS_ACCESS_KEY_ID="$CF_ACCESS_KEY_ID" \
+    AWS_SECRET_ACCESS_KEY="$CF_ACCESS_KEY_SECRET" \
+    aws s3 ls "${R2_DST}/${BINARY_NAME}" \
+    --endpoint-url "${R2_ENDPOINT}" && R2_EXISTS=1
+
+  if [ "${GCS_EXISTS}" -eq 1 ] && [ "${R2_EXISTS}" -eq 1 ]; then
+    echo 'Binary already exists'; exit 0
+  else
+    echo 'Building a new binary.'
+  fi
 fi
 
 ARCH_NAME="k8"
@@ -159,6 +174,19 @@ do
     # Copy it to the bucket.
     echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
     gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DWP_NAME}" "${DST}/"
+
+    R2_DST="${DST/gs:\/\//s3:\/\/}"
+    ENDPOINT="$(echo "${CF_CREDENTIALS}" | jq -r '.endpoint' | tr -d '\n')"
+
+    AWS_ACCESS_KEY_ID="$(echo "${CF_CREDENTIALS}" | jq -r '.access_key' | tr -d '\n')"
+    AWS_SECRET_ACCESS_KEY="$(echo "${CF_CREDENTIALS}" | jq -r '.secret_key' | tr -d '\n')"
+    AWS_REGION="$(echo "${CF_CREDENTIALS}" | jq -r '.region' | tr -d '\n')"
+    AWS_SESSION_TOKEN="$(echo "${CF_CREDENTIALS}" | jq -r '.session_token' | tr -d '\n')"
+    export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION AWS_SESSION_TOKEN
+    for f in "${BINARY_NAME}" "${SHA256_NAME}" "${DWP_NAME}"; do
+      echo "Copying $(basename "${f}") to R2"
+      aws s3 cp "${f}" "${R2_DST}/$(basename "${f}")" --endpoint-url "${ENDPOINT}"
+    done
   fi
 done
 
