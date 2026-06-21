@@ -203,7 +203,7 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
 }
 
 TEST(WorkloadMetadataObjectTest, ConvertFromEmpty) {
-  google::protobuf::Struct node;
+  Envoy::Protobuf::Struct node;
   auto obj = convertStructToWorkloadMetadata(node);
   EXPECT_EQ(obj->serializeAsString(), "");
   checkStructConversion(*obj);

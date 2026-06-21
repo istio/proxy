@@ -63,7 +63,7 @@ bool parsePeerMetadataHeader(const std::string& data, PeerMetadataHeader& header
 }
 
 bool parsePeerMetadata(const std::string& data, PeerMetadataHeader& header,
-                       google::protobuf::Any& any) {
+                       Envoy::Protobuf::Any& any) {
   if (!parsePeerMetadataHeader(data, header)) {
     return false;
   }
@@ -111,7 +111,7 @@ public:
   }
 
   void disablePeerDiscovery() {
-    google::protobuf::Struct metadata;
+    Envoy::Protobuf::Struct metadata;
     auto fields = metadata.mutable_fields();
     (*fields)[FilterNames::get().DisableDiscoveryField].set_bool_value(true);
     (*stream_info_.metadata_.mutable_filter_metadata())[FilterNames::get().Name].MergeFrom(
@@ -194,12 +194,12 @@ TEST_F(PeerMetadataFilterTest, TestPeerMetadataDiscoveredAndPropagated) {
   EXPECT_FALSE(injected.empty());
 
   PeerMetadataHeader header;
-  google::protobuf::Any any;
+  Envoy::Protobuf::Any any;
   EXPECT_TRUE(parsePeerMetadata(injected, header, any));
   EXPECT_EQ(header.magic, PeerMetadataHeader::magic_number);
   EXPECT_GT(header.data_size, 0);
 
-  google::protobuf::Struct metadata;
+  Envoy::Protobuf::Struct metadata;
   EXPECT_TRUE(any.UnpackTo(&metadata));
 
   std::unique_ptr<Istio::Common::WorkloadMetadataObject> workload =
@@ -321,8 +321,8 @@ std::string encodePeerMetadataHeaderOnly(const PeerMetadataHeader& header) {
 std::string encodeMetadataOnly(std::string_view baggage, std::string_view identity) {
   std::unique_ptr<::Istio::Common::WorkloadMetadataObject> metadata =
       ::Istio::Common::convertBaggageToWorkloadMetadata(baggage, identity);
-  google::protobuf::Struct data = convertWorkloadMetadataToStruct(*metadata);
-  google::protobuf::Any wrapped;
+  Envoy::Protobuf::Struct data = convertWorkloadMetadataToStruct(*metadata);
+  Envoy::Protobuf::Any wrapped;
   wrapped.PackFrom(data);
   return wrapped.SerializeAsString();
 }
@@ -363,7 +363,7 @@ public:
       return std::nullopt;
     }
 
-    google::protobuf::Struct obj;
+    Envoy::Protobuf::Struct obj;
     if (!obj.ParseFromString(std::string_view(cel_state->value()))) {
       return std::nullopt;
     }
@@ -441,7 +441,7 @@ TEST_F(PeerMetadataUpstreamFilterTest, TestPeerMetadataNotConsumedWhenDisabledVi
   initialize();
   setUpstreamHost(makeInternalListenerHost("connect_originate"));
 
-  google::protobuf::Struct metadata;
+  Envoy::Protobuf::Struct metadata;
   auto fields = metadata.mutable_fields();
   (*fields)[FilterNames::get().DisableDiscoveryField].set_bool_value(true);
   (*hostMetadata().mutable_filter_metadata())[FilterNames::get().Name].MergeFrom(metadata);
@@ -462,7 +462,7 @@ TEST_F(PeerMetadataUpstreamFilterTest, TestPeerMetadataNotConsumedWhenDisabledVi
   initialize();
   setUpstreamHost(makeInternalListenerHost("connect_originate"));
 
-  google::protobuf::Struct metadata;
+  Envoy::Protobuf::Struct metadata;
   auto fields = metadata.mutable_fields();
   (*fields)[FilterNames::get().DisableDiscoveryField].set_bool_value(true);
   (*clusterMetadata().mutable_filter_metadata())[FilterNames::get().Name].MergeFrom(metadata);

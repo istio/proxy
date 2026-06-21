@@ -50,8 +50,8 @@ struct Context {
 class DiscoveryMethod {
 public:
   virtual ~DiscoveryMethod() = default;
-  virtual absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
-                                                  Context&) const PURE;
+  virtual std::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
+                                                 Context&) const PURE;
   virtual void remove(Http::HeaderMap&) const {}
 };
 
@@ -61,12 +61,12 @@ class MXMethod : public DiscoveryMethod {
 public:
   MXMethod(bool downstream, const absl::flat_hash_set<std::string> additional_labels,
            Server::Configuration::ServerFactoryContext& factory_context);
-  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
-                                          Context&) const override;
+  std::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
+                                         Context&) const override;
   void remove(Http::HeaderMap&) const override;
 
 private:
-  absl::optional<PeerInfo> lookup(absl::string_view id, absl::string_view value) const;
+  std::optional<PeerInfo> lookup(absl::string_view id, absl::string_view value) const;
   const bool downstream_;
   struct MXCache : public ThreadLocal::ThreadLocalObject {
     absl::flat_hash_map<std::string, PeerInfo> cache_;
@@ -116,8 +116,8 @@ private:
 class BaggageDiscoveryMethod : public DiscoveryMethod, public Logger::Loggable<Logger::Id::filter> {
 public:
   BaggageDiscoveryMethod();
-  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
-                                          Context&) const override;
+  std::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
+                                         Context&) const override;
 };
 
 class FilterConfig : public Logger::Loggable<Logger::Id::filter> {

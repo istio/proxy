@@ -32,7 +32,7 @@ namespace {
 TEST(HashableStringTest, TestHashableStringIsHashable) {
   using ::envoy::extensions::filters::common::set_filter_state::v3::FilterStateValue;
   using ::Envoy::Extensions::Filters::Common::SetFilterState::Config;
-  using ::google::protobuf::RepeatedPtrField;
+  using ::Envoy::Protobuf::RepeatedPtrField;
 
   NiceMock<Envoy::Server::Configuration::MockGenericFactoryContext> context;
   Envoy::Http::TestRequestHeaderMapImpl header_map;

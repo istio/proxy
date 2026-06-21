@@ -26,7 +26,7 @@
 #include "test/mocks/protobuf/mocks.h"
 #include "test/mocks/server/server_factory_context.h"
 
-using ::google::protobuf::util::MessageDifferencer;
+using ::Envoy::Protobuf::util::MessageDifferencer;
 using testing::NiceMock;
 using testing::Return;
 using testing::ReturnRef;

@@ -54,7 +54,7 @@ namespace {
 
 constexpr absl::string_view NamespaceKey = "/ns/";
 
-absl::optional<absl::string_view> getNamespace(absl::string_view principal) {
+std::optional<absl::string_view> getNamespace(absl::string_view principal) {
   // The namespace is a substring in principal with format:
   // "<DOMAIN>/ns/<NAMESPACE>/sa/<SERVICE-ACCOUNT>". '/' is not allowed to
   // appear in actual content except as delimiter between tokens.
@@ -87,7 +87,7 @@ absl::string_view extractMapString(const Protobuf::Struct& metadata, const std::
   return extractString(it->second.struct_value(), key);
 }
 
-absl::optional<Istio::Common::WorkloadMetadataObject>
+std::optional<Istio::Common::WorkloadMetadataObject>
 extractEndpointMetadata(const StreamInfo::StreamInfo& info) {
   auto upstream_info = info.upstreamInfo();
   auto upstream_host = upstream_info ? upstream_info->upstreamHost() : nullptr;
@@ -391,7 +391,7 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
   // Initial transformation: metrics dropped.
   absl::flat_hash_set<Stats::StatName> drop_;
   // Second transformation: tags changed.
-  using TagOverrides = absl::flat_hash_map<Stats::StatName, absl::optional<uint32_t>>;
+  using TagOverrides = absl::flat_hash_map<Stats::StatName, std::optional<uint32_t>>;
   absl::flat_hash_map<Stats::StatName, TagOverrides> tag_overrides_;
   // Third transformation: tags added.
   using TagAdditions = std::vector<std::pair<Stats::StatName, uint32_t>>;
@@ -426,7 +426,7 @@ struct MetricOverrides : public Logger::Loggable<Logger::Id::filter> {
     }
     return out;
   }
-  absl::optional<uint32_t> getOrCreateExpression(const std::string& expr, bool int_expr) {
+  std::optional<uint32_t> getOrCreateExpression(const std::string& expr, bool int_expr) {
     const auto& it = expression_ids_.find(expr);
     if (it != expression_ids_.end()) {
       return {it->second};
@@ -973,7 +973,7 @@ private:
   void populatePeerInfo(const StreamInfo::StreamInfo& info,
                         const StreamInfo::FilterState& filter_state) {
     // Compute peer info with client-side fallbacks.
-    absl::optional<Istio::Common::WorkloadMetadataObject> peer;
+    std::optional<Istio::Common::WorkloadMetadataObject> peer;
     auto object = peerInfo(config_->reporter(), filter_state);
     if (object) {
       peer.emplace(object.value());
@@ -1256,7 +1256,7 @@ private:
   bool peer_read_{false};
   uint64_t bytes_sent_{0};
   uint64_t bytes_received_{0};
-  absl::optional<bool> mutual_tls_;
+  std::optional<bool> mutual_tls_;
   bool is_grpc_{false};
   uint64_t request_message_count_{0};
   uint64_t response_message_count_{0};
