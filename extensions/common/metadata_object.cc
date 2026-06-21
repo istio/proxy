@@ -448,7 +448,7 @@ std::optional<absl::string_view> WorkloadMetadataObject::field(absl::string_view
       return locality_zone_;
     }
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 WorkloadMetadataObject::FieldType
