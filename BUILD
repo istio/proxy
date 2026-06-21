@@ -30,6 +30,8 @@ config_setting(
     },
 )
 
+load("@envoy_build_config//:extensions_build_config.bzl", "OPENSSL_INCOMPATIBLE_CONTRIB_DEPS")
+
 envoy_cc_binary(
     name = "envoy",
     repository = "@envoy",
