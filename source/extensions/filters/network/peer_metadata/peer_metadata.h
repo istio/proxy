@@ -153,8 +153,8 @@ public:
 private:
   void populateBaggage();
   bool disableDiscovery() const;
-  std::optional<google::protobuf::Any> discoverPeerMetadata();
-  void propagatePeerMetadata(const google::protobuf::Any& peer_metadata);
+  std::optional<Envoy::Protobuf::Any> discoverPeerMetadata();
+  void propagatePeerMetadata(const Envoy::Protobuf::Any& peer_metadata);
   void propagateNoPeerMetadata();
 
   PeerMetadataState state_ = PeerMetadataState::WaitingForData;

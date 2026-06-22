@@ -68,7 +68,7 @@ static absl::flat_hash_map<absl::string_view, WorkloadType> ALL_WORKLOAD_TOKENS 
     {CronJobSuffix, WorkloadType::CronJob},
 };
 
-absl::optional<absl::string_view> toSuffix(WorkloadType workload_type) {
+std::optional<absl::string_view> toSuffix(WorkloadType workload_type) {
   switch (workload_type) {
   case WorkloadType::Deployment:
     return DeploymentSuffix;
@@ -228,16 +228,16 @@ WorkloadMetadataObject::serializeAsPairs() const {
   return parts;
 }
 
-absl::optional<std::string> WorkloadMetadataObject::serializeAsString() const {
+std::optional<std::string> WorkloadMetadataObject::serializeAsString() const {
   const auto parts = serializeAsPairs();
   return absl::StrJoin(parts, ",", absl::PairFormatter("="));
 }
 
-absl::optional<uint64_t> WorkloadMetadataObject::hash() const {
+std::optional<uint64_t> WorkloadMetadataObject::hash() const {
   return Envoy::HashUtil::xxHash64(*serializeAsString());
 }
 
-absl::optional<std::string> WorkloadMetadataObject::owner() const {
+std::optional<std::string> WorkloadMetadataObject::owner() const {
   const auto suffix = toSuffix(workload_type_);
   if (suffix) {
     return absl::StrCat(OwnerPrefix, namespace_name_, "/", *suffix, "s/", workload_name_);
@@ -267,8 +267,8 @@ WorkloadType parseOwner(absl::string_view owner, absl::string_view workload) {
   return WorkloadType::Unknown;
 }
 
-google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataObject& obj) {
-  google::protobuf::Struct metadata;
+Envoy::Protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataObject& obj) {
+  Envoy::Protobuf::Struct metadata;
   if (!obj.instance_name_.empty()) {
     (*metadata.mutable_fields())[InstanceMetadataField].set_string_value(obj.instance_name_);
   }
@@ -316,20 +316,20 @@ google::protobuf::Struct convertWorkloadMetadataToStruct(const WorkloadMetadataO
 
 // Convert struct to a metadata object.
 std::unique_ptr<WorkloadMetadataObject>
-convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata) {
+convertStructToWorkloadMetadata(const Envoy::Protobuf::Struct& metadata) {
   return convertStructToWorkloadMetadata(metadata, {});
 }
 
 std::unique_ptr<WorkloadMetadataObject>
-convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
+convertStructToWorkloadMetadata(const Envoy::Protobuf::Struct& metadata,
                                 const absl::flat_hash_set<std::string>& additional_labels) {
   return convertStructToWorkloadMetadata(metadata, additional_labels, {});
 }
 
 std::unique_ptr<WorkloadMetadataObject>
-convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
+convertStructToWorkloadMetadata(const Envoy::Protobuf::Struct& metadata,
                                 const absl::flat_hash_set<std::string>& additional_labels,
-                                const absl::optional<envoy::config::core::v3::Locality> locality) {
+                                const std::optional<envoy::config::core::v3::Locality> locality) {
   absl::string_view instance, namespace_name, owner, workload, cluster, identity, canonical_name,
       canonical_revision, app_name, app_version, region, zone;
   std::vector<std::pair<std::string, std::string>> labels;
@@ -393,22 +393,22 @@ convertStructToWorkloadMetadata(const google::protobuf::Struct& metadata,
   return obj;
 }
 
-absl::optional<WorkloadMetadataObject>
+std::optional<WorkloadMetadataObject>
 convertEndpointMetadata(const std::string& endpoint_encoding) {
   std::vector<absl::string_view> parts = absl::StrSplit(endpoint_encoding, ';');
   if (parts.size() < 5) {
     return {};
   }
-  return absl::make_optional<WorkloadMetadataObject>("", parts[4], parts[1], parts[0], parts[2],
-                                                     parts[3], "", "", WorkloadType::Unknown, "",
-                                                     "", "");
+  return std::make_optional<WorkloadMetadataObject>("", parts[4], parts[1], parts[0], parts[2],
+                                                    parts[3], "", "", WorkloadType::Unknown, "", "",
+                                                    "");
 }
 
-std::string serializeToStringDeterministic(const google::protobuf::Struct& metadata) {
+std::string serializeToStringDeterministic(const Envoy::Protobuf::Struct& metadata) {
   std::string out;
   {
-    google::protobuf::io::StringOutputStream md(&out);
-    google::protobuf::io::CodedOutputStream mcs(&md);
+    Envoy::Protobuf::io::StringOutputStream md(&out);
+    Envoy::Protobuf::io::CodedOutputStream mcs(&md);
     mcs.SetSerializationDeterministic(true);
     if (!metadata.SerializeToCodedStream(&mcs)) {
       out.clear();
@@ -417,8 +417,7 @@ std::string serializeToStringDeterministic(const google::protobuf::Struct& metad
   return out;
 }
 
-absl::optional<absl::string_view>
-WorkloadMetadataObject::field(absl::string_view field_name) const {
+std::optional<absl::string_view> WorkloadMetadataObject::field(absl::string_view field_name) const {
   const auto it = ALL_METADATA_FIELDS.find(field_name);
   if (it != ALL_METADATA_FIELDS.end()) {
     switch (it->second) {
@@ -449,7 +448,7 @@ WorkloadMetadataObject::field(absl::string_view field_name) const {
       return locality_zone_;
     }
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 WorkloadMetadataObject::FieldType

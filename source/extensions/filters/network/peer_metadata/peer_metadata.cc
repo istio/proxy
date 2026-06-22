@@ -93,7 +93,7 @@ Network::FilterStatus Filter::onWrite(Buffer::Instance& buffer, bool) {
     // for peer metadata anymore, if the upstream sent it, we'd have it by
     // now. So we can check if the peer metadata is available or not, and if
     // no peer metadata available, we can give up waiting for it.
-    std::optional<google::protobuf::Any> peer_metadata = discoverPeerMetadata();
+    std::optional<Envoy::Protobuf::Any> peer_metadata = discoverPeerMetadata();
     if (peer_metadata) {
       propagatePeerMetadata(*peer_metadata);
     } else {
@@ -137,7 +137,7 @@ bool Filter::disableDiscovery() const {
 //
 // NOTE: It's safe to call this function during any step of processing - it
 // will not do anything if the filter is not in the right state.
-std::optional<google::protobuf::Any> Filter::discoverPeerMetadata() {
+std::optional<Envoy::Protobuf::Any> Filter::discoverPeerMetadata() {
   ENVOY_LOG(trace, "Trying to discover peer metadata from filter state set by TCP Proxy");
   ASSERT(write_callbacks_);
 
@@ -177,13 +177,13 @@ std::optional<google::protobuf::Any> Filter::discoverPeerMetadata() {
       ::Istio::Common::convertBaggageToWorkloadMetadata(baggage[0]->value().getStringView(),
                                                         identity);
 
-  google::protobuf::Struct data = convertWorkloadMetadataToStruct(*metadata);
-  google::protobuf::Any wrapped;
+  Envoy::Protobuf::Struct data = convertWorkloadMetadataToStruct(*metadata);
+  Envoy::Protobuf::Any wrapped;
   wrapped.PackFrom(data);
   return wrapped;
 }
 
-void Filter::propagatePeerMetadata(const google::protobuf::Any& peer_metadata) {
+void Filter::propagatePeerMetadata(const Envoy::Protobuf::Any& peer_metadata) {
   ENVOY_LOG(trace, "Sending peer metadata downstream with the data stream");
   ASSERT(write_callbacks_);
 
@@ -347,14 +347,14 @@ bool UpstreamFilter::consumePeerMetadata(Buffer::Instance& buffer, bool end_stre
   std::string_view data{static_cast<const char*>(buffer.linearize(peer_metadata_size)),
                         peer_metadata_size};
   data = data.substr(sizeof(PeerMetadataHeader));
-  google::protobuf::Any any;
+  Envoy::Protobuf::Any any;
   if (!any.ParseFromArray(data.data(), data.size())) {
     ENVOY_LOG(trace, "Failed to parse peer metadata proto from the data stream");
     populateNoPeerMetadata();
     return true;
   }
 
-  google::protobuf::Struct peer_metadata;
+  Envoy::Protobuf::Struct peer_metadata;
   if (!any.UnpackTo(&peer_metadata)) {
     ENVOY_LOG(trace, "Failed to unpack peer metadata struct");
     populateNoPeerMetadata();

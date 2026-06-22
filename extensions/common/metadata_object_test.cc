@@ -203,17 +203,17 @@ TEST(WorkloadMetadataObjectTest, Conversion) {
 }
 
 TEST(WorkloadMetadataObjectTest, ConvertFromEmpty) {
-  google::protobuf::Struct node;
+  Envoy::Protobuf::Struct node;
   auto obj = convertStructToWorkloadMetadata(node);
   EXPECT_EQ(obj->serializeAsString(), "");
   checkStructConversion(*obj);
 }
 
 TEST(WorkloadMetadataObjectTest, ConvertFromEndpointMetadata) {
-  EXPECT_EQ(absl::nullopt, convertEndpointMetadata(""));
-  EXPECT_EQ(absl::nullopt, convertEndpointMetadata("a;b"));
-  EXPECT_EQ(absl::nullopt, convertEndpointMetadata("a;;;b"));
-  EXPECT_EQ(absl::nullopt, convertEndpointMetadata("a;b;c;d"));
+  EXPECT_EQ(std::nullopt, convertEndpointMetadata(""));
+  EXPECT_EQ(std::nullopt, convertEndpointMetadata("a;b"));
+  EXPECT_EQ(std::nullopt, convertEndpointMetadata("a;;;b"));
+  EXPECT_EQ(std::nullopt, convertEndpointMetadata("a;b;c;d"));
   auto obj = convertEndpointMetadata("foo-pod;default;foo-service;v1;my-cluster");
   ASSERT_TRUE(obj.has_value());
   EXPECT_EQ(obj->serializeAsString(), "workload=foo-pod,cluster=my-cluster,"

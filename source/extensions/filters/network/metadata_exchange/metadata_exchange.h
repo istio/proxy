@@ -134,7 +134,7 @@ private:
   void tryReadInitialProxyHeader(Buffer::Instance& data);
 
   // Tries to read data after initial proxy header. This is currently in the
-  // form of google::protobuf::any which encapsulates google::protobuf::struct.
+  // form of Envoy::Protobuf::any which encapsulates Envoy::Protobuf::struct.
   void tryReadProxyData(Buffer::Instance& data);
 
   // Helper function to share the metadata with other filters.
@@ -161,7 +161,7 @@ private:
   const std::string ExchangeMetadataHeader = "x-envoy-peer-metadata";
   const std::string ExchangeMetadataHeaderId = "x-envoy-peer-metadata-id";
 
-  // Type url of google::protobuf::struct.
+  // Type url of Envoy::Protobuf::struct.
   const std::string StructTypeUrl = "type.googleapis.com/google.protobuf.Struct";
 
   // Captures the state machine of what is going on in the filter.

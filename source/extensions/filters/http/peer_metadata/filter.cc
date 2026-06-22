@@ -37,8 +37,8 @@ public:
       : downstream_(downstream),
         metadata_provider_(Extensions::Common::WorkloadDiscovery::GetProvider(factory_context)),
         local_info_(factory_context.localInfo()) {}
-  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
-                                          Context&) const override;
+  std::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
+                                         Context&) const override;
 
 private:
   const bool downstream_;
@@ -46,8 +46,8 @@ private:
   const LocalInfo::LocalInfo& local_info_;
 };
 
-absl::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo& info,
-                                                   Http::HeaderMap& headers, Context&) const {
+std::optional<PeerInfo> XDSMethod::derivePeerInfo(const StreamInfo::StreamInfo& info,
+                                                  Http::HeaderMap& headers, Context&) const {
   if (!metadata_provider_) {
     return {};
   }
@@ -123,8 +123,8 @@ MXMethod::MXMethod(bool downstream, const absl::flat_hash_set<std::string> addit
   tls_.set([](Event::Dispatcher&) { return std::make_shared<MXCache>(); });
 }
 
-absl::optional<PeerInfo> MXMethod::derivePeerInfo(const StreamInfo::StreamInfo&,
-                                                  Http::HeaderMap& headers, Context& ctx) const {
+std::optional<PeerInfo> MXMethod::derivePeerInfo(const StreamInfo::StreamInfo&,
+                                                 Http::HeaderMap& headers, Context& ctx) const {
   const auto peer_id_header = headers.get(Headers::get().ExchangeMetadataHeaderId);
   if (downstream_) {
     ctx.request_peer_id_received_ = !peer_id_header.empty();
@@ -148,7 +148,7 @@ void MXMethod::remove(Http::HeaderMap& headers) const {
   headers.remove(Headers::get().ExchangeMetadataHeader);
 }
 
-absl::optional<PeerInfo> MXMethod::lookup(absl::string_view id, absl::string_view value) const {
+std::optional<PeerInfo> MXMethod::lookup(absl::string_view id, absl::string_view value) const {
   // This code is copied from:
   // https://github.com/istio/proxy/blob/release-1.18/extensions/metadata_exchange/plugin.cc#L116
   auto& cache = tls_->cache_;
@@ -159,7 +159,7 @@ absl::optional<PeerInfo> MXMethod::lookup(absl::string_view id, absl::string_vie
     }
   }
   const auto bytes = Base64::decodeWithoutPadding(value);
-  google::protobuf::Struct metadata;
+  Envoy::Protobuf::Struct metadata;
   if (!metadata.ParseFromString(bytes)) {
     return {};
   }
@@ -179,14 +179,14 @@ public:
   UpstreamFilterStateMethod(
       const io::istio::http::peer_metadata::Config_UpstreamFilterState& config)
       : peer_metadata_key_(config.peer_metadata_key()) {}
-  absl::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
-                                          Context&) const override;
+  std::optional<PeerInfo> derivePeerInfo(const StreamInfo::StreamInfo&, Http::HeaderMap&,
+                                         Context&) const override;
 
 private:
   std::string peer_metadata_key_;
 };
 
-absl::optional<PeerInfo>
+std::optional<PeerInfo>
 UpstreamFilterStateMethod::derivePeerInfo(const StreamInfo::StreamInfo& info, Http::HeaderMap&,
                                           Context&) const {
   const auto upstream = info.upstreamInfo();
@@ -206,7 +206,7 @@ UpstreamFilterStateMethod::derivePeerInfo(const StreamInfo::StreamInfo& info, Ht
     return {};
   }
 
-  google::protobuf::Struct obj;
+  Envoy::Protobuf::Struct obj;
   if (!obj.ParseFromString(absl::string_view(cel_state->value()))) {
     return {};
   }
@@ -233,7 +233,7 @@ std::string MXPropagationMethod::computeValue(
   const auto obj = Istio::Common::convertStructToWorkloadMetadata(
       factory_context.localInfo().node().metadata(), additional_labels,
       factory_context.localInfo().node().locality());
-  const google::protobuf::Struct metadata = Istio::Common::convertWorkloadMetadataToStruct(*obj);
+  const Envoy::Protobuf::Struct metadata = Istio::Common::convertWorkloadMetadataToStruct(*obj);
   const std::string metadata_bytes = Istio::Common::serializeToStringDeterministic(metadata);
   return Base64::encode(metadata_bytes.data(), metadata_bytes.size());
 }
@@ -271,9 +271,9 @@ void BaggagePropagationMethod::inject(const StreamInfo::StreamInfo&, Http::Heade
 
 BaggageDiscoveryMethod::BaggageDiscoveryMethod() {}
 
-absl::optional<PeerInfo> BaggageDiscoveryMethod::derivePeerInfo(const StreamInfo::StreamInfo&,
-                                                                Http::HeaderMap& headers,
-                                                                Context&) const {
+std::optional<PeerInfo> BaggageDiscoveryMethod::derivePeerInfo(const StreamInfo::StreamInfo&,
+                                                               Http::HeaderMap& headers,
+                                                               Context&) const {
   const auto baggage_header = headers.get(Headers::get().Baggage);
   if (baggage_header.empty()) {
     return {};

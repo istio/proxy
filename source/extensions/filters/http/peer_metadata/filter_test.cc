@@ -561,7 +561,7 @@ TEST_F(PeerMetadataTest, UpstreamMXPropagationWithNodeLocality) {
   const std::string encoded_metadata = std::string(mx_header[0]->value().getStringView());
   const std::string metadata_bytes = Base64::decode(encoded_metadata);
 
-  google::protobuf::Struct metadata;
+  Envoy::Protobuf::Struct metadata;
   ASSERT_TRUE(metadata.ParseFromString(metadata_bytes));
   // Check that locality fields are present
   ASSERT_TRUE(metadata.fields().contains("REGION"));
@@ -682,7 +682,7 @@ TEST_F(PeerMetadataTest, CelExpressionCompatibility) {
   ASSERT_NE(proto, nullptr);
 
   // Verify the protobuf contains expected data
-  const auto* struct_proto = dynamic_cast<const google::protobuf::Struct*>(proto.get());
+  const auto* struct_proto = dynamic_cast<const Envoy::Protobuf::Struct*>(proto.get());
   ASSERT_NE(struct_proto, nullptr);
   EXPECT_EQ("production", extractString(*struct_proto, "namespace"));
   EXPECT_EQ("bar", extractString(*struct_proto, "workload"));
@@ -1313,7 +1313,7 @@ TEST_F(PeerMetadataTest, BaggagePropagationWithNodeLocality) {
 // Test MX discovery preserves locality from incoming headers
 TEST_F(PeerMetadataTest, MXDiscoveryPreservesLocality) {
   // Create test MX header with locality
-  google::protobuf::Struct test_metadata;
+  Envoy::Protobuf::Struct test_metadata;
   (*test_metadata.mutable_fields())[Istio::Common::NamespaceMetadataField].set_string_value(
       "mx-locality-ns");
   (*test_metadata.mutable_fields())[Istio::Common::ClusterMetadataField].set_string_value(
