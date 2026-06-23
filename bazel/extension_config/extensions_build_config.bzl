@@ -495,6 +495,7 @@ ENVOY_CONTRIB_EXTENSIONS = {
     "envoy.filters.network.postgres_proxy":                     "//contrib/postgres_proxy/filters/network/source:config",
     "envoy.filters.network.rocketmq_proxy":                     "//contrib/rocketmq_proxy/filters/network/source:config",
     "envoy.filters.network.metadata_exchange":                  "//contrib/istio/filters/network/metadata_exchange/source:config",
+    "envoy.filters.network.peer_metadata":                      "//contrib/istio/filters/network/peer_metadata/source:config",
 
     #
     # Sip proxy
@@ -547,6 +548,7 @@ ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.load_balancing_policies.peak_ewma",
     "envoy.filters.http.peak_ewma",
     "envoy.filters.network.metadata_exchange",
+    "envoy.filters.network.peer_metadata",
     "envoy.filters.http.alpn",
     "envoy.filters.http.peer_metadata",
     "envoy.filters.http.istio_stats",
