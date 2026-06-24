@@ -30,25 +30,12 @@ config_setting(
     },
 )
 
-ISTIO_EXTENSIONS = [
-    # TODO(krinkinmu): drop this extension once upstream Envoy hashable string
-    # is available in all Istio releases we support, so that we can migrate to
-    # envoy hashable string instead of using custom Envoy implementation.
-    "//source/extensions/common/hashable_string",
-    "//source/extensions/common/workload_discovery:api_lib",
-    "//source/extensions/filters/http/alpn:config_lib",
-    "//source/extensions/filters/http/istio_stats",
-    "//source/extensions/filters/http/peer_metadata:filter_lib",
-    "//source/extensions/filters/network/metadata_exchange:config_lib",
-    "//source/extensions/filters/network/peer_metadata",
-]
-
 load("@envoy_build_config//:extensions_build_config.bzl", "OPENSSL_INCOMPATIBLE_CONTRIB_DEPS")
 
 envoy_cc_binary(
     name = "envoy",
     repository = "@envoy",
-    deps = ISTIO_EXTENSIONS + [
+    deps = [
         "@envoy//source/exe:envoy_main_entry_lib",
     ] + select({
         "@envoy//bazel:using_openssl": [],

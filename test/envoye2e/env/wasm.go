@@ -48,6 +48,11 @@ func EnsureWasmFiles(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		// Create the directory if it does not exist
+		err = os.MkdirAll(filepath.Dir(file), 0o755)
+		if err != nil {
+			t.Fatal(err)
+		}
 		err = os.WriteFile(file, content, 0o666)
 		if err != nil {
 			t.Fatal(err)
