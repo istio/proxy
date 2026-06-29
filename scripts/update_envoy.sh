@@ -61,3 +61,6 @@ sed -i 's/ENVOY_SHA256 = .*/ENVOY_SHA256 = "'"$SHA256"'"/' "${WORKSPACE}"
 # Update .bazelversion and envoy.bazelrc
 curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelversion" > .bazelversion
 curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelrc" > envoy.bazelrc
+
+# Update VERSION.txt
+curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/VERSION.txt" > ENVOY_VERSION.txt
