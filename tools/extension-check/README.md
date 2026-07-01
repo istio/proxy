@@ -16,12 +16,6 @@ go run tools/extension-check/main.go \
 Envoy source code can be found at `~/Codes/istio.io/envoy`.
 Proxy source code can be found at `~/Codes/istio.io/proxy`.
 
-First you need delete the first line of proxy extensions build config file, which is `load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")`.
-
-```bash
-sed -i '1d' ~/Codes/istio.io/proxy/bazel/extension_config/extensions_build_config.bzl
-```
-
 Then you can run the following command to check all core extensions are enabled in proxy.
 
 ```bash
