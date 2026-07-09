@@ -1,0 +1,12 @@
+diff --git a/ossm/vendor/v8/BUILD.bazel b/ossm/vendor/v8/BUILD.bazel
+index af424cf04..8f1451763 100644
+--- a/ossm/vendor/v8/BUILD.bazel
++++ b/ossm/vendor/v8/BUILD.bazel
+@@ -3822,6 +3822,7 @@ filegroup(
+             "src/maglev/maglev-truncation.h",
+             "src/maglev/maglev-post-hoc-optimizations-processors.h",
+             "src/maglev/maglev-pre-regalloc-codegen-processors.h",
++            "src/maglev/maglev-regalloc-node-info.h",
+         ],
+     }),
+ )

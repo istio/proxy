@@ -1,0 +1,15 @@
+diff --git a/ossm/vendor/highway/BUILD b/ossm/vendor/highway/BUILD
+index 5cc31aa1f..f9cd4a83a 100644
+--- a/ossm/vendor/highway/BUILD
++++ b/ossm/vendor/highway/BUILD
+@@ -133,6 +133,9 @@ COPTS = select({
+     "@platforms//cpu:ppc64le": [
+         "-DTOOLCHAIN_MISS_ASM_HWCAP_H"
+     ],
++    "@platforms//cpu:s390x": [
++        "-DTOOLCHAIN_MISS_ASM_HWCAP_H"
++    ],
+     "//conditions:default": [
+     ],
+ })
+

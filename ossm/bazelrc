@@ -1,0 +1,44 @@
+# Common build flags
+
+build --verbose_failures
+
+# Toolchain configuration
+build --repo_env=BAZEL_USE_HOST_SYSROOT=True
+build --repo_env=BAZEL_LLVM_PATH=/usr
+build --config=clang-common
+build --config=libstdc++
+build --action_env=Clang_DIR=/usr/lib64/llvm21
+build --cxxopt=-Wno-nullability-completeness
+build --host_linkopt=-latomic
+build --linkopt=-latomic
+
+build --host_force_python=PY3
+build --extra_toolchains=@rules_python//python:autodetecting_toolchain
+
+build --extra_toolchains=@local_jdk//:all
+build --tool_java_runtime_version=local_jdk
+
+# OpenSSL configuration
+common --config=openssl
+
+# Test flags
+build --test_env=ENVOY_IP_TEST_VERSIONS=v4only
+build --test_env=HEAPCHECK=minimal
+build --test_output=all
+
+# Arch-specific build flags, triggered with --config=$ARCH in bazel build command
+build:x86_64 --define=DUMMY=dummy
+build:s390x --@envoy//source/extensions/filters/common/lua:luajit2=1
+build:ppc --action_env=BAZEL_LINKLIBS=-lstdc++
+build:ppc --@envoy//source/extensions/filters/common/lua:luajit2=1
+build:ppc --platforms=//ppc64le_platform:host
+build:ppc --extra_execution_platforms=//ppc64le_platform:host
+build:ppc --extra_toolchains=//ppc64le_platform:jdk_runtime
+build:aarch64 --define=DUMMY=dummy
+
+# Colored ouput messes with some of the logging systems in CI, so we disable that.
+build:ci-config --color=no
+build:ci-config --show_progress_rate_limit=10
+
+# Import vendor flags
+#import %workspace%/ossm/bazelrc-vendor

@@ -1,0 +1,171 @@
+---
+name: Release artifact (post-merge)
+
+# Equivalent to Prow's postsubmit jobs: copy-artifacts-gcs and copy-artifacts-gcs-arm.
+# Triggered when a PR is merged.
+# Produces envoy-alpha-{SHA}.tar.gz and envoy-alpha-{SHA}-arm64.tar.gz in GCS.
+#
+# Fast path: if the pre-submit (build.yaml) already built and cached the artifact as
+# a GHA artifact for the PR HEAD commit, we download it directly and skip TF entirely.
+# Fallback: if the cached artifact is not available (expired or pre-submit failed),
+# we launch a TF job with plans/release to rebuild from scratch.
+
+on:
+  push:
+    branches:
+      - release-1.28
+      - release-1.30
+  workflow_dispatch:
+    inputs:
+      pr_head_sha:
+        description: |
+          SHA of the PR commit that passed CI (used to look up the cached GHA artifact).
+          Leave empty to auto-detect from the merge commit (only works on real merge commits).
+        required: false
+        default: ''
+      dry_run:
+        description: 'If true, skips the GCS upload (for testing without writing to production)'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            suffix: ""
+          - arch: aarch64
+            suffix: "-arm64"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find pre-submit artifact (fast path)
+        id: cache
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_PR_HEAD_SHA: ${{ github.event.inputs.pr_head_sha }}
+          ARTIFACT_SUFFIX: ${{ matrix.suffix }}
+        run: |
+          set -euo pipefail
+
+          if [[ -n "${INPUT_PR_HEAD_SHA}" ]]; then
+            # workflow_dispatch: SHA provided explicitly
+            PR_HEAD_SHA="${INPUT_PR_HEAD_SHA}"
+            echo "Using manually provided PR HEAD SHA: ${PR_HEAD_SHA}"
+          else
+            # push event: determine PR HEAD SHA from commit parents
+            COMMIT_DATA=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}")
+            PR_HEAD_SHA=$(echo "${COMMIT_DATA}" | jq -r '.parents[1].sha // empty')
+
+            if [[ -n "${PR_HEAD_SHA}" ]]; then
+              # Standard merge commit: verify the PR branch was up-to-date with the base at merge time.
+              # parents[0] is the base branch tip before the merge.
+              BASE_BEFORE_MERGE=$(echo "${COMMIT_DATA}" | jq -r '.parents[0].sha // empty')
+              COMPARE_STATUS=$(gh api \
+                "repos/${GITHUB_REPOSITORY}/compare/${BASE_BEFORE_MERGE}...${PR_HEAD_SHA}" \
+                --jq '.status')
+              echo "Compare ${BASE_BEFORE_MERGE:0:8}...${PR_HEAD_SHA:0:8}: ${COMPARE_STATUS}"
+              if [[ "${COMPARE_STATUS}" != "ahead" && "${COMPARE_STATUS}" != "identical" ]]; then
+                echo "PR branch was not up-to-date with base (compare: ${COMPARE_STATUS}), must rebuild from merge commit"
+                echo "found=false" >> "${GITHUB_OUTPUT}"
+                exit 0
+              fi
+            else
+              # Fast-forward or squash merge: GITHUB_SHA may be the PR commit itself.
+              # Use it and let the artifact lookup below determine if a pre-built artifact exists.
+              PR_HEAD_SHA="${GITHUB_SHA}"
+              echo "No merge commit detected (fast-forward or squash), trying SHA: ${PR_HEAD_SHA}"
+            fi
+          fi
+
+          ARTIFACT_NAME="envoy-alpha-${PR_HEAD_SHA}${ARTIFACT_SUFFIX}"
+          echo "Looking for pre-submit artifact: ${ARTIFACT_NAME}"
+
+          ARTIFACT_ID=$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts" \
+            --jq ".artifacts[] | select(.name == \"${ARTIFACT_NAME}\" and .expired == false) | .id" \
+            | head -1)
+
+          if [[ -z "${ARTIFACT_ID}" ]]; then
+            echo "Pre-submit artifact not found or expired, will rebuild via TF"
+            echo "found=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "Found pre-submit artifact (id=${ARTIFACT_ID}): ${ARTIFACT_NAME}"
+            gh run download --repo "${GITHUB_REPOSITORY}" \
+              --name "${ARTIFACT_NAME}" --dir artifact-download
+            ls artifact-download/
+            ARTIFACT_FILE=$(ls artifact-download/*.tar.gz | head -1)
+            mv "${ARTIFACT_FILE}" .
+            ARTIFACT_BASENAME=$(basename "${ARTIFACT_FILE}")
+            echo "found=true"                        >> "${GITHUB_OUTPUT}"
+            echo "artifact_name=${ARTIFACT_BASENAME}" >> "${GITHUB_OUTPUT}"
+          fi
+
+      # --- Fast path: artifact already available, upload to GCS directly ---
+
+      - name: Upload to GCS (fast path)
+        if: steps.cache.outputs.found == 'true'
+        env:
+          GCS_SERVICE_ACCOUNT_KEY: ${{ secrets.GCS_SERVICE_ACCOUNT_KEY }}
+          ARTIFACT_NAME: ${{ steps.cache.outputs.artifact_name }}
+          ARTIFACT_SUFFIX: ${{ matrix.suffix }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          set -euo pipefail
+          # Rename: fast path artifact uses PR HEAD SHA; GCS consumers expect merge commit SHA.
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            MERGE_ARTIFACT="envoy-alpha-${GITHUB_SHA}${ARTIFACT_SUFFIX}.tar.gz"
+            mv "${ARTIFACT_NAME}" "${MERGE_ARTIFACT}"
+            ARTIFACT_NAME="${MERGE_ARTIFACT}"
+            echo "Renamed to merge commit SHA: ${ARTIFACT_NAME}"
+          fi
+          bash .github/scripts/upload-to-gcs.sh "${ARTIFACT_NAME}"
+
+      # --- Fallback path: rebuild via Testing Farm ---
+
+      - name: Build release artifact on Testing Farm (fallback)
+        id: tf
+        if: steps.cache.outputs.found != 'true'
+        uses: sclorg/testing-farm-as-github-action@v4
+        with:
+          api_key: ${{ secrets.TESTING_FARM_PUBLIC_API_TOKEN }}
+          api_url: https://api.testing-farm.io/v0.1
+          git_url: https://github.com/openshift-service-mesh/proxy.git
+          git_ref: ${{ github.ref_name }}
+          tmt_plan_regex: /plans/release
+          compose: CentOS-Stream-10
+          arch: ${{ matrix.arch }}
+          tmt_hardware: '{"virtualization": {"is-virtualized": false}}'
+          variables: "SOURCE_REPO=${{ format('{0}/{1}.git', github.server_url, github.repository) }};SOURCE_REF=${{ github.sha }}"
+          timeout: 120
+
+      - name: Collect artifact from TF (fallback)
+        id: tf-artifact
+        if: steps.cache.outputs.found != 'true' && success()
+        env:
+          ARTIFACTS_URL: https://artifacts.dev.testing-farm.io/${{ steps.tf.outputs.request_id }}
+          SOURCE_REF: ${{ github.sha }}
+          ARTIFACT_SUFFIX: ${{ matrix.suffix }}
+        run: |
+          set -euo pipefail
+          ARTIFACT="envoy-alpha-${SOURCE_REF}${ARTIFACT_SUFFIX}.tar.gz"
+          echo "Fetching results.xml to locate artifact URL..."
+          curl -fSL -o results.xml "${ARTIFACTS_URL}/results.xml"
+          TF_PATH=$(grep -oP 'href="\K[^"]+'"${ARTIFACT}"'[^"]*' results.xml | head -1)
+          [[ -z "${TF_PATH}" ]] && { echo "ERROR: ${ARTIFACT} not found in results.xml"; cat results.xml; exit 1; }
+          echo "Downloading: ${TF_PATH}"
+          curl -fSL -o "${ARTIFACT}" "${TF_PATH}"
+          echo "Downloaded: ${ARTIFACT} ($(du -sh "${ARTIFACT}" | cut -f1))"
+          echo "artifact_name=${ARTIFACT}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload to GCS (fallback)
+        if: steps.cache.outputs.found != 'true' && success()
+        env:
+          GCS_SERVICE_ACCOUNT_KEY: ${{ secrets.GCS_SERVICE_ACCOUNT_KEY }}
+          ARTIFACT_NAME: ${{ steps.tf-artifact.outputs.artifact_name }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: bash .github/scripts/upload-to-gcs.sh "${ARTIFACT_NAME}"

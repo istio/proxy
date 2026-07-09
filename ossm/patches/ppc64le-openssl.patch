@@ -1,0 +1,71 @@
+diff --git a/bazel/dependency_imports.bzl b/bazel/dependency_imports.bzl
+--- a/bazel/dependency_imports.bzl
++++ b/bazel/dependency_imports.bzl
+@@ -68,5 +68,14 @@
+         ],
+         versions = [rust_common.default_version],
+     )
++    rust_repository_set(
++        name = "rust_linux_ppc64le",
++        exec_triple = "powerpc64le-unknown-linux-gnu",
++        extra_target_triples = [
++            "wasm32-unknown-unknown",
++            "wasm32-wasi",
++        ],
++        versions = [rust_common.default_version],
++    )
+     rules_rust_dependencies()
+     rust_register_toolchains(
+diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
+--- a/bazel/repositories.bzl
++++ b/bazel/repositories.bzl
+@@ -3,7 +3,7 @@ load("@envoy_api//bazel:envoy_http_archive.bzl", "envoy_http_archive")
+ load("@envoy_api//bazel:external_deps.bzl", "load_repository_locations")
+ load(":repository_locations.bzl", "PROTOC_VERSIONS", "REPOSITORY_LOCATIONS_SPEC")
+
+-PPC_SKIP_TARGETS = ["envoy.string_matcher.lua", "envoy.filters.http.lua", "envoy.router.cluster_specifier_plugin.lua"]
++PPC_SKIP_TARGETS = []
+
+ WINDOWS_SKIP_TARGETS = [
+     "envoy.extensions.http.cache.file_system_http_cache",
+@@ -724,6 +724,8 @@ def _abseil_cpp():
+ def _com_google_protobuf():
+     external_http_archive(
+         name = "rules_python",
++        patch_args = ["-p1"],
++        patches = ["@envoy//bazel:rules_python_ppc64le.patch"],
+     )
+     external_http_archive(
+         name = "rules_java",
+diff --git a/bazel/rules_python_ppc64le.patch b/bazel/rules_python_ppc64le.patch
+new file mode 100644
+--- /dev/null
++++ b/bazel/rules_python_ppc64le.patch
+@@ -0,0 +1,11 @@
++diff --git a/python/private/pypi/pip_repository.bzl b/python/private/pypi/pip_repository.bzl
++--- a/python/private/pypi/pip_repository.bzl
+++++ b/python/private/pypi/pip_repository.bzl
++@@ -97,6 +97,7 @@
++                 "linux_aarch64",
++                 "linux_arm",
++                 "linux_ppc",
+++                "linux_ppc64le",
++                 "linux_riscv64",
++                 "linux_s390x",
++                 "linux_x86_64",
+diff --git a/compat/openssl/patch/include/openssl/target.h.sh b/compat/openssl/patch/include/openssl/target.h.sh
+--- a/compat/openssl/patch/include/openssl/target.h.sh
++++ b/compat/openssl/patch/include/openssl/target.h.sh
+@@ -6,9 +6,10 @@ uncomment.sh "$1" --comment -h \
+ --uncomment-macro OPENSSL_ASM_INCOMPATIBLE \
+ --uncomment-macro OPENSSL_NO_ASM \
+ --uncomment-macro OPENSSL_NO_THREADS_CORRUPT_MEMORY_AND_LEAK_SECRETS_IF_THREADED \
+---uncomment-macro 'OPENSSL_\(X86_64\|X86\|AARCH64\|ARM\|MIPS\|MIPS64\|RISCV64\|PNACL\)' \
++--uncomment-macro 'OPENSSL_\(X86_64\|X86\|AARCH64\|ARM\|MIPS\|MIPS64\|RISCV64\|PNACL\|PPC64LE\)' \
+ --uncomment-macro 'OPENSSL_\(APPLE\|MACOS\|IOS\)' \
+ --uncomment-macro 'OPENSSL_\(WINDOWS\|LINUX\|FUCHSIA\|TRUSTY\|ANDROID\|FREEBSD\)' \
+ --uncomment-macro 'OPENSSL_[ATM]SAN' \
+ --uncomment-macro  OPENSSL_64_BIT \
+---uncomment-macro  OPENSSL_32_BIT
++--uncomment-macro  OPENSSL_32_BIT \
++--sed 's/^#else$/#elif defined(__powerpc64__)\n#define OPENSSL_64_BIT\n#define OPENSSL_PPC64LE\n#else/'

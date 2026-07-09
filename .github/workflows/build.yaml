@@ -1,0 +1,142 @@
+---
+name: Proxy build (Testing Farm)
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number (passed by ok-to-test.yaml)"
+        required: true
+        type: string
+      head_sha:
+        description: "PR head SHA to build"
+        required: true
+        type: string
+      base_ref:
+        description: "PR base branch (e.g. release-1.30)"
+        required: true
+        type: string
+      source_repo:
+        description: "PR head repo clone URL"
+        required: true
+        type: string
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches:
+      - release-1.30
+
+jobs:
+  manage-labels:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target'
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Add needs-ok-to-test for external contributors
+        if: |
+          github.event.pull_request.author_association != 'OWNER' &&
+          github.event.pull_request.author_association != 'MEMBER' &&
+          github.event.pull_request.author_association != 'COLLABORATOR'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['needs-ok-to-test']
+            }).catch(() => {})
+
+      - name: Remove ok-to-test on new commit
+        if: github.event.action == 'synchronize'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              name: 'ok-to-test'
+            }).catch(() => {})
+
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            suffix: ""
+            name_suffix: ""
+            status_name: x86_64 bare metal
+          - arch: aarch64
+            suffix: "-arm64"
+            name_suffix: " arm64"
+            status_name: arm64 bare metal
+    name: "build (${{ matrix.arch }}, Testing Farm bare metal${{ matrix.name_suffix }})"
+    steps:
+      - name: Check authorization
+        run: |
+          # workflow_dispatch is always authorized:
+          # only ok-to-test.yaml calls createWorkflowDispatch, and only after
+          # a maintainer adds the ok-to-test label
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "Triggered via workflow_dispatch (ok-to-test authorized)"
+            exit 0
+          fi
+          ASSOCIATION="${{ github.event.pull_request.author_association }}"
+          if [[ "$ASSOCIATION" == "OWNER" || "$ASSOCIATION" == "MEMBER" || \
+                "$ASSOCIATION" == "COLLABORATOR" ]]; then
+            echo "Trusted author ($ASSOCIATION)"
+            exit 0
+          fi
+          echo "::error::External contributor. A maintainer must add the 'ok-to-test' label to run CI."
+          exit 1
+
+      - name: Run build on Testing Farm bare metal
+        id: tf
+        uses: sclorg/testing-farm-as-github-action@v4
+        with:
+          api_key: ${{ secrets.TESTING_FARM_PUBLIC_API_TOKEN }}
+          api_url: https://api.testing-farm.io/v0.1
+          git_url: https://github.com/openshift-service-mesh/proxy.git
+          git_ref: ${{ inputs.base_ref || github.base_ref || github.ref_name }}
+          tmt_plan_regex: /plans/build
+          compose: CentOS-Stream-10
+          arch: ${{ matrix.arch }}
+          tmt_hardware: '{"virtualization": {"is-virtualized": false}}'
+          variables: "SOURCE_REPO=${{ inputs.source_repo || github.event.pull_request.head.repo.clone_url || format('{0}/{1}.git', github.server_url, github.repository) }};SOURCE_REF=${{ inputs.head_sha || github.event.pull_request.head.sha || github.sha }}"
+          timeout: 120
+          update_pull_request_status: true
+          pull_request_status_name: ${{ matrix.status_name }}
+          create_issue_comment: true
+          commit_sha: ${{ inputs.head_sha || github.event.pull_request.head.sha || github.sha }}
+          pr_number: ${{ inputs.pr_number || github.event.pull_request.number || '' }}
+
+      - name: Collect build artifact
+        if: success()
+        env:
+          REQUEST_ID: ${{ steps.tf.outputs.request_id }}
+          SOURCE_REF: ${{ inputs.head_sha || github.event.pull_request.head.sha || github.sha }}
+          SUFFIX: ${{ matrix.suffix }}
+        run: |
+          ARTIFACTS_URL="https://artifacts.dev.testing-farm.io/${REQUEST_ID}"
+          ARTIFACT="envoy-alpha-${SOURCE_REF}${SUFFIX}.tar.gz"
+          echo "Fetching results.xml to locate artifact URL..."
+          curl -fSL -o results.xml "${ARTIFACTS_URL}/results.xml"
+          TF_PATH=$(grep -oP 'href="\K[^"]+'"${ARTIFACT}"'[^"]*' results.xml | head -1)
+          [[ -z "${TF_PATH}" ]] && { echo "ERROR: ${ARTIFACT} not found in results.xml"; cat results.xml; exit 1; }
+          echo "Downloading: ${TF_PATH}"
+          curl -fSL -o "${ARTIFACT}" "${TF_PATH}"
+          echo "Downloaded: ${ARTIFACT} ($(du -sh "${ARTIFACT}" | cut -f1))"
+
+      - name: Upload build artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: envoy-alpha-${{ inputs.head_sha || github.event.pull_request.head.sha || github.sha }}${{ matrix.suffix }}
+          path: envoy-alpha-${{ inputs.head_sha || github.event.pull_request.head.sha || github.sha }}${{ matrix.suffix }}.tar.gz
+          retention-days: 7

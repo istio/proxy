@@ -1,0 +1,39 @@
+name: Update Envoy-OpenSSL (old branches)
+
+on:
+  schedule:
+    - cron: "10 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-envoy:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: [release-1.24, release-1.26, release-1.27, release-1.28]
+
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        ref: ${{matrix.branch}}
+
+    - name: Run the update script
+      run: make ossm-update-everything
+
+    - name: Create the PR
+      uses: peter-evans/create-pull-request@v8
+      with:
+        token: ${{ secrets.GIT_TOKEN }}
+        branch: update-envoy-${{matrix.branch}}
+        title: "[${{matrix.branch}}] Update Envoy"
+        body: "[${{matrix.branch}}] Update Envoy - Automated"
+        commit-message: "[${{matrix.branch}}] Update Envoy"
+        committer: openshift-service-mesh-bot <openshiftservicemeshbot@gmail.com>
+        author: openshift-service-mesh-bot <openshiftservicemeshbot@gmail.com>
+        labels: auto-merge

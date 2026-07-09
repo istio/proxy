@@ -1,0 +1,67 @@
+name: Merge upstream
+
+on:
+  schedule:
+    - cron: "10 */12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge-upstream:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        branch: [release-1.28, release-1.30]
+
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        ref: ${{ matrix.branch }}
+        fetch-depth: 0
+
+    - name: Merge upstream
+      run: |
+        git config user.name "openshift-service-mesh-bot"
+        git config user.email "openshiftservicemeshbot@gmail.com"
+        git remote add upstream https://github.com/istio/proxy.git
+        git fetch upstream ${{ matrix.branch }}
+        merge_output=$(git merge upstream/${{ matrix.branch }} 2>&1) || {
+          echo "::error::Merge failed:"
+          echo "$merge_output"
+          exit 1
+        }
+        if echo "$merge_output" | grep -q "Already up to date"; then
+          echo "already-synced=true" >> "$GITHUB_OUTPUT"
+        fi
+      id: merge
+
+    - name: Update deps
+      if: steps.merge.outputs.already-synced != 'true'
+      run: |
+        ./ossm/scripts/update-deps.sh
+        # Reset the changes to compiler.bzl since we don't want to update it
+        git checkout ossm/vendor/envoy_repo/compiler.bzl || true
+        git add -A
+        git commit -m "Update deps" || true
+
+    - name: Create the PR
+      if: steps.merge.outputs.already-synced != 'true'
+      uses: peter-evans/create-pull-request@v8
+      with:
+        token: ${{ secrets.GIT_TOKEN }}
+        branch: merge-upstream-${{ matrix.branch }}
+        base: ${{ matrix.branch }}
+        title: "[${{ matrix.branch }}] Merge upstream"
+        body: "[${{ matrix.branch }}] Merge upstream - Automated"
+        commit-message: "[${{ matrix.branch }}] Merge upstream"
+        committer: openshift-service-mesh-bot <openshiftservicemeshbot@gmail.com>
+        author: openshift-service-mesh-bot <openshiftservicemeshbot@gmail.com>
+        labels: |
+          auto-merge
+          tide/merge-method-merge
+          ok-to-test

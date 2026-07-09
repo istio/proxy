@@ -1,0 +1,523 @@
+diff --git a/ossm/vendor/quiche/quiche/common/internet_checksum.cc b/ossm/vendor/quiche/quiche/common/internet_checksum.cc
+index 668d54676..8de8924d0 100644
+--- a/ossm/vendor/quiche/quiche/common/internet_checksum.cc
++++ b/ossm/vendor/quiche/quiche/common/internet_checksum.cc
+@@ -10,6 +10,8 @@
+ #include "absl/strings/string_view.h"
+ #include "absl/types/span.h"
+
++#include "quiche/common/quiche_endian.h"
++
+ namespace quiche {
+
+ void InternetChecksum::Update(const char* data, size_t size) {
+@@ -20,7 +22,9 @@ void InternetChecksum::Update(const char* data, size_t size) {
+     accumulator_ += v;
+   }
+   if (current < data + size) {
+-    accumulator_ += *reinterpret_cast<const unsigned char*>(current);
++    uint16_t v = *reinterpret_cast<const unsigned char*>(current);
++    v = quiche::QuicheEndian::HostToLittleEndian16(v);
++    accumulator_ += v;
+   }
+ }
+
+diff --git a/ossm/vendor/quiche/quiche/common/quiche_data_reader.cc b/ossm/vendor/quiche/quiche/common/quiche_data_reader.cc
+index 9d900ad88..306384fd7 100644
+--- a/ossm/vendor/quiche/quiche/common/quiche_data_reader.cc
++++ b/ossm/vendor/quiche/quiche/common/quiche_data_reader.cc
+@@ -66,6 +66,9 @@ bool QuicheDataReader::ReadUInt32(uint32_t* result) {
+   }
+   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
+     *result = quiche::QuicheEndian::NetToHost32(*result);
++  } else if (endianness_ == quiche::HOST_BYTE_ORDER
++             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    *result = quiche::QuicheEndian::ByteSwap32(*result);
+   }
+   return true;
+ }
+@@ -76,6 +79,9 @@ bool QuicheDataReader::ReadUInt64(uint64_t* result) {
+   }
+   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
+     *result = quiche::QuicheEndian::NetToHost64(*result);
++  } else if (endianness_ == quiche::HOST_BYTE_ORDER
++             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    *result = quiche::QuicheEndian::ByteSwap64(*result);
+   }
+   return true;
+ }
+@@ -86,7 +92,13 @@ bool QuicheDataReader::ReadBytesToUInt64(size_t num_bytes, uint64_t* result) {
+     return false;
+   }
+   if (endianness_ == quiche::HOST_BYTE_ORDER) {
+-    return ReadBytes(result, num_bytes);
++    if (!ReadBytes(result, num_bytes)) {
++      return false;
++    }
++    if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++      *result = quiche::QuicheEndian::ByteSwap64(*result);
++    }
++    return true;
+   }
+
+   if (!ReadBytes(reinterpret_cast<char*>(result) + sizeof(*result) - num_bytes,
+diff --git a/ossm/vendor/quiche/quiche/common/quiche_data_writer.cc b/ossm/vendor/quiche/quiche/common/quiche_data_writer.cc
+index c439e72ba..cd8e6ca33 100644
+--- a/ossm/vendor/quiche/quiche/common/quiche_data_writer.cc
++++ b/ossm/vendor/quiche/quiche/common/quiche_data_writer.cc
+@@ -35,6 +35,9 @@ bool QuicheDataWriter::WriteUInt8(uint8_t value) {
+ bool QuicheDataWriter::WriteUInt16(uint16_t value) {
+   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
+     value = quiche::QuicheEndian::HostToNet16(value);
++  } else if (endianness_ == quiche::HOST_BYTE_ORDER
++             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    value = quiche::QuicheEndian::ByteSwap16(value);
+   }
+   return WriteBytes(&value, sizeof(value));
+ }
+@@ -42,6 +45,9 @@ bool QuicheDataWriter::WriteUInt16(uint16_t value) {
+ bool QuicheDataWriter::WriteUInt32(uint32_t value) {
+   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
+     value = quiche::QuicheEndian::HostToNet32(value);
++  } else if (endianness_ == quiche::HOST_BYTE_ORDER
++             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    value = quiche::QuicheEndian::ByteSwap32(value);
+   }
+   return WriteBytes(&value, sizeof(value));
+ }
+@@ -49,6 +55,9 @@ bool QuicheDataWriter::WriteUInt32(uint32_t value) {
+ bool QuicheDataWriter::WriteUInt64(uint64_t value) {
+   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
+     value = quiche::QuicheEndian::HostToNet64(value);
++  } else if (endianness_ == quiche::HOST_BYTE_ORDER
++             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    value = quiche::QuicheEndian::ByteSwap64(value);
+   }
+   return WriteBytes(&value, sizeof(value));
+ }
+@@ -58,6 +67,9 @@ bool QuicheDataWriter::WriteBytesToUInt64(size_t num_bytes, uint64_t value) {
+     return false;
+   }
+   if (endianness_ == quiche::HOST_BYTE_ORDER) {
++    if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++      value = quiche::QuicheEndian::ByteSwap64(value);
++    }
+     return WriteBytes(&value, num_bytes);
+   }
+
+diff --git a/ossm/vendor/quiche/quiche/common/quiche_endian.h b/ossm/vendor/quiche/quiche/common/quiche_endian.h
+index ee5999fb2..c90f12951 100644
+--- a/ossm/vendor/quiche/quiche/common/quiche_endian.h
++++ b/ossm/vendor/quiche/quiche/common/quiche_endian.h
+@@ -19,28 +19,65 @@ enum Endianness {
+   HOST_BYTE_ORDER      // little endian
+ };
+
++enum HostEndianness {
++  BIG,
++  LITTLE
++};
++
+ // Provide utility functions that convert from/to network order (big endian)
+ // to/from host order (little endian).
+ class QUICHE_EXPORT QuicheEndian {
+  public:
+-  // Convert |x| from host order (little endian) to network order (big endian).
+-#if defined(__clang__) || \
+-    (defined(__GNUC__) && \
+-     ((__GNUC__ == 4 && __GNUC_MINOR__ >= 8) || __GNUC__ >= 5))
+-  static uint16_t HostToNet16(uint16_t x) { return __builtin_bswap16(x); }
+-  static uint32_t HostToNet32(uint32_t x) { return __builtin_bswap32(x); }
+-  static uint64_t HostToNet64(uint64_t x) { return __builtin_bswap64(x); }
++  // Get host machine endianness
++#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && \
++    __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
++  static const quiche::HostEndianness HostEndianness = quiche::BIG;
++#else
++  static const quiche::HostEndianness HostEndianness = quiche::LITTLE;
++#endif
++
++  // Convert byte order of |x|.
++ #if defined(__clang__) || \
++  (defined(__GNUC__) && \
++   ((__GNUC__ == 4 && __GNUC_MINOR__ >= 8) || __GNUC__ >= 5))
++  static uint16_t ByteSwap16(uint16_t x) { return __builtin_bswap16(x); }
++  static uint32_t ByteSwap32(uint32_t x) { return __builtin_bswap32(x); }
++  static uint64_t ByteSwap64(uint64_t x) { return __builtin_bswap64(x); }
+ #else
+-  static uint16_t HostToNet16(uint16_t x) { return PortableByteSwap(x); }
+-  static uint32_t HostToNet32(uint32_t x) { return PortableByteSwap(x); }
+-  static uint64_t HostToNet64(uint64_t x) { return PortableByteSwap(x); }
++  static uint16_t ByteSwap16(uint16_t x) { return PortableByteSwap(x); }
++  static uint32_t ByteSwap32(uint32_t x) { return PortableByteSwap(x); }
++  static uint64_t ByteSwap64(uint64_t x) { return PortableByteSwap(x); }
+ #endif
+
+-  // Convert |x| from network order (big endian) to host order (little endian).
++  // Convert |x| from host order to network order (big endian).
++#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && \
++    __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
++  static uint16_t HostToNet16(uint16_t x) { return x; }
++  static uint32_t HostToNet32(uint32_t x) { return x; }
++  static uint64_t HostToNet64(uint64_t x) { return x; }
++#else
++  static uint16_t HostToNet16(uint16_t x) { return ByteSwap16(x); }
++  static uint32_t HostToNet32(uint32_t x) { return ByteSwap32(x); }
++  static uint64_t HostToNet64(uint64_t x) { return ByteSwap64(x); }
++#endif
++
++  // Convert |x| from network order (big endian) to host order.
+   static uint16_t NetToHost16(uint16_t x) { return HostToNet16(x); }
+   static uint32_t NetToHost32(uint32_t x) { return HostToNet32(x); }
+   static uint64_t NetToHost64(uint64_t x) { return HostToNet64(x); }
+
++  // Convert |x| from host order to little endian order.
++#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && \
++    __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
++  static uint16_t HostToLittleEndian16(uint16_t x) { return ByteSwap16(x); }
++  static uint32_t HostToLittleEndian32(uint32_t x) { return ByteSwap32(x); }
++  static uint64_t HostToLittleEndian64(uint64_t x) { return ByteSwap64(x); }
++#else
++  static uint16_t HostToLittleEndian16(uint16_t x) { return x; }
++  static uint32_t HostToLittleEndian32(uint32_t x) { return x; }
++  static uint64_t HostToLittleEndian64(uint64_t x) { return x; }
++#endif
++
+   // Left public for tests.
+   template <typename T>
+   static T PortableByteSwap(T input) {
+diff --git a/ossm/vendor/quiche/quiche/quic/core/crypto/crypto_framer.cc b/ossm/vendor/quiche/quiche/quic/core/crypto/crypto_framer.cc
+index 1fbe19e90..bb170c0d6 100644
+--- a/ossm/vendor/quiche/quiche/quic/core/crypto/crypto_framer.cc
++++ b/ossm/vendor/quiche/quiche/quic/core/crypto/crypto_framer.cc
+@@ -180,7 +180,7 @@ std::unique_ptr<QuicData> CryptoFramer::ConstructHandshakeMessage(
+       return nullptr;
+     }
+
+-    if (it->first > kPAD && need_pad_tag) {
++    if (TagGreater(it->first, kPAD) && need_pad_tag) {
+       need_pad_tag = false;
+       if (!WritePadTag(&writer, pad_length, &end_offset)) {
+         return nullptr;
+@@ -207,7 +207,7 @@ std::unique_ptr<QuicData> CryptoFramer::ConstructHandshakeMessage(
+   // Values
+   for (auto it = message.tag_value_map().begin();
+        it != message.tag_value_map().end(); ++it) {
+-    if (it->first > kPAD && need_pad_value) {
++    if (TagGreater(it->first, kPAD) && need_pad_value) {
+       need_pad_value = false;
+       if (!writer.WriteRepeatedByte('-', pad_length)) {
+         QUICHE_DCHECK(false) << "Failed to write padding.";
+@@ -281,7 +281,7 @@ QuicErrorCode CryptoFramer::Process(absl::string_view input) {
+       for (unsigned i = 0; i < num_entries_; ++i) {
+         QuicTag tag;
+         reader.ReadTag(&tag);
+-        if (i > 0 && tag <= tags_and_lengths_[i - 1].first) {
++        if (i > 0 && !TagGreater(tag, tags_and_lengths_[i - 1].first)) {
+           if (tag == tags_and_lengths_[i - 1].first) {
+             error_detail_ = absl::StrCat("Duplicate tag:", tag);
+             return QUIC_CRYPTO_DUPLICATE_TAG;
+diff --git a/ossm/vendor/quiche/quiche/quic/core/quic_data_writer.cc b/ossm/vendor/quiche/quiche/quic/core/quic_data_writer.cc
+index 09f192305..911938400 100644
+--- a/ossm/vendor/quiche/quiche/quic/core/quic_data_writer.cc
++++ b/ossm/vendor/quiche/quiche/quic/core/quic_data_writer.cc
+@@ -63,6 +63,9 @@ bool QuicDataWriter::WriteUFloat16(uint64_t value) {
+
+   if (endianness() == quiche::NETWORK_BYTE_ORDER) {
+     result = quiche::QuicheEndian::HostToNet16(result);
++  } else if (endianness() == quiche::HOST_BYTE_ORDER
++             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    result = quiche::QuicheEndian::ByteSwap16(result);
+   }
+   return WriteBytes(&result, sizeof(result));
+ }
+diff --git a/ossm/vendor/quiche/quiche/quic/core/quic_framer.cc b/ossm/vendor/quiche/quiche/quic/core/quic_framer.cc
+index 2eaa4802b..f4237438f 100644
+--- a/ossm/vendor/quiche/quiche/quic/core/quic_framer.cc
++++ b/ossm/vendor/quiche/quiche/quic/core/quic_framer.cc
+@@ -58,6 +58,7 @@
+ #include "quiche/quic/platform/api/quic_flags.h"
+ #include "quiche/quic/platform/api/quic_ip_address_family.h"
+ #include "quiche/quic/platform/api/quic_logging.h"
++#include "quiche/common/quiche_endian.h"
+ #include "quiche/common/quiche_text_utils.h"
+ #include "quiche/common/wire_serialization.h"
+
+@@ -1251,7 +1252,7 @@ std::unique_ptr<QuicEncryptedPacket> QuicFramer::BuildPublicResetPacket(
+     const QuicPublicResetPacket& packet) {
+   CryptoHandshakeMessage reset;
+   reset.set_tag(kPRST);
+-  reset.SetValue(kRNON, packet.nonce_proof);
++  reset.SetValue(kRNON, quiche::QuicheEndian::HostToLittleEndian64(packet.nonce_proof));
+   if (packet.client_address.host().address_family() !=
+       IpAddressFamily::IP_UNSPEC) {
+     // packet.client_address is non-empty.
+@@ -5399,7 +5400,8 @@ bool QuicFramer::AppendAckFrameAndTypeByte(const QuicAckFrame& frame,
+   }
+
+   if (num_ack_blocks > 0) {
+-    if (!writer->WriteBytes(&num_ack_blocks, 1)) {
++    uint8_t num_ack_blocks_serialized = static_cast<uint8_t>(num_ack_blocks);
++      if (!writer->WriteBytes(&num_ack_blocks_serialized, 1)) {
+       return false;
+     }
+   }
+diff --git a/ossm/vendor/quiche/quiche/quic/core/quic_inlined_string_view.h b/ossm/vendor/quiche/quiche/quic/core/quic_inlined_string_view.h
+index d3e2a92c8..4ed1d55a3 100644
+--- a/ossm/vendor/quiche/quiche/quic/core/quic_inlined_string_view.h
++++ b/ossm/vendor/quiche/quiche/quic/core/quic_inlined_string_view.h
+@@ -54,7 +54,7 @@ class QUICHE_NO_EXPORT QuicInlinedStringView {
+     if (source.size() > kMaxInlinedSize) {
+       ViewRep rep;
+       rep.data = source.data();
+-      rep.size = source.size();
++      rep.size = absl::endian::native == absl::endian::little ? source.size() : source.size() << 8;
+       memcpy(&data_, &rep, sizeof(rep));
+       set_last_byte(kNotInlinedMarker);
+       return;
+@@ -113,7 +113,8 @@ class QUICHE_NO_EXPORT QuicInlinedStringView {
+     size_t size;
+   };
+   static_assert(sizeof(ViewRep) <= kSize);
+-  static_assert(absl::endian::native == absl::endian::little);
++  static_assert(absl::endian::native == absl::endian::little
++              || (absl::endian::native == absl::endian::big && sizeof(size_t) > 4));
+
+   // Accessors for ViewRep; necessary to work around C++ strict aliasing
+   // limitations.  Clang will turn this into direct field access at `-O1`.
+@@ -125,7 +126,7 @@ class QUICHE_NO_EXPORT QuicInlinedStringView {
+   size_t view_rep_size() const {
+     ViewRep rep;
+     memcpy(&rep, data_, sizeof(rep));
+-    return rep.size;
++    return absl::endian::native == absl::endian::little ? rep.size : rep.size >> 8;
+   }
+   // Those casts should be valid as long as uint8_t is unsigned char.
+   const uint8_t& last_byte() const {
+diff --git a/ossm/vendor/quiche/quiche/quic/core/quic_socket_address_coder.cc b/ossm/vendor/quiche/quiche/quic/core/quic_socket_address_coder.cc
+index 9bf85b2ea..5356fd458 100644
+--- a/ossm/vendor/quiche/quiche/quic/core/quic_socket_address_coder.cc
++++ b/ossm/vendor/quiche/quiche/quic/core/quic_socket_address_coder.cc
+@@ -9,6 +9,7 @@
+ #include <vector>
+
+ #include "quiche/quic/platform/api/quic_ip_address_family.h"
++#include "quiche/common/quiche_endian.h"
+
+ namespace quic {
+
+@@ -33,10 +34,10 @@ std::string QuicSocketAddressCoder::Encode() const {
+   uint16_t address_family;
+   switch (address_.host().address_family()) {
+     case IpAddressFamily::IP_V4:
+-      address_family = kIPv4;
++      address_family = quiche::QuicheEndian::HostToLittleEndian16(kIPv4);
+       break;
+     case IpAddressFamily::IP_V6:
+-      address_family = kIPv6;
++      address_family = quiche::QuicheEndian::HostToLittleEndian16(kIPv6);
+       break;
+     default:
+       return serialized;
+@@ -44,7 +45,7 @@ std::string QuicSocketAddressCoder::Encode() const {
+   serialized.append(reinterpret_cast<const char*>(&address_family),
+                     sizeof(address_family));
+   serialized.append(address_.host().ToPackedString());
+-  uint16_t port = address_.port();
++  uint16_t port = quiche::QuicheEndian::HostToLittleEndian16(address_.port());
+   serialized.append(reinterpret_cast<const char*>(&port), sizeof(port));
+   return serialized;
+ }
+diff --git a/ossm/vendor/quiche/quiche/quic/core/quic_tag.cc b/ossm/vendor/quiche/quiche/quic/core/quic_tag.cc
+index 27a71e495..a5f1af0e4 100644
+--- a/ossm/vendor/quiche/quiche/quic/core/quic_tag.cc
++++ b/ossm/vendor/quiche/quiche/quic/core/quic_tag.cc
+@@ -15,10 +15,17 @@
+ #include "absl/strings/escaping.h"
+ #include "absl/strings/str_split.h"
+ #include "absl/strings/string_view.h"
++#include "quiche/common/quiche_endian.h"
+ #include "quiche/common/quiche_text_utils.h"
+
+ namespace quic {
+
++bool QuicTagLess::operator()(const QuicTag& a, const QuicTag& b) const {
++  return quiche::QuicheEndian::HostToLittleEndian32(a)
++      < quiche::QuicheEndian::HostToLittleEndian32(b);
++}
++
++
+ bool FindMutualQuicTag(const QuicTagVector& our_tags,
+                        const QuicTagVector& their_tags, QuicTag* out_result,
+                        size_t* out_index) {
+@@ -47,17 +54,31 @@ std::string QuicTagToString(QuicTag tag) {
+   bool ascii = true;
+   const QuicTag orig_tag = tag;
+
+-  for (size_t i = 0; i < ABSL_ARRAYSIZE(chars); i++) {
+-    chars[i] = static_cast<char>(tag);
+-    if ((chars[i] == 0 || chars[i] == '\xff') &&
+-        i == ABSL_ARRAYSIZE(chars) - 1) {
+-      chars[i] = ' ';
++  if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    memcpy(&chars, &tag, sizeof tag);
++    for (size_t i = 0; i < ABSL_ARRAYSIZE(chars); i++) {
++      if ((chars[i] == 0 || chars[i] == '\xff') &&
++          i == ABSL_ARRAYSIZE(chars) - 1) {
++        chars[i] = ' ';
++      }
++      if (!absl::ascii_isprint(static_cast<unsigned char>(chars[i]))) {
++        ascii = false;
++        break;
++      }
+     }
+-    if (!absl::ascii_isprint(static_cast<unsigned char>(chars[i]))) {
+-      ascii = false;
+-      break;
++  } else {
++    for (size_t i = 0; i < ABSL_ARRAYSIZE(chars); i++) {
++      chars[i] = static_cast<char>(tag);
++      if ((chars[i] == 0 || chars[i] == '\xff') &&
++          i == ABSL_ARRAYSIZE(chars) - 1) {
++        chars[i] = ' ';
++      }
++      if (!absl::ascii_isprint(static_cast<unsigned char>(chars[i]))) {
++        ascii = false;
++        break;
++      }
++      tag >>= 8;
+     }
+-    tag >>= 8;
+   }
+
+   if (ascii) {
+@@ -69,8 +90,13 @@ std::string QuicTagToString(QuicTag tag) {
+ }
+
+ uint32_t MakeQuicTag(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
+-  return static_cast<uint32_t>(a) | static_cast<uint32_t>(b) << 8 |
+-         static_cast<uint32_t>(c) << 16 | static_cast<uint32_t>(d) << 24;
++  if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    return static_cast<uint32_t>(d) | static_cast<uint32_t>(c) << 8 |
++           static_cast<uint32_t>(b) << 16 | static_cast<uint32_t>(a) << 24;
++  } else {
++    return static_cast<uint32_t>(a) | static_cast<uint32_t>(b) << 8 |
++           static_cast<uint32_t>(c) << 16 | static_cast<uint32_t>(d) << 24;
++  }
+ }
+
+ bool ContainsQuicTag(const QuicTagVector& tag_vector, QuicTag tag) {
+@@ -86,12 +112,18 @@ QuicTag ParseQuicTag(absl::string_view tag_string) {
+     tag_string = tag_bytes;
+   }
+   QuicTag tag = 0;
+-  // Iterate over every character from right to left.
+-  for (auto it = tag_string.rbegin(); it != tag_string.rend(); ++it) {
+-    // The cast here is required on platforms where char is signed.
+-    unsigned char token_char = static_cast<unsigned char>(*it);
+-    tag <<= 8;
+-    tag |= token_char;
++  if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    size_t len = tag_string.length() < sizeof tag
++        ? tag_string.length() : sizeof tag;
++    memcpy(&tag, tag_string.data(), len);
++  } else {
++    // Iterate over every character from right to left.
++    for (auto it = tag_string.rbegin(); it != tag_string.rend(); ++it) {
++      // The cast here is required on platforms where char is signed.
++      unsigned char token_char = static_cast<unsigned char>(*it);
++      tag <<= 8;
++      tag |= token_char;
++    }
+   }
+   return tag;
+ }
+diff --git a/ossm/vendor/quiche/quiche/quic/core/quic_tag.h b/ossm/vendor/quiche/quiche/quic/core/quic_tag.h
+index 2736aac8a..36020ea48 100644
+--- a/ossm/vendor/quiche/quiche/quic/core/quic_tag.h
++++ b/ossm/vendor/quiche/quiche/quic/core/quic_tag.h
+@@ -24,7 +24,10 @@ namespace quic {
+ // just a mnemonic for the value 0x504d5845 (little-endian version of the ASCII
+ // string E X M P).
+ using QuicTag = uint32_t;
+-using QuicTagValueMap = std::map<QuicTag, std::string>;
++struct QUICHE_NO_EXPORT QuicTagLess {
++  bool operator()(const QuicTag& a, const QuicTag& b) const;
++};
++using QuicTagValueMap = std::map<QuicTag, std::string, QuicTagLess>;
+ using QuicTagVector = std::vector<QuicTag>;
+
+ // MakeQuicTag returns a value given the four bytes. For example:
+diff --git a/ossm/vendor/quiche/quiche/quic/core/quic_utils.cc b/ossm/vendor/quiche/quiche/quic/core/quic_utils.cc
+index cd18fb154..355aafdb4 100644
+--- a/ossm/vendor/quiche/quiche/quic/core/quic_utils.cc
++++ b/ossm/vendor/quiche/quiche/quic/core/quic_utils.cc
+@@ -137,8 +137,8 @@ absl::uint128 QuicUtils::FNV1a_128_Hash_Three(absl::string_view data1,
+
+ // static
+ void QuicUtils::SerializeUint128Short(absl::uint128 v, uint8_t* out) {
+-  const uint64_t lo = absl::Uint128Low64(v);
+-  const uint64_t hi = absl::Uint128High64(v);
++  const uint64_t lo = quiche::QuicheEndian::HostToLittleEndian64(absl::Uint128Low64(v));
++  const uint64_t hi = quiche::QuicheEndian::HostToLittleEndian64(absl::Uint128High64(v));
+   // This assumes that the system is little-endian.
+   memcpy(out, &lo, sizeof(lo));
+   memcpy(out + sizeof(lo), &hi, sizeof(hi) / 2);
+diff --git a/ossm/vendor/quiche/quiche/quic/core/quic_versions.cc b/ossm/vendor/quiche/quiche/quic/core/quic_versions.cc
+index 59f5c83e9..6fe12ca42 100644
+--- a/ossm/vendor/quiche/quiche/quic/core/quic_versions.cc
++++ b/ossm/vendor/quiche/quiche/quic/core/quic_versions.cc
+@@ -94,7 +94,11 @@ std::ostream& operator<<(std::ostream& os,
+ }
+
+ QuicVersionLabel MakeVersionLabel(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
+-  return MakeQuicTag(d, c, b, a);
++  if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
++    return MakeQuicTag(a, b, c, d);
++  } else {
++    return MakeQuicTag(d, c, b, a);
++  }
+ }
+
+ std::ostream& operator<<(std::ostream& os,
+diff --git a/ossm/vendor/quiche/quiche/quic/test_tools/crypto_test_utils.cc b/ossm/vendor/quiche/quiche/quic/test_tools/crypto_test_utils.cc
+index 1956dcf8d..52529bc15 100644
+--- a/ossm/vendor/quiche/quiche/quic/test_tools/crypto_test_utils.cc
++++ b/ossm/vendor/quiche/quiche/quic/test_tools/crypto_test_utils.cc
+@@ -48,6 +48,7 @@
+ #include "quiche/quic/test_tools/simple_quic_framer.h"
+ #include "quiche/quic/test_tools/test_certificates.h"
+ #include "quiche/common/platform/api/quiche_logging.h"
++#include "quiche/common/quiche_endian.h"
+ #include "quiche/common/quiche_callbacks.h"
+ #include "quiche/common/test_tools/quiche_test_utils.h"
+
+@@ -783,6 +784,7 @@ QuicTag ParseTag(const char* tagstr) {
+       tag |= static_cast<uint32_t>(tagstr[i]) << 24;
+     }
+   }
++  tag = quiche::QuicheEndian::HostToLittleEndian32(tag);
+
+   return tag;
+ }
+diff --git a/ossm/vendor/quiche/quiche/quic/test_tools/quic_test_utils.cc b/ossm/vendor/quiche/quiche/quic/test_tools/quic_test_utils.cc
+index 8e12b1ccc..d454e7f0d 100644
+--- a/ossm/vendor/quiche/quiche/quic/test_tools/quic_test_utils.cc
++++ b/ossm/vendor/quiche/quiche/quic/test_tools/quic_test_utils.cc
+@@ -263,7 +263,7 @@ bool MaybeUpdateSconePacket(const char* old_buffer, char* new_buffer,
+ uint64_t SimpleRandom::RandUint64() {
+   uint64_t result;
+   RandBytes(&result, sizeof(result));
+-  return result;
++  return quiche::QuicheEndian::HostToLittleEndian64(result);;
+ }
+
+ void SimpleRandom::RandBytes(void* data, size_t len) {
+@@ -297,6 +297,7 @@ void SimpleRandom::FillBuffer() {
+
+ void SimpleRandom::set_seed(uint64_t seed) {
+   static_assert(sizeof(key_) == SHA256_DIGEST_LENGTH, "Key has to be 256 bits");
++  seed = quiche::QuicheEndian::HostToLittleEndian64(seed);
+   SHA256(reinterpret_cast<const uint8_t*>(&seed), sizeof(seed), key_);
+
+   memset(buffer_, 0, sizeof(buffer_));
