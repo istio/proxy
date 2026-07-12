@@ -5,16 +5,16 @@ go 1.25.0
 require (
 	github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2
 	github.com/envoyproxy/go-control-plane v0.14.1-0.20260103185439-d6ff64e48402
-	github.com/envoyproxy/go-control-plane/contrib v1.36.1-0.20260704201305-e0b6b8bc5462
-	github.com/envoyproxy/go-control-plane/envoy v1.37.1-0.20260704201305-e0b6b8bc5462
+	github.com/envoyproxy/go-control-plane/contrib v1.36.1-0.20260711060602-2e68dcf16de3
+	github.com/envoyproxy/go-control-plane/envoy v1.37.1-0.20260711060602-2e68dcf16de3
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-cmp v0.7.0
 	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.46.0
 	go.opentelemetry.io/proto/otlp v1.10.0
 	go.starlark.net v0.0.0-20240123142251-f86470692795
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171
-	google.golang.org/grpc v1.81.1
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478
+	google.golang.org/grpc v1.82.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.4.0
@@ -30,5 +30,5 @@ require (
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260226221140-a57be14db171 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260414002931-afd174a4e478 // indirect
 )
