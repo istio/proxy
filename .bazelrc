@@ -10,8 +10,8 @@ import %workspace%/envoy.bazelrc
 # The 3GB limit causes memory pressure during large downloads which breaks gRPC remote cache connections
 # Also increase direct buffer memory for large file transfers
 # See: https://github.com/istio/proxy/pull/6726
-startup --host_jvm_args=-Xmx4g
-startup --host_jvm_args=-XX:MaxDirectMemorySize=4g
+startup --host_jvm_args=-Xmx5g
+startup --host_jvm_args=-XX:MaxDirectMemorySize=5g
 
 # Overrides workspace_status_command
 build --workspace_status_command=bazel/bazel_get_workspace_status
