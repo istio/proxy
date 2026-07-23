@@ -35,13 +35,13 @@ func main() {
 	flag.Parse()
 	envoyCoreExtensions, err := extensions(*envoyExtensionsBuildConfig, "EXTENSIONS")
 	if err != nil {
-		fmt.Printf("error: %v", err)
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
 	proxyExtensions, err := extensions(*proxyExtensionsBuildConfig, "ENVOY_EXTENSIONS")
 	if err != nil {
-		fmt.Printf("error: %v", err)
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -79,13 +79,18 @@ func main() {
 // The file is expected to be a starlark file that defines a global variable.
 // Depends on go.starlark.net/starlark.
 func extensions(filename, key string) (map[string]string, error) {
+	src, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
 	thread := &starlark.Thread{
 		Name:  "extensions",
 		Print: func(_ *starlark.Thread, msg string) { fmt.Println(msg) },
 	}
-	globals, err := starlark.ExecFile(thread, filename, nil, nil)
+	globals, err := starlark.ExecFile(thread, filename, stripLoadStatements(string(src)), nil)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	if v, ok := globals[key]; ok {
@@ -99,4 +104,34 @@ func extensions(filename, key string) (map[string]string, error) {
 	}
 
 	return nil, errors.New("no extensions found")
+}
+
+// stripLoadStatements removes Bazel load() statements so build config files can
+// be evaluated without resolving external repositories.
+func stripLoadStatements(src string) string {
+	lines := strings.Split(src, "\n")
+	filtered := make([]string, 0, len(lines))
+	skippingLoad := false
+	parenDepth := 0
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if !skippingLoad && strings.HasPrefix(trimmed, "load(") {
+			skippingLoad = true
+		}
+
+		if skippingLoad {
+			parenDepth += strings.Count(line, "(")
+			parenDepth -= strings.Count(line, ")")
+			if parenDepth <= 0 {
+				skippingLoad = false
+				parenDepth = 0
+			}
+			continue
+		}
+
+		filtered = append(filtered, line)
+	}
+
+	return strings.Join(filtered, "\n")
 }
