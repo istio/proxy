@@ -173,7 +173,10 @@ do
   if [ -n "${DST}" ]; then
     # Copy it to the bucket.
     echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
-    gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DWP_NAME}" "${DST}/"
+    # only do this if AWS_CONTAINER_CREDENTIALS_FULL_URI is not set, otherwise we will get an error from gsutil
+    if [ -z "${AWS_CONTAINER_CREDENTIALS_FULL_URI}" ]; then
+        gsutil cp "${BINARY_NAME}" "${SHA256_NAME}" "${DWP_NAME}" "${DST}/"
+    fi
 
     R2_DST="${DST/gs:\/\//s3:\/\/}"
     ENDPOINT="$(echo "${CF_CREDENTIALS}" | jq -r '.endpoint' | tr -d '\n')"
