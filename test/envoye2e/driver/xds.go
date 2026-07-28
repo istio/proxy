@@ -21,6 +21,7 @@ import (
 	"net"
 	"net/netip"
 
+	workloadapi "github.com/envoyproxy/go-control-plane/contrib/envoy/extensions/filters/common/workload_discovery/v3"
 	clusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	listenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
@@ -32,8 +33,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/server/v3"
 	"google.golang.org/grpc"
-
-	workloadapi "github.com/envoyproxy/go-control-plane/contrib/envoy/extensions/filters/common/workload_discovery/v3"
 )
 
 // XDS creates an xDS server

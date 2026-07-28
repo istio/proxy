@@ -77,7 +77,8 @@ func GetDefaultEnvoyBinOrDie() string {
 
 func IsHTTP3Enabled() bool {
 	buildArgs := os.Getenv("BAZEL_BUILD_ARGS")
-	args := []string{"cquery", "@envoy//bazel:http3",
+	args := []string{
+		"cquery", "@envoy//bazel:http3",
 		"--output=starlark",
 		"--starlark:expr=providers(target)[\"@@bazel_skylib//rules:common_settings.bzl%BuildSettingInfo\"].value",
 	}
