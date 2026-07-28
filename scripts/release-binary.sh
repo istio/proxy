@@ -79,11 +79,11 @@ if [ "${DST}" == "none" ]; then
   DST=""
 fi
 
-# Make sure the release binaries are built on x86_64 Ubuntu 18.04 (Bionic)
+# Make sure the release binaries are built on x86_64 Ubuntu 24.04 (Noble)
 if [ "${CHECK}" -eq 1 ] ; then
   if [[ "${BAZEL_BUILD_ARGS}" != *"--config=remote-"* ]]; then
     UBUNTU_RELEASE=${UBUNTU_RELEASE:-$(lsb_release -c -s)}
-    [[ "${UBUNTU_RELEASE}" == 'bionic' ]] || { echo 'Must run on Ubuntu Bionic.'; exit 1; }
+    [[ "${UBUNTU_RELEASE}" == 'noble' ]] || { echo 'Must run on Ubuntu Noble.'; exit 1; }
   fi
   [[ "$(uname -m)" == 'x86_64' ]] || { echo 'Must run on x86_64.'; exit 1; }
 fi
