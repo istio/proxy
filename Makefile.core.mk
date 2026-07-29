@@ -101,20 +101,10 @@ lint: lint-copyright-banner format-go lint-go tidy-go lint-scripts
 	@scripts/check-style.sh
 
 test_release:
-ifeq "$(shell uname -m)" "x86_64"
 	export BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
-else
-	# Only x86 has support for legacy GLIBC, otherwise pass -i to skip the check
-	export BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -i
-endif
 
 push_release:
-ifeq "$(shell uname -m)" "x86_64"
 	export BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
-else
-	# Only x86 has support for legacy GLIBC, otherwise pass -i to skip the check
-	export BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -i -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
-endif
 
 # Used by build container to export the build output from the docker volume cache
 exportcache: BAZEL_BIN_PATH ?= $(shell bazel info $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) bazel-bin)
