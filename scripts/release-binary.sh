@@ -41,9 +41,6 @@ fi
 # The bucket name to store proxy binaries.
 DST=""
 
-# Verify that we're building binaries on Ubuntu 18.04 (Bionic).
-CHECK=1
-
 # Defines the base binary name for artifacts. For example, this will be "envoy-debug".
 BASE_BINARY_NAME="${BASE_BINARY_NAME:-"envoy"}"
 
@@ -53,15 +50,13 @@ BUILD_ENVOY_BINARY_ONLY="${BUILD_ENVOY_BINARY_ONLY:-0}"
 function usage() {
   echo "$0
     -d  The bucket name to store proxy binary (optional).
-        If not provided, both envoy binary push and docker image push are skipped.
-    -i  Skip Ubuntu Bionic check. DO NOT USE THIS FOR RELEASED BINARIES."
+        If not provided, both envoy binary push and docker image push are skipped."
   exit 1
 }
 
-while getopts d:i arg ; do
+while getopts d: arg ; do
   case "${arg}" in
     d) DST="${OPTARG}";;
-    i) CHECK=0;;
     *) usage;;
   esac
 done
@@ -79,14 +74,8 @@ if [ "${DST}" == "none" ]; then
   DST=""
 fi
 
-# Make sure the release binaries are built on x86_64 Ubuntu 24.04 (Noble)
-if [ "${CHECK}" -eq 1 ] ; then
-  if [[ "${BAZEL_BUILD_ARGS}" != *"--config=remote-"* ]]; then
-    UBUNTU_RELEASE=${UBUNTU_RELEASE:-$(lsb_release -c -s)}
-    [[ "${UBUNTU_RELEASE}" == 'noble' ]] || { echo 'Must run on Ubuntu Noble.'; exit 1; }
-  fi
-  [[ "$(uname -m)" == 'x86_64' ]] || { echo 'Must run on x86_64.'; exit 1; }
-fi
+# Expected glibc version from the hermetic sysroot configured in WORKSPACE.
+EXPECTED_GLIBC=$(grep -oP 'glibc_version\s*=\s*"\K[^"]+' WORKSPACE)
 
 # The proxy binary name.
 SHA="$(git rev-parse --verify HEAD)"
@@ -169,6 +158,22 @@ do
   cp -f "${BAZEL_TARGET}" "${BINARY_NAME}"
   cp -f "${DWP_TARGET}" "${DWP_NAME}"
   sha256sum "${BINARY_NAME}" > "${SHA256_NAME}"
+
+  # Verify the binary doesn't require a newer glibc than the hermetic sysroot provides.
+  if [ -n "${EXPECTED_GLIBC}" ]; then
+    VERIFY_TMPDIR=$(mktemp -d)
+    tar xf "${BINARY_NAME}" -C "${VERIFY_TMPDIR}"
+    ENVOY_BIN=$(find "${VERIFY_TMPDIR}" -name envoy -type f)
+    MAX_GLIBC=$(readelf -V "${ENVOY_BIN}" 2>/dev/null \
+      | grep -oP 'GLIBC_\K[0-9]+\.[0-9]+' \
+      | sort -uV | tail -1)
+    rm -rf "${VERIFY_TMPDIR}"
+    if [ "$(printf '%s\n' "${EXPECTED_GLIBC}" "${MAX_GLIBC}" | sort -V | tail -1)" != "${EXPECTED_GLIBC}" ]; then
+      echo "ERROR: ${config} binary requires GLIBC_${MAX_GLIBC}, but sysroot targets ${EXPECTED_GLIBC}"
+      exit 1
+    fi
+    echo "OK: ${config} binary requires GLIBC_${MAX_GLIBC} (<= sysroot ${EXPECTED_GLIBC})"
+  fi
 
   if [ -n "${DST}" ]; then
     # Copy it to the bucket.
