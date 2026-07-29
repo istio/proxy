@@ -1,5 +1,3 @@
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
-
 ENVOY_EXTENSIONS = {
     #
     # Access loggers
