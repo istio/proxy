@@ -69,17 +69,19 @@ CREDS="google_default_credentials"
 # Use GCP service account when available.
 if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
   echo "Using legacy GOOGLE_APPLICATION_CREDENTIALS. Move to workload identity!" >&2
-  gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
-  CREDS="google_credentials=${GOOGLE_APPLICATION_CREDENTIALS}"
+  gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}" CREDS="google_credentials=${GOOGLE_APPLICATION_CREDENTIALS}"
 fi
 
 BAZEL_BUILD_RBE_JOBS="${BAZEL_BUILD_RBE_JOBS:-200}"
-if [[ -n "${BAZEL_BUILD_RBE_INSTANCE}" ]]; then
-  if [[ "${BAZEL_BUILD_RBE_JOBS}" -gt 0 ]]; then
-    echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE} (execute)"
-    export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --${CREDS} --config=remote-clang-libc++ --config=remote-ci --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --jobs=${BAZEL_BUILD_RBE_JOBS}"
-  elif [[ -n "${BAZEL_BUILD_RBE_CACHE}" ]]; then
+if [[ "${BAZEL_BUILD_RBE_JOBS}" -gt 0 && -n "${BAZEL_BUILD_RBE_INSTANCE}" ]]; then
+  echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE} (execute)"
+  export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --${CREDS} --config=remote-clang-libc++ --config=remote-ci --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --jobs=${BAZEL_BUILD_RBE_JOBS}"
+elif [[ -n "${BAZEL_BUILD_RBE_CACHE}" ]]; then
+  if [[ -n "${BAZEL_BUILD_RBE_INSTANCE}" ]]; then
     echo "Using RBE: ${BAZEL_BUILD_RBE_INSTANCE} (cache)"
     export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --${CREDS} --remote_instance_name=${BAZEL_BUILD_RBE_INSTANCE} --remote_cache=${BAZEL_BUILD_RBE_CACHE}"
+  else
+    echo "Using remote cache: ${BAZEL_BUILD_RBE_CACHE}"
+    export BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --remote_cache=${BAZEL_BUILD_RBE_CACHE}"
   fi
 fi
