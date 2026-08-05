@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
 )
 
 var (
@@ -83,7 +84,7 @@ func extensions(filename, key string) (map[string]string, error) {
 		Name:  "extensions",
 		Print: func(_ *starlark.Thread, msg string) { fmt.Println(msg) },
 	}
-	globals, err := starlark.ExecFile(thread, filename, nil, nil)
+	globals, err := starlark.ExecFileOptions(syntax.LegacyFileOptions(), thread, filename, nil, nil)
 	if err != nil {
 		panic(err)
 	}

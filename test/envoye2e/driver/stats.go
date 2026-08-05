@@ -24,6 +24,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 	"google.golang.org/protobuf/testing/protocmp"
 
 	"istio.io/proxy/test/envoye2e/env"
@@ -48,7 +49,8 @@ func (s *Stats) Run(p *Params) error {
 			return err
 		}
 		reader := strings.NewReader(body)
-		metrics, err = (&expfmt.TextParser{}).TextToMetricFamilies(reader)
+		parser := expfmt.NewTextParser(model.UTF8Validation)
+		metrics, err = parser.TextToMetricFamilies(reader)
 		if err != nil {
 			return err
 		}
