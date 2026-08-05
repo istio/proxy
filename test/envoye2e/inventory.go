@@ -22,6 +22,7 @@ var ProxyE2ETests = &env.TestInventory{}
 
 func init() {
 	ProxyE2ETests.Tests = append(ProxyE2ETests.Tests, []string{
+		"TestExtensionsBuildConfig",
 		"TestAttributeGen",
 		"TestBasicFlow",
 		"TestBasicHTTP",
