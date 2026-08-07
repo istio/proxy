@@ -45,6 +45,9 @@ build:macos --define tcmalloc=disabled
 # Build with embedded V8-based WebAssembly runtime.
 build --define wasm=v8
 
+# Enable kill_request filter (disabled by default in Envoy via enabled_default = False).
+build --@envoy//source/extensions/filters/http/kill_request:enabled
+
 # Build Proxy-WASM plugins as native extensions.
 build --copt -DNULL_PLUGIN
 
