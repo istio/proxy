@@ -9,10 +9,10 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/envoyproxy/go-control-plane v0.14.1-0.20260804155219-b18f642dbd8e h1:M57pKP7tenYPd6H2I/WmNvtqOAY7ZJLWAwUebxUHSX0=
 github.com/envoyproxy/go-control-plane v0.14.1-0.20260804155219-b18f642dbd8e/go.mod h1:rcDQvjX9fwNQvh7l9pxwfGBufBWU6xQ0zK5mcsH8/Lg=
-github.com/envoyproxy/go-control-plane/contrib v1.36.1-0.20260804155219-b18f642dbd8e h1:E6PomJbOevEe+FaLAnNufJBT+MUg7x3ioEIE9iOUsiI=
-github.com/envoyproxy/go-control-plane/contrib v1.36.1-0.20260804155219-b18f642dbd8e/go.mod h1:pdjA+146jsWRsJ0M1jgfRrvJq1HPWeyvaT/Va+nV2OY=
-github.com/envoyproxy/go-control-plane/envoy v1.37.1-0.20260804155219-b18f642dbd8e h1:wOinr/CWG7DVYgryeijZN/ZJh9XUMA/PODoIOwTBsRU=
-github.com/envoyproxy/go-control-plane/envoy v1.37.1-0.20260804155219-b18f642dbd8e/go.mod h1:rYoRI6N8FcjZVmmeKqH8/ykAhfro9Bg8+of2IpBseyQ=
+github.com/envoyproxy/go-control-plane/contrib v1.36.1-0.20260808095156-3dbe1b20ce18 h1:FsnYB6u4HYXYWSC5hdCbERK+bJeK/AmqlAe5RMe8IYY=
+github.com/envoyproxy/go-control-plane/contrib v1.36.1-0.20260808095156-3dbe1b20ce18/go.mod h1:Mq7tNxsmJ0dhtsMobSo752FdW0R5IBQF2A+Idw+XNo4=
+github.com/envoyproxy/go-control-plane/envoy v1.37.1-0.20260808095156-3dbe1b20ce18 h1:WHtiKk3sazEIo8yQHHPNYnaWinnhGUZ3ctEMLi0kty0=
+github.com/envoyproxy/go-control-plane/envoy v1.37.1-0.20260808095156-3dbe1b20ce18/go.mod h1:tjY7cZvIhlQAKRpob4GSOkZYAqtoTPtgWZXGhOTWbhQ=
 github.com/envoyproxy/go-control-plane/ratelimit v0.1.0 h1:/G9QYbddjL25KvtKTv3an9lx6VBE2cnb8wp1vEGNYGI=
 github.com/envoyproxy/go-control-plane/ratelimit v0.1.0/go.mod h1:Wk+tMFAFbCXaJPzVVHnPgRKdUdwW/KdbRt94AzgRee4=
 github.com/envoyproxy/protoc-gen-validate v1.3.3 h1:MVQghNeW+LZcmXe7SY1V36Z+WFMDjpqGAGacLe2T0ds=
