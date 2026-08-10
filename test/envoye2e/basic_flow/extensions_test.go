@@ -67,6 +67,14 @@ var excludedExtensions = map[string]string{
 	"envoy.resource_monitors.downstream_connections": "proactive resource monitor, not in /server_info",
 }
 
+// Extensions gated behind envoy_select_enable_http3; absent when built with --config=openssl.
+var http3Extensions = toSet([]string{
+	"envoy.quic.crypto_stream.server.quiche",
+	"envoy.quic.deterministic_connection_id_generator",
+	"envoy.quic.proof_source.filter_chain",
+	"envoy.udp_packet_writer.gso",
+})
+
 // TestExtensionsBuildConfig verifies that the built Envoy binary contains all
 // extensions defined in bazel/extension_config/extensions_build_config.bzl.
 func TestExtensionsBuildConfig(t *testing.T) {
@@ -126,11 +134,20 @@ func verifyExtensions(t *testing.T, adminPort uint16, configured []string) error
 	}
 	log.Printf("binary reports %d registered extensions", len(registered))
 
+	http3Enabled := registered["envoy.quic.crypto_stream.server.quiche"]
+	if !http3Enabled {
+		t.Log("HTTP/3 not enabled in this build; skipping QUIC extensions")
+	}
+
 	var missing []string
 	verified := 0
 	for _, bzlKey := range configured {
 		if reason, ok := excludedExtensions[bzlKey]; ok {
 			t.Logf("skipping %s: %s", bzlKey, reason)
+			continue
+		}
+		if !http3Enabled && http3Extensions[bzlKey] {
+			t.Logf("skipping %s: HTTP/3 not enabled", bzlKey)
 			continue
 		}
 
