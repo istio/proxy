@@ -1,0 +1,407 @@
+From 9478f1a871b4251d82672ee4facbc2415333db76 Mon Sep 17 00:00:00 2001
+From: Dan Zhang <danzh@google.com>
+Date: Mon, 20 Jul 2026 15:16:03 +0000
+Subject: [PATCH 02/13] quiche: patch oghttp2 to validate trailers END_STREAM
+ flag and add integration tests
+
+Fix: [GHSA-jjmm-fw8p-crpw](https://github.com/envoyproxy/envoy/security/advisories/GHSA-jjmm-fw8p-crpw)
+
+Enforce HTTP/2 RFC 9113 Section 8.1 in QUICHE oghttp2 codec: trailers MUST have
+END_STREAM set. This prevents stream state corruption and UAF vulnerabilities when
+malicious upstream servers send response trailers without END_STREAM.
+
+Also add integration tests in multiplexed_integration_test.cc to test upstream response
+trailers without END_STREAM.
+
+Signed-off-by: Dan Zhang <danzh@google.com>
+Signed-off-by: Ryan Northey <ryan@synca.io>
+---
+ bazel/external/oghttp2_trailer_fix.patch      | 191 ++++++++++++++++++
+ bazel/repositories.bzl                        |   6 +-
+ ...tp2__fix-crash-on-trailers-without-eos.rst |   4 +
+ .../multiplexed_integration_test.cc           | 143 +++++++++++++
+ 4 files changed, 343 insertions(+), 1 deletion(-)
+ create mode 100644 bazel/external/oghttp2_trailer_fix.patch
+ create mode 100644 changelogs/current/bug_fixes/http2__fix-crash-on-trailers-without-eos.rst
+
+diff --git a/bazel/external/oghttp2_trailer_fix.patch b/bazel/external/oghttp2_trailer_fix.patch
+new file mode 100644
+index 0000000000..f2bd10672d
+--- /dev/null
++++ b/bazel/external/oghttp2_trailer_fix.patch
+@@ -0,0 +1,191 @@
++diff --git a/quiche/http2/adapter/oghttp2_session.cc b/quiche/http2/adapter/oghttp2_session.cc
++index 74584c0..be5c1d2 100644
++--- a/quiche/http2/adapter/oghttp2_session.cc
+++++ b/quiche/http2/adapter/oghttp2_session.cc
++@@ -276,6 +276,13 @@ void OgHttp2Session::PassthroughHeadersHandler::OnHeaderBlockEnd(
++     SetResult(OnHeaderResult::HEADER_HTTP_MESSAGING);
++     return;
++   }
+++  if ((type_ == HeaderType::REQUEST_TRAILER ||
+++       type_ == HeaderType::RESPONSE_TRAILER) &&
+++      !frame_contains_fin_) {
+++    QUICHE_VLOG(1) << "Trailers must contain END_STREAM";
+++    SetResult(OnHeaderResult::HEADER_HTTP_MESSAGING);
+++    return;
+++  }
++   if (frame_contains_fin_ && IsResponse(type_) &&
++       StatusIs1xx(status_header())) {
++     QUICHE_VLOG(1) << "Unexpected end of stream without final headers";
++diff --git a/quiche/http2/adapter/oghttp2_session_test.cc b/quiche/http2/adapter/oghttp2_session_test.cc
++index 654bde1..8267fae 100644
++--- a/quiche/http2/adapter/oghttp2_session_test.cc
+++++ b/quiche/http2/adapter/oghttp2_session_test.cc
++@@ -1079,6 +1079,168 @@ TEST(OgHttp2SessionTest, ServerSeesErrorOnEndStream) {
++   EXPECT_FALSE(session.want_write());
++ }
++ 
+++TEST(OgHttp2SessionTest, ClientReceivesTrailersWithoutEndStream) {
+++  TestVisitor visitor;
+++  OgHttp2Session::Options options;
+++  options.perspective = Perspective::kClient;
+++  OgHttp2Session session(visitor, options);
+++
+++  // Send client preface.
+++  EXPECT_CALL(visitor, OnBeforeFrameSent(SETTINGS, 0, _, 0x0));
+++  EXPECT_CALL(visitor, OnFrameSent(SETTINGS, 0, _, 0x0, 0));
+++  int send_result = session.Send();
+++  EXPECT_EQ(0, send_result);
+++  visitor.Clear();
+++
+++  // Submit a request.
+++  int stream_id =
+++      session.SubmitRequest(ToHeaders({{":method", "GET"},
+++                                       {":scheme", "http"},
+++                                       {":authority", "example.com"},
+++                                       {":path", "/"}}),
+++                            true, nullptr);
+++  ASSERT_EQ(stream_id, 1);
+++
+++  // Send the request HEADERS.
+++  // 0x5 is END_STREAM | END_HEADERS.
+++  EXPECT_CALL(visitor, OnBeforeFrameSent(HEADERS, stream_id, _, 0x5));
+++  EXPECT_CALL(visitor, OnFrameSent(HEADERS, stream_id, _, 0x5, 0));
+++  send_result = session.Send();
+++  EXPECT_EQ(0, send_result);
+++  visitor.Clear();
+++
+++  // Server sends preface, response headers, and then invalid trailers.
+++  const std::string frames = TestFrameSequence()
+++                                 .ServerPreface()
+++                                 .Headers(1, {{":status", "200"}},
+++                                          /*fin=*/false)
+++                                 // Trailers without END_STREAM (fin=false)
+++                                 .Headers(1, {{"final-status", "a-ok"}},
+++                                          /*fin=*/false)
+++                                 .Serialize();
+++
+++  testing::InSequence s;
+++
+++  // Server preface (empty SETTINGS)
+++  EXPECT_CALL(visitor, OnFrameHeader(0, 0, SETTINGS, 0));
+++  EXPECT_CALL(visitor, OnSettingsStart());
+++  EXPECT_CALL(visitor, OnSettingsEnd());
+++
+++  // Response headers (4 is END_HEADERS)
+++  EXPECT_CALL(visitor, OnFrameHeader(stream_id, _, HEADERS, 4));
+++  EXPECT_CALL(visitor, OnBeginHeadersForStream(stream_id));
+++  EXPECT_CALL(visitor, OnHeaderForStream(stream_id, ":status", "200"));
+++  EXPECT_CALL(visitor, OnEndHeadersForStream(stream_id));
+++
+++  // Trailers (4 is END_HEADERS)
+++  EXPECT_CALL(visitor, OnFrameHeader(stream_id, _, HEADERS, 4));
+++  EXPECT_CALL(visitor, OnBeginHeadersForStream(stream_id));
+++  EXPECT_CALL(visitor, OnHeaderForStream(stream_id, "final-status", "a-ok"));
+++
+++  // The fix should trigger OnInvalidFrame because of the missing END_STREAM.
+++  EXPECT_CALL(
+++      visitor,
+++      OnInvalidFrame(stream_id,
+++                     Http2VisitorInterface::InvalidFrameError::kHttpMessaging));
+++
+++  const int64_t result = session.ProcessBytes(frames);
+++  EXPECT_EQ(frames.size(), static_cast<size_t>(result));
+++
+++  // Session should want to write SETTINGS ACK and RST_STREAM.
+++  EXPECT_TRUE(session.want_write());
+++
+++  // We expect SETTINGS ACK.
+++  EXPECT_CALL(visitor, OnBeforeFrameSent(SETTINGS, 0, 0, 0x1));
+++  EXPECT_CALL(visitor, OnFrameSent(SETTINGS, 0, 0, 0x1, 0));
+++
+++  // We expect RST_STREAM due to the invalid trailers.
+++  EXPECT_CALL(visitor, OnBeforeFrameSent(RST_STREAM, stream_id, _, 0x0));
+++  EXPECT_CALL(visitor,
+++              OnFrameSent(RST_STREAM, stream_id, _, 0x0,
+++                          static_cast<int>(Http2ErrorCode::PROTOCOL_ERROR)));
+++  EXPECT_CALL(visitor,
+++              OnCloseStream(stream_id, Http2ErrorCode::HTTP2_NO_ERROR));
+++
+++  send_result = session.Send();
+++  EXPECT_EQ(0, send_result);
+++}
+++
+++// Regression test for receiving a second HEADERS frame without
+++// END_STREAM on an existing stream on server side.
+++// In current implementation, it is misinterpreted by
+++// OgHttp2Session::OnHeaders as an attempt to open a new stream. Since the
+++// stream ID has already been processed, it immediately triggers a
+++// ConnectionError::kInvalidNewStreamId (connection error) before our
+++// validation logic in OnHeaderBlockEnd can run. This still safely prevents
+++// the UAF/crash, albeit via a connection teardown instead of a stream reset.
+++TEST(OgHttp2SessionTest, ServerReceivesTrailersWithoutEndStream) {
+++  TestVisitor visitor;
+++  OgHttp2Session::Options options;
+++  options.perspective = Perspective::kServer;
+++  OgHttp2Session session(visitor, options);
+++
+++  // Send server preface (initial settings).
+++  EXPECT_CALL(visitor, OnBeforeFrameSent(SETTINGS, 0, _, 0x0));
+++  EXPECT_CALL(visitor, OnFrameSent(SETTINGS, 0, _, 0x0, 0));
+++  int send_result = session.Send();
+++  EXPECT_EQ(0, send_result);
+++  visitor.Clear();
+++
+++  // Client sends preface, request headers, and then invalid trailers.
+++  const std::string frames = TestFrameSequence()
+++                                 .ClientPreface()
+++                                 .Headers(1,
+++                                          {{":method", "POST"},
+++                                           {":scheme", "https"},
+++                                           {":authority", "example.com"},
+++                                           {":path", "/"}},
+++                                          /*fin=*/false)
+++                                 // Trailers without END_STREAM (fin=false)
+++                                 .Headers(1, {{"customer-header", "value"}},
+++                                          /*fin=*/false)
+++                                 .Serialize();
+++
+++  testing::InSequence s;
+++
+++  // Client preface (empty SETTINGS)
+++  EXPECT_CALL(visitor, OnFrameHeader(0, 0, SETTINGS, 0));
+++  EXPECT_CALL(visitor, OnSettingsStart());
+++  EXPECT_CALL(visitor, OnSettingsEnd());
+++
+++  // Request headers (4 is END_HEADERS)
+++  EXPECT_CALL(visitor, OnFrameHeader(1, _, HEADERS, 4));
+++  EXPECT_CALL(visitor, OnBeginHeadersForStream(1));
+++  EXPECT_CALL(visitor, OnHeaderForStream(1, ":method", "POST"));
+++  EXPECT_CALL(visitor, OnHeaderForStream(1, ":scheme", "https"));
+++  EXPECT_CALL(visitor, OnHeaderForStream(1, ":authority", "example.com"));
+++  EXPECT_CALL(visitor, OnHeaderForStream(1, ":path", "/"));
+++  EXPECT_CALL(visitor, OnEndHeadersForStream(1));
+++
+++  // Trailers (4 is END_HEADERS)
+++  EXPECT_CALL(visitor, OnFrameHeader(1, _, HEADERS, 4));
+++
+++  // It fails immediately in OnHeaders because fin is false on an existing
+++  // stream, which is interpreted as a new stream with an invalid (already used)
+++  // ID.
+++  EXPECT_CALL(visitor,
+++              OnConnectionError(
+++                  Http2VisitorInterface::ConnectionError::kInvalidNewStreamId));
+++
+++  const int64_t result = session.ProcessBytes(frames);
+++  EXPECT_GT(result, 0);
+++
+++  // Session should want to write GOAWAY.
+++  EXPECT_TRUE(session.want_write());
+++
+++  // We expect GOAWAY.
+++  EXPECT_CALL(visitor, OnBeforeFrameSent(GOAWAY, 0, _, 0x0));
+++  EXPECT_CALL(visitor,
+++              OnFrameSent(GOAWAY, 0, _, 0x0, 1));  // 1 is PROTOCOL_ERROR
+++
+++  send_result = session.Send();
+++  EXPECT_EQ(0, send_result);
+++}
+++
++ }  // namespace test
++ }  // namespace adapter
++ }  // namespace http2
+diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
+index dd27d9ed6f..b24a46adb0 100644
+--- a/bazel/repositories.bzl
++++ b/bazel/repositories.bzl
+@@ -737,7 +737,11 @@ def _com_github_google_quiche():
+     external_http_archive(
+         name = "com_github_google_quiche",
+         patch_args = ["-p1"],
+-        patches = ["@envoy//bazel:quiche.patch"],
++        patches = [
++            "@envoy//bazel:quiche.patch",
++            "@envoy//bazel/external:oghttp2_trailer_fix.patch",
++        ],
++        patch_tool = "patch",
+         patch_cmds = ["find quiche/ -type f -name \"*.bazel\" -delete"],
+         build_file = "@envoy//bazel/external:quiche.BUILD",
+     )
+diff --git a/changelogs/current/bug_fixes/http2__fix-crash-on-trailers-without-eos.rst b/changelogs/current/bug_fixes/http2__fix-crash-on-trailers-without-eos.rst
+new file mode 100644
+index 0000000000..593349a0b1
+--- /dev/null
++++ b/changelogs/current/bug_fixes/http2__fix-crash-on-trailers-without-eos.rst
+@@ -0,0 +1,4 @@
++Fix: `GHSA-jjmm-fw8p-crpw <https://github.com/envoyproxy/envoy/security/advisories/GHSA-jjmm-fw8p-crpw>`_
++
++Fixed abnormal process termination when Envoy receives trailers without the END_STREAM flag
++over HTTP/2 protocol.
+diff --git a/test/integration/multiplexed_integration_test.cc b/test/integration/multiplexed_integration_test.cc
+index 44e9be595b..2699a94a7b 100644
+--- a/test/integration/multiplexed_integration_test.cc
++++ b/test/integration/multiplexed_integration_test.cc
+@@ -2390,6 +2390,149 @@ TEST_P(Http2FrameIntegrationTest, SetDetailsTwice) {
+   EXPECT_THAT(waitForAccessLog(access_log_name_), HasSubstr("too_many_headers"));
+ }
+ 
++TEST_P(Http2FrameIntegrationTest, UpstreamResponseTrailersWithoutEndStream) {
++  beginSession();
++
++  // Downstream → Envoy: header-only GET (END_STREAM|END_HEADERS).
++  sendFrame(Http2Frame::makeRequest(1, "host", "/"));
++
++  // Envoy → upstream: grab the raw upstream TCP connection.
++  FakeRawConnectionPtr upstream;
++  ASSERT_TRUE(fake_upstreams_[0]->waitForRawConnection(upstream));
++
++  // Wait until Envoy has actually written its preface + SETTINGS + request
++  // HEADERS to the upstream so the client codec stream-1 exists and is
++  // half_closed_local (we sent a header-only GET).
++  std::string observed;
++  ASSERT_TRUE(upstream->waitForData(FakeRawConnection::waitForAtLeastBytes(40), &observed));
++
++  // Craft the malicious upstream response, all in one write so the client
++  // codec processes it in a single dispatch():
++  //   1. SETTINGS (server preface)
++  //   2. SETTINGS ACK
++  //   3. HEADERS stream=1 :status=200, END_HEADERS only (no END_STREAM)
++  //   4. HEADERS stream=1 trailer "x: y", END_HEADERS only (no END_STREAM)
++  //      ← oghttp2 delivers this as RESPONSE_TRAILER without fin; Envoy's
++  //        onHeaders() sees flags & END_STREAM == 0 and fires
++  //        ASSERT(stream->remote_end_stream_).
++  //   5. HEADERS stream=1 trailer again, END_HEADERS|END_STREAM — in a
++  //      release build (ASSERT compiled out) step 4 ran decodeTrailers()
++  //      and freed the ActiveRequest; this third HEADERS dereferences the
++  //      dangling response_decoder_.
++  std::string buf;
++  absl::StrAppend(&buf, std::string(Http2Frame::makeEmptySettingsFrame()));
++  absl::StrAppend(&buf,
++                  std::string(Http2Frame::makeEmptySettingsFrame(Http2Frame::SettingsFlags::Ack)));
++
++  // Response headers: :status 200, END_HEADERS only.
++  absl::StrAppend(&buf, std::string(Http2Frame::makeHeadersFrameWithStatus(
++                            "200", 1, Http2Frame::HeadersFlags::EndHeaders)));
++
++  // Trailers WITHOUT END_STREAM: a single regular header, END_HEADERS only.
++  {
++    Http2Frame trailers =
++        Http2Frame::makeEmptyHeadersFrame(1, Http2Frame::HeadersFlags::EndHeaders);
++    trailers.appendHeaderWithoutIndexing(Http2Frame::Header("x", "y"));
++    trailers.adjustPayloadSize();
++    absl::StrAppend(&buf, std::string(trailers));
++  }
++
++  // Third HEADERS (release-build UAF amplifier).
++  {
++    Http2Frame extra = Http2Frame::makeEmptyHeadersFrame(
++        1, static_cast<Http2Frame::HeadersFlags>(Http::Http2::orFlags(
++               Http2Frame::HeadersFlags::EndStream, Http2Frame::HeadersFlags::EndHeaders)));
++    extra.appendHeaderWithoutIndexing(Http2Frame::Header("x", "z"));
++    extra.adjustPayloadSize();
++    absl::StrAppend(&buf, std::string(extra));
++  }
++
++  ASSERT_TRUE(upstream->write(buf));
++
++  // We expect HEADERS (response headers) first.
++  Http2Frame response = readFrame();
++  EXPECT_EQ(Http2Frame::Type::Headers, response.type());
++
++  // Then we expect RST_STREAM.
++  Http2Frame reset = readFrame();
++  EXPECT_EQ(Http2Frame::Type::RstStream, reset.type());
++
++  tcp_client_->close();
++
++  if (upstream->connected()) {
++    ASSERT_TRUE(upstream->close());
++  }
++}
++
++TEST_P(Http2FrameIntegrationTest, UpstreamResponseTrailersWithoutEndStream_DataFrameAmplifier) {
++  beginSession();
++
++  // Downstream → Envoy: header-only GET (END_STREAM|END_HEADERS).
++  sendFrame(Http2Frame::makeRequest(1, "host", "/"));
++
++  // Envoy → upstream: grab the raw upstream TCP connection.
++  FakeRawConnectionPtr upstream;
++  ASSERT_TRUE(fake_upstreams_[0]->waitForRawConnection(upstream));
++
++  // Wait until Envoy has actually written its preface + SETTINGS + request
++  // HEADERS to the upstream so the client codec stream-1 exists and is
++  // half_closed_local (we sent a header-only GET).
++  std::string observed;
++  ASSERT_TRUE(upstream->waitForData(FakeRawConnection::waitForAtLeastBytes(40), &observed));
++
++  // Craft the malicious upstream response, all in one write so the client
++  // codec processes it in a single dispatch():
++  //   1. SETTINGS (server preface)
++  //   2. SETTINGS ACK
++  //   3. HEADERS stream=1 :status=200, END_HEADERS only (no END_STREAM)
++  //   4. HEADERS stream=1 trailer "x: y", END_HEADERS only (no END_STREAM)
++  //      ← oghttp2 delivers this as RESPONSE_TRAILER without fin; Envoy's
++  //        onHeaders() sees flags & END_STREAM == 0 and fires
++  //        ASSERT(stream->remote_end_stream_).
++  //   5. DATA stream=1 empty, END_STREAM — in a release build (ASSERT
++  //      compiled out) step 4 ran decodeTrailers() and freed the ActiveRequest;
++  //      this DATA frame dereferences the dangling response_decoder_.
++  std::string buf;
++  absl::StrAppend(&buf, std::string(Http2Frame::makeEmptySettingsFrame()));
++  absl::StrAppend(&buf,
++                  std::string(Http2Frame::makeEmptySettingsFrame(Http2Frame::SettingsFlags::Ack)));
++
++  // Response headers: :status 200, END_HEADERS only.
++  absl::StrAppend(&buf, std::string(Http2Frame::makeHeadersFrameWithStatus(
++                            "200", 1, Http2Frame::HeadersFlags::EndHeaders)));
++
++  // Trailers WITHOUT END_STREAM: a single regular header, END_HEADERS only.
++  {
++    Http2Frame trailers =
++        Http2Frame::makeEmptyHeadersFrame(1, Http2Frame::HeadersFlags::EndHeaders);
++    trailers.appendHeaderWithoutIndexing(Http2Frame::Header("x", "y"));
++    trailers.adjustPayloadSize();
++    absl::StrAppend(&buf, std::string(trailers));
++  }
++
++  // Third frame (release-build UAF amplifier): empty DATA frame with END_STREAM.
++  {
++    Http2Frame extra = Http2Frame::makeEmptyDataFrame(1, Http2Frame::DataFlags::EndStream);
++    absl::StrAppend(&buf, std::string(extra));
++  }
++
++  ASSERT_TRUE(upstream->write(buf));
++
++  // We expect HEADERS (response headers) first.
++  Http2Frame response = readFrame();
++  EXPECT_EQ(Http2Frame::Type::Headers, response.type());
++
++  // Then we expect RST_STREAM.
++  Http2Frame reset = readFrame();
++  EXPECT_EQ(Http2Frame::Type::RstStream, reset.type());
++
++  tcp_client_->close();
++
++  if (upstream->connected()) {
++    ASSERT_TRUE(upstream->close());
++  }
++}
++
+ TEST_P(Http2FrameIntegrationTest, AdjustUpstreamSettingsMaxStreams) {
+   // Configure max concurrent streams to 2.
+   config_helper_.addConfigModifier([&](envoy::config::bootstrap::v3::Bootstrap& bootstrap) -> void {
+-- 
+2.54.0
+

@@ -1,0 +1,252 @@
+From 069688c53a41c23253ea7c600c96759a0ce995d9 Mon Sep 17 00:00:00 2001
+From: Yan Avlasov <yavlasov@google.com>
+Date: Tue, 28 Jul 2026 02:58:31 +0000
+Subject: [PATCH 07/13] stats: sanitize stat names on html conversion
+
+Fix: [GHSA-pv9h-4fxf-7vrg](https://github.com/envoyproxy/envoy/security/advisories/GHSA-pv9h-4fxf-7vrg)
+
+Signed-off-by: Yan Avlasov <yavlasov@google.com>
+Signed-off-by: Adi Suissa-Peleg <adip@google.com>
+Signed-off-by: Ryan Northey <ryan@synca.io>
+---
+ .../bug_fixes/html__sanitize-stat-name.rst    |  4 +++
+ source/common/html/utility.h                  |  9 ++++++
+ source/common/runtime/runtime_features.cc     |  1 +
+ source/server/admin/stats_html_render.cc      | 27 ++++++++++++++++--
+ source/server/admin/stats_html_render.h       | 10 +++++--
+ test/integration/integration_admin_test.cc    | 22 +++++++++++++++
+ test/server/admin/BUILD                       |  1 +
+ test/server/admin/stats_html_render_test.cc   | 28 +++++++++++++++++++
+ 8 files changed, 96 insertions(+), 6 deletions(-)
+ create mode 100644 changelogs/current/bug_fixes/html__sanitize-stat-name.rst
+
+diff --git a/changelogs/current/bug_fixes/html__sanitize-stat-name.rst b/changelogs/current/bug_fixes/html__sanitize-stat-name.rst
+new file mode 100644
+index 0000000000..0599a6a360
+--- /dev/null
++++ b/changelogs/current/bug_fixes/html__sanitize-stat-name.rst
+@@ -0,0 +1,4 @@
++Fix: `GHSA-pv9h-4fxf-7vrg <https://github.com/envoyproxy/envoy/security/advisories/GHSA-pv9h-4fxf-7vrg>`_
++
++Sanitize stat names before converting them to HTML.
++The change is guarded by runtime guard ``envoy.reloadable_features.sanitize_html_stats_names``.
+diff --git a/source/common/html/utility.h b/source/common/html/utility.h
+index 820c736222..c7610dce1d 100644
+--- a/source/common/html/utility.h
++++ b/source/common/html/utility.h
+@@ -17,6 +17,15 @@ public:
+    * @param text arbitrary text to be escaped for safe inclusion in HTML.
+    */
+   static std::string sanitize(absl::string_view text);
++
++  /**
++   * Checks if the text contains any characters that require HTML sanitization.
++   * @param text the text to check.
++   * @return true if the text contains HTML special characters (&, <, >, ", or '), false otherwise.
++   */
++  static inline bool requiresSanitization(absl::string_view text) {
++    return text.find_first_of("&<>\"'") != absl::string_view::npos;
++  }
+ };
+ 
+ } // namespace Html
+diff --git a/source/common/runtime/runtime_features.cc b/source/common/runtime/runtime_features.cc
+index d1d8e07627..f3662a2b45 100644
+--- a/source/common/runtime/runtime_features.cc
++++ b/source/common/runtime/runtime_features.cc
+@@ -92,6 +92,7 @@ RUNTIME_GUARD(envoy_reloadable_features_report_load_when_rq_active_is_non_zero);
+ RUNTIME_GUARD(envoy_reloadable_features_reset_ignore_upstream_reason);
+ RUNTIME_GUARD(envoy_reloadable_features_reset_with_error);
+ RUNTIME_GUARD(envoy_reloadable_features_safe_http2_options);
++RUNTIME_GUARD(envoy_reloadable_features_sanitize_html_stats_names);
+ RUNTIME_GUARD(envoy_reloadable_features_skip_dns_lookup_for_proxied_requests);
+ RUNTIME_GUARD(envoy_reloadable_features_tcp_proxy_set_idle_timer_immediately_on_new_connection);
+ RUNTIME_GUARD(envoy_reloadable_features_test_feature_true);
+diff --git a/source/server/admin/stats_html_render.cc b/source/server/admin/stats_html_render.cc
+index 954b685222..5e73de86ed 100644
+--- a/source/server/admin/stats_html_render.cc
++++ b/source/server/admin/stats_html_render.cc
+@@ -6,6 +6,7 @@
+ #include "source/common/common/assert.h"
+ #include "source/common/filesystem/filesystem_impl.h"
+ #include "source/common/html/utility.h"
++#include "source/common/runtime/runtime_features.h"
+ #include "source/server/admin/admin_html_util.h"
+ 
+ #include "absl/strings/str_replace.h"
+@@ -23,7 +24,9 @@ StatsHtmlRender::StatsHtmlRender(Http::ResponseHeaderMap& response_headers,
+                                  Buffer::Instance& response, const StatsParams& params)
+     : StatsTextRender(params), active_(params.format_ == StatsFormat::ActiveHtml),
+       json_histograms_(!active_ &&
+-                       params.histogram_buckets_mode_ == Utility::HistogramBucketsMode::Detailed) {
++                       params.histogram_buckets_mode_ == Utility::HistogramBucketsMode::Detailed),
++      sanitize_html_stats_names_(
++          Runtime::runtimeFeatureEnabled("envoy.reloadable_features.sanitize_html_stats_names")) {
+   AdminHtmlUtil::renderHead(response_headers, response);
+ }
+ 
+@@ -58,7 +61,21 @@ void StatsHtmlRender::setupStatsPage(const Admin::UrlHandler& url_handler,
+ void StatsHtmlRender::generate(Buffer::Instance& response, const std::string& name,
+                                const std::string& value) {
+   ASSERT(first_histogram_);
+-  response.addFragments({name, ": \"", Html::Utility::sanitize(value), "\"\n"});
++  absl::string_view name_view = name;
++  std::string sanitized_name;
++  if (Html::Utility::requiresSanitization(name) && sanitize_html_stats_names_) {
++    sanitized_name = Html::Utility::sanitize(name);
++    name_view = sanitized_name;
++  }
++
++  absl::string_view value_view = value;
++  std::string sanitized_value;
++  if (Html::Utility::requiresSanitization(value)) {
++    sanitized_value = Html::Utility::sanitize(value);
++    value_view = sanitized_value;
++  }
++
++  response.addFragments({name_view, ": \"", value_view, "\"\n"});
+ }
+ 
+ void StatsHtmlRender::noStats(Buffer::Instance& response, absl::string_view types) {
+@@ -101,7 +118,11 @@ void StatsHtmlRender::generate(Buffer::Instance& response, const std::string& na
+     { StatsJsonRender::generateHistogramDetail(name, histogram, *streamer.makeRootMap()); }
+     response.add(");\n</script>\n");
+   } else {
+-    StatsTextRender::generate(response, name, histogram);
++    if (Html::Utility::requiresSanitization(name) && sanitize_html_stats_names_) {
++      StatsTextRender::generate(response, Html::Utility::sanitize(name), histogram);
++    } else {
++      StatsTextRender::generate(response, name, histogram);
++    }
+   }
+ }
+ 
+diff --git a/source/server/admin/stats_html_render.h b/source/server/admin/stats_html_render.h
+index 92001c6e86..e4ee488f8b 100644
+--- a/source/server/admin/stats_html_render.h
++++ b/source/server/admin/stats_html_render.h
+@@ -2,6 +2,7 @@
+ 
+ #include "envoy/filesystem/filesystem.h"
+ 
++#include "source/common/html/utility.h"
+ #include "source/server/admin/admin_html_util.h"
+ #include "source/server/admin/stats_render.h"
+ 
+@@ -29,10 +30,12 @@ public:
+   void generate(Buffer::Instance& response, const std::string& name,
+                 const std::string& value) override;
+ 
+-  // This matches the superclass impl exactly, but is needed to allow gcc to compile, which
+-  // warns about hidden overrides if we omit it.
+   void generate(Buffer::Instance& response, const std::string& name, uint64_t value) override {
+-    StatsTextRender::generate(response, name, value);
++    if (Html::Utility::requiresSanitization(name) && sanitize_html_stats_names_) {
++      StatsTextRender::generate(response, Html::Utility::sanitize(name), value);
++    } else {
++      StatsTextRender::generate(response, name, value);
++    }
+   }
+ 
+   void generate(Buffer::Instance&, const std::string& name,
+@@ -43,6 +46,7 @@ private:
+   const bool active_{false};
+   bool json_histograms_{false};
+   bool first_histogram_{true};
++  const bool sanitize_html_stats_names_{false};
+ };
+ 
+ } // namespace Server
+diff --git a/test/integration/integration_admin_test.cc b/test/integration/integration_admin_test.cc
+index b86ba24ba6..47edc56717 100644
+--- a/test/integration/integration_admin_test.cc
++++ b/test/integration/integration_admin_test.cc
+@@ -664,6 +664,28 @@ TEST_P(IntegrationAdminTest, AdminCpuProfilerStart) {
+   EXPECT_EQ("200", request("admin", "POST", "/cpuprofiler?enable=n", response));
+ }
+ 
++TEST_P(IntegrationAdminTest, AdminStatsHtmlXss) {
++  setUpstreamCount(2);
++  config_helper_.addConfigModifier([](envoy::config::bootstrap::v3::Bootstrap& bootstrap) -> void {
++    auto* cluster = bootstrap.mutable_static_resources()->add_clusters();
++    *cluster =
++        ConfigHelper::buildStaticCluster("cluster_<script>alert(1)</script>", 0, "127.0.0.1");
++  });
++  initialize();
++
++  BufferingStreamDecoderPtr response;
++#ifdef ENVOY_ADMIN_HTML
++  EXPECT_EQ("200", request("admin", "GET", "/stats?format=html", response));
++  EXPECT_EQ("text/html; charset=UTF-8", contentType(response));
++  EXPECT_THAT(response->body(), HasSubstr("cluster_&lt;script&gt;alert(1)&lt;/script&gt;"));
++  EXPECT_THAT(response->body(), Not(HasSubstr("cluster_<script>alert(1)</script>")));
++#else
++  EXPECT_EQ("400", request("admin", "GET", "/stats?format=html", response));
++  EXPECT_EQ("text/plain; charset=UTF-8", contentType(response));
++  EXPECT_THAT(response->body(), HasSubstr("HTML output was disabled"));
++#endif
++}
++
+ class IntegrationAdminIpv4Ipv6Test : public testing::Test, public HttpIntegrationTest {
+ public:
+   IntegrationAdminIpv4Ipv6Test()
+diff --git a/test/server/admin/BUILD b/test/server/admin/BUILD
+index bd58b52a0f..ab8f8d6154 100644
+--- a/test/server/admin/BUILD
++++ b/test/server/admin/BUILD
+@@ -134,6 +134,7 @@ envoy_cc_test(
+     deps = [
+         ":stats_render_test_base",
+         "//source/server/admin:admin_lib",
++        "//test/test_common:test_runtime_lib",
+     ],
+ )
+ 
+diff --git a/test/server/admin/stats_html_render_test.cc b/test/server/admin/stats_html_render_test.cc
+index 801c07c883..70308a8def 100644
+--- a/test/server/admin/stats_html_render_test.cc
++++ b/test/server/admin/stats_html_render_test.cc
+@@ -2,6 +2,7 @@
+ #include "source/server/admin/stats_html_render.h"
+ 
+ #include "test/server/admin/stats_render_test_base.h"
++#include "test/test_common/test_runtime.h"
+ 
+ #include "gmock/gmock.h"
+ #include "gtest/gtest.h"
+@@ -99,5 +100,32 @@ TEST_F(StatsHtmlRenderTest, RenderActive) {
+   EXPECT_THAT(response_.toString(), HasSubstr("<script>"));
+ }
+ 
++TEST_F(StatsHtmlRenderTest, SanitizeNameInString) {
++  TestScopedRuntime scoped_runtime;
++  scoped_runtime.mergeValues({{"envoy.reloadable_features.sanitize_html_stats_names", "true"}});
++  StatsHtmlRender renderer{response_headers_, response_, params_};
++  EXPECT_THAT(render<std::string>(renderer, "<script>alert(1)</script>", "value"),
++              HasSubstr("&lt;script&gt;alert(1)&lt;/script&gt;: \"value\"\n"));
++}
++
++TEST_F(StatsHtmlRenderTest, SanitizeNameInUnsigned) {
++  TestScopedRuntime scoped_runtime;
++  scoped_runtime.mergeValues({{"envoy.reloadable_features.sanitize_html_stats_names", "true"}});
++  StatsHtmlRender renderer{response_headers_, response_, params_};
++  EXPECT_THAT(render<uint64_t>(renderer, "<script>alert(1)</script>", 42),
++              HasSubstr("&lt;script&gt;alert(1)&lt;/script&gt;: 42\n"));
++}
++
++TEST_F(StatsHtmlRenderTest, SanitizeNameInHistogramTextMode) {
++  TestScopedRuntime scoped_runtime;
++  scoped_runtime.mergeValues({{"envoy.reloadable_features.sanitize_html_stats_names", "true"}});
++  params_.histogram_buckets_mode_ = Utility::HistogramBucketsMode::Summary;
++  StatsHtmlRender renderer{response_headers_, response_, params_};
++  Stats::ParentHistogram& histogram = populateHistogram("h1", {200, 300, 300});
++  std::string result = render<>(renderer, "<script>alert(1)</script>", histogram);
++  EXPECT_THAT(result, HasSubstr("&lt;script&gt;alert(1)&lt;/script&gt;:"));
++  EXPECT_THAT(result, Not(HasSubstr("<script>alert(1)</script>:")));
++}
++
+ } // namespace Server
+ } // namespace Envoy
+-- 
+2.54.0
+

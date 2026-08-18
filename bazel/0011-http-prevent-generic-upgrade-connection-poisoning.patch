@@ -1,0 +1,369 @@
+From 6a225cbcfef15469e82b2463a09f88559967c7dd Mon Sep 17 00:00:00 2001
+From: Kateryna Nezdolii <kateryna.nezdolii@gmail.com>
+Date: Mon, 3 Aug 2026 13:37:24 +0000
+Subject: [PATCH 11/13] http: prevent generic upgrade connection poisoning
+
+Signed-off-by: Kateryna Nezdolii <kateryna.nezdolii@gmail.com>
+---
+ ...tp__pause-generic-upgrade-request-body.rst |   7 +
+ envoy/http/filter.h                           |   6 +
+ source/common/router/upstream_codec_filter.cc |  13 ++
+ source/common/router/upstream_request.cc      |  14 +-
+ source/common/router/upstream_request.h       |  11 +-
+ source/common/runtime/runtime_features.cc     |   1 +
+ .../udp_tunneling_integration_test.cc         |  34 ++++
+ .../integration/websocket_integration_test.cc | 148 ++++++++++++++++++
+ 8 files changed, 230 insertions(+), 4 deletions(-)
+ create mode 100644 changelogs/current/bug_fixes/http__pause-generic-upgrade-request-body.rst
+
+diff --git a/changelogs/current/bug_fixes/http__pause-generic-upgrade-request-body.rst b/changelogs/current/bug_fixes/http__pause-generic-upgrade-request-body.rst
+new file mode 100644
+index 0000000000..da54a2066f
+--- /dev/null
++++ b/changelogs/current/bug_fixes/http__pause-generic-upgrade-request-body.rst
+@@ -0,0 +1,7 @@
++Fix: `GHSA-3vhp-c83q-jqc2 <https://github.com/envoyproxy/envoy/security/advisories/GHSA-3vhp-c83q-jqc2>`_.
++
++Fixed a vulnerability where payload sent before a generic HTTP upgrade was accepted could be
++interpreted as a pipelined HTTP/1 request and poison a shared upstream connection. Generic upgrade
++payload is now paused until the upstream accepts the upgrade. This change can be temporarily
++reverted by setting ``envoy.reloadable_features.http_pause_generic_upgrade_request_body`` to
++``false``.
+diff --git a/envoy/http/filter.h b/envoy/http/filter.h
+index ff9e6e59e7..fd0bba9cb3 100644
+--- a/envoy/http/filter.h
++++ b/envoy/http/filter.h
+@@ -246,6 +246,12 @@ public:
+   virtual bool pausedForWebsocketUpgrade() const PURE;
+   virtual void setPausedForWebsocketUpgrade(bool value) PURE;
+ 
++  // Setters and getters to determine if sending body payload is paused on
++  // confirmation of a generic (non-WebSocket) HTTP upgrade. These should only be used by the
++  // upstream codec filter.
++  virtual bool pausedForGenericUpgrade() const PURE;
++  virtual void setPausedForGenericUpgrade(bool value) PURE;
++
+   // Disable the route timeout after websocket upgrade completes successfully.
+   // This should only be used by the upstream codec filter.
+   virtual void disableRouteTimeoutForWebsocketUpgrade() PURE;
+diff --git a/source/common/router/upstream_codec_filter.cc b/source/common/router/upstream_codec_filter.cc
+index a72b277ce0..3ad1d1ff3c 100644
+--- a/source/common/router/upstream_codec_filter.cc
++++ b/source/common/router/upstream_codec_filter.cc
+@@ -89,6 +89,8 @@ Http::FilterHeadersStatus UpstreamCodecFilter::decodeHeaders(Http::RequestHeader
+     return Http::FilterHeadersStatus::StopAllIterationAndWatermark;
+   } else if (callbacks_->upstreamCallbacks()->pausedForWebsocketUpgrade()) {
+     return Http::FilterHeadersStatus::StopAllIterationAndWatermark;
++  } else if (callbacks_->upstreamCallbacks()->pausedForGenericUpgrade()) {
++    return Http::FilterHeadersStatus::StopAllIterationAndWatermark;
+   }
+   return Http::FilterHeadersStatus::Continue;
+ }
+@@ -157,6 +159,17 @@ void UpstreamCodecFilter::CodecBridge::decodeHeaders(Http::ResponseHeaderMapPtr&
+     filter_.callbacks_->continueDecoding();
+   }
+ 
++  if (filter_.callbacks_->upstreamCallbacks()->pausedForGenericUpgrade()) {
++    const uint64_t status = Http::Utility::getResponseStatus(*headers);
++    const auto protocol = filter_.callbacks_->upstreamCallbacks()->upstreamStreamInfo().protocol();
++    if (status == static_cast<uint64_t>(Http::Code::SwitchingProtocols) ||
++        (protocol.has_value() && protocol.value() != Envoy::Http::Protocol::Http11 &&
++         Http::CodeUtility::is2xx(status))) {
++      filter_.callbacks_->upstreamCallbacks()->setPausedForGenericUpgrade(false);
++      filter_.callbacks_->continueDecoding();
++    }
++  }
++
+   if (filter_.callbacks_->upstreamCallbacks()->pausedForWebsocketUpgrade()) {
+     const uint64_t status = Http::Utility::getResponseStatus(*headers);
+     const auto protocol = filter_.callbacks_->upstreamCallbacks()->upstreamStreamInfo().protocol();
+diff --git a/source/common/router/upstream_request.cc b/source/common/router/upstream_request.cc
+index 39302c1cf8..c8bced2df1 100644
+--- a/source/common/router/upstream_request.cc
++++ b/source/common/router/upstream_request.cc
+@@ -88,7 +88,7 @@ UpstreamRequest::UpstreamRequest(RouterFilterInterface& parent,
+       upstream_canary_(false), router_sent_end_stream_(false), encode_trailers_(false),
+       retried_(false), awaiting_headers_(true), outlier_detection_timeout_recorded_(false),
+       create_per_try_timeout_on_request_complete_(false), paused_for_connect_(false),
+-      paused_for_websocket_(false), reset_stream_(false),
++      paused_for_websocket_(false), paused_for_generic_upgrade_(false), reset_stream_(false),
+       record_timeout_budget_(parent_.cluster()->timeoutBudgetStats().has_value()),
+       cleaned_up_(false), had_upstream_(false),
+       stream_options_({can_send_early_data, can_use_http3}), grpc_rq_success_deferred_(false),
+@@ -403,6 +403,13 @@ void UpstreamRequest::acceptHeadersFromRouter(bool end_stream) {
+       }
+       parent_.setupRouteTimeoutForWebsocketUpgrade();
+     }
++  } else if (!end_stream &&
++             Runtime::runtimeFeatureEnabled(
++                 "envoy.reloadable_features.http_pause_generic_upgrade_request_body") &&
++             Http::Utility::isUpgrade(*headers)) {
++    // Pause proxying the payload of generic (non-WebSocket) upgrades until the upstream
++    // accepts the upgrade.
++    paused_for_generic_upgrade_ = true;
+   }
+ 
+   // Kick off creation of the upstream connection immediately upon receiving headers.
+@@ -608,10 +615,11 @@ void UpstreamRequest::onPoolReady(std::unique_ptr<GenericUpstream>&& upstream,
+   if (protocol) {
+     stream_info_.protocol(protocol.value());
+   } else {
+-    // We only pause for CONNECT and WebSocket for HTTP upstreams. If this is a TCP upstream,
+-    // unpause.
++    // We only pause for CONNECT and upgrades for HTTP upstreams. If this is a non-HTTP
++    // upstream (e.g. TCP for CONNECT termination or UDP for CONNECT-UDP termination), unpause.
+     paused_for_connect_ = false;
+     paused_for_websocket_ = false;
++    paused_for_generic_upgrade_ = false;
+   }
+ 
+   StreamInfo::UpstreamInfo& upstream_info = *stream_info_.upstreamInfo();
+diff --git a/source/common/router/upstream_request.h b/source/common/router/upstream_request.h
+index 7144b51a9d..f274e940f8 100644
+--- a/source/common/router/upstream_request.h
++++ b/source/common/router/upstream_request.h
+@@ -251,8 +251,10 @@ private:
+   // waiting for response headers.
+   bool paused_for_connect_ : 1;
+   bool paused_for_websocket_ : 1;
++  // True if generic (non-WebSocket) upgrade headers have been sent but proxying payload is
++  // paused waiting for the upstream to accept the upgrade.
++  bool paused_for_generic_upgrade_ : 1;
+   bool reset_stream_ : 1;
+-
+   // Sentinel to indicate if timeout budget tracking is configured for the cluster,
+   // and if so, if the per-try histogram should record a value.
+   bool record_timeout_budget_ : 1;
+@@ -372,6 +374,13 @@ public:
+     upstream_request_.paused_for_websocket_ = value;
+   }
+ 
++  bool pausedForGenericUpgrade() const override {
++    return upstream_request_.paused_for_generic_upgrade_;
++  }
++  void setPausedForGenericUpgrade(bool value) override {
++    upstream_request_.paused_for_generic_upgrade_ = value;
++  }
++
+   void disableRouteTimeoutForWebsocketUpgrade() override;
+   void disablePerTryTimeoutForWebsocketUpgrade() override;
+ 
+diff --git a/source/common/runtime/runtime_features.cc b/source/common/runtime/runtime_features.cc
+index 09d86b90ba..4bf95ffe21 100644
+--- a/source/common/runtime/runtime_features.cc
++++ b/source/common/runtime/runtime_features.cc
+@@ -54,6 +54,7 @@ RUNTIME_GUARD(envoy_reloadable_features_grpc_side_stream_flow_control);
+ RUNTIME_GUARD(envoy_reloadable_features_http2_discard_host_header);
+ RUNTIME_GUARD(envoy_reloadable_features_http2_include_cookies_in_limits);
+ RUNTIME_GUARD(envoy_reloadable_features_http_async_client_retry_respect_buffer_limits);
++RUNTIME_GUARD(envoy_reloadable_features_http_pause_generic_upgrade_request_body);
+ // Delay deprecation and decommission until UHV is enabled.
+ RUNTIME_GUARD(envoy_reloadable_features_http_reject_path_with_fragment);
+ RUNTIME_GUARD(envoy_reloadable_features_limit_json_parser_nesting_depth);
+diff --git a/test/integration/udp_tunneling_integration_test.cc b/test/integration/udp_tunneling_integration_test.cc
+index 635c84c91a..1e29a3f150 100644
+--- a/test/integration/udp_tunneling_integration_test.cc
++++ b/test/integration/udp_tunneling_integration_test.cc
+@@ -114,6 +114,40 @@ TEST_P(ConnectUdpTerminationIntegrationTest, ExchangeCapsules) {
+   exchangeValidCapsules();
+ }
+ 
++// Verify that capsules sent before the synthesized 200 response arrives are buffered and
++// forwarded once the terminated upgrade is accepted, rather than deadlocking the stream.
++TEST_P(ConnectUdpTerminationIntegrationTest, ExchangeCapsulesBeforeResponseHeaders) {
++  config_helper_.addRuntimeOverride(
++      "envoy.reloadable_features.http_pause_generic_upgrade_request_body", "true");
++  initialize();
++  codec_client_ = makeHttpConnection(lookupPort("http"));
++  auto encoder_decoder = codec_client_->startRequest(connect_udp_headers_);
++  request_encoder_ = &encoder_decoder.first;
++  response_ = std::move(encoder_decoder.second);
++
++  // Send a capsule without waiting for the response headers.
++  const std::string sent_capsule_fragment =
++      absl::HexStringToBytes("00"             // DATAGRAM Capsule Type
++                             "08"             // Capsule Length
++                             "00"             // Context ID
++                             "a1a2a3a4a5a6a7" // UDP Proxying Payload
++      );
++  codec_client_->sendData(*request_encoder_, sent_capsule_fragment, false);
++
++  Network::UdpRecvData request_datagram;
++  ASSERT_TRUE(fake_upstreams_[0]->waitForUdpDatagram(request_datagram));
++  EXPECT_EQ(absl::HexStringToBytes("a1a2a3a4a5a6a7"), request_datagram.buffer_->toString());
++
++  response_->waitForHeaders();
++  if (downstream_protocol_ == Http::CodecType::HTTP1) {
++    EXPECT_EQ("200", response_->headers().getStatusValue());
++  } else {
++    // For HTTP/2 and HTTP/3 downstreams the test client codec issues an extended CONNECT and
++    // transforms the 200 response back to the HTTP/1 style 101 Switching Protocols.
++    EXPECT_EQ("101", response_->headers().getStatusValue());
++  }
++}
++
+ TEST_P(ConnectUdpTerminationIntegrationTest, ExchangeCapsulesWithHostMatch) {
+   host_to_match_ = "foo.lyft.com:80";
+   initialize();
+diff --git a/test/integration/websocket_integration_test.cc b/test/integration/websocket_integration_test.cc
+index 146e376718..fe486ffcc1 100644
+--- a/test/integration/websocket_integration_test.cc
++++ b/test/integration/websocket_integration_test.cc
+@@ -306,6 +306,154 @@ TEST_P(WebsocketIntegrationTest, NonWebsocketUpgrade) {
+   codec_client_->close();
+ }
+ 
++// Verify that extended CONNECT payload is not forwarded to an HTTP/1 upstream before the upstream
++// accepts a generic upgrade. On a rejected upgrade the upstream connection must not be reused.
++TEST_P(WebsocketIntegrationTest, NonWebsocketUpgradeWithPrePayloadDoesNotPoisonConnection) {
++  if (downstreamProtocol() != Http::CodecType::HTTP2 ||
++      upstreamProtocol() != Http::CodecType::HTTP1) {
++    return;
++  }
++
++  TestScopedRuntime scoped_runtime;
++  scoped_runtime.mergeValues(
++      {{"envoy.reloadable_features.http_pause_generic_upgrade_request_body", "true"}});
++
++  config_helper_.addConfigModifier(
++      [&](envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager&
++              hcm) -> void { hcm.add_upgrade_configs()->set_upgrade_type("foo"); });
++  initialize();
++
++  constexpr char smuggled_request[] = "GET /smuggled HTTP/1.1\r\nHost: sni.lyft.com\r\n\r\n";
++  codec_client_ = makeHttpConnection(lookupPort("http"));
++  auto request_headers = upgradeRequestHeaders("foo");
++  request_headers.removeContentLength();
++  auto encoder_decoder = codec_client_->startRequest(request_headers);
++  request_encoder_ = &encoder_decoder.first;
++  response_ = std::move(encoder_decoder.second);
++  codec_client_->sendData(*request_encoder_, smuggled_request, true);
++
++  FakeRawConnectionPtr fake_upstream_connection;
++  ASSERT_TRUE(fake_upstreams_[0]->waitForRawConnection(fake_upstream_connection));
++  ASSERT_NE(fake_upstream_connection, nullptr);
++  std::string upstream_data;
++  ASSERT_TRUE(fake_upstream_connection->waitForData(
++      FakeRawConnection::waitForInexactMatch("\r\n\r\n"), &upstream_data));
++
++  ASSERT_FALSE(fake_upstream_connection->waitForData(
++      FakeRawConnection::waitForInexactMatch(smuggled_request), nullptr,
++      std::chrono::milliseconds(100)));
++
++  ASSERT_TRUE(
++      fake_upstream_connection->write("HTTP/1.1 200 OK\r\ncontent-length: 5\r\n\r\nouter", false));
++  ASSERT_TRUE(response_->waitForEndStream());
++  // The downstream codec represents a successful extended CONNECT response as an H1 upgrade.
++  EXPECT_EQ("101", response_->headers().getStatusValue());
++  EXPECT_EQ("outer", response_->body());
++
++  ASSERT_TRUE(fake_upstream_connection->waitForDisconnect());
++
++  IntegrationCodecClientPtr victim_client = makeHttpConnection(lookupPort("http"));
++  auto victim_headers = default_request_headers_;
++  victim_headers.setPath("/victim");
++  IntegrationStreamDecoderPtr victim_response =
++      victim_client->makeHeaderOnlyRequest(victim_headers);
++
++  FakeRawConnectionPtr victim_upstream_connection;
++  ASSERT_TRUE(fake_upstreams_[0]->waitForRawConnection(victim_upstream_connection));
++  ASSERT_NE(victim_upstream_connection, nullptr);
++  ASSERT_TRUE(victim_upstream_connection->waitForData(
++      FakeRawConnection::waitForInexactMatch("GET /victim HTTP/1.1")));
++
++  ASSERT_TRUE(victim_upstream_connection->write(
++      "HTTP/1.1 200 OK\r\ncontent-length: 6\r\n\r\nvictim", false));
++  ASSERT_TRUE(victim_response->waitForEndStream());
++  EXPECT_EQ("200", victim_response->headers().getStatusValue());
++  EXPECT_EQ("victim", victim_response->body());
++
++  victim_client->close();
++  codec_client_->close();
++  ASSERT_TRUE(victim_upstream_connection->close());
++  ASSERT_TRUE(victim_upstream_connection->waitForDisconnect());
++}
++
++TEST_P(WebsocketIntegrationTest, NonWebsocketUpgradeBuffersPrePayloadUntilAccepted) {
++  if (downstreamProtocol() != Http::CodecType::HTTP2 ||
++      upstreamProtocol() != Http::CodecType::HTTP1) {
++    return;
++  }
++
++  TestScopedRuntime scoped_runtime;
++  scoped_runtime.mergeValues(
++      {{"envoy.reloadable_features.http_pause_generic_upgrade_request_body", "true"}});
++
++  config_helper_.addConfigModifier(
++      [&](envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager&
++              hcm) -> void { hcm.add_upgrade_configs()->set_upgrade_type("foo"); });
++  initialize();
++
++  codec_client_ = makeHttpConnection(lookupPort("http"));
++  auto request_headers = upgradeRequestHeaders("foo");
++  request_headers.removeContentLength();
++  auto encoder_decoder = codec_client_->startRequest(request_headers);
++  request_encoder_ = &encoder_decoder.first;
++  response_ = std::move(encoder_decoder.second);
++  codec_client_->sendData(*request_encoder_, "hello", false);
++
++  FakeRawConnectionPtr fake_upstream_connection;
++  ASSERT_TRUE(fake_upstreams_[0]->waitForRawConnection(fake_upstream_connection));
++  ASSERT_NE(fake_upstream_connection, nullptr);
++  ASSERT_TRUE(
++      fake_upstream_connection->waitForData(FakeRawConnection::waitForInexactMatch("\r\n\r\n")));
++  ASSERT_FALSE(fake_upstream_connection->waitForData(
++      FakeRawConnection::waitForInexactMatch("hello"), nullptr, std::chrono::milliseconds(100)));
++
++  ASSERT_TRUE(fake_upstream_connection->write(
++      "HTTP/1.1 101 Switching Protocols\r\nconnection: upgrade\r\nupgrade: foo\r\n\r\n", false));
++  response_->waitForHeaders();
++  EXPECT_EQ("101", response_->headers().getStatusValue());
++  ASSERT_TRUE(
++      fake_upstream_connection->waitForData(FakeRawConnection::waitForInexactMatch("hello")));
++
++  codec_client_->close();
++  ASSERT_TRUE(fake_upstream_connection->close());
++  ASSERT_TRUE(fake_upstream_connection->waitForDisconnect());
++}
++
++TEST_P(WebsocketIntegrationTest, NonWebsocketUpgradePrePayloadRuntimeGuardDisabled) {
++  if (downstreamProtocol() != Http::CodecType::HTTP2 ||
++      upstreamProtocol() != Http::CodecType::HTTP1) {
++    return;
++  }
++
++  TestScopedRuntime scoped_runtime;
++  scoped_runtime.mergeValues(
++      {{"envoy.reloadable_features.http_pause_generic_upgrade_request_body", "false"}});
++
++  config_helper_.addConfigModifier(
++      [&](envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager&
++              hcm) -> void { hcm.add_upgrade_configs()->set_upgrade_type("foo"); });
++  initialize();
++
++  constexpr char payload[] = "GET /legacy HTTP/1.1\r\nHost: sni.lyft.com\r\n\r\n";
++  codec_client_ = makeHttpConnection(lookupPort("http"));
++  auto request_headers = upgradeRequestHeaders("foo");
++  request_headers.removeContentLength();
++  auto encoder_decoder = codec_client_->startRequest(request_headers);
++  request_encoder_ = &encoder_decoder.first;
++  response_ = std::move(encoder_decoder.second);
++  codec_client_->sendData(*request_encoder_, payload, true);
++
++  FakeRawConnectionPtr fake_upstream_connection;
++  ASSERT_TRUE(fake_upstreams_[0]->waitForRawConnection(fake_upstream_connection));
++  ASSERT_NE(fake_upstream_connection, nullptr);
++  ASSERT_TRUE(fake_upstream_connection->waitForData(FakeRawConnection::waitForInexactMatch(payload),
++                                                    nullptr, std::chrono::milliseconds(100)));
++
++  codec_client_->close();
++  ASSERT_TRUE(fake_upstream_connection->close());
++  ASSERT_TRUE(fake_upstream_connection->waitForDisconnect());
++}
++
+ TEST_P(WebsocketIntegrationTest, RouteSpecificUpgrade) {
+   config_helper_.addConfigModifier(
+       [&](envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager&
+-- 
+2.54.0
+

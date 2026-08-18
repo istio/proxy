@@ -1,0 +1,341 @@
+From d8c1ef41bff1dfd084604fa1ceaddf21716635e6 Mon Sep 17 00:00:00 2001
+From: Yan Avlasov <yavlasov@google.com>
+Date: Sat, 25 Jul 2026 01:11:50 +0000
+Subject: [PATCH 03/13] quic: fix heap-use-after-free in HttpDatagramHandler
+ decodeCapsule
+
+Fix: [GHSA-r6j2-mrm5-72mg](https://github.com/envoyproxy/envoy/security/advisories/GHSA-r6j2-mrm5-72mg)
+
+Signed-off-by: Yan Avlasov <yavlasov@google.com>
+Signed-off-by: Dan Zhang <danzh@google.com>
+Signed-off-by: Ryan Northey <ryan@synca.io>
+---
+ .../http3__fix-uaf-h3-stream-handling.rst     |  3 +
+ .../common/quic/envoy_quic_client_stream.cc   |  3 +-
+ .../common/quic/envoy_quic_server_stream.cc   | 12 ++-
+ source/common/quic/http_datagram_handler.cc   |  7 +-
+ source/common/quic/http_datagram_handler.h    | 13 ++-
+ .../quic/envoy_quic_client_stream_test.cc     | 29 ++++++
+ .../quic/envoy_quic_server_stream_test.cc     | 22 +++++
+ .../common/quic/http_datagram_handler_test.cc |  4 +-
+ .../integration/quic_http_integration_test.cc | 94 +++++++++++++++++++
+ 9 files changed, 177 insertions(+), 10 deletions(-)
+ create mode 100644 changelogs/current/bug_fixes/http3__fix-uaf-h3-stream-handling.rst
+
+diff --git a/changelogs/current/bug_fixes/http3__fix-uaf-h3-stream-handling.rst b/changelogs/current/bug_fixes/http3__fix-uaf-h3-stream-handling.rst
+new file mode 100644
+index 0000000000..6da7926721
+--- /dev/null
++++ b/changelogs/current/bug_fixes/http3__fix-uaf-h3-stream-handling.rst
+@@ -0,0 +1,3 @@
++Fix: `GHSA-r6j2-mrm5-72mg <https://github.com/envoyproxy/envoy/security/advisories/GHSA-r6j2-mrm5-72mg>`_
++
++Fixed UAF when Envoy receives specifically timed sequence of HTTP/3 frames.
+diff --git a/source/common/quic/envoy_quic_client_stream.cc b/source/common/quic/envoy_quic_client_stream.cc
+index 3ad55a45cb..2a030e34a9 100644
+--- a/source/common/quic/envoy_quic_client_stream.cc
++++ b/source/common/quic/envoy_quic_client_stream.cc
+@@ -506,7 +506,8 @@ bool EnvoyQuicClientStream::hasPendingData() { return BufferedDataBytes() > 0; }
+ // connect-udp".
+ void EnvoyQuicClientStream::useCapsuleProtocol() {
+   http_datagram_handler_ = std::make_unique<HttpDatagramHandler>(*this);
+-  http_datagram_handler_->setStreamDecoder(getResponseDecoder());
++  http_datagram_handler_->setStreamDecoderProvider(
++      [this]() -> Http::StreamDecoder* { return getResponseDecoder(); });
+   RegisterHttp3DatagramVisitor(http_datagram_handler_.get());
+ }
+ #endif
+diff --git a/source/common/quic/envoy_quic_server_stream.cc b/source/common/quic/envoy_quic_server_stream.cc
+index 677b7808b3..1e956ed912 100644
+--- a/source/common/quic/envoy_quic_server_stream.cc
++++ b/source/common/quic/envoy_quic_server_stream.cc
+@@ -567,8 +567,16 @@ bool EnvoyQuicServerStream::hasPendingData() {
+ #ifdef ENVOY_ENABLE_HTTP_DATAGRAMS
+ void EnvoyQuicServerStream::useCapsuleProtocol() {
+   http_datagram_handler_ = std::make_unique<HttpDatagramHandler>(*this);
+-  ASSERT(request_decoder_->get().has_value());
+-  http_datagram_handler_->setStreamDecoder(request_decoder_->get().ptr());
++  if (request_decoder_ && request_decoder_->get().has_value()) {
++    std::shared_ptr<Http::RequestDecoderHandle> handle =
++        request_decoder_->get().ptr()->getRequestDecoderHandle();
++    http_datagram_handler_->setStreamDecoderProvider([handle]() -> Http::StreamDecoder* {
++      if (handle && handle->get().has_value()) {
++        return handle->get().ptr();
++      }
++      return nullptr;
++    });
++  }
+   RegisterHttp3DatagramVisitor(http_datagram_handler_.get());
+ }
+ #endif
+diff --git a/source/common/quic/http_datagram_handler.cc b/source/common/quic/http_datagram_handler.cc
+index 19c4c0e826..a26566b78c 100644
+--- a/source/common/quic/http_datagram_handler.cc
++++ b/source/common/quic/http_datagram_handler.cc
+@@ -19,8 +19,11 @@ void HttpDatagramHandler::decodeCapsule(const quiche::Capsule& capsule) {
+   quiche::QuicheBuffer serialized_capsule = SerializeCapsule(capsule, &capsule_buffer_allocator_);
+   Buffer::InstancePtr buffer = std::make_unique<Buffer::OwnedImpl>();
+   buffer->add(serialized_capsule.AsStringView());
+-  if (stream_decoder_) {
+-    stream_decoder_->decodeData(*buffer, stream_.IsDoneReading());
++  if (stream_decoder_provider_) {
++    if (Http::StreamDecoder* stream_decoder = stream_decoder_provider_();
++        stream_decoder != nullptr) {
++      stream_decoder->decodeData(*buffer, stream_.IsDoneReading());
++    }
+   } else {
+     IS_ENVOY_BUG("HTTP/3 Datagram received before a stream decoder is set.");
+   }
+diff --git a/source/common/quic/http_datagram_handler.h b/source/common/quic/http_datagram_handler.h
+index 395c620fec..9208e92ba5 100644
+--- a/source/common/quic/http_datagram_handler.h
++++ b/source/common/quic/http_datagram_handler.h
+@@ -1,8 +1,9 @@
+ #pragma once
+ 
++#include <functional>
++
+ #include "envoy/http/codec.h"
+ 
+-#include "source/common/common/assert.h"
+ #include "source/common/common/logger.h"
+ #include "source/common/http/header_map_impl.h"
+ 
+@@ -13,6 +14,8 @@
+ namespace Envoy {
+ namespace Quic {
+ 
++using StreamDecoderProvider = std::function<Http::StreamDecoder*()>;
++
+ // Enables HTTP Datagrams and the Capsule Protocol support based on RFC 9297. This class is used
+ // both on the decode path (HTTP/3 codec -> Envoy) and the encode path (Envoy -> HTTP/3 codec) of
+ // the QUIC client and server streams in Envoy.
+@@ -38,8 +41,10 @@ public:
+   // created and sent successfully. Returns false if the CapsuleParser fails to parse the
+   // |capsule_fragment| or the corresponding stream fails to send the Datagram.
+   bool encodeCapsuleFragment(absl::string_view capsule_fragment, bool end_stream);
+-  // Does not take ownership of the StreamDecoder. "decoder" must outlive HttpDatagramHandler.
+-  void setStreamDecoder(Http::StreamDecoder* decoder) { stream_decoder_ = decoder; }
++
++  void setStreamDecoderProvider(StreamDecoderProvider decoder_provider) {
++    stream_decoder_provider_ = std::move(decoder_provider);
++  }
+ 
+ private:
+   // Serializes and decodes a given Capsule.
+@@ -48,7 +53,7 @@ private:
+   quic::QuicSpdyStream& stream_;
+   quiche::CapsuleParser capsule_parser_{this};
+   quiche::SimpleBufferAllocator capsule_buffer_allocator_;
+-  Http::StreamDecoder* stream_decoder_ = nullptr; // not owned.
++  StreamDecoderProvider stream_decoder_provider_;
+   bool fin_set_ = false;
+ };
+ 
+diff --git a/test/common/quic/envoy_quic_client_stream_test.cc b/test/common/quic/envoy_quic_client_stream_test.cc
+index 6cbd6bfdc1..4e87b9a3a1 100644
+--- a/test/common/quic/envoy_quic_client_stream_test.cc
++++ b/test/common/quic/envoy_quic_client_stream_test.cc
+@@ -871,6 +871,35 @@ TEST_F(EnvoyQuicClientStreamTest, DecodeHttp3Datagram) {
+   EXPECT_CALL(stream_callbacks_, onResetStream(_, _));
+ }
+ 
++TEST_F(EnvoyQuicClientStreamTest, DropDatagramAfterDecoderDestroyed) {
++  auto temp_decoder = std::make_unique<testing::NiceMock<Http::MockResponseDecoder>>();
++  EXPECT_CALL(*temp_decoder, decodeHeaders_(_, _)).Times(testing::AnyNumber());
++
++  quic_stream_->setResponseDecoder(*temp_decoder);
++
++  EXPECT_TRUE(quic_session_.OnSetting(quic::SETTINGS_H3_DATAGRAM, 1));
++  Http::TestRequestHeaderMapImpl request_headers = {
++      {":authority", host_},        {":method", "CONNECT"},
++      {":protocol", "connect-udp"}, {":path", "/.well-known/masque/udp/192.0.2.6/443/"},
++      {":scheme", "https"},         {"capsule-protocol", "?1"}};
++  const auto status = quic_stream_->encodeHeaders(request_headers, false);
++  EXPECT_TRUE(status.ok());
++
++  quiche::HttpHeaderBlock response_headers;
++  response_headers[":status"] = "200";
++  response_headers["capsule-protocol"] = "?1";
++  std::string payload = spdyHeaderToHttp3StreamPayload(response_headers);
++  quic::QuicStreamFrame frame(stream_id_, false, 0, payload);
++  quic_stream_->OnStreamFrame(frame);
++  EXPECT_TRUE(quic_stream_->FinishedReadingHeaders());
++
++  temp_decoder.reset();
++
++  EXPECT_CALL(stream_decoder_, decodeData(_, _)).Times(0);
++  quic_session_.OnDatagramReceived(datagram_fragment_);
++  EXPECT_CALL(stream_callbacks_, onResetStream(_, _));
++}
++
+ TEST_F(EnvoyQuicClientStreamTest, ResetStreamWithHttpDatagramHandler) {
+   setUpCapsuleProtocol(true, false);
+   EXPECT_CALL(stream_callbacks_, onResetStream(_, _));
+diff --git a/test/common/quic/envoy_quic_server_stream_test.cc b/test/common/quic/envoy_quic_server_stream_test.cc
+index e1a9acd3f4..88f90905ae 100644
+--- a/test/common/quic/envoy_quic_server_stream_test.cc
++++ b/test/common/quic/envoy_quic_server_stream_test.cc
+@@ -912,6 +912,28 @@ TEST_F(EnvoyQuicServerStreamTest, DecodeHttp3Datagram) {
+   EXPECT_CALL(stream_decoder_, decodeData(BufferStringEqual(capsule_fragment_), _));
+   quic_session_.OnDatagramReceived(datagram_fragment_);
+ }
++
++TEST_F(EnvoyQuicServerStreamTest, DropDatagramAfterStreamRecreation) {
++  auto valid_indicator = std::make_shared<bool>(true);
++  std::weak_ptr<bool> weak_ind = valid_indicator;
++
++  EXPECT_CALL(stream_decoder_, getRequestDecoderHandle()).WillRepeatedly(Invoke([weak_ind, this]() {
++    auto handle = std::make_unique<NiceMock<Http::MockRequestDecoderHandle>>();
++    ON_CALL(*handle, get()).WillByDefault(Invoke([weak_ind, this]() {
++      if (weak_ind.expired())
++        return OptRef<Http::RequestDecoder>();
++      return OptRef<Http::RequestDecoder>(stream_decoder_);
++    }));
++    return handle;
++  }));
++
++  setUpCapsuleProtocol(true, false);
++
++  valid_indicator.reset();
++
++  EXPECT_CALL(stream_decoder_, decodeData(_, _)).Times(0);
++  quic_session_.OnDatagramReceived(datagram_fragment_);
++}
+ #endif
+ 
+ TEST_F(EnvoyQuicServerStreamTest, RegularHeaderBeforePseudoHeader) {
+diff --git a/test/common/quic/http_datagram_handler_test.cc b/test/common/quic/http_datagram_handler_test.cc
+index 2cc35df0fe..e9f97d96a1 100644
+--- a/test/common/quic/http_datagram_handler_test.cc
++++ b/test/common/quic/http_datagram_handler_test.cc
+@@ -46,7 +46,9 @@ public:
+ 
+ class HttpDatagramHandlerTest : public ::testing::Test {
+ public:
+-  HttpDatagramHandlerTest() { http_datagram_handler_.setStreamDecoder(&stream_decoder_); };
++  HttpDatagramHandlerTest() {
++    http_datagram_handler_.setStreamDecoderProvider([this]() { return &stream_decoder_; });
++  };
+ 
+ protected:
+   testing::NiceMock<quic::test::MockQuicConnectionHelper> connection_helper_;
+diff --git a/test/integration/quic_http_integration_test.cc b/test/integration/quic_http_integration_test.cc
+index b5e22b92a4..dc76a79c8d 100644
+--- a/test/integration/quic_http_integration_test.cc
++++ b/test/integration/quic_http_integration_test.cc
+@@ -3,10 +3,15 @@
+ #include <openssl/ssl.h>
+ #include <openssl/x509_vfy.h>
+ 
++#include <chrono>
+ #include <cstddef>
+ #include <initializer_list>
+ #include <memory>
+ 
++#include "source/common/quic/envoy_quic_client_connection.h"
++#include "source/common/quic/envoy_quic_packet_writer.h"
++
++#include "quiche/quic/core/quic_packet_writer_wrapper.h"
+ #include "quiche/quic/test_tools/quic_connection_peer.h"
+ 
+ namespace Envoy {
+@@ -624,6 +629,95 @@ TEST_P(QuicHttpIntegrationTest, Http3ClientKeepalive) {
+   EXPECT_LE(quic_connection_->GetStats().ping_frames_sent, 8u);
+ }
+ 
++class ReorderingTestWriter : public quic::QuicPacketWriterWrapper {
++public:
++  quic::WriteResult WritePacket(const char* buffer, size_t buf_len,
++                                const quic::QuicIpAddress& self_address,
++                                const quic::QuicSocketAddress& peer_address,
++                                quic::PerPacketOptions* options,
++                                const quic::QuicPacketWriterParams& params) override {
++    if (hold_packets_) {
++      held_packets_.emplace_back(buffer, buf_len);
++      self_address_ = self_address;
++      peer_address_ = peer_address;
++      return quic::WriteResult(quic::WRITE_STATUS_OK, buf_len);
++    }
++    return quic::QuicPacketWriterWrapper::WritePacket(buffer, buf_len, self_address, peer_address,
++                                                      options, params);
++  }
++
++  void flushHeldPackets() {
++    for (const auto& packet : held_packets_) {
++      quic::QuicPacketWriterWrapper::WritePacket(packet.data(), packet.size(), self_address_,
++                                                 peer_address_, nullptr,
++                                                 quic::QuicPacketWriterParams());
++    }
++    held_packets_.clear();
++  }
++
++  bool hold_packets_{false};
++  std::vector<std::string> held_packets_;
++  quic::QuicIpAddress self_address_;
++  quic::QuicSocketAddress peer_address_;
++};
++
++TEST_P(QuicHttpIntegrationTest, DatagramAfterRequestCompleteUaf) {
++  config_helper_.addConfigModifier(
++      [&](envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager&
++              hcm) -> void {
++        auto* route = hcm.mutable_route_config()->mutable_virtual_hosts(0)->mutable_routes(0);
++        auto* direct_response = route->mutable_direct_response();
++        direct_response->set_status(200);
++        direct_response->mutable_body()->set_inline_string("foo");
++      });
++
++  Http::TestRequestHeaderMapImpl request_headers{{":method", "GET"},
++                                                 {":scheme", "https"},
++                                                 {":authority", "example.com"},
++                                                 {":path", "/"},
++                                                 {"capsule-protocol", "?1"}};
++
++  initialize();
++  codec_client_ = makeHttpConnection(makeClientConnection(lookupPort("http")));
++  auto* quic_session = static_cast<EnvoyQuicClientSession*>(codec_client_->connection());
++  ASSERT_NE(quic_session, nullptr);
++  auto* client_connection = static_cast<EnvoyQuicClientConnection*>(quic_session->connection());
++  auto real_writer =
++      std::make_unique<EnvoyQuicPacketWriter>(std::make_unique<Network::UdpDefaultWriter>(
++          client_connection->connectionSocket()->ioHandle()));
++  auto* delaying_writer = new ReorderingTestWriter();
++  delaying_writer->set_writer(real_writer.release());
++  client_connection->SetQuicPacketWriter(delaying_writer, true);
++
++  auto response = codec_client_->makeHeaderOnlyRequest(request_headers);
++
++  // Hold any ACK packets so that the QUIC stream remains alive in Envoy while the Envoy HTTP
++  // decoder gets destroyed.
++  delaying_writer->hold_packets_ = true;
++  response->waitForHeaders();
++  EXPECT_EQ("200", response->headers().getStatusValue());
++
++  delaying_writer->hold_packets_ = false;
++  uint64_t stream_id_to_write = 0;
++  std::string payload = "AAAAAAAA";
++  size_t slice_length = quic::QuicDataWriter::GetVarInt62Len(stream_id_to_write) + payload.length();
++  quiche::QuicheBuffer buffer(quic_session->connection()->helper()->GetStreamSendBufferAllocator(),
++                              slice_length);
++  quic::QuicDataWriter writer(slice_length, buffer.data());
++  writer.WriteVarInt62(stream_id_to_write);
++  writer.WriteBytes(payload.data(), payload.length());
++  quiche::QuicheMemSlice slice(std::move(buffer));
++  quic_session->SendDatagram(std::move(slice));
++
++  Event::TimerPtr timer(dispatcher_->createTimer([this, delaying_writer]() -> void {
++    delaying_writer->flushHeldPackets();
++    dispatcher_->exit();
++  }));
++  timer->enableTimer(std::chrono::milliseconds(1));
++  dispatcher_->run(Event::Dispatcher::RunType::Block);
++  cleanupUpstreamAndDownstream();
++}
++
+ TEST_P(QuicHttpIntegrationTest, Http3ClientKeepaliveDisabled) {
+   initialize();
+ 
+-- 
+2.54.0
+

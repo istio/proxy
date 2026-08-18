@@ -1,0 +1,166 @@
+From cf2c458e92e9ad2066c473ba708f7ced3dbfbe2b Mon Sep 17 00:00:00 2001
+From: Yan Avlasov <yavlasov@google.com>
+Date: Tue, 28 Jul 2026 13:21:15 +0000
+Subject: [PATCH 08/13] Avoid null de-reference of transport_socket_options for
+ HTTP/3
+
+Fixes CVE-2026-48521 https://github.com/envoyproxy/envoy/security/advisories/GHSA-5vff-j9p4-38j3
+
+Signed-off-by: Yan Avlasov <yavlasov@google.com>
+Signed-off-by: Ethan Truong <ethantruong@google.com>
+Signed-off-by: Kateryna Nezdolii <kateryna.nezdolii@gmail.com>
+---
+ .../http3__fixed-crash-due-to-null-deref.rst  |  4 +
+ .../common/upstream/cluster_manager_impl.cc   |  2 +-
+ test/integration/BUILD                        | 18 ++++
+ .../allocate_conn_pool_integration_test.cc    | 85 +++++++++++++++++++
+ 4 files changed, 108 insertions(+), 1 deletion(-)
+ create mode 100644 changelogs/current/bug_fixes/http3__fixed-crash-due-to-null-deref.rst
+ create mode 100644 test/integration/allocate_conn_pool_integration_test.cc
+
+diff --git a/changelogs/current/bug_fixes/http3__fixed-crash-due-to-null-deref.rst b/changelogs/current/bug_fixes/http3__fixed-crash-due-to-null-deref.rst
+new file mode 100644
+index 0000000000..d86b7187d5
+--- /dev/null
++++ b/changelogs/current/bug_fixes/http3__fixed-crash-due-to-null-deref.rst
+@@ -0,0 +1,4 @@
++Fix: `CVE-2026-48521 <https://github.com/envoyproxy/envoy/security/advisories/GHSA-5vff-j9p4-38j3>`_
++
++Fixed abnormal process termination when Envoy is configured to automatically select a protocol with upstream
++server based on ALPN and the server uses HTTP/3.
+diff --git a/source/common/upstream/cluster_manager_impl.cc b/source/common/upstream/cluster_manager_impl.cc
+index b81a5ade87..170fa890b2 100644
+--- a/source/common/upstream/cluster_manager_impl.cc
++++ b/source/common/upstream/cluster_manager_impl.cc
+@@ -2203,7 +2203,7 @@ Http::ConnectionPool::InstancePtr ProdClusterManagerFactory::allocateConnPool(
+       getOrigin(transport_socket_options, host);
+   if (protocols.size() == 3 &&
+       context_.runtime().snapshot().featureEnabled("upstream.use_http3", 100) &&
+-      !transport_socket_options->http11ProxyInfo()) {
++      (!transport_socket_options || !transport_socket_options->http11ProxyInfo())) {
+     ASSERT(contains(protocols,
+                     {Http::Protocol::Http11, Http::Protocol::Http2, Http::Protocol::Http3}));
+     ASSERT(alternate_protocol_options.has_value());
+diff --git a/test/integration/BUILD b/test/integration/BUILD
+index fdc744032c..d4762b6eb3 100644
+--- a/test/integration/BUILD
++++ b/test/integration/BUILD
+@@ -53,6 +53,24 @@ envoy_cc_test_library(
+     ],
+ )
+ 
++envoy_cc_test(
++    name = "allocate_conn_pool_integration_test",
++    srcs = select({
++        "//bazel:disable_http3": [],
++        "//conditions:default": ["allocate_conn_pool_integration_test.cc"],
++    }),
++    deps = [
++        ":http_integration_lib",
++        "//test/test_common:utility_lib",
++        "@envoy_api//envoy/extensions/transport_sockets/quic/v3:pkg_cc_proto",
++        "@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg_cc_proto",
++        "@envoy_api//envoy/extensions/upstreams/http/v3:pkg_cc_proto",
++    ] + envoy_select_enable_http3([
++        "//source/common/quic:quic_client_factory_lib",
++        "//source/extensions/upstreams/http:config",
++    ]),
++)
++
+ envoy_cc_test(
+     name = "ads_integration_test",
+     size = "large",
+diff --git a/test/integration/allocate_conn_pool_integration_test.cc b/test/integration/allocate_conn_pool_integration_test.cc
+new file mode 100644
+index 0000000000..c43a022641
+--- /dev/null
++++ b/test/integration/allocate_conn_pool_integration_test.cc
+@@ -0,0 +1,85 @@
++#include "envoy/extensions/transport_sockets/quic/v3/quic_transport.pb.h"
++#include "envoy/extensions/upstreams/http/v3/http_protocol_options.pb.h"
++
++#include "source/common/http/message_impl.h"
++
++#include "test/integration/http_integration.h"
++#include "test/test_common/utility.h"
++
++#include "absl/synchronization/notification.h"
++#include "gtest/gtest.h"
++
++namespace Envoy {
++
++class MyCallbacks : public Http::AsyncClient::Callbacks {
++public:
++  MyCallbacks(absl::Notification& done) : done_(done) {}
++  void onSuccess(const Http::AsyncClient::Request&, Http::ResponseMessagePtr&&) override {
++    done_.Notify();
++  }
++  void onFailure(const Http::AsyncClient::Request&, Http::AsyncClient::FailureReason) override {
++    done_.Notify();
++  }
++  void onBeforeFinalizeUpstreamSpan(Tracing::Span&, const Http::ResponseHeaderMap*) override {}
++
++private:
++  absl::Notification& done_;
++};
++
++class AllocateConnPoolIntegrationTest : public HttpIntegrationTest,
++                                        public testing::TestWithParam<Network::Address::IpVersion> {
++public:
++  AllocateConnPoolIntegrationTest() : HttpIntegrationTest(Http::CodecType::HTTP1, GetParam()) {}
++
++  void SetUp() override { setUpstreamProtocol(Http::CodecType::HTTP3); }
++
++  void initialize() override {
++    config_helper_.addConfigModifier(
++        [&](envoy::config::bootstrap::v3::Bootstrap& bootstrap) -> void {
++          auto* cluster = bootstrap.mutable_static_resources()->mutable_clusters(0);
++          envoy::extensions::upstreams::http::v3::HttpProtocolOptions protocol_options;
++          auto* auto_config = protocol_options.mutable_auto_config();
++          auto_config->mutable_http3_protocol_options();
++          auto_config->mutable_alternate_protocols_cache_options()->set_name("base_cache");
++          ConfigHelper::setProtocolOptions(*cluster, protocol_options);
++
++          // Configure QUIC for the upstream cluster to satisfy validation.
++          auto* transport_socket = cluster->mutable_transport_socket();
++          transport_socket->set_name("envoy.transport_sockets.quic");
++          envoy::extensions::transport_sockets::quic::v3::QuicUpstreamTransport quic_context;
++          quic_context.mutable_upstream_tls_context();
++          std::ignore = transport_socket->mutable_typed_config()->PackFrom(quic_context);
++        });
++    config_helper_.addRuntimeOverride("upstream.use_http3", "true");
++    HttpIntegrationTest::initialize();
++  }
++};
++
++INSTANTIATE_TEST_SUITE_P(IpVersions, AllocateConnPoolIntegrationTest,
++                         testing::ValuesIn(TestEnvironment::getIpVersionsForTest()),
++                         TestUtility::ipTestParamsToString);
++
++TEST_P(AllocateConnPoolIntegrationTest, NullTransportSocketOptionsCrash) {
++  initialize();
++
++  absl::Notification done;
++  auto callbacks = std::make_shared<MyCallbacks>(done);
++
++  test_server_->server().dispatcher().post([&, callbacks]() {
++    auto cluster = test_server_->server().clusterManager().getThreadLocalCluster("cluster_0");
++    if (cluster != nullptr) {
++      auto& async_client = cluster->httpAsyncClient();
++
++      Http::TestRequestHeaderMapImpl headers{
++          {":method", "GET"}, {":path", "/"}, {":scheme", "http"}, {":authority", "127.0.0.1"}};
++
++      auto message = std::make_unique<Http::RequestMessageImpl>(
++          std::make_unique<Http::TestRequestHeaderMapImpl>(headers));
++
++      // Verify that this doesn't crash the server.
++      async_client.send(std::move(message), *callbacks, Http::AsyncClient::RequestOptions());
++    }
++  });
++  done.WaitForNotification();
++}
++} // namespace Envoy
+-- 
+2.54.0
+

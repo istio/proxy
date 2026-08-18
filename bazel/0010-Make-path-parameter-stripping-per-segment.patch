@@ -1,0 +1,555 @@
+From 6375a3bf4581b0043eb5690d4d7a351e55c004f9 Mon Sep 17 00:00:00 2001
+From: Yan Avlasov <yavlasov@google.com>
+Date: Wed, 29 Jul 2026 02:29:02 +0000
+Subject: [PATCH 10/13] Make path parameter stripping per segment.
+
+Signed-off-by: Yan Avlasov <yavlasov@google.com>
+Signed-off-by: Kateryna Nezdolii <kateryna.nezdolii@gmail.com>
+Signed-off-by: Ryan Northey <ryan@synca.io>
+Signed-off-by: Kateryna Nezdolii <kateryna.nezdolii@gmail.com>
+---
+ ...on__remove_path_parameters_per_segment.rst |   6 +
+ source/common/http/path_utility.cc            |  37 ++++
+ source/common/http/path_utility.h             |   9 +
+ source/common/router/config_impl.cc           |  49 +++--
+ source/common/router/config_impl.h            |   2 +-
+ source/common/runtime/runtime_features.cc     |   1 +
+ test/common/http/path_utility_test.cc         |  27 +++
+ test/common/router/config_impl_test.cc        | 208 ++++++++++++++++++
+ test/integration/protocol_integration_test.cc |  48 ++++
+ 9 files changed, 370 insertions(+), 17 deletions(-)
+ create mode 100644 changelogs/current/bug_fixes/url_normalization__remove_path_parameters_per_segment.rst
+
+diff --git a/changelogs/current/bug_fixes/url_normalization__remove_path_parameters_per_segment.rst b/changelogs/current/bug_fixes/url_normalization__remove_path_parameters_per_segment.rst
+new file mode 100644
+index 0000000000..d00ae3a051
+--- /dev/null
++++ b/changelogs/current/bug_fixes/url_normalization__remove_path_parameters_per_segment.rst
+@@ -0,0 +1,6 @@
++Fixes `GHSA-m745-gh6x-349x <https://github.com/envoyproxy/envoy/security/advisories/GHSA-m745-gh6x-349x>`_
++
++Strip path parameters from individual path segments per https://datatracker.ietf.org/doc/html/rfc3986#section-3.3
++
++This behavioral change can be temporarily reverted by setting runtime
++guard ``envoy.reloadable_features.strip_path_parameters_per_segment`` to ``false``.
+diff --git a/source/common/http/path_utility.cc b/source/common/http/path_utility.cc
+index fee7e543ec..f48d8e9add 100644
+--- a/source/common/http/path_utility.cc
++++ b/source/common/http/path_utility.cc
+@@ -1,5 +1,7 @@
+ #include "source/common/http/path_utility.h"
+ 
++#include <string>
++
+ #include "source/common/common/logger.h"
+ #include "source/common/runtime/runtime_features.h"
+ 
+@@ -136,5 +138,40 @@ absl::string_view PathUtil::removeQueryAndFragment(const absl::string_view path)
+   return ret;
+ }
+ 
++absl::optional<std::string> PathUtil::removePathParameters(const RequestHeaderMap& headers) {
++  return removePathParameters(headers.getPathValue());
++}
++
++absl::optional<std::string> PathUtil::removePathParameters(const absl::string_view path) {
++  const size_t query_or_fragment_pos = path.find_first_of("?#");
++  const absl::string_view path_portion = path.substr(0, query_or_fragment_pos);
++
++  if (path_portion.find(';') == absl::string_view::npos) {
++    return std::nullopt;
++  }
++
++  const absl::string_view query_and_fragment = (query_or_fragment_pos != absl::string_view::npos)
++                                                   ? path.substr(query_or_fragment_pos)
++                                                   : absl::string_view{};
++
++  std::string result;
++  result.reserve(path.size());
++
++  bool in_parameter = false;
++  for (char c : path_portion) {
++    if (c == '/') {
++      in_parameter = false;
++      result.push_back(c);
++    } else if (c == ';') {
++      in_parameter = true;
++    } else if (!in_parameter) {
++      result.push_back(c);
++    }
++  }
++
++  result.append(query_and_fragment.data(), query_and_fragment.size());
++  return result;
++}
++
+ } // namespace Http
+ } // namespace Envoy
+diff --git a/source/common/http/path_utility.h b/source/common/http/path_utility.h
+index dfff442bd0..c93b70ee63 100644
+--- a/source/common/http/path_utility.h
++++ b/source/common/http/path_utility.h
+@@ -1,5 +1,8 @@
+ #pragma once
+ 
++#include <optional>
++#include <string>
++
+ #include "envoy/http/header_map.h"
+ 
+ #include "absl/strings/string_view.h"
+@@ -37,6 +40,12 @@ public:
+   // Removes the query and/or fragment string (if present) from the input path.
+   // For example, this function returns "/data" for the input path "/data?param=value#fragment".
+   static absl::string_view removeQueryAndFragment(const absl::string_view path);
++
++  // Removes path parameters (characters following and including ';' in path segments)
++  // from the :path request header.
++  // Returns std::nullopt if the path did not contain parameters, or the modified path if changed.
++  static absl::optional<std::string> removePathParameters(const RequestHeaderMap& headers);
++  static absl::optional<std::string> removePathParameters(const absl::string_view path);
+ };
+ 
+ } // namespace Http
+diff --git a/source/common/router/config_impl.cc b/source/common/router/config_impl.cc
+index 6ec41f1d54..754c8aebe0 100644
+--- a/source/common/router/config_impl.cc
++++ b/source/common/router/config_impl.cc
+@@ -791,16 +791,23 @@ bool RouteEntryImplBase::evaluateRuntimeMatch(const uint64_t random_value) const
+                                                  random_value);
+ }
+ 
+-absl::string_view
++absl::optional<std::string>
+ RouteEntryImplBase::sanitizePathBeforePathMatching(const absl::string_view path) const {
+-  absl::string_view ret = path;
+   if (vhost_->globalRouteConfig().ignorePathParametersInPathMatching()) {
+-    auto pos = ret.find_first_of(';');
+-    if (pos != absl::string_view::npos) {
+-      ret.remove_suffix(ret.length() - pos);
++    if (Runtime::runtimeFeatureEnabled(
++            "envoy.reloadable_features.strip_path_parameters_per_segment")) {
++      absl::optional<std::string> modified_path = Http::PathUtil::removePathParameters(path);
++      if (modified_path.has_value()) {
++        return modified_path;
++      }
++    } else {
++      const auto pos = path.find(';');
++      if (pos != absl::string_view::npos) {
++        return std::string(path.substr(0, pos));
++      }
+     }
+   }
+-  return ret;
++  return std::nullopt;
+ }
+ 
+ bool RouteEntryImplBase::evaluateTlsContextMatch(const StreamInfo::StreamInfo& stream_info) const {
+@@ -1422,9 +1429,12 @@ PrefixRouteEntryImpl::currentUrlPathAfterRewrite(const Http::RequestHeaderMap& h
+ RouteConstSharedPtr PrefixRouteEntryImpl::matches(const Http::RequestHeaderMap& headers,
+                                                   const StreamInfo::StreamInfo& stream_info,
+                                                   uint64_t random_value) const {
+-  if (RouteEntryImplBase::matchRoute(headers, stream_info, random_value) &&
+-      path_matcher_->match(sanitizePathBeforePathMatching(headers.getPathValue()))) {
+-    return clusterEntry(headers, stream_info, random_value);
++  if (RouteEntryImplBase::matchRoute(headers, stream_info, random_value)) {
++    const absl::string_view path = headers.getPathValue();
++    const auto sanitized = sanitizePathBeforePathMatching(path);
++    if (path_matcher_->match(sanitized.has_value() ? absl::string_view(*sanitized) : path)) {
++      return clusterEntry(headers, stream_info, random_value);
++    }
+   }
+   return nullptr;
+ }
+@@ -1456,9 +1466,12 @@ PathRouteEntryImpl::currentUrlPathAfterRewrite(const Http::RequestHeaderMap& hea
+ RouteConstSharedPtr PathRouteEntryImpl::matches(const Http::RequestHeaderMap& headers,
+                                                 const StreamInfo::StreamInfo& stream_info,
+                                                 uint64_t random_value) const {
+-  if (RouteEntryImplBase::matchRoute(headers, stream_info, random_value) &&
+-      path_matcher_->match(sanitizePathBeforePathMatching(headers.getPathValue()))) {
+-    return clusterEntry(headers, stream_info, random_value);
++  if (RouteEntryImplBase::matchRoute(headers, stream_info, random_value)) {
++    const absl::string_view path = headers.getPathValue();
++    const auto sanitized = sanitizePathBeforePathMatching(path);
++    if (path_matcher_->match(sanitized.has_value() ? absl::string_view(*sanitized) : path)) {
++      return clusterEntry(headers, stream_info, random_value);
++    }
+   }
+ 
+   return nullptr;
+@@ -1482,7 +1495,7 @@ void RegexRouteEntryImpl::rewritePathHeader(Http::RequestHeaderMap& headers,
+   absl::string_view path = Http::PathUtil::removeQueryAndFragment(headers.getPathValue());
+   // TODO(yuval-k): This ASSERT can happen if the path was changed by a filter without clearing
+   // the route cache. We should consider if ASSERT-ing is the desired behavior in this case.
+-  ASSERT(path_matcher_->match(sanitizePathBeforePathMatching(path)));
++  ASSERT(path_matcher_->match(sanitizePathBeforePathMatching(path).value_or(std::string(path))));
+   finalizePathHeaderForRedirect(headers, path, insert_envoy_original_path);
+ }
+ 
+@@ -1498,7 +1511,9 @@ RouteConstSharedPtr RegexRouteEntryImpl::matches(const Http::RequestHeaderMap& h
+                                                  const StreamInfo::StreamInfo& stream_info,
+                                                  uint64_t random_value) const {
+   if (RouteEntryImplBase::matchRoute(headers, stream_info, random_value)) {
+-    if (path_matcher_->match(sanitizePathBeforePathMatching(headers.getPathValue()))) {
++    const absl::string_view path = headers.getPathValue();
++    const auto sanitized = sanitizePathBeforePathMatching(path);
++    if (path_matcher_->match(sanitized.has_value() ? absl::string_view(*sanitized) : path)) {
+       return clusterEntry(headers, stream_info, random_value);
+     }
+   }
+@@ -1565,8 +1580,10 @@ PathSeparatedPrefixRouteEntryImpl::matches(const Http::RequestHeaderMap& headers
+   if (!RouteEntryImplBase::matchRoute(headers, stream_info, random_value)) {
+     return nullptr;
+   }
+-  absl::string_view sanitized_path = sanitizePathBeforePathMatching(
+-      Http::PathUtil::removeQueryAndFragment(headers.getPathValue()));
++  const absl::string_view raw_path = Http::PathUtil::removeQueryAndFragment(headers.getPathValue());
++  const auto sanitized_opt = sanitizePathBeforePathMatching(raw_path);
++  const absl::string_view sanitized_path =
++      sanitized_opt.has_value() ? absl::string_view(*sanitized_opt) : raw_path;
+   const size_t sanitized_size = sanitized_path.size();
+   const size_t matcher_size = matcher().size();
+   if (sanitized_size >= matcher_size && path_matcher_->match(sanitized_path) &&
+diff --git a/source/common/router/config_impl.h b/source/common/router/config_impl.h
+index 82760279b4..c198d3879c 100644
+--- a/source/common/router/config_impl.h
++++ b/source/common/router/config_impl.h
+@@ -755,7 +755,7 @@ public:
+ 
+   // Sanitizes the |path| before passing it to PathMatcher, if configured, this method makes the
+   // path matching to ignore the path-parameters.
+-  absl::string_view sanitizePathBeforePathMatching(const absl::string_view path) const;
++  absl::optional<std::string> sanitizePathBeforePathMatching(const absl::string_view path) const;
+ 
+ protected:
+   const PathMatcherSharedPtr path_matcher_;
+diff --git a/source/common/runtime/runtime_features.cc b/source/common/runtime/runtime_features.cc
+index 9ba8ba07e1..09d86b90ba 100644
+--- a/source/common/runtime/runtime_features.cc
++++ b/source/common/runtime/runtime_features.cc
+@@ -95,6 +95,7 @@ RUNTIME_GUARD(envoy_reloadable_features_safe_http2_options);
+ RUNTIME_GUARD(envoy_reloadable_features_sanitize_html_stats_names);
+ RUNTIME_GUARD(envoy_reloadable_features_skip_dns_lookup_for_proxied_requests);
+ RUNTIME_GUARD(envoy_reloadable_features_strip_dotdot_segments_with_parameters);
++RUNTIME_GUARD(envoy_reloadable_features_strip_path_parameters_per_segment);
+ RUNTIME_GUARD(envoy_reloadable_features_tcp_proxy_set_idle_timer_immediately_on_new_connection);
+ RUNTIME_GUARD(envoy_reloadable_features_test_feature_true);
+ RUNTIME_GUARD(envoy_reloadable_features_trace_refresh_after_route_refresh);
+diff --git a/test/common/http/path_utility_test.cc b/test/common/http/path_utility_test.cc
+index 45cef0f3b0..ba4c3ea4fd 100644
+--- a/test/common/http/path_utility_test.cc
++++ b/test/common/http/path_utility_test.cc
+@@ -252,5 +252,32 @@ TEST_F(PathUtilityTest, UnescapeSlashes) {
+             unescapeSlashes("%2fa%5Cb%2fc%5c?%2fabcd%5C%%2f%")); // query is untouched
+ }
+ 
++TEST_F(PathUtilityTest, RemovePathParameters) {
++  EXPECT_EQ(std::nullopt, PathUtil::removePathParameters(""));
++  EXPECT_EQ(std::nullopt, PathUtil::removePathParameters("/"));
++  EXPECT_EQ(std::nullopt, PathUtil::removePathParameters("/abc"));
++  EXPECT_EQ(std::nullopt, PathUtil::removePathParameters("/abc/def"));
++  EXPECT_EQ(std::nullopt, PathUtil::removePathParameters("/abc/def?param=1;2"));
++  EXPECT_EQ(std::nullopt, PathUtil::removePathParameters("/abc/def?param=1#frag;2"));
++
++  EXPECT_EQ("/abc/def", *PathUtil::removePathParameters("/abc;param=1/def"));
++  EXPECT_EQ("/abc/def", *PathUtil::removePathParameters("/abc;p1=1;p2=2/def"));
++  EXPECT_EQ("/abc/def", *PathUtil::removePathParameters("/abc;p1=1/def;p2=2"));
++  EXPECT_EQ("/abc/def", *PathUtil::removePathParameters("/abc;;p=1/def"));
++  EXPECT_EQ("/abc/def", *PathUtil::removePathParameters("/abc;/def"));
++  EXPECT_EQ("/abc//def", *PathUtil::removePathParameters("/abc/;p=1/def"));
++  EXPECT_EQ("/abc", *PathUtil::removePathParameters("/abc;p=1"));
++  EXPECT_EQ("/abc/def?param=1;2", *PathUtil::removePathParameters("/abc;p=1/def?param=1;2"));
++  EXPECT_EQ("/abc/def#frag;2", *PathUtil::removePathParameters("/abc;p=1/def#frag;2"));
++  EXPECT_EQ("/abc/def?q=1#f;2", *PathUtil::removePathParameters("/abc;p=1/def?q=1#f;2"));
++
++  // Verify header map parameter overload
++  pathHeaderEntry("/foo/bar?query=val");
++  EXPECT_EQ(std::nullopt, PathUtil::removePathParameters(headers_));
++
++  pathHeaderEntry("/foo;param=1/bar;param=2?query=val;123#frag");
++  EXPECT_EQ("/foo/bar?query=val;123#frag", *PathUtil::removePathParameters(headers_));
++}
++
+ } // namespace Http
+ } // namespace Envoy
+diff --git a/test/common/router/config_impl_test.cc b/test/common/router/config_impl_test.cc
+index 467258fc3f..d36ea1ece4 100644
+--- a/test/common/router/config_impl_test.cc
++++ b/test/common/router/config_impl_test.cc
+@@ -2546,6 +2546,214 @@ virtual_hosts:
+   }
+ }
+ 
++TEST_F(RouteMatcherTest, IgnorePathParametersInPathMatchingPerSegmentEnabledAllMatchers) {
++  const std::string yaml = R"EOF(
++virtual_hosts:
++- name: prefix_vh
++  domains: ["prefix.local"]
++  routes:
++  - match:
++      prefix: "/foo/bar"
++    name: "prefix-long"
++    route: { cluster: prefix-long }
++  - match:
++      prefix: "/foo"
++    name: "prefix-short"
++    route: { cluster: prefix-short }
++  - match:
++      prefix: "/"
++    name: "prefix-fallback"
++    route: { cluster: prefix-fallback }
++- name: exact_vh
++  domains: ["exact.local"]
++  routes:
++  - match:
++      path: "/foo/bar"
++    name: "exact-long"
++    route: { cluster: exact-long }
++  - match:
++      path: "/foo"
++    name: "exact-short"
++    route: { cluster: exact-short }
++  - match:
++      prefix: "/"
++    name: "exact-fallback"
++    route: { cluster: exact-fallback }
++- name: regex_vh
++  domains: ["regex.local"]
++  routes:
++  - match:
++      safe_regex:
++        regex: "^/foo/bar$"
++    name: "regex-long"
++    route: { cluster: regex-long }
++  - match:
++      safe_regex:
++        regex: "^/foo$"
++    name: "regex-short"
++    route: { cluster: regex-short }
++  - match:
++      prefix: "/"
++    name: "regex-fallback"
++    route: { cluster: regex-fallback }
++- name: path_separated_vh
++  domains: ["pathsep.local"]
++  routes:
++  - match:
++      path_separated_prefix: "/foo/bar"
++    name: "pathsep-long"
++    route: { cluster: pathsep-long }
++  - match:
++      path_separated_prefix: "/foo"
++    name: "pathsep-short"
++    route: { cluster: pathsep-short }
++  - match:
++      prefix: "/"
++    name: "pathsep-fallback"
++    route: { cluster: pathsep-fallback }
++  )EOF";
++  auto route_configuration = parseRouteConfigurationFromYaml(yaml);
++  route_configuration.set_ignore_path_parameters_in_path_matching(true);
++
++  factory_context_.cluster_manager_.initializeClusters(
++      {"prefix-long", "prefix-short", "prefix-fallback", "exact-long", "exact-short",
++       "exact-fallback", "regex-long", "regex-short", "regex-fallback", "pathsep-long",
++       "pathsep-short", "pathsep-fallback"},
++      {});
++  TestConfigImpl config(route_configuration, factory_context_, true, creation_status_);
++
++  EXPECT_EQ("prefix-long",
++            config.route(genHeaders("prefix.local", "/foo;a=1/bar;b=2", "GET"), 0)->routeName());
++  EXPECT_EQ("prefix-long",
++            config.route(genHeaders("prefix.local", "/foo/bar", "GET"), 0)->routeName());
++  EXPECT_EQ("exact-long",
++            config.route(genHeaders("exact.local", "/foo;a=1/bar;b=2", "GET"), 0)->routeName());
++  EXPECT_EQ("exact-long",
++            config.route(genHeaders("exact.local", "/foo/bar;b=2", "GET"), 0)->routeName());
++  EXPECT_EQ("regex-long",
++            config.route(genHeaders("regex.local", "/foo;a=1/bar;b=2", "GET"), 0)->routeName());
++  EXPECT_EQ("pathsep-long",
++            config.route(genHeaders("pathsep.local", "/foo;a=1/bar;b=2", "GET"), 0)->routeName());
++  EXPECT_EQ("pathsep-short",
++            config.route(genHeaders("pathsep.local", "/foo;a=1", "GET"), 0)->routeName());
++  EXPECT_EQ("pathsep-fallback",
++            config.route(genHeaders("pathsep.local", "/foobar;a=1", "GET"), 0)->routeName());
++}
++
++TEST_F(RouteMatcherTest, IgnorePathParametersInPathMatchingPerSegmentDisabledAllMatchers) {
++  mergeValues({{"envoy.reloadable_features.strip_path_parameters_per_segment", "false"}});
++
++  const std::string yaml = R"EOF(
++virtual_hosts:
++- name: prefix_vh
++  domains: ["prefix.local"]
++  routes:
++  - match:
++      prefix: "/foo/bar"
++    name: "prefix-long"
++    route: { cluster: prefix-long }
++  - match:
++      prefix: "/foo"
++    name: "prefix-short"
++    route: { cluster: prefix-short }
++  - match:
++      prefix: "/"
++    name: "prefix-fallback"
++    route: { cluster: prefix-fallback }
++- name: exact_vh
++  domains: ["exact.local"]
++  routes:
++  - match:
++      path: "/foo/bar"
++    name: "exact-long"
++    route: { cluster: exact-long }
++  - match:
++      path: "/foo"
++    name: "exact-short"
++    route: { cluster: exact-short }
++  - match:
++      prefix: "/"
++    name: "exact-fallback"
++    route: { cluster: exact-fallback }
++- name: regex_vh
++  domains: ["regex.local"]
++  routes:
++  - match:
++      safe_regex:
++        regex: "^/foo/bar$"
++    name: "regex-long"
++    route: { cluster: regex-long }
++  - match:
++      safe_regex:
++        regex: "^/foo$"
++    name: "regex-short"
++    route: { cluster: regex-short }
++  - match:
++      prefix: "/"
++    name: "regex-fallback"
++    route: { cluster: regex-fallback }
++- name: path_separated_vh
++  domains: ["pathsep.local"]
++  routes:
++  - match:
++      path_separated_prefix: "/foo/bar"
++    name: "pathsep-long"
++    route: { cluster: pathsep-long }
++  - match:
++      path_separated_prefix: "/foo"
++    name: "pathsep-short"
++    route: { cluster: pathsep-short }
++  - match:
++      prefix: "/"
++    name: "pathsep-fallback"
++    route: { cluster: pathsep-fallback }
++  )EOF";
++  auto route_configuration = parseRouteConfigurationFromYaml(yaml);
++  route_configuration.set_ignore_path_parameters_in_path_matching(true);
++
++  factory_context_.cluster_manager_.initializeClusters(
++      {"prefix-long", "prefix-short", "prefix-fallback", "exact-long", "exact-short",
++       "exact-fallback", "regex-long", "regex-short", "regex-fallback", "pathsep-long",
++       "pathsep-short", "pathsep-fallback"},
++      {});
++  TestConfigImpl config(route_configuration, factory_context_, true, creation_status_);
++
++  EXPECT_EQ("prefix-short",
++            config.route(genHeaders("prefix.local", "/foo;a=1/bar;b=2", "GET"), 0)->routeName());
++  EXPECT_EQ("exact-short",
++            config.route(genHeaders("exact.local", "/foo;a=1/bar;b=2", "GET"), 0)->routeName());
++  EXPECT_EQ("regex-short",
++            config.route(genHeaders("regex.local", "/foo;a=1/bar;b=2", "GET"), 0)->routeName());
++  EXPECT_EQ("pathsep-short",
++            config.route(genHeaders("pathsep.local", "/foo;a=1/bar;b=2", "GET"), 0)->routeName());
++  EXPECT_EQ("pathsep-fallback",
++            config.route(genHeaders("pathsep.local", "/foobar;a=1", "GET"), 0)->routeName());
++}
++
++TEST_F(RouteMatcherTest, IgnorePathParametersInPathMatchingDefaultUnchanged) {
++  const std::string yaml = R"EOF(
++virtual_hosts:
++- name: no_ignore_vh
++  domains: ["no-ignore.local"]
++  routes:
++  - match:
++      path: "/foo/bar"
++    name: "exact-long"
++    route: { cluster: exact-long }
++  - match:
++      prefix: "/"
++    name: "fallback"
++    route: { cluster: fallback }
++  )EOF";
++  auto route_configuration = parseRouteConfigurationFromYaml(yaml);
++
++  factory_context_.cluster_manager_.initializeClusters({"exact-long", "fallback"}, {});
++  TestConfigImpl config(route_configuration, factory_context_, true, creation_status_);
++
++  EXPECT_EQ("fallback",
++            config.route(genHeaders("no-ignore.local", "/foo;a=1/bar;b=2", "GET"), 0)->routeName());
++}
++
+ // Tests that when 'ignore_port_in_host_matching' is true, port from host header
+ // is ignored in host matching.
+ TEST_F(RouteMatcherTest, IgnorePortInHostMatching) {
+diff --git a/test/integration/protocol_integration_test.cc b/test/integration/protocol_integration_test.cc
+index f6f5de6960..7226d5d1dd 100644
+--- a/test/integration/protocol_integration_test.cc
++++ b/test/integration/protocol_integration_test.cc
+@@ -213,6 +213,54 @@ TEST_P(ProtocolIntegrationTest, RouterVirtualClusters) { testRouterVirtualCluste
+ 
+ TEST_P(ProtocolIntegrationTest, RouterStats) { testRouteStats(); }
+ 
++TEST_P(ProtocolIntegrationTest, IgnorePathParametersInPathMatchingPerSegmentEnabled) {
++  config_helper_.addConfigModifier(
++      [](envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager&
++             hcm) {
++        hcm.mutable_route_config()
++            ->mutable_virtual_hosts(0)
++            ->mutable_routes(0)
++            ->mutable_match()
++            ->set_prefix("/foo/bar");
++        hcm.mutable_route_config()->set_ignore_path_parameters_in_path_matching(true);
++      });
++  initialize();
++
++  codec_client_ = makeHttpConnection(lookupPort("http"));
++
++  default_request_headers_.setPath("/foo;param1=1/bar;param2=2");
++  auto response =
++      sendRequestAndWaitForResponse(default_request_headers_, 0, default_response_headers_, 0);
++
++  ASSERT_TRUE(response->complete());
++  EXPECT_EQ("200", response->headers().getStatusValue());
++}
++
++TEST_P(DownstreamProtocolIntegrationTest, IgnorePathParametersInPathMatchingPerSegmentDisabled) {
++  config_helper_.addConfigModifier(
++      [](envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager&
++             hcm) {
++        hcm.mutable_route_config()
++            ->mutable_virtual_hosts(0)
++            ->mutable_routes(0)
++            ->mutable_match()
++            ->set_prefix("/foo/bar");
++        hcm.mutable_route_config()->set_ignore_path_parameters_in_path_matching(true);
++      });
++  config_helper_.addRuntimeOverride("envoy.reloadable_features.strip_path_parameters_per_segment",
++                                    "false");
++  initialize();
++
++  codec_client_ = makeHttpConnection(lookupPort("http"));
++
++  default_request_headers_.setPath("/foo;param1=1/bar;param2=2");
++  auto response = codec_client_->makeHeaderOnlyRequest(default_request_headers_);
++  ASSERT_TRUE(response->waitForEndStream());
++
++  EXPECT_TRUE(response->complete());
++  EXPECT_EQ("404", response->headers().getStatusValue());
++}
++
+ // Change the default route to be restrictive, and send a POST to an alternate route.
+ TEST_P(DownstreamProtocolIntegrationTest, RouterNotFoundBodyNoBuffer) {
+   testRouterNotFoundWithBody();
+-- 
+2.54.0
+

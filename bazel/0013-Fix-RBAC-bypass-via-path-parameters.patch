@@ -1,0 +1,366 @@
+From 1f9621cf9a3ab8023126916df1c920056cf5f891 Mon Sep 17 00:00:00 2001
+From: Paul Ogilby <pgal@google.com>
+Date: Mon, 22 Jun 2026 14:28:35 -0400
+Subject: [PATCH 13/13] Fix RBAC bypass via path parameters
+
+When ignore_path_parameters_in_path_matching is enabled, the router strips path parameters (everything after ';') before matching. However, the RBAC filter's PathMatcher and UriTemplateMatcher did not, leading to a bypass where a path like '/admin;x' bypasses RBAC policies matching '/admin' but is still routed to '/admin'.
+
+This fix exposes ignorePathParametersInPathMatching() on the Route's CommonConfig, and updates RBAC PathMatcher and UriTemplateMatcher to check this config and strip path parameters using a new shared Http::PathUtil helper before evaluating the match.
+
+Fixes GHSA-77x5-xqjg-hprq.
+
+Signed-off-by: Paul Ogilby <pgal@google.com>
+Signed-off-by: Kateryna Nezdolii <kateryna.nezdolii@gmail.com>
+---
+ .../rbac__respect-ignore-path-parameters.rst  |  12 ++
+ envoy/router/router.h                         |   5 +
+ source/common/http/null_route_impl.h          |   1 +
+ source/common/router/config_impl.h            |   5 +-
+ source/common/runtime/runtime_features.cc     |   1 +
+ .../filters/common/rbac/matchers.cc           |  33 ++++-
+ test/extensions/filters/common/rbac/BUILD     |   3 +
+ .../filters/common/rbac/matchers_test.cc      | 121 ++++++++++++++++++
+ test/mocks/router/mocks.cc                    |   1 +
+ test/mocks/router/mocks.h                     |   1 +
+ 10 files changed, 177 insertions(+), 6 deletions(-)
+ create mode 100644 changelogs/current/minor_behavior_changes/rbac__respect-ignore-path-parameters.rst
+
+diff --git a/changelogs/current/minor_behavior_changes/rbac__respect-ignore-path-parameters.rst b/changelogs/current/minor_behavior_changes/rbac__respect-ignore-path-parameters.rst
+new file mode 100644
+index 0000000000..4824b5aba1
+--- /dev/null
++++ b/changelogs/current/minor_behavior_changes/rbac__respect-ignore-path-parameters.rst
+@@ -0,0 +1,12 @@
++Fix: `GHSA-77x5-xqjg-hprq <https://github.com/envoyproxy/envoy/security/advisories/GHSA-77x5-xqjg-hprq>`_
++
++RBAC path matching (via ``PathMatcher`` and ``UriTemplateMatcher``) now respects the route's
++``ignore_path_parameters_in_path_matching`` configuration. When enabled on a route, the RBAC filter
++will strip path parameters (everything after a semicolon in each path segment, e.g., transforming
++``/admin;x=y/action;foo=bar`` to ``/admin/action``) before evaluating the path match. This ensures
++path matching consistency between the Router and the RBAC filter, preventing authorization bypasses
++where an attacker could append path parameters to bypass RBAC rules while still being routed to the
++protected endpoint.
++
++This behavioral change can be temporarily reverted by setting the runtime guard
++``envoy.reloadable_features.rbac_respect_ignore_path_parameters`` to ``false``.
+diff --git a/envoy/router/router.h b/envoy/router/router.h
+index 2e3d5cef50..1b8e0e8554 100644
+--- a/envoy/router/router.h
++++ b/envoy/router/router.h
+@@ -1416,6 +1416,11 @@ public:
+    * for this route configuration.
+    */
+   virtual const Envoy::Config::TypedMetadata& typedMetadata() const PURE;
++
++  /**
++   * @return bool whether to ignore path parameters in path matching.
++   */
++  virtual bool ignorePathParametersInPathMatching() const PURE;
+ };
+ 
+ struct VirtualHostRoute {
+diff --git a/source/common/http/null_route_impl.h b/source/common/http/null_route_impl.h
+index f6085b49be..b806aa06fa 100644
+--- a/source/common/http/null_route_impl.h
++++ b/source/common/http/null_route_impl.h
+@@ -49,6 +49,7 @@ struct NullCommonConfig : public Router::CommonConfig {
+   const Envoy::Config::TypedMetadata& typedMetadata() const override {
+     return Router::DefaultRouteMetadataPack::get().typed_metadata_;
+   }
++  bool ignorePathParametersInPathMatching() const override { return false; }
+ 
+   static const std::vector<LowerCaseString> internal_only_headers_;
+ };
+diff --git a/source/common/router/config_impl.h b/source/common/router/config_impl.h
+index c198d3879c..8db63cc1c5 100644
+--- a/source/common/router/config_impl.h
++++ b/source/common/router/config_impl.h
+@@ -1286,7 +1286,7 @@ public:
+   const std::vector<ShadowPolicyPtr>& shadowPolicies() const { return shadow_policies_; }
+   absl::StatusOr<ClusterSpecifierPluginSharedPtr>
+   clusterSpecifierPlugin(absl::string_view provider) const;
+-  bool ignorePathParametersInPathMatching() const {
++  bool ignorePathParametersInPathMatching() const override {
+     return ignore_path_parameters_in_path_matching_;
+   }
+   const envoy::config::core::v3::Metadata& metadata() const override;
+@@ -1350,7 +1350,7 @@ public:
+   const std::vector<ShadowPolicyPtr>& shadowPolicies() const {
+     return shared_config_->shadowPolicies();
+   }
+-  bool ignorePathParametersInPathMatching() const {
++  bool ignorePathParametersInPathMatching() const override {
+     return shared_config_->ignorePathParametersInPathMatching();
+   }
+   const envoy::config::core::v3::Metadata& metadata() const override {
+@@ -1397,6 +1397,7 @@ public:
+   uint32_t maxDirectResponseBodySizeBytes() const override { return 0; }
+   const envoy::config::core::v3::Metadata& metadata() const override;
+   const Envoy::Config::TypedMetadata& typedMetadata() const override;
++  bool ignorePathParametersInPathMatching() const override { return false; }
+ 
+ private:
+   std::vector<Http::LowerCaseString> internal_only_headers_;
+diff --git a/source/common/runtime/runtime_features.cc b/source/common/runtime/runtime_features.cc
+index f73a33300c..49583690c9 100644
+--- a/source/common/runtime/runtime_features.cc
++++ b/source/common/runtime/runtime_features.cc
+@@ -88,6 +88,7 @@ RUNTIME_GUARD(envoy_reloadable_features_quic_upstream_reads_fixed_number_packets
+ RUNTIME_GUARD(envoy_reloadable_features_quic_upstream_socket_use_address_cache_for_read);
+ RUNTIME_GUARD(envoy_reloadable_features_quic_validate_headers_only_content_length);
+ RUNTIME_GUARD(envoy_reloadable_features_rbac_match_headers_individually);
++RUNTIME_GUARD(envoy_reloadable_features_rbac_respect_ignore_path_parameters);
+ RUNTIME_GUARD(envoy_reloadable_features_re2_use_latin1_mode);
+ RUNTIME_GUARD(envoy_reloadable_features_reject_empty_trusted_ca_file);
+ RUNTIME_GUARD(envoy_reloadable_features_report_load_when_rq_active_is_non_zero);
+diff --git a/source/extensions/filters/common/rbac/matchers.cc b/source/extensions/filters/common/rbac/matchers.cc
+index be2d6925f9..cc3f7d42c1 100644
+--- a/source/extensions/filters/common/rbac/matchers.cc
++++ b/source/extensions/filters/common/rbac/matchers.cc
+@@ -5,6 +5,7 @@
+ #include "envoy/upstream/upstream.h"
+ 
+ #include "source/common/config/utility.h"
++#include "source/common/http/path_utility.h"
+ #include "source/common/runtime/runtime_features.h"
+ #include "source/extensions/filters/common/rbac/matcher_extension.h"
+ #include "source/extensions/filters/common/rbac/principal_extension.h"
+@@ -386,17 +387,41 @@ bool RequestedServerNameMatcher::matches(const Network::Connection& connection,
+ }
+ 
+ bool PathMatcher::matches(const Network::Connection&, const Envoy::Http::RequestHeaderMap& headers,
+-                          const StreamInfo::StreamInfo&) const {
++                          const StreamInfo::StreamInfo& info) const {
+   if (headers.Path() == nullptr) {
+     return false;
+   }
+-  return path_matcher_.match(headers.getPathValue());
++  std::string path_without_parameters;
++  absl::string_view path = headers.getPathValue();
++  if (Runtime::runtimeFeatureEnabled(
++          "envoy.reloadable_features.rbac_respect_ignore_path_parameters") &&
++      info.route() != nullptr && info.route()->virtualHost() != nullptr &&
++      info.route()->virtualHost()->routeConfig().ignorePathParametersInPathMatching()) {
++    absl::optional<std::string> modified_path = Http::PathUtil::removePathParameters(path);
++    if (modified_path.has_value()) {
++      path_without_parameters = std::move(modified_path).value();
++      path = path_without_parameters;
++    }
++  }
++  return path_matcher_.match(path);
+ }
+ 
+ bool UriTemplateMatcher::matches(const Network::Connection&,
+                                  const Envoy::Http::RequestHeaderMap& headers,
+-                                 const StreamInfo::StreamInfo&) const {
+-  return uri_template_matcher_->match(headers.getPathValue());
++                                 const StreamInfo::StreamInfo& info) const {
++  std::string path_without_parameters;
++  absl::string_view path = headers.getPathValue();
++  if (Runtime::runtimeFeatureEnabled(
++          "envoy.reloadable_features.rbac_respect_ignore_path_parameters") &&
++      info.route() != nullptr && info.route()->virtualHost() != nullptr &&
++      info.route()->virtualHost()->routeConfig().ignorePathParametersInPathMatching()) {
++    absl::optional<std::string> modified_path = Http::PathUtil::removePathParameters(path);
++    if (modified_path.has_value()) {
++      path_without_parameters = std::move(modified_path).value();
++      path = path_without_parameters;
++    }
++  }
++  return uri_template_matcher_->match(path);
+ }
+ 
+ } // namespace RBAC
+diff --git a/test/extensions/filters/common/rbac/BUILD b/test/extensions/filters/common/rbac/BUILD
+index f28647786d..2cf9342d88 100644
+--- a/test/extensions/filters/common/rbac/BUILD
++++ b/test/extensions/filters/common/rbac/BUILD
+@@ -24,9 +24,11 @@ envoy_extension_cc_test(
+         "//source/extensions/filters/common/rbac:matchers_lib",
+         "//source/extensions/filters/common/rbac/principals/mtls_authenticated:config",
+         "//test/mocks/network:network_mocks",
++        "//test/mocks/router:router_mocks",
+         "//test/mocks/server:server_factory_context_mocks",
+         "//test/mocks/ssl:ssl_mocks",
+         "//test/test_common:status_utility_lib",
++        "//test/test_common:test_runtime_lib",
+         "//test/test_common:utility_lib",
+         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
+         "@envoy_api//envoy/config/rbac/v3:pkg_cc_proto",
+@@ -46,6 +48,7 @@ envoy_extension_cc_test(
+         "//source/extensions/filters/http/rbac:rbac_filter_lib",
+         "//source/extensions/matching/network/common:inputs_lib",
+         "//test/mocks/network:network_mocks",
++        "//test/mocks/router:router_mocks",
+         "//test/mocks/server:factory_context_mocks",
+         "//test/mocks/ssl:ssl_mocks",
+         "//test/mocks/stream_info:stream_info_mocks",
+diff --git a/test/extensions/filters/common/rbac/matchers_test.cc b/test/extensions/filters/common/rbac/matchers_test.cc
+index 0dc26758d2..77a0051f9f 100644
+--- a/test/extensions/filters/common/rbac/matchers_test.cc
++++ b/test/extensions/filters/common/rbac/matchers_test.cc
+@@ -12,9 +12,11 @@
+ #include "source/extensions/filters/common/rbac/principals/mtls_authenticated/mtls_authenticated.h"
+ 
+ #include "test/mocks/network/mocks.h"
++#include "test/mocks/router/mocks.h"
+ #include "test/mocks/server/server_factory_context.h"
+ #include "test/mocks/ssl/mocks.h"
+ #include "test/test_common/status_utility.h"
++#include "test/test_common/test_runtime.h"
+ 
+ #include "gmock/gmock.h"
+ #include "gtest/gtest.h"
+@@ -1889,6 +1891,125 @@ TEST(PrincipalMatcher, MetadataCreation) {
+                Envoy::Http::TestRequestHeaderMapImpl(), info);
+ }
+ 
++TEST(PathMatcher, PathParametersBypass) {
++  NiceMock<Server::Configuration::MockServerFactoryContext> context;
++  Envoy::Http::TestRequestHeaderMapImpl headers;
++  envoy::type::matcher::v3::PathMatcher matcher;
++  matcher.mutable_path()->set_exact("/exact/value");
++
++  // Case 1: ignore_path_parameters_in_path_matching = false (default)
++  // Request path: "/exact;foo=bar/value;ver=1"
++  // It should NOT match because the parameter is not ignored, so "/exact;foo=bar" != "/exact"
++  {
++    NiceMock<StreamInfo::MockStreamInfo> info;
++    auto route = std::make_shared<NiceMock<Router::MockRoute>>();
++    EXPECT_CALL(info, route()).WillRepeatedly(Return(route));
++    NiceMock<Router::MockConfig> route_config;
++    EXPECT_CALL(*route->virtual_host_, routeConfig()).WillRepeatedly(ReturnRef(route_config));
++    EXPECT_CALL(route_config, ignorePathParametersInPathMatching()).WillRepeatedly(Return(false));
++
++    headers.setPath("/exact;foo=bar/value;ver=1");
++    checkMatcher(PathMatcher(matcher, context), false, Envoy::Network::MockConnection(), headers,
++                 info);
++  }
++
++  // Case 2: ignore_path_parameters_in_path_matching = true
++  // Request path: "/exact;foo=bar/value;ver=1"
++  // It SHOULD match because the parameter is ignored, so it is sanitized to "/exact"
++  {
++    NiceMock<StreamInfo::MockStreamInfo> info;
++    auto route = std::make_shared<NiceMock<Router::MockRoute>>();
++    EXPECT_CALL(info, route()).WillRepeatedly(Return(route));
++    NiceMock<Router::MockConfig> route_config;
++    EXPECT_CALL(*route->virtual_host_, routeConfig()).WillRepeatedly(ReturnRef(route_config));
++    EXPECT_CALL(route_config, ignorePathParametersInPathMatching()).WillRepeatedly(Return(true));
++
++    headers.setPath("/exact;foo=bar/value;ver=1");
++    checkMatcher(PathMatcher(matcher, context), true, Envoy::Network::MockConnection(), headers,
++                 info);
++  }
++
++  // Case 3: ignore_path_parameters_in_path_matching = true, BUT rbac_respect_ignore_path_parameters
++  // is false (disabled) Request path: "/exact;foo=bar" It should NOT match because the runtime flag
++  // is disabled.
++  {
++    TestScopedRuntime scoped_runtime;
++    scoped_runtime.mergeValues(
++        {{"envoy.reloadable_features.rbac_respect_ignore_path_parameters", "false"}});
++
++    NiceMock<StreamInfo::MockStreamInfo> info;
++    auto route = std::make_shared<NiceMock<Router::MockRoute>>();
++    EXPECT_CALL(info, route()).WillRepeatedly(Return(route));
++    NiceMock<Router::MockConfig> route_config;
++    EXPECT_CALL(*route->virtual_host_, routeConfig()).WillRepeatedly(ReturnRef(route_config));
++    EXPECT_CALL(route_config, ignorePathParametersInPathMatching()).WillRepeatedly(Return(true));
++
++    headers.setPath("/exact;foo=bar/value;ver=1");
++    checkMatcher(PathMatcher(matcher, context), false, Envoy::Network::MockConnection(), headers,
++                 info);
++  }
++}
++
++TEST(UriTemplateMatcher, PathMatchingWithParameters) {
++  envoy::extensions::path::match::uri_template::v3::UriTemplateMatchConfig
++      uri_template_match_config;
++  uri_template_match_config.set_path_template("/bar/{lang}/target");
++  Router::PathMatcherSharedPtr raw_matcher =
++      std::make_shared<Envoy::Extensions::UriTemplate::Match::UriTemplateMatcher>(
++          uri_template_match_config);
++  UriTemplateMatcher matcher(raw_matcher);
++
++  Envoy::Http::TestRequestHeaderMapImpl headers;
++
++  // Case 1: ignore_path_parameters_in_path_matching = false (default)
++  // Request path: "/bar/lang;ver=1/target;foo=bar"
++  // It should NOT match.
++  {
++    NiceMock<StreamInfo::MockStreamInfo> info;
++    auto route = std::make_shared<NiceMock<Router::MockRoute>>();
++    EXPECT_CALL(info, route()).WillRepeatedly(Return(route));
++    NiceMock<Router::MockConfig> route_config;
++    EXPECT_CALL(*route->virtual_host_, routeConfig()).WillRepeatedly(ReturnRef(route_config));
++    EXPECT_CALL(route_config, ignorePathParametersInPathMatching()).WillRepeatedly(Return(false));
++
++    headers.setPath("/bar/lang;ver=1/target;foo=bar");
++    checkMatcher(matcher, false, Envoy::Network::MockConnection(), headers, info);
++  }
++
++  // Case 2: ignore_path_parameters_in_path_matching = true
++  // Request path: "/bar/lang;ver=1/target;foo=bar"
++  // It SHOULD match.
++  {
++    NiceMock<StreamInfo::MockStreamInfo> info;
++    auto route = std::make_shared<NiceMock<Router::MockRoute>>();
++    EXPECT_CALL(info, route()).WillRepeatedly(Return(route));
++    NiceMock<Router::MockConfig> route_config;
++    EXPECT_CALL(*route->virtual_host_, routeConfig()).WillRepeatedly(ReturnRef(route_config));
++    EXPECT_CALL(route_config, ignorePathParametersInPathMatching()).WillRepeatedly(Return(true));
++
++    headers.setPath("/bar/lang;ver=1/target;foo=bar");
++    checkMatcher(matcher, true, Envoy::Network::MockConnection(), headers, info);
++  }
++
++  // Case 3: ignore_path_parameters_in_path_matching = true, BUT rbac_respect_ignore_path_parameters
++  // is false (disabled) Request path: "/bar/lang;ver=1/target;foo=bar" It should NOT match.
++  {
++    TestScopedRuntime scoped_runtime;
++    scoped_runtime.mergeValues(
++        {{"envoy.reloadable_features.rbac_respect_ignore_path_parameters", "false"}});
++
++    NiceMock<StreamInfo::MockStreamInfo> info;
++    auto route = std::make_shared<NiceMock<Router::MockRoute>>();
++    EXPECT_CALL(info, route()).WillRepeatedly(Return(route));
++    NiceMock<Router::MockConfig> route_config;
++    EXPECT_CALL(*route->virtual_host_, routeConfig()).WillRepeatedly(ReturnRef(route_config));
++    EXPECT_CALL(route_config, ignorePathParametersInPathMatching()).WillRepeatedly(Return(true));
++
++    headers.setPath("/bar/lang;ver=1/target;foo=bar");
++    checkMatcher(matcher, false, Envoy::Network::MockConnection(), headers, info);
++  }
++}
++
+ } // namespace
+ } // namespace RBAC
+ } // namespace Common
+diff --git a/test/mocks/router/mocks.cc b/test/mocks/router/mocks.cc
+index 51781a930a..e19ebe58e9 100644
+--- a/test/mocks/router/mocks.cc
++++ b/test/mocks/router/mocks.cc
+@@ -136,6 +136,7 @@ MockConfig::MockConfig() : route_(new NiceMock<MockRoute>()) {
+   ON_CALL(*this, usesVhds()).WillByDefault(Return(false));
+   ON_CALL(*this, metadata()).WillByDefault(ReturnRef(metadata_));
+   ON_CALL(*this, typedMetadata()).WillByDefault(ReturnRef(typed_metadata_));
++  ON_CALL(*this, ignorePathParametersInPathMatching()).WillByDefault(Return(false));
+ }
+ 
+ MockConfig::~MockConfig() = default;
+diff --git a/test/mocks/router/mocks.h b/test/mocks/router/mocks.h
+index 7d4db90836..3ad43dd229 100644
+--- a/test/mocks/router/mocks.h
++++ b/test/mocks/router/mocks.h
+@@ -636,6 +636,7 @@ public:
+   MOCK_METHOD(uint32_t, maxDirectResponseBodySizeBytes, (), (const));
+   MOCK_METHOD(const envoy::config::core::v3::Metadata&, metadata, (), (const));
+   MOCK_METHOD(const Envoy::Config::TypedMetadata&, typedMetadata, (), (const));
++  MOCK_METHOD(bool, ignorePathParametersInPathMatching, (), (const));
+ 
+   std::shared_ptr<MockRoute> route_;
+   std::vector<Http::LowerCaseString> internal_only_headers_;
+-- 
+2.54.0
+
