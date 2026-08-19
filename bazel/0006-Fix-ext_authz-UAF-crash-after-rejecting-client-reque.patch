@@ -1,0 +1,146 @@
+From 0d6b18a24c04ded8519935b8cc53899122f8493c Mon Sep 17 00:00:00 2001
+From: Yan Avlasov <yavlasov@google.com>
+Date: Mon, 27 Jul 2026 19:33:45 +0000
+Subject: [PATCH 06/13] Fix ext_authz UAF crash after rejecting client request
+
+Fix: [CVE-2026-50572](https://github.com/envoyproxy/envoy/security/advisories/GHSA-q8wp-gf7q-m8cv)
+
+Signed-off-by: Yan Avlasov <yavlasov@google.com>
+Signed-off-by: Ryan Northey <ryan@synca.io>
+---
+ ...ext_authz__fix_uaf_when_rejecting_request.rst |  3 +++
+ .../common/ext_authz/ext_authz_grpc_impl.cc      |  6 ++++--
+ .../common/ext_authz/ext_authz_http_impl.cc      |  9 ++++++---
+ .../common/ext_authz/ext_authz_grpc_impl_test.cc | 16 ++++++++++++++++
+ .../common/ext_authz/ext_authz_http_impl_test.cc | 15 +++++++++++++++
+ 5 files changed, 44 insertions(+), 5 deletions(-)
+ create mode 100644 changelogs/current/bug_fixes/ext_authz__fix_uaf_when_rejecting_request.rst
+
+diff --git a/changelogs/current/bug_fixes/ext_authz__fix_uaf_when_rejecting_request.rst b/changelogs/current/bug_fixes/ext_authz__fix_uaf_when_rejecting_request.rst
+new file mode 100644
+index 0000000000..b0b405e73c
+--- /dev/null
++++ b/changelogs/current/bug_fixes/ext_authz__fix_uaf_when_rejecting_request.rst
+@@ -0,0 +1,3 @@
++Fix: `CVE-2026-50572 <https://github.com/envoyproxy/envoy/security/advisories/GHSA-q8wp-gf7q-m8cv>`_
++
++Fixed UAF when ext_authz over HTTP causes request to be rejected.
+diff --git a/source/extensions/filters/common/ext_authz/ext_authz_grpc_impl.cc b/source/extensions/filters/common/ext_authz/ext_authz_grpc_impl.cc
+index aa8e0a1d96..4cbd3b8fce 100644
+--- a/source/extensions/filters/common/ext_authz/ext_authz_grpc_impl.cc
++++ b/source/extensions/filters/common/ext_authz/ext_authz_grpc_impl.cc
+@@ -157,8 +157,9 @@ void GrpcClientImpl::onSuccess(std::unique_ptr<envoy::service::auth::v3::CheckRe
+     authz_response->dynamic_metadata = response->dynamic_metadata();
+   }
+ 
+-  callbacks_->onComplete(std::move(authz_response));
++  RequestCallbacks* callbacks = callbacks_;
+   callbacks_ = nullptr;
++  callbacks->onComplete(std::move(authz_response));
+ }
+ 
+ void GrpcClientImpl::onFailure(Grpc::Status::GrpcStatus status, const std::string&,
+@@ -169,8 +170,9 @@ void GrpcClientImpl::onFailure(Grpc::Status::GrpcStatus status, const std::strin
+   Response response{};
+   response.status = CheckStatus::Error;
+   response.grpc_status = status;
+-  callbacks_->onComplete(std::make_unique<Response>(response));
++  RequestCallbacks* callbacks = callbacks_;
+   callbacks_ = nullptr;
++  callbacks->onComplete(std::make_unique<Response>(response));
+ }
+ 
+ } // namespace ExtAuthz
+diff --git a/source/extensions/filters/common/ext_authz/ext_authz_http_impl.cc b/source/extensions/filters/common/ext_authz/ext_authz_http_impl.cc
+index e8e9d07795..145e008165 100644
+--- a/source/extensions/filters/common/ext_authz/ext_authz_http_impl.cc
++++ b/source/extensions/filters/common/ext_authz/ext_authz_http_impl.cc
+@@ -371,8 +371,9 @@ void RawHttpClientImpl::check(RequestCallbacks& callbacks,
+   if (thread_local_cluster == nullptr) {
+     // TODO(dio): Add stats related to this.
+     ENVOY_LOG(debug, "ext_authz cluster '{}' does not exist", cluster);
+-    callbacks_->onComplete(std::make_unique<Response>(errorResponse()));
++    RequestCallbacks* callbacks = callbacks_;
+     callbacks_ = nullptr;
++    callbacks->onComplete(std::make_unique<Response>(errorResponse()));
+   } else {
+     // Do not enforce a sampling decision on this span; instead keep the parent's sampling status.
+     auto options = Http::AsyncClient::RequestOptions()
+@@ -395,8 +396,9 @@ void RawHttpClientImpl::check(RequestCallbacks& callbacks,
+ 
+ void RawHttpClientImpl::onSuccess(const Http::AsyncClient::Request&,
+                                   Http::ResponseMessagePtr&& message) {
+-  callbacks_->onComplete(toResponse(std::move(message)));
++  RequestCallbacks* callbacks = callbacks_;
+   callbacks_ = nullptr;
++  callbacks->onComplete(toResponse(std::move(message)));
+ }
+ 
+ void RawHttpClientImpl::onFailure(const Http::AsyncClient::Request&,
+@@ -404,8 +406,9 @@ void RawHttpClientImpl::onFailure(const Http::AsyncClient::Request&,
+   // TODO(botengyao): handle different failure reasons.
+   ASSERT(reason == Http::AsyncClient::FailureReason::Reset ||
+          reason == Http::AsyncClient::FailureReason::ExceedResponseBufferLimit);
+-  callbacks_->onComplete(std::make_unique<Response>(errorResponse()));
++  RequestCallbacks* callbacks = callbacks_;
+   callbacks_ = nullptr;
++  callbacks->onComplete(std::make_unique<Response>(errorResponse()));
+ }
+ 
+ void RawHttpClientImpl::onBeforeFinalizeUpstreamSpan(
+diff --git a/test/extensions/filters/common/ext_authz/ext_authz_grpc_impl_test.cc b/test/extensions/filters/common/ext_authz/ext_authz_grpc_impl_test.cc
+index 74be98da05..9e0773e0f1 100644
+--- a/test/extensions/filters/common/ext_authz/ext_authz_grpc_impl_test.cc
++++ b/test/extensions/filters/common/ext_authz/ext_authz_grpc_impl_test.cc
+@@ -635,6 +635,22 @@ ok_response:
+                      span_);
+ }
+ 
++TEST_F(ExtAuthzGrpcClientTest, TestGrpcClientResetOnComplete) {
++  initialize();
++
++  envoy::service::auth::v3::CheckRequest request;
++  expectCallSend(request);
++  client_->check(request_callbacks_, request, Tracing::NullSpan::instance(), stream_info_);
++
++  EXPECT_CALL(span_, setTag(_, _)).Times(testing::AnyNumber());
++  EXPECT_CALL(request_callbacks_, onComplete_(_)).WillOnce(Invoke([this](ResponsePtr&) {
++    // Synchronously destroy the client while inside onComplete()!
++    client_.reset();
++  }));
++
++  client_->onSuccess(std::make_unique<envoy::service::auth::v3::CheckResponse>(), span_);
++}
++
+ } // namespace ExtAuthz
+ } // namespace Common
+ } // namespace Filters
+diff --git a/test/extensions/filters/common/ext_authz/ext_authz_http_impl_test.cc b/test/extensions/filters/common/ext_authz/ext_authz_http_impl_test.cc
+index 767c68cde2..9695239ac0 100644
+--- a/test/extensions/filters/common/ext_authz/ext_authz_http_impl_test.cc
++++ b/test/extensions/filters/common/ext_authz/ext_authz_http_impl_test.cc
+@@ -967,6 +967,21 @@ TEST_F(ExtAuthzHttpClientTest, MultipleSetCookieHeadersOnSuccess) {
+   client_->onSuccess(async_request_, std::move(message_response));
+ }
+ 
++TEST_F(ExtAuthzHttpClientTest, TestHttpClientResetOnComplete) {
++  envoy::service::auth::v3::CheckRequest request;
++  client_->check(request_callbacks_, request, parent_span_, stream_info_);
++
++  EXPECT_CALL(request_callbacks_, onComplete_(_)).WillOnce(Invoke([this](ResponsePtr&) {
++    // Synchronously destroy the client while inside onComplete()!
++    client_.reset();
++  }));
++
++  const auto expected_headers = TestCommon::makeHeaderValueOption({{":status", "200", false}});
++  auto check_response = TestCommon::makeMessageResponse(expected_headers);
++
++  client_->onSuccess(async_request_, std::move(check_response));
++}
++
+ } // namespace
+ } // namespace ExtAuthz
+ } // namespace Common
+-- 
+2.54.0
+

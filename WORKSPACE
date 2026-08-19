@@ -35,6 +35,22 @@ ENVOY_REPO = "envoy"
 # persist the option in `user.bazelrc`.
 http_archive(
     name = "envoy",
+    patch_args = ["-p1"],
+    patches = [
+        "@io_istio_proxy//bazel:0001-Switch-safe_regex-to-Latin1-charset.patch",
+        "@io_istio_proxy//bazel:0002-quiche-patch-oghttp2-to-validate-trailers-END_STREAM.patch",
+        "@io_istio_proxy//bazel:0003-quic-fix-heap-use-after-free-in-HttpDatagramHandler-.patch",
+        "@io_istio_proxy//bazel:0004-ext_authz-fix-null-pointer-dereference-for-query-par.patch",
+        "@io_istio_proxy//bazel:0005-Fix-parsing-of-scoped-IPv6-addresses-for-QUIC-reques.patch",
+        "@io_istio_proxy//bazel:0006-Fix-ext_authz-UAF-crash-after-rejecting-client-reque.patch",
+        "@io_istio_proxy//bazel:0007-stats-sanitize-stat-names-on-html-conversion.patch",
+        "@io_istio_proxy//bazel:0008-Avoid-null-de-reference-of-transport_socket_options-.patch",
+        "@io_istio_proxy//bazel:0009-Normalize-dot-and-dotdot-segments-with-parameters.patch",
+        "@io_istio_proxy//bazel:0010-Make-path-parameter-stripping-per-segment.patch",
+        "@io_istio_proxy//bazel:0011-http-prevent-generic-upgrade-connection-poisoning.patch",
+        "@io_istio_proxy//bazel:0012-Include-the-length-of-dropped-Host-headers-in-HTTP-2.patch",
+        "@io_istio_proxy//bazel:0013-Fix-RBAC-bypass-via-path-parameters.patch",
+    ],
     sha256 = ENVOY_SHA256,
     strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
     url = "https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz",

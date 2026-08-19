@@ -1,0 +1,307 @@
+From 9be98a2d2d6999106875f05d4b832ffd93e4075e Mon Sep 17 00:00:00 2001
+From: Yan Avlasov <yavlasov@google.com>
+Date: Thu, 30 Jul 2026 00:32:02 +0000
+Subject: [PATCH 12/13] Include the length of dropped Host headers in HTTP/2
+ request header map size and count limits
+
+Signed-off-by: Yan Avlasov <yavlasov@google.com>
+Signed-off-by: Kateryna Nezdolii <kateryna.nezdolii@gmail.com>
+---
+ ...ttp2__keep_size_of_dropped_host_header.rst |   7 ++
+ source/common/http/http2/codec_impl.cc        |  33 ++++--
+ source/common/http/http2/codec_impl.h         |   3 +
+ source/common/runtime/runtime_features.cc     |   1 +
+ test/common/http/http2/codec_impl_test.cc     | 105 ++++++++++++++++++
+ .../multiplexed_integration_test.cc           |  39 +++++++
+ 6 files changed, 178 insertions(+), 10 deletions(-)
+ create mode 100644 changelogs/current/bug_fixes/http2__keep_size_of_dropped_host_header.rst
+
+diff --git a/changelogs/current/bug_fixes/http2__keep_size_of_dropped_host_header.rst b/changelogs/current/bug_fixes/http2__keep_size_of_dropped_host_header.rst
+new file mode 100644
+index 0000000000..a1d30b8cb9
+--- /dev/null
++++ b/changelogs/current/bug_fixes/http2__keep_size_of_dropped_host_header.rst
+@@ -0,0 +1,7 @@
++Fixes `GHSA-qgf6-qvhw-4hvh <https://github.com/envoyproxy/envoy/security/advisories/GHSA-qgf6-qvhw-4hvh>`_
++
++Account for the length of dropped ``Host`` headers in HTTP/2 request header map size and count limits. ``Host`` headers
++are dropped when they match HTTP/2 ```:authority`` header.
++
++This behavioral change can be reverted by setting the runtime
++guard ``envoy.reloadable_features.http2_track_size_of_dropped_host_header`` to ``false``.
+diff --git a/source/common/http/http2/codec_impl.cc b/source/common/http/http2/codec_impl.cc
+index b21c7d09f1..bfd98d9919 100644
+--- a/source/common/http/http2/codec_impl.cc
++++ b/source/common/http/http2/codec_impl.cc
+@@ -1661,8 +1661,8 @@ int ConnectionImpl::onMetadataFrameComplete(int32_t stream_id, bool end_metadata
+ // The `histograms_recorded_` guard ensures we only record once (only for headers, not trailers).
+ void ConnectionImpl::recordHistogramsForStream(StreamImpl& stream) {
+   if (record_http2_histograms_ && !stream.histograms_recorded_) {
+-    uint64_t headers_size = stream.headers().byteSize();
+-    uint64_t headers_count = stream.headers().size();
++    uint64_t headers_size = stream.headers().byteSize() + stream.discarded_host_header_size_;
++    uint64_t headers_count = stream.headers().size() + stream.discarded_host_header_count_;
+     uint64_t headers_with_cookies_size = headers_size + stream.cookies_.size();
+     uint64_t headers_with_cookies_count = headers_count + stream.cookie_count_;
+     stats_.header_list_size_.recordValue(headers_with_cookies_size);
+@@ -1704,21 +1704,25 @@ int ConnectionImpl::saveHeader(int32_t stream_id, HeaderString&& name, HeaderStr
+     stats_.cookies_total_bytes_too_large_.inc();
+     return ERR_TEMPORAL_CALLBACK_FAILURE;
+   }
+-  uint64_t headers_size = stream->headers().byteSize();
+-  uint64_t headers_count = stream->headers().size();
++  return checkHeaderLimits(*stream);
++}
++
++int ConnectionImpl::checkHeaderLimits(StreamImpl& stream) {
++  uint64_t headers_size = stream.headers().byteSize() + stream.discarded_host_header_size_;
++  uint64_t headers_count = stream.headers().size() + stream.discarded_host_header_count_;
+ 
+   if (Runtime::runtimeFeatureEnabled("envoy.reloadable_features.http2_include_cookies_in_limits")) {
+-    headers_size += stream->cookies_.size();
+-    headers_count += stream->cookie_count_;
++    headers_size += stream.cookies_.size();
++    headers_count += stream.cookie_count_;
+   }
+ 
+   if (headers_size > max_headers_kb_ * 1024) {
+-    stream->setDetails(Http2ResponseCodeDetails::get().header_list_size_too_large);
++    stream.setDetails(Http2ResponseCodeDetails::get().header_list_size_too_large);
+     stats_.header_list_size_too_large_.inc();
+     return ERR_TEMPORAL_CALLBACK_FAILURE;
+   }
+   if (headers_count > max_headers_count_) {
+-    stream->setDetails(Http2ResponseCodeDetails::get().too_many_headers);
++    stream.setDetails(Http2ResponseCodeDetails::get().too_many_headers);
+     stats_.header_overflow_.inc();
+     // This will cause the library to reset/close the stream.
+     return ERR_TEMPORAL_CALLBACK_FAILURE;
+@@ -2497,8 +2501,17 @@ int ServerConnectionImpl::onHeader(int32_t stream_id, HeaderString&& name, Heade
+       // Check if there is already the :authority header
+       const auto result = stream->headers().get(Http::Headers::get().Host);
+       if (!result.empty()) {
+-        // Discard the host header value
+-        return 0;
++        if (Runtime::runtimeFeatureEnabled(
++                "envoy.reloadable_features.http2_track_size_of_dropped_host_header")) {
++          // Discard the host header value but track its size for enforcing received header map
++          // limits.
++          stream->discarded_host_header_size_ += name.size() + value.size();
++          stream->discarded_host_header_count_++;
++          stream->bytes_meter_->addDecompressedHeaderBytesReceived(name.size() + value.size());
++          return checkHeaderLimits(*stream);
++        } else {
++          return 0;
++        }
+       }
+       // Otherwise use host value as :authority
+     }
+diff --git a/source/common/http/http2/codec_impl.h b/source/common/http/http2/codec_impl.h
+index 0cb87534ec..690e57cf33 100644
+--- a/source/common/http/http2/codec_impl.h
++++ b/source/common/http/http2/codec_impl.h
+@@ -442,6 +442,8 @@ protected:
+     absl::optional<StreamResetReason> reset_reason_;
+     HeaderString cookies_;
+     uint32_t cookie_count_;
++    uint64_t discarded_host_header_size_{0};
++    uint32_t discarded_host_header_count_{0};
+     bool local_end_stream_sent_ : 1;
+     bool remote_end_stream_ : 1;
+     bool remote_rst_ : 1;
+@@ -658,6 +660,7 @@ protected:
+   StreamImpl* getStreamUnchecked(int32_t stream_id);
+   int saveHeader(int32_t stream_id, HeaderString&& name, HeaderString&& value);
+   void recordHistogramsForStream(StreamImpl& stream);
++  int checkHeaderLimits(StreamImpl& stream);
+ 
+   /**
+    * Copies any frames pending internally by nghttp2 into outbound buffer.
+diff --git a/source/common/runtime/runtime_features.cc b/source/common/runtime/runtime_features.cc
+index ae1fa75d41..5e0a73840c 100644
+--- a/source/common/runtime/runtime_features.cc
++++ b/source/common/runtime/runtime_features.cc
+@@ -65,6 +65,7 @@ RUNTIME_GUARD(envoy_reloadable_features_hide_transport_failure_reason_in_respons
+ RUNTIME_GUARD(envoy_reloadable_features_http1_close_connection_on_zombie_stream_complete);
+ RUNTIME_GUARD(envoy_reloadable_features_http2_discard_host_header);
+ RUNTIME_GUARD(envoy_reloadable_features_http2_include_cookies_in_limits);
++RUNTIME_GUARD(envoy_reloadable_features_http2_track_size_of_dropped_host_header);
+ RUNTIME_GUARD(envoy_reloadable_features_http_async_client_retry_respect_buffer_limits);
+ RUNTIME_GUARD(envoy_reloadable_features_http_pause_generic_upgrade_request_body);
+ // Delay deprecation and decommission until UHV is enabled.
+diff --git a/test/common/http/http2/codec_impl_test.cc b/test/common/http/http2/codec_impl_test.cc
+index eb275b73f0..6b41e5eef9 100644
+--- a/test/common/http/http2/codec_impl_test.cc
++++ b/test/common/http/http2/codec_impl_test.cc
+@@ -58,6 +58,8 @@ namespace Http2 {
+ 
+ namespace {
+ 
++MATCHER(IsOk, "") { return arg.ok(); }
++
+ // Tests in this suite observe request headers produced by the codec
+ // by returning a MockRequestDecoder object in the newStream callback.
+ // For tests runs with Universal Header Validator (UHV) enabled, some checks and transformations
+@@ -3148,6 +3150,109 @@ TEST_P(Http2CodecImplTest, HeaderListSizeTooLargeWithoutCookies) {
+   }
+ }
+ 
++// Tests stream reset when a duplicated host header pushes total header size over the limit.
++TEST_P(Http2CodecImplTest, HeaderListSizeTooLargeWithDiscardedHostHeader) {
++  expect_buffered_data_on_teardown_ = true;
++  max_request_headers_kb_ = 2;
++  initialize();
++  driveToCompletion();
++
++  std::string large_host(2000, 'a');
++  Http2Frame request = Http2Frame::makeRequest(Http2Frame::makeClientStreamId(0), "one.example.com",
++                                               "/path", {{"host", large_host}});
++
++  EXPECT_CALL(server_stream_callbacks_, onResetStream(_, _));
++  EXPECT_CALL(server_codec_event_callbacks_, onCodecLowLevelReset());
++
++  Buffer::OwnedImpl data;
++  data.add(request.data(), request.size());
++  // dispatch() is private in ServerConnectionImpl but public in base ConnectionImpl
++  EXPECT_THAT(static_cast<ConnectionImpl*>(server_.get())->dispatch(data), IsOk());
++
++  if (http2_implementation_ != Http2Impl::Oghttp2) {
++    EXPECT_EQ(1, server_stats_store_.counter("http2.header_list_size_too_large").value());
++  }
++}
++
++// Tests stream reset when a duplicated host header pushes total header count over the limit.
++TEST_P(Http2CodecImplTest, TooManyHeadersWithDiscardedHostHeader) {
++  expect_buffered_data_on_teardown_ = true;
++  max_request_headers_count_ = 4;
++  max_request_headers_kb_ = 100; // High size limit so only count limit is triggered
++  initialize();
++  driveToCompletion();
++
++  // Http2Frame::makeRequest creates 4 headers (:method, :scheme, :path, :authority).
++  // Adding "host" header makes total header count 5, exceeding the limit of 4.
++  Http2Frame request = Http2Frame::makeRequest(Http2Frame::makeClientStreamId(0), "one.example.com",
++                                               "/path", {{"host", "two.example.com"}});
++
++  EXPECT_CALL(server_stream_callbacks_, onResetStream(_, _));
++  EXPECT_CALL(server_codec_event_callbacks_, onCodecLowLevelReset());
++
++  Buffer::OwnedImpl data;
++  data.add(request.data(), request.size());
++  // dispatch() is private in ServerConnectionImpl but public in base ConnectionImpl
++  EXPECT_THAT(static_cast<ConnectionImpl*>(server_.get())->dispatch(data), IsOk());
++
++  EXPECT_EQ(1, server_stats_store_.counter("http2.header_overflow").value());
++}
++
++TEST_P(Http2CodecImplTest, HeaderListSizeTooLargeWithDiscardedHostHeaderAllowedWithOverride) {
++  if (http2_implementation_ == Http2Impl::Oghttp2) {
++    // Oghttp2 resets due to its own check of header map size limits.
++    GTEST_SKIP();
++  }
++  TestScopedRuntime scoped_runtime;
++  scoped_runtime.mergeValues(
++      {{"envoy.reloadable_features.http2_track_size_of_dropped_host_header", "false"}});
++  max_request_headers_kb_ = 2;
++  initialize();
++  driveToCompletion();
++
++  std::string large_host(2000, 'a');
++  Http2Frame request = Http2Frame::makeRequest(Http2Frame::makeClientStreamId(0), "one.example.com",
++                                               "/path", {{"host", large_host}});
++
++  EXPECT_CALL(request_decoder_, decodeHeaders_(_, true));
++  EXPECT_CALL(server_stream_callbacks_, onResetStream(_, _)).Times(0);
++  EXPECT_CALL(server_codec_event_callbacks_, onCodecLowLevelReset()).Times(0);
++
++  Buffer::OwnedImpl data;
++  data.add(request.data(), request.size());
++  // dispatch() is private in ServerConnectionImpl but public in base ConnectionImpl
++  EXPECT_THAT(static_cast<ConnectionImpl*>(server_.get())->dispatch(data), IsOk());
++
++  EXPECT_EQ(0, server_stats_store_.counter("http2.header_list_size_too_large").value());
++}
++
++// Tests stream reset when a duplicated host header pushes total header count over the limit.
++TEST_P(Http2CodecImplTest, TooManyHeadersWithDiscardedHostHeaderAllowedWithOverride) {
++  TestScopedRuntime scoped_runtime;
++  scoped_runtime.mergeValues(
++      {{"envoy.reloadable_features.http2_track_size_of_dropped_host_header", "false"}});
++  max_request_headers_count_ = 4;
++  max_request_headers_kb_ = 100; // High size limit so only count limit is triggered
++  initialize();
++  driveToCompletion();
++
++  // Http2Frame::makeRequest creates 4 headers (:method, :scheme, :path, :authority).
++  // Adding "host" header makes total header count 5, exceeding the limit of 4.
++  Http2Frame request = Http2Frame::makeRequest(Http2Frame::makeClientStreamId(0), "one.example.com",
++                                               "/path", {{"host", "two.example.com"}});
++
++  EXPECT_CALL(request_decoder_, decodeHeaders_(_, true));
++  EXPECT_CALL(server_stream_callbacks_, onResetStream(_, _)).Times(0);
++  EXPECT_CALL(server_codec_event_callbacks_, onCodecLowLevelReset()).Times(0);
++
++  Buffer::OwnedImpl data;
++  data.add(request.data(), request.size());
++  // dispatch() is private in ServerConnectionImpl but public in base ConnectionImpl
++  EXPECT_THAT(static_cast<ConnectionImpl*>(server_.get())->dispatch(data), IsOk());
++
++  EXPECT_EQ(0, server_stats_store_.counter("http2.header_overflow").value());
++}
++
+ // Tests that max number of request headers is configurable.
+ TEST_P(Http2CodecImplTest, ManyRequestHeadersAccepted) {
+   max_request_headers_count_ = 150;
+diff --git a/test/integration/multiplexed_integration_test.cc b/test/integration/multiplexed_integration_test.cc
+index 3476c4492d..2e57e566f6 100644
+--- a/test/integration/multiplexed_integration_test.cc
++++ b/test/integration/multiplexed_integration_test.cc
+@@ -3340,6 +3340,45 @@ TEST_P(Http2FrameIntegrationTest, DownstreamSendingEmptyMetadata) {
+   tcp_client_->close();
+ }
+ 
++TEST_P(Http2FrameIntegrationTest, HostExceedsHeaderMapSizeLimit) {
++  config_helper_.addConfigModifier(
++      [](envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager&
++             hcm) { hcm.mutable_max_request_headers_kb()->set_value(2); });
++  beginSession();
++
++  uint32_t request_idx = 0;
++  std::string large_host(2000, 'a');
++  auto request = Http2Frame::makeRequest(Http2Frame::makeClientStreamId(request_idx),
++                                         "one.example.com", "/path", {{"host", large_host}});
++  sendFrame(request);
++
++  auto frame = readFrame();
++  EXPECT_EQ(Http2Frame::Type::RstStream, frame.type());
++  tcp_client_->close();
++  if (GetParam().http2_implementation == Http2Impl::Nghttp2) {
++    test_server_->waitForCounterGe("http2.header_list_size_too_large", 1);
++  }
++}
++
++TEST_P(Http2FrameIntegrationTest, HostExceedsHeaderMapCountLimit) {
++  config_helper_.addConfigModifier(
++      [](envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager&
++             hcm) {
++        hcm.mutable_common_http_protocol_options()->mutable_max_headers_count()->set_value(4);
++      });
++  beginSession();
++
++  uint32_t request_idx = 0;
++  auto request = Http2Frame::makeRequest(Http2Frame::makeClientStreamId(request_idx),
++                                         "one.example.com", "/path", {{"host", "two.example.com"}});
++  sendFrame(request);
++
++  auto frame = readFrame();
++  EXPECT_EQ(Http2Frame::Type::RstStream, frame.type());
++  tcp_client_->close();
++  test_server_->waitForCounterGe("http2.header_overflow", 1);
++}
++
+ // Tests that an empty metadata map from upstream is ignored.
+ TEST_P(MetadataIntegrationTest, UpstreamSendingEmptyMetadata) {
+   if (upstreamProtocol() == Http::CodecType::HTTP3) {
+-- 
+2.54.0
+

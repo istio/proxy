@@ -1,0 +1,296 @@
+From 948f08383f64a7311794d6e768730fc0f5b942be Mon Sep 17 00:00:00 2001
+From: Yan Avlasov <yavlasov@google.com>
+Date: Sun, 26 Jul 2026 02:30:12 +0000
+Subject: [PATCH 04/13] ext_authz: fix null pointer dereference for query
+ parameter mutations on path-less requests
+
+Fix: [GHSA-87ph-jqwm-pg6r](https://github.com/envoyproxy/envoy/security/advisories/GHSA-87ph-jqwm-pg6r)
+
+Signed-off-by: Yan Avlasov <yavlasov@google.com>
+Signed-off-by: antoniovleonti <leonti@google.com>
+Signed-off-by: Ryan Northey <ryan@synca.io>
+---
+ ...thz__fix-handling-of-pathless-requests.rst |   4 +
+ .../filters/http/ext_authz/ext_authz.cc       |  81 +++++----
+ .../ext_authz/ext_authz_integration_test.cc   | 155 ++++++++++++++++++
+ 3 files changed, 205 insertions(+), 35 deletions(-)
+ create mode 100644 changelogs/current/bug_fixes/ext_authz__fix-handling-of-pathless-requests.rst
+
+diff --git a/changelogs/current/bug_fixes/ext_authz__fix-handling-of-pathless-requests.rst b/changelogs/current/bug_fixes/ext_authz__fix-handling-of-pathless-requests.rst
+new file mode 100644
+index 0000000000..4b91a17f7a
+--- /dev/null
++++ b/changelogs/current/bug_fixes/ext_authz__fix-handling-of-pathless-requests.rst
+@@ -0,0 +1,4 @@
++Fix: `GHSA-87ph-jqwm-pg6r <https://github.com/envoyproxy/envoy/security/advisories/GHSA-87ph-jqwm-pg6r>`_
++
++Fixed abnormal process termination when Envoy calls ext_authz service with requests without URI path
++(i.e. CONNECT).
+diff --git a/source/extensions/filters/http/ext_authz/ext_authz.cc b/source/extensions/filters/http/ext_authz/ext_authz.cc
+index 578967a607..17d1cb04c9 100644
+--- a/source/extensions/filters/http/ext_authz/ext_authz.cc
++++ b/source/extensions/filters/http/ext_authz/ext_authz.cc
+@@ -75,6 +75,41 @@ bool headersWithinLimits(const Http::HeaderMap& headers) {
+          headers.byteSize() <= headers.maxHeadersKb() * 1024;
+ }
+ 
++absl::StatusOr<absl::optional<Http::Utility::QueryParamsMulti>> modifyQueryParameters(
++    const Http::RequestHeaderMap& request_headers,
++    const std::vector<std::pair<std::string, std::string>>& query_parameters_to_set,
++    const std::vector<std::string>& query_parameters_to_remove, bool validate_mutations) {
++  if (query_parameters_to_set.empty() && query_parameters_to_remove.empty()) {
++    return absl::optional<Http::Utility::QueryParamsMulti>();
++  }
++
++  if (request_headers.Path() == nullptr) {
++    if (validate_mutations) {
++      return absl::InvalidArgumentError("Query parameter mutations on a path-less request.");
++    }
++    return absl::optional<Http::Utility::QueryParamsMulti>();
++  }
++
++  Http::Utility::QueryParamsMulti modified_query_parameters =
++      Http::Utility::QueryParamsMulti::parseQueryString(
++          request_headers.Path()->value().getStringView());
++
++  for (const auto& [key, value] : query_parameters_to_set) {
++    if (validate_mutations &&
++        (!Http::Utility::PercentEncoding::queryParameterIsUrlEncoded(key) ||
++         !Http::Utility::PercentEncoding::queryParameterIsUrlEncoded(value))) {
++      return absl::InvalidArgumentError("Invalid query parameter " + key + "=" + value + ".");
++    }
++    modified_query_parameters.overwrite(key, value);
++  }
++
++  for (const auto& key : query_parameters_to_remove) {
++    modified_query_parameters.remove(key);
++  }
++
++  return absl::optional<Http::Utility::QueryParamsMulti>(std::move(modified_query_parameters));
++}
++
+ } // namespace
+ 
+ FilterConfig::FilterConfig(const envoy::extensions::filters::http::ext_authz::v3::ExtAuthz& config,
+@@ -929,43 +964,19 @@ void Filter::onComplete(Filters::Common::ExtAuthz::ResponsePtr&& response) {
+                              response->response_headers_to_overwrite_if_exists.end()};
+     }
+ 
+-    absl::optional<Http::Utility::QueryParamsMulti> modified_query_parameters;
+-    if (!response->query_parameters_to_set.empty()) {
+-      modified_query_parameters = Http::Utility::QueryParamsMulti::parseQueryString(
+-          request_headers_->Path()->value().getStringView());
+-      ENVOY_STREAM_LOG(
+-          trace, "ext_authz filter set query parameter(s) on the request:", *decoder_callbacks_);
+-      for (const auto& [key, value] : response->query_parameters_to_set) {
+-        if (config_->validateMutations() &&
+-            (!Http::Utility::PercentEncoding::queryParameterIsUrlEncoded(key) ||
+-             !Http::Utility::PercentEncoding::queryParameterIsUrlEncoded(value))) {
+-          ENVOY_STREAM_LOG(trace, "Rejected invalid query parameter {}={}.", *decoder_callbacks_,
+-                           key, value);
+-          rejectResponse();
+-          updateEffect(Effect::InvalidMutationRejected);
+-          return;
+-        }
+-        ENVOY_STREAM_LOG(trace, "'{}={}'", *decoder_callbacks_, key, value);
+-        modified_query_parameters->overwrite(key, value);
+-      }
+-    }
+-
+-    if (!response->query_parameters_to_remove.empty()) {
+-      if (!modified_query_parameters) {
+-        modified_query_parameters = Http::Utility::QueryParamsMulti::parseQueryString(
+-            request_headers_->Path()->value().getStringView());
+-      }
+-      ENVOY_STREAM_LOG(trace, "ext_authz filter removed query parameter(s) from the request:",
+-                       *decoder_callbacks_);
+-      for (const auto& key : response->query_parameters_to_remove) {
+-        ENVOY_STREAM_LOG(trace, "'{}'", *decoder_callbacks_, key);
+-        modified_query_parameters->remove(key);
+-      }
++    auto status_or_query_parameters =
++        modifyQueryParameters(*request_headers_, response->query_parameters_to_set,
++                              response->query_parameters_to_remove, config_->validateMutations());
++    if (!status_or_query_parameters.ok()) {
++      ENVOY_STREAM_LOG(trace, "Rejected query parameter mutations: {}", *decoder_callbacks_,
++                       status_or_query_parameters.status().message());
++      rejectResponse();
++      updateEffect(Effect::InvalidMutationRejected);
++      return;
+     }
+ 
+-    // We modified the query parameters in some way, so regenerate the `path` header and set it
+-    // here.
+-    if (modified_query_parameters) {
++    auto& modified_query_parameters = status_or_query_parameters.value();
++    if (modified_query_parameters.has_value()) {
+       const auto new_path =
+           modified_query_parameters->replaceQueryString(request_headers_->Path()->value());
+       ENVOY_STREAM_LOG(
+diff --git a/test/extensions/filters/http/ext_authz/ext_authz_integration_test.cc b/test/extensions/filters/http/ext_authz/ext_authz_integration_test.cc
+index 3982766672..31f2e122c0 100644
+--- a/test/extensions/filters/http/ext_authz/ext_authz_integration_test.cc
++++ b/test/extensions/filters/http/ext_authz/ext_authz_integration_test.cc
+@@ -3517,4 +3517,159 @@ TEST(ExtConfigValidateTest, Validate) {
+                              Thread::threadFactoryForTest(), Filesystem::fileSystemForTest()));
+ }
+ 
++class ExtAuthzConnectQueryParamMutationTest
++    : public Grpc::BaseGrpcClientIntegrationParamTest,
++      public HttpIntegrationTest,
++      public testing::TestWithParam<std::tuple<Network::Address::IpVersion, Grpc::ClientType>> {
++public:
++  ExtAuthzConnectQueryParamMutationTest()
++      : HttpIntegrationTest(Http::CodecType::HTTP1, std::get<0>(GetParam())) {}
++
++  Network::Address::IpVersion ipVersion() const override { return std::get<0>(GetParam()); }
++
++  Grpc::ClientType clientType() const override { return std::get<1>(GetParam()); }
++
++  void createUpstreams() override {
++    HttpIntegrationTest::createUpstreams();
++    addFakeUpstream(Http::CodecType::HTTP2);
++  }
++
++  void initializeFilter(bool validate_mutations = false) {
++    config_helper_.addConfigModifier([](envoy::config::bootstrap::v3::Bootstrap& bootstrap) {
++      auto* ext_authz_cluster = bootstrap.mutable_static_resources()->add_clusters();
++      ext_authz_cluster->MergeFrom(bootstrap.static_resources().clusters()[0]);
++      ext_authz_cluster->set_name("ext_authz_cluster");
++      ConfigHelper::setHttp2(*ext_authz_cluster);
++    });
++
++    // Prepend the ext_authz HTTP filter to the HCM filter chain.
++    envoy::extensions::filters::http::ext_authz::v3::ExtAuthz proto_config;
++    proto_config.set_transport_api_version(envoy::config::core::v3::ApiVersion::V3);
++    proto_config.mutable_grpc_service()->mutable_envoy_grpc()->set_cluster_name(
++        "ext_authz_cluster");
++    proto_config.mutable_grpc_service()->mutable_timeout()->set_seconds(300);
++    proto_config.set_validate_mutations(validate_mutations);
++
++    envoy::extensions::filters::network::http_connection_manager::v3::HttpFilter filter;
++    filter.set_name("envoy.filters.http.ext_authz");
++    std::ignore = filter.mutable_typed_config()->PackFrom(proto_config);
++    config_helper_.prependFilter(MessageUtil::getJsonStringFromMessageOrError(filter));
++
++    // Configure the HCM and route to accept CONNECT (so the filter chain,
++    // including ext_authz, runs for a path-less CONNECT request).
++    config_helper_.addConfigModifier(
++        [](envoy::extensions::filters::network::http_connection_manager::v3::HttpConnectionManager&
++               hcm) {
++          ConfigHelper::setConnectConfig(hcm, /*terminate_connect=*/false,
++                                         /*allow_post=*/false, /*http3=*/false);
++        });
++
++    initialize();
++  }
++
++  void waitForAuthzRequest() {
++    ASSERT_TRUE(
++        fake_upstreams_.back()->waitForHttpConnection(*dispatcher_, fake_ext_authz_connection_));
++    ASSERT_TRUE(fake_ext_authz_connection_->waitForNewStream(*dispatcher_, ext_authz_request_));
++    ASSERT_TRUE(ext_authz_request_->waitForEndStream(*dispatcher_));
++  }
++
++  void sendAuthzResponse(envoy::service::auth::v3::CheckResponse& check_response) {
++    ext_authz_request_->startGrpcStream();
++    ext_authz_request_->sendGrpcMessage(check_response);
++    ext_authz_request_->finishGrpcStream(Grpc::Status::Ok);
++  }
++
++  void cleanup() {
++    if (fake_ext_authz_connection_ != nullptr) {
++      AssertionResult result = fake_ext_authz_connection_->close();
++      RELEASE_ASSERT(result, result.message());
++      result = fake_ext_authz_connection_->waitForDisconnect();
++      RELEASE_ASSERT(result, result.message());
++    }
++    cleanupUpstreamAndDownstream();
++  }
++
++  FakeHttpConnectionPtr fake_ext_authz_connection_;
++  FakeStreamPtr ext_authz_request_;
++};
++
++INSTANTIATE_TEST_SUITE_P(
++    IpVersions, ExtAuthzConnectQueryParamMutationTest,
++    testing::Combine(testing::ValuesIn(TestEnvironment::getIpVersionsForTest()),
++                     testing::Values(Grpc::ClientType::EnvoyGrpc)));
++
++TEST_P(ExtAuthzConnectQueryParamMutationTest, ConnectQueryParamNullDerefIgnore) {
++  initializeFilter(false);
++
++  // Downstream CONNECT — no :path header is set by the HTTP/1 codec.
++  codec_client_ = makeHttpConnection(lookupPort("http"));
++  Http::TestRequestHeaderMapImpl connect_headers{{":method", "CONNECT"},
++                                                 {":authority", "foo.lyft.com:80"}};
++  auto encoder_decoder = codec_client_->startRequest(connect_headers);
++  auto response = std::move(encoder_decoder.second);
++
++  // Envoy → ext_authz gRPC side-channel.
++  waitForAuthzRequest();
++
++  // Malicious ext_authz server: OK status, but instructs Envoy to mutate query
++  // parameters on a request that has no :path.
++  envoy::service::auth::v3::CheckResponse check_response;
++  check_response.mutable_status()->set_code(Grpc::Status::WellKnownGrpcStatus::Ok);
++  auto* qp = check_response.mutable_ok_response()->add_query_parameters_to_set();
++  qp->set_key("k");
++  qp->set_value("v");
++  sendAuthzResponse(check_response);
++
++  // Since validate_mutations is false, Envoy should ignore the query parameter mutations
++  // and proceed to upstream without crashing.
++  AssertionResult result =
++      fake_upstreams_[0]->waitForHttpConnection(*dispatcher_, fake_upstream_connection_);
++  RELEASE_ASSERT(result, result.message());
++  result = fake_upstream_connection_->waitForNewStream(*dispatcher_, upstream_request_);
++  RELEASE_ASSERT(result, result.message());
++
++  // Respond from upstream.
++  upstream_request_->encodeHeaders(Http::TestResponseHeaderMapImpl{{":status", "200"}}, true);
++  response->waitForHeaders();
++  EXPECT_EQ("200", response->headers().getStatusValue());
++
++  // Cleanly terminate the tunnel.
++  ASSERT_TRUE(fake_upstream_connection_->close());
++  ASSERT_TRUE(fake_upstream_connection_->waitForDisconnect());
++  ASSERT_TRUE(codec_client_->waitForDisconnect());
++
++  cleanup();
++}
++
++TEST_P(ExtAuthzConnectQueryParamMutationTest, ConnectQueryParamNullDerefReject) {
++  initializeFilter(true);
++
++  // Downstream CONNECT — no :path header is set by the HTTP/1 codec.
++  codec_client_ = makeHttpConnection(lookupPort("http"));
++  Http::TestRequestHeaderMapImpl connect_headers{{":method", "CONNECT"},
++                                                 {":authority", "foo.lyft.com:80"}};
++  auto encoder_decoder = codec_client_->startRequest(connect_headers);
++  auto response = std::move(encoder_decoder.second);
++
++  // Envoy → ext_authz gRPC side-channel.
++  waitForAuthzRequest();
++
++  // Malicious ext_authz server: OK status, but instructs Envoy to mutate query
++  // parameters on a request that has no :path.
++  envoy::service::auth::v3::CheckResponse check_response;
++  check_response.mutable_status()->set_code(Grpc::Status::WellKnownGrpcStatus::Ok);
++  auto* qp = check_response.mutable_ok_response()->add_query_parameters_to_set();
++  qp->set_key("k");
++  qp->set_value("v");
++  sendAuthzResponse(check_response);
++
++  // Since validate_mutations is true, Envoy should reject the request with 500.
++  ASSERT_TRUE(response->waitForEndStream());
++  EXPECT_TRUE(response->complete());
++  EXPECT_EQ("500", response->headers().getStatusValue());
++
++  cleanup();
++}
++
+ } // namespace Envoy
+-- 
+2.54.0
+
