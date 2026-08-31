@@ -24,7 +24,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb" // nolint: depguard // We need the deprecated module since the jsonpb replacement is not backwards compatible.
+	// nolint // We need the deprecated module since the jsonpb replacement is not backwards compatible.
+	"github.com/golang/protobuf/jsonpb"
 	// nolint: staticcheck
 	legacyproto "github.com/golang/protobuf/proto"
 	yamlv2 "gopkg.in/yaml.v2"
