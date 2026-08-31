@@ -43,7 +43,7 @@ build --define path_normalization_by_default=true
 build:macos --define tcmalloc=disabled
 
 # Build with embedded V8-based WebAssembly runtime.
-build --define wasm=v8
+build --@proxy-wasm-cpp-host//bazel:engine=v8
 
 # Build Proxy-WASM plugins as native extensions.
 build --copt -DNULL_PLUGIN

@@ -100,7 +100,7 @@ func (g *GRPCServer) EchoStream(stream grpc_echo.Echo_EchoStreamServer) error {
 func tryWaitForGRPCServer(addr string) error {
 	for i := 0; i < 10; i++ {
 		log.Println("Attempting to establish connection to gRPC server: ", addr)
-		conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+		conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err == nil {
 			conn.Close()
 			return nil
