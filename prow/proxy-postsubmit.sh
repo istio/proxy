@@ -31,7 +31,7 @@ else
   echo "No credential helpers found, push to docker may not function properly"
 fi
 
-GCS_BUILD_BUCKET="${GCS_BUILD_BUCKET:-istio-build}"
+R2_BUILD_BUCKET="${R2_BUILD_BUCKET:-istio-build}"
 
 echo 'Create and push artifacts'
-make push_release RELEASE_GCS_PATH="gs://${GCS_BUILD_BUCKET}/proxy"
+make push_release RELEASE_R2_PATH="gs://${R2_BUILD_BUCKET}/proxy"
