@@ -34,4 +34,4 @@ fi
 R2_BUILD_BUCKET="${R2_BUILD_BUCKET:-istio-build}"
 
 echo 'Create and push artifacts'
-make push_release RELEASE_R2_PATH="gs://${R2_BUILD_BUCKET}/proxy"
+make push_release RELEASE_R2_PATH="s3://${R2_BUILD_BUCKET}/proxy"
