@@ -104,7 +104,7 @@ test_release:
 	export BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh
 
 push_release:
-	export BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_GCS_PATH)" ${PUSH_RELEASE_FLAGS}
+	export BAZEL_BUILD_ARGS="$(BAZEL_BUILD_ARGS)" && ./scripts/release-binary.sh -d "$(RELEASE_R2_PATH)" ${PUSH_RELEASE_FLAGS}
 
 # Used by build container to export the build output from the docker volume cache
 exportcache: BAZEL_BIN_PATH ?= $(shell bazel info $(BAZEL_BUILD_ARGS) $(BAZEL_CONFIG_CURRENT) bazel-bin)
