@@ -95,13 +95,15 @@ if [ -n "${DST}" ]; then
   # If binary already exists skip.
   # Use the name of the last artifact to make sure that everything was uploaded.
   BINARY_NAME="${HOME}/istio-proxy-debug-${SHA}.deb"
-  R2_ENDPOINT="https://${CF_ACCOUNT_ID}.r2.cloudflarestorage.com"
+  ENDPOINT="$(echo "${CF_CREDENTIALS}" | jq -r '.endpoint' | tr -d '\n')"
+  AWS_ACCESS_KEY_ID="$(echo "${CF_CREDENTIALS}" | jq -r '.access_key' | tr -d '\n')"
+  AWS_SECRET_ACCESS_KEY="$(echo "${CF_CREDENTIALS}" | jq -r '.secret_key' | tr -d '\n')"
+  AWS_REGION="$(echo "${CF_CREDENTIALS}" | jq -r '.region' | tr -d '\n')"
+  AWS_SESSION_TOKEN="$(echo "${CF_CREDENTIALS}" | jq -r '.session_token' | tr -d '\n')"
+  export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION AWS_SESSION_TOKEN
 
   R2_EXISTS=0
-  AWS_ACCESS_KEY_ID="$CF_ACCESS_KEY_ID" \
-    AWS_SECRET_ACCESS_KEY="$CF_ACCESS_KEY_SECRET" \
-    aws s3 ls "${DST}/${BINARY_NAME}" \
-    --endpoint-url "${R2_ENDPOINT}" && R2_EXISTS=1
+  aws s3 ls "${DST}/${BINARY_NAME}" --endpoint-url "${ENDPOINT}" && R2_EXISTS=1
 
   if [ "${R2_EXISTS}" -eq 1 ]; then
     echo 'Binary already exists'; exit 0
@@ -170,13 +172,6 @@ do
     # Copy it to the bucket.
     echo "Copying ${BINARY_NAME} ${SHA256_NAME} to ${DST}/"
 
-    ENDPOINT="$(echo "${CF_CREDENTIALS}" | jq -r '.endpoint' | tr -d '\n')"
-
-    AWS_ACCESS_KEY_ID="$(echo "${CF_CREDENTIALS}" | jq -r '.access_key' | tr -d '\n')"
-    AWS_SECRET_ACCESS_KEY="$(echo "${CF_CREDENTIALS}" | jq -r '.secret_key' | tr -d '\n')"
-    AWS_REGION="$(echo "${CF_CREDENTIALS}" | jq -r '.region' | tr -d '\n')"
-    AWS_SESSION_TOKEN="$(echo "${CF_CREDENTIALS}" | jq -r '.session_token' | tr -d '\n')"
-    export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION AWS_SESSION_TOKEN
     for f in "${BINARY_NAME}" "${SHA256_NAME}" "${DWP_NAME}"; do
       echo "Copying $(basename "${f}") to R2"
       aws s3 cp "${f}" "${DST}/$(basename "${f}")" --endpoint-url "${ENDPOINT}"
