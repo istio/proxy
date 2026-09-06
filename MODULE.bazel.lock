@@ -1260,7 +1260,7 @@
     "@@envoy+//bazel:extensions.bzl%envoy_build_config_ext": {
       "general": {
         "bzlTransitiveDigest": "dw/Tdy/iUC4F36IXsG1YO2qMasHYK+5Bl8C0qJyELJI=",
-        "usagesDigest": "j38JTT2L2tu2Bb3aU3SJvcSdXwo+2oW2iuLdI7n45ZY=",
+        "usagesDigest": "TuOVqMd/o4niT8nvdAZPAES1h8jyxGgg0RVLBOcXTGA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1418,7 +1418,7 @@
     "@@envoy+//bazel:extensions.bzl%envoy_toolchains_extension": {
       "general": {
         "bzlTransitiveDigest": "dw/Tdy/iUC4F36IXsG1YO2qMasHYK+5Bl8C0qJyELJI=",
-        "usagesDigest": "WY4QAn4jcr1k1UynWUX8idOJIvH/64ZyE0GQQvqAI+8=",
+        "usagesDigest": "a3D2hV8oTIdoge533BS0PyA/N9g9kRArBVSqcTWCc7A=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1698,11 +1698,31 @@
     "@@envoy_toolshed+//sysroot:extensions.bzl%sysroot_extension": {
       "general": {
         "bzlTransitiveDigest": "CQlHTk2wRBJ3aOM7jzKA9zRO6JoNhMR68mo4qJZ5uZw=",
-        "usagesDigest": "nSDDX99vyIfwgBgpFKfFOenma3fzdgW2DxMaRUaLQuk=",
+        "usagesDigest": "unbIp92M9HAwFVcGYYNi88AJqxVTuaenk2JXrLXwdZA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
         "generatedRepoSpecs": {
+          "istio_sysroot_linux_amd64": {
+            "repoRuleId": "@@envoy_toolshed+//sysroot:sysroot.bzl%sysroot",
+            "attributes": {
+              "version": "0.2.14",
+              "sha256": "e0746985caeb5f89a934833ca9b6da07e250df57bbf1c59ce618b6866d030561",
+              "arch": "amd64",
+              "glibc_version": "2.28",
+              "stdcc_version": "13"
+            }
+          },
+          "istio_sysroot_linux_arm64": {
+            "repoRuleId": "@@envoy_toolshed+//sysroot:sysroot.bzl%sysroot",
+            "attributes": {
+              "version": "0.2.14",
+              "sha256": "81edf650447696679d158aa2991d9f6e337957ad34e4b334daf65b1b2b287351",
+              "arch": "arm64",
+              "glibc_version": "2.28",
+              "stdcc_version": "13"
+            }
+          },
           "sysroot_linux_amd64": {
             "repoRuleId": "@@envoy_toolshed+//sysroot:sysroot.bzl%sysroot",
             "attributes": {
@@ -1730,7 +1750,7 @@
     "@@envoy_toolshed+//v8:extensions.bzl%wee8_prebuilt_extension": {
       "general": {
         "bzlTransitiveDigest": "gXMFfVg+qoio1QNyicAgzuZLG0526gxbQBOVTkMq3iM=",
-        "usagesDigest": "53yRbs6u1ShmmTpzkqUCI42IObBFFt3lX1XuELDPZxQ=",
+        "usagesDigest": "HtXjLW3YBXjd2YrMqyKkzWdCGmpgLeOdEEGarahRk/M=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1769,7 +1789,7 @@
     "@@googleapis+//:extensions.bzl%switched_rules": {
       "general": {
         "bzlTransitiveDigest": "1ZTg77R3Ks/ksx8QMNIoTRJetbJPRlzGFlJa9hoUn+Y=",
-        "usagesDigest": "LS/ccuoYlsHm7ha0dlDIBye/nlh7EWKG3q64NI22RhM=",
+        "usagesDigest": "gua6Fkpr8DbrtVBh/uHosWqF32RVE6fs1h6EcMCKg9M=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -2616,7 +2636,7 @@
     "@@rules_rust+//crate_universe:extension.bzl%crate": {
       "general": {
         "bzlTransitiveDigest": "zEk/7pEPoMxY/R0NKoKrRoUpHmjQk1O9lvMW4kcKxS4=",
-        "usagesDigest": "PfMiM0uyhEQWNhIHICL/rPW96cuSbJ1AoWxmp+g3dhc=",
+        "usagesDigest": "DXwzWBo++525ksMJXODFSlWJmJmVA5TIEvFz8AsPKTg=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {
@@ -2991,7 +3011,7 @@
     "@@rules_rust+//crate_universe:extensions.bzl%crate": {
       "general": {
         "bzlTransitiveDigest": "uwY4aoVLW/kyhkyOWIguwjmJoAqmmfFZl+L9smNtTLg=",
-        "usagesDigest": "v51IIVzZ1oPGN328uzmhzo+ImkPoGicBU2YNpY0xr1Y=",
+        "usagesDigest": "jEz1Gikcp0K3LcyM8BL0CBGn4lT3ns4rcffRpdej3nM=",
         "recordedFileInputs": {
           "@@envoy+//Cargo.lock": "cabafbb8b90edd735465ed83f7f178c737b3fa21a425b34ac4e6f4539be04f8a",
           "@@envoy+//Cargo.toml": "c9efddb99563255164b111971f35618643cbd15948caa9a29199cc3fabb2b7fe",

@@ -139,10 +139,43 @@ override_repo(
 )
 
 # LLVM toolchain configuration
+#
+# Envoy's own MODULE.bazel wires its hermetic Linux Clang toolchain's sysroot
+# to whatever `@sysroot_linux_amd64` / `@sysroot_linux_arm64` resolve to (via
+# `llvm.sysroot(label = "@sysroot_linux_{arch}//:sysroot")`), which come from
+# a bare `sysroot_ext.setup()` call in envoy's own MODULE.bazel -- defaulting
+# to glibc 2.31. scripts/release-binary.sh (EXPECTED_GLIBC) pins released
+# binaries to glibc 2.28, matching the old WORKSPACE-era
+# `envoy_dependencies_extra(glibc_version = "2.28", ...)` pin, so we need
+# envoy's toolchain to actually use a 2.28 sysroot instead of 2.31.
+#
+# The `toolchains_llvm` `llvm` extension scopes a toolchain's `sysroot` tags
+# to whichever module's `toolchain` tag first claims that toolchain's `name`
+# (here "llvm_toolchain", claimed by envoy itself) -- so a
+# `llvm.sysroot(name = "llvm_toolchain", ...)` tag declared from *our* module
+# would silently be ignored. Instead we override the sysroot_extension's own
+# generated repos: ask the same extension (identified by its .bzl file +
+# extension name, shared across the whole module graph regardless of which
+# module's `use_extension()` call is used to reach it) for our own glibc-2.28
+# sysroots under a distinct `name_prefix` (avoiding a repo-name collision
+# with envoy's own default-named ones), then `override_repo` envoy's
+# "sysroot_linux_amd64"/"sysroot_linux_arm64" to resolve to ours -- so
+# envoy's existing `llvm.sysroot(label = "@sysroot_linux_amd64//:sysroot")`
+# wiring picks up our pinned sysroot transparently, with no need to
+# duplicate envoy's llvm.toolchain/toolchain_root/cxx_cross_lib config.
+#
+# Note the real package is "sysroot", not "bazel/sysroot" as the
+# envoy_toolshed README (as of 0.4.13) still documents -- confirmed via
+# `bazel query "@sysroot_linux_amd64//:sysroot"` against the fetched repo.
+sysroot_ext = use_extension("@envoy_toolshed//sysroot:extensions.bzl", "sysroot_extension")
+sysroot_ext.setup(
+    glibc_version = "2.28",
+    name_prefix = "istio",
+)
+use_repo(sysroot_ext, "istio_sysroot_linux_amd64", "istio_sysroot_linux_arm64")
 
-# Setup sysroots using the extension
-sysroot_ext = use_extension("@envoy_toolshed//bazel/sysroot:extensions.bzl", "sysroot_extension")
-
-# pin glibc to 2.28
-sysroot_ext.setup(glibc_version = 2.28)
-use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
+override_repo(
+    sysroot_ext,
+    sysroot_linux_amd64 = "istio_sysroot_linux_amd64",
+    sysroot_linux_arm64 = "istio_sysroot_linux_arm64",
+)
