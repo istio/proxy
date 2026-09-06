@@ -20,15 +20,15 @@ set -eu
 
 # Check whether any git repositories are defined.
 # Git repository definition contains `commit` and `remote` fields.
-if grep -nr "commit =\|remote =" --include=WORKSPACE --include=*.bzl .; then
+if grep -nr "commit =\|remote =" --include=MODULE.bazel --include=*.bzl .; then
   echo "Using git repositories is not allowed."
   echo "To ensure that all dependencies can be stored offline in distdir, only HTTP repositories are allowed."
   exit 1
 fi
 
-# Check whether workspace file has `ENVOY_SHA = "` presented.
+# Check whether MODULE.bazel has `ENVOY_SHA = "` presented.
 # This is needed by release builder to resolve envoy dep sha to tag.
-if ! grep -Pq "ENVOY_SHA = \"[a-zA-Z0-9]{40}\"" WORKSPACE; then
-  echo "'ENVOY_SHA' is not set properly in WORKSPACE file, release builder depends on it to resolve envoy dep sha to tag."
+if ! grep -Pq "ENVOY_SHA = \"[a-zA-Z0-9]{40}\"" MODULE.bazel; then
+  echo "'ENVOY_SHA' is not set properly in MODULE.bazel file, release builder depends on it to resolve envoy dep sha to tag."
   exit 1
 fi

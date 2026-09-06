@@ -1,0 +1,143 @@
+# Copyright 2016 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+################################################################################
+#
+module(name = "io_istio_proxy")
+
+bazel_dep(name = "googleapis", version = "0.0.0-20251003-2193a2bf")
+bazel_dep(name = "googleurl", version = "0.0.0-221103-dd4080f.envoy")
+# grpc is only ever a transitive dependency (pulled in via envoy_api), but
+# envoy.bazelrc sets label flags like `--@grpc//third_party:ssl_lib=...`
+# unconditionally. Bzlmod only resolves an unqualified `@grpc` label
+# against repos the *root* module directly depends on, so without this
+# direct bazel_dep those flags fail with "No repository visible as
+# '@grpc' from main repository". Version must match what envoy_api
+# declares (see external envoy_api's MODULE.bazel) to avoid a second
+# resolution.
+bazel_dep(name = "grpc", version = "1.83.0.envoy")
+# Same reasoning as grpc above: only a transitive dep (via envoy), but
+# envoy.bazelrc references it unqualified. Version must match envoy's
+# own MODULE.bazel.
+bazel_dep(name = "librdkafka", version = "2.6.0.envoy")
+# Same reasoning as grpc above: only a transitive dep (via envoy), but
+# envoy.bazelrc references it unqualified. Version must match envoy's
+# own MODULE.bazel.
+bazel_dep(name = "libsxg", version = "0.0.0-210708-beaa393.envoy")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "protobuf", version = "35.1.bcr.envoy")
+bazel_dep(name = "protoc-gen-validate", version = "1.3.3.envoy")
+bazel_dep(name = "proxy-wasm-cpp-host", version = "0.0.0-260704-f2db56a.envoy")
+bazel_dep(name = "quiche", version = "0.0.0-260831-5c9cc6b.envoy")
+bazel_dep(name = "re2", version = "2025-08-12.bcr.1")
+bazel_dep(name = "rules_cc", version = "0.2.22")
+bazel_dep(name = "rules_pkg", version = "1.1.0")
+bazel_dep(name = "rules_python", version = "2.2.0")
+bazel_dep(name = "rules_rust", version = "0.69.0.envoy")
+# Same reasoning as grpc/librdkafka/libsxg above: only a transitive dep (via
+# envoy), but envoy.bazelrc references it unqualified. Version must match
+# envoy's own MODULE.bazel.
+bazel_dep(name = "zlib-ng", version = "2.3.2.envoy")
+bazel_dep(name = "envoy_toolshed", version = "0.4.13.envoy")
+
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
+
+# 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
+# 2. Update .bazelversion, envoy.bazelrc, ENVOY_VERSION.txt and .bazelrc if needed.
+#
+# Commit date: 2026-09-04
+ENVOY_SHA = "329dd5106e758b7b24a65af51b8a28e3a0568af5"
+
+ENVOY_SHA256 = "db351b49b89391b8c6e380dcad13c8ee47c52577f4f95601d34288d225308efa"
+
+ENVOY_ORG = "envoyproxy"
+
+ENVOY_REPO = "envoy"
+
+# Envoy has migrated its own build to Bzlmod (envoyproxy/envoy#42910) and is not
+# published to any module registry, so we fetch it the same way its own
+# automation always has -- a pinned GitHub archive -- but via `archive_override`
+# instead of a WORKSPACE `http_archive`. The version below must track
+# ENVOY_VERSION.txt (kept in sync by scripts/update_envoy.sh).
+#
+# To override with a local envoy checkout, pass
+# `--override_repository=envoy=/PATH/TO/ENVOY` to Bazel or persist the option
+# in `user.bazelrc`.
+bazel_dep(name = "envoy", version = "1.40.0-dev")
+
+archive_override(
+    module_name = "envoy",
+    urls = ["https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz"],
+    strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
+    sha256 = ENVOY_SHA256,
+)
+
+# Envoy's own MODULE.bazel resolves its `api/` subtree as a separate module
+# (envoy_api) via `local_path_override(path = "api")` -- but bzlmod only
+# honors override_* directives declared in the *root* module, and here
+# `envoy` is a dependency, not the root, so that override is silently
+# ignored (confirmed: without this, `bazel mod graph` fails trying to
+# resolve envoy_api from the registries). We re-declare the same override
+# ourselves, pointed at the "api" subdirectory of the identical archive.
+bazel_dep(name = "envoy_api", version = "1.40.0-dev")
+
+archive_override(
+    module_name = "envoy_api",
+    urls = ["https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz"],
+    strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA + "/api",
+    sha256 = ENVOY_SHA256,
+)
+
+envoy_toolchains_ext = use_extension("@envoy//bazel:extensions.bzl", "envoy_toolchains_extension")
+use_repo(envoy_toolchains_ext, "clang_platform")
+
+# Compiler toolchain as dev_dependency - only required when building this
+# module directly, downstream modules provide their own toolchain.
+bazel_dep(name = "toolchains_llvm", version = "1.9.0.envoy", dev_dependency = True)
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    is_default = True,
+    python_version = "3.12",
+)
+use_repo(
+    python,
+    "python_3_12",
+    python = "python_versions",
+)
+
+# Named "envoy_build_config" (not e.g. "istio_proxy_envoy_build_config") so
+# it is visible under that exact apparent name both here in the root module
+# (our own root BUILD file does `load("@envoy_build_config//...")`) and via
+# the override_repo below, which redirects whatever the envoy_build_config_ext
+# extension would otherwise produce for @envoy to this same repo.
+build_config = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+build_config(
+    name = "envoy_build_config",
+    path = "bazel/extension_config",
+)
+
+envoy_build_config_ext = use_extension("@envoy//bazel:extensions.bzl", "envoy_build_config_ext")
+override_repo(envoy_build_config_ext, envoy_build_config = "envoy_build_config")
+
+# LLVM toolchain configuration
+
+
+# Setup sysroots using the extension
+sysroot_ext = use_extension("@envoy_toolshed//bazel/sysroot:extensions.bzl", "sysroot_extension")
+
+# pin glibc to 2.28
+sysroot_ext.setup(glibc_version=2.28)
+use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
+

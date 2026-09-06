@@ -17,7 +17,7 @@
 WD=$(dirname "$0")
 WD=$(cd "$WD" || exit 1; pwd)
 ROOT=$(dirname "$WD")
-WORKSPACE="${ROOT}/WORKSPACE"
+MODULE_BAZEL="${ROOT}/MODULE.bazel"
 
 # Exit immediately for non zero status
 set -e
@@ -40,13 +40,13 @@ if [[ "${ENVOY_REPOSITORY:-}" && "${ENVOY_PREFIX:-}" ]]; then
   # The other path is preferred as it uses an API intended for programmatic access and allows fine-grained access token usage.
   TMP_DIR=$(mktemp -d -t envoy-XXXXXXXXXX)
   trap 'rm -rf ${TMP_DIR:?}' EXIT
-  ENVOY_SHA="${ENVOY_SHA:-$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "$WORKSPACE")}"
+  ENVOY_SHA="${ENVOY_SHA:-$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "$MODULE_BAZEL")}"
   BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_repository=envoy=${TMP_DIR}/${ENVOY_PREFIX}-${ENVOY_SHA}"
   curl -nsSfL "${ENVOY_REPOSITORY}/archive/${ENVOY_SHA}.tar.gz" | tar -C "${TMP_DIR}" -xz
 elif [[ "${ENVOY_REPOSITORY:-}" ]]; then
   TMP_DIR=$(mktemp -d -t envoy-XXXXXXXXXX)
   trap 'rm -rf ${TMP_DIR:?}' EXIT
-  ENVOY_SHA="${ENVOY_SHA:-$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "$WORKSPACE")}"
+  ENVOY_SHA="${ENVOY_SHA:-$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "$MODULE_BAZEL")}"
   BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_repository=envoy=${TMP_DIR}"
   # User passes a URl like https://github.com/foo/bar, we translate it to https://api.github.com/foo/bar/repos.
   api_url=${ENVOY_REPOSITORY/https:\/\/github.com/https:\/\/api.github.com/repos}

@@ -74,8 +74,7 @@ if [ "${DST}" == "none" ]; then
   DST=""
 fi
 
-# Expected glibc version from the hermetic sysroot configured in WORKSPACE.
-EXPECTED_GLIBC=$(grep -oP 'glibc_version\s*=\s*"\K[^"]+' WORKSPACE)
+EXPECTED_GLIBC="2.28"
 
 # The proxy binary name.
 SHA="$(git rev-parse --verify HEAD)"

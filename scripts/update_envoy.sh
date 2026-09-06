@@ -15,7 +15,7 @@
 # limitations under the License.
 
 
-# Update the Envoy SHA in istio/proxy WORKSPACE with the first argument (aka ENVOY_SHA) and
+# Update the Envoy SHA in istio/proxy MODULE.bazel with the first argument (aka ENVOY_SHA) and
 # the second argument (aka ENVOY_SHA commit date)
 
 # Exit immediately for non zero status
@@ -30,10 +30,10 @@ UPDATE_BRANCH=${UPDATE_BRANCH:-"main"}
 ENVOY_SHA=${ENVOY_SHA:-""}
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-WORKSPACE=${ROOT}/WORKSPACE
+MODULE_BAZEL=${ROOT}/MODULE.bazel
 
-ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
-ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
+ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${MODULE_BAZEL}")"
+ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${MODULE_BAZEL}")"
 
 # get latest commit for specified org/repo
 LATEST_SHA="$(git ls-remote https://github.com/"${ENVOY_ORG}"/"${ENVOY_REPO}" "refs/heads/$UPDATE_BRANCH" | awk '{ print $1}')"
@@ -52,11 +52,11 @@ SHA256=${SHAArr[0]}
 rm "${LATEST_SHA}".tar.gz
 
 # Update ENVOY_SHA commit date
-sed -i "s/Commit date: .*/Commit date: ${DATE}/" "${WORKSPACE}"
+sed -i "s/Commit date: .*/Commit date: ${DATE}/" "${MODULE_BAZEL}"
 
-# Update the dependency in istio/proxy WORKSPACE
-sed -i 's/ENVOY_SHA = .*/ENVOY_SHA = "'"$LATEST_SHA"'"/' "${WORKSPACE}"
-sed -i 's/ENVOY_SHA256 = .*/ENVOY_SHA256 = "'"$SHA256"'"/' "${WORKSPACE}"
+# Update the dependency in istio/proxy MODULE.bazel
+sed -i 's/ENVOY_SHA = .*/ENVOY_SHA = "'"$LATEST_SHA"'"/' "${MODULE_BAZEL}"
+sed -i 's/ENVOY_SHA256 = .*/ENVOY_SHA256 = "'"$SHA256"'"/' "${MODULE_BAZEL}"
 
 # Update .bazelversion and envoy.bazelrc
 curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelversion" > .bazelversion
@@ -64,3 +64,8 @@ curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST
 
 # Update VERSION.txt
 curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/VERSION.txt" > ENVOY_VERSION.txt
+
+# Keep MODULE.bazel's `bazel_dep(name = "envoy", ...)` version aligned with
+# the version Envoy itself declares in its own MODULE.bazel (== VERSION.txt).
+ENVOY_MODULE_VERSION="$(cat ENVOY_VERSION.txt)"
+sed -i 's/bazel_dep(name = "envoy", version = ".*")/bazel_dep(name = "envoy", version = "'"${ENVOY_MODULE_VERSION}"'")/' "${MODULE_BAZEL}"
