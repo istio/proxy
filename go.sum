@@ -9,10 +9,10 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/envoyproxy/go-control-plane v0.14.1-0.20260804155219-b18f642dbd8e h1:M57pKP7tenYPd6H2I/WmNvtqOAY7ZJLWAwUebxUHSX0=
 github.com/envoyproxy/go-control-plane v0.14.1-0.20260804155219-b18f642dbd8e/go.mod h1:rcDQvjX9fwNQvh7l9pxwfGBufBWU6xQ0zK5mcsH8/Lg=
-github.com/envoyproxy/go-control-plane/contrib v1.36.1-0.20260829101913-1e3cf565f8ea h1:t8WZECqzDlnfpNxGEbWVaxnuArCLViVl1bBJccoCuIs=
-github.com/envoyproxy/go-control-plane/contrib v1.36.1-0.20260829101913-1e3cf565f8ea/go.mod h1:KZDaLAfs9N00nebS1apwh+yZ/mOiYV3jvrFHwlIMN4s=
-github.com/envoyproxy/go-control-plane/envoy v1.39.1-0.20260829101913-1e3cf565f8ea h1:kJzxTAvqGSP/XcO3mhh4G/pIli1CpuFHJxZsvHATr/I=
-github.com/envoyproxy/go-control-plane/envoy v1.39.1-0.20260829101913-1e3cf565f8ea/go.mod h1:DAlDU2dsSxtwK0WKRXMDxXb2j25XXcs1FO/6fTcLiXU=
+github.com/envoyproxy/go-control-plane/contrib v1.36.1-0.20260905210924-6c7bb2f1a101 h1:7oqoZCjPD517WamXz89PPpjh3pXBBBIxXpDcwVcln/M=
+github.com/envoyproxy/go-control-plane/contrib v1.36.1-0.20260905210924-6c7bb2f1a101/go.mod h1:KZDaLAfs9N00nebS1apwh+yZ/mOiYV3jvrFHwlIMN4s=
+github.com/envoyproxy/go-control-plane/envoy v1.39.1-0.20260905210924-6c7bb2f1a101 h1:K8Elxaui2iaIr5L99JO2Bd+ZXt0mLyvn084f6DONRKE=
+github.com/envoyproxy/go-control-plane/envoy v1.39.1-0.20260905210924-6c7bb2f1a101/go.mod h1:owhijsHegYB/xF025EF0Io1lR5+l8k1e2m5KUWMXI74=
 github.com/envoyproxy/go-control-plane/ratelimit v0.1.0 h1:/G9QYbddjL25KvtKTv3an9lx6VBE2cnb8wp1vEGNYGI=
 github.com/envoyproxy/go-control-plane/ratelimit v0.1.0/go.mod h1:Wk+tMFAFbCXaJPzVVHnPgRKdUdwW/KdbRt94AzgRee4=
 github.com/envoyproxy/protoc-gen-validate v1.3.3 h1:MVQghNeW+LZcmXe7SY1V36Z+WFMDjpqGAGacLe2T0ds=
@@ -39,8 +39,8 @@ github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 h1:GFCKgm
 github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10/go.mod h1:t/avpk3KcrXxUnYOhZhMXJlSEyie6gQbtLq5NM3loB8=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/prometheus/client_model v0.6.2 h1:oBsgwpGs7iVziMvrGhE53c/GrLUsZdHnqNwqPLxwZyk=
-github.com/prometheus/client_model v0.6.2/go.mod h1:y3m2F6Gdpfy6Ut/GBsUqTWZqCUvMVzSfMLjcu6wAwpE=
+github.com/prometheus/client_model v0.6.3 h1:O0jaTVAYNxTHYInEPFJt5I3+sN8zqBtVMPTB1qyxiEo=
+github.com/prometheus/client_model v0.6.3/go.mod h1:gpN5P9S7Rr6Yr92PiQ+Ixvhf6JZEkF1dnxsYL2aPBEM=
 github.com/prometheus/common v0.70.1 h1:1HvjP4D5oL3t8RsPlwxA9onvvStjtIHYE5XuuwOi/PY=
 github.com/prometheus/common v0.70.1/go.mod h1:VdFUQDMZK3VLkurFUVhia6uys/0suUp86TJz5qbJRhc=
 github.com/rogpeppe/go-internal v1.12.0 h1:exVL4IDcn6na9z1rAb56Vxr+CgyK3nn3O+epU5NdKM8=
