@@ -167,10 +167,7 @@ override_repo(
 # envoy's existing `llvm.sysroot(label = "@sysroot_linux_amd64//:sysroot")`
 # wiring picks up our pinned sysroot transparently, with no need to
 # duplicate envoy's llvm.toolchain/toolchain_root/cxx_cross_lib config.
-#
-# Note the real package is "sysroot", not "bazel/sysroot" as the
-# envoy_toolshed README (as of 0.4.13) still documents -- confirmed via
-# `bazel query "@sysroot_linux_amd64//:sysroot"` against the fetched repo.
+# duplicate envoy'''s llvm.toolchain/toolchain_root/cxx_cross_lib config.
 sysroot_ext = use_extension("@envoy_toolshed//sysroot:extensions.bzl", "sysroot_extension")
 sysroot_ext.setup(
     glibc_version = "2.28",
