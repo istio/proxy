@@ -59,13 +59,34 @@ sed -i 's/ENVOY_SHA = .*/ENVOY_SHA = "'"$LATEST_SHA"'"/' "${MODULE_BAZEL}"
 sed -i 's/ENVOY_SHA256 = .*/ENVOY_SHA256 = "'"$SHA256"'"/' "${MODULE_BAZEL}"
 
 # Update .bazelversion and envoy.bazelrc
-curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelversion" > .bazelversion
-curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelrc" > envoy.bazelrc
+# -f (fail on 404/5xx) matters here: without it curl exits 0 and writes the
+# error body to the destination file, which later steps then treat as valid.
+curl -sSfL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelversion" > .bazelversion
+curl -sSfL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelrc" > envoy.bazelrc
 
 # Update VERSION.txt
-curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/VERSION.txt" > ENVOY_VERSION.txt
+curl -sSfL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/VERSION.txt" > ENVOY_VERSION.txt
 
-# Keep MODULE.bazel's `bazel_dep(name = "envoy", ...)` version aligned with
-# the version Envoy itself declares in its own MODULE.bazel (== VERSION.txt).
+# Keep MODULE.bazel's `bazel_dep(name = "envoy", ...)` and
+# `bazel_dep(name = "envoy_api", ...)` versions aligned with the version
+# Envoy itself declares in its own MODULE.bazel (== VERSION.txt) -- upstream
+# keeps both in lockstep, so both must be updated together or the module file
+# ends up internally inconsistent.
 ENVOY_MODULE_VERSION="$(cat ENVOY_VERSION.txt)"
-sed -i 's/bazel_dep(name = "envoy", version = ".*")/bazel_dep(name = "envoy", version = "'"${ENVOY_MODULE_VERSION}"'")/' "${MODULE_BAZEL}"
+# Sanity-check before substituting: a bad/empty ENVOY_VERSION.txt must not be
+# written into MODULE.bazel as a version string.
+echo "${ENVOY_MODULE_VERSION}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-dev)?$' || {
+  echo "ENVOY_VERSION.txt has unexpected content: ${ENVOY_MODULE_VERSION}" >&2
+  exit 1
+}
+sed -i -E 's/bazel_dep\(name = "(envoy|envoy_api)", version = "[^"]*"\)/bazel_dep(name = "\1", version = "'"${ENVOY_MODULE_VERSION}"'")/' "${MODULE_BAZEL}"
+
+# Refresh MODULE.bazel.lock: bumping ENVOY_SHA/ENVOY_SHA256 above invalidates
+# the digests the lockfile recorded for Envoy-provided module extensions
+# (envoy_build_config_ext, envoy_repo_extension, envoy_toolchains_extension,
+# envoy_module_graph_extension). Without this, `bazel_get_workspace_status`
+# sees a lockfile refresh (triggered by Bazel's default
+# --lockfile_mode=update during loading) as an uncommitted change and stamps
+# BUILD_SCM_STATUS=Modified on released binaries, and any job passing
+# --lockfile_mode=error hard-fails on this bot's own PRs.
+bazel mod deps --lockfile_mode=update

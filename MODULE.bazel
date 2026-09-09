@@ -60,10 +60,10 @@ bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc, ENVOY_VERSION.txt and .bazelrc if needed.
 #
-# Commit date: 2026-09-04
-ENVOY_SHA = "329dd5106e758b7b24a65af51b8a28e3a0568af5"
+# Commit date: 2026-09-08
+ENVOY_SHA = "e804587cd341809b3afa3cf33443e8e6c907e31a"
 
-ENVOY_SHA256 = "db351b49b89391b8c6e380dcad13c8ee47c52577f4f95601d34288d225308efa"
+ENVOY_SHA256 = "a374fa85f5fb08d6f37e22ad1bf5c2ab6d9ccc026cbd559729cdb1b04d2fdf02"
 
 ENVOY_ORG = "envoyproxy"
 
@@ -76,8 +76,12 @@ ENVOY_REPO = "envoy"
 # ENVOY_VERSION.txt (kept in sync by scripts/update_envoy.sh).
 #
 # To override with a local envoy checkout, pass
-# `--override_repository=envoy=/PATH/TO/ENVOY` to Bazel or persist the option
-# in `user.bazelrc`.
+# `--override_module=envoy=/PATH/TO/ENVOY --override_module=envoy_api=/PATH/TO/ENVOY/api`
+# to Bazel or persist the options in `user.bazelrc`. Use `--override_module`,
+# not `--override_repository`: envoy is a bzlmod module, so module resolution
+# still reads the pinned archive's own MODULE.bazel unless the module itself
+# is overridden. Both envoy and envoy_api must be overridden together -- see
+# the envoy_api module below for why it isn't derived from envoy anymore.
 bazel_dep(name = "envoy", version = "1.40.0-dev")
 archive_override(
     module_name = "envoy",

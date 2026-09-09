@@ -41,13 +41,21 @@ if [[ "${ENVOY_REPOSITORY:-}" && "${ENVOY_PREFIX:-}" ]]; then
   TMP_DIR=$(mktemp -d -t envoy-XXXXXXXXXX)
   trap 'rm -rf ${TMP_DIR:?}' EXIT
   ENVOY_SHA="${ENVOY_SHA:-$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "$MODULE_BAZEL")}"
-  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_repository=envoy=${TMP_DIR}/${ENVOY_PREFIX}-${ENVOY_SHA}"
+  # --override_module (not --override_repository) is required here: envoy is a
+  # bzlmod module, and --override_repository doesn't affect module resolution
+  # (the pinned archive's own MODULE.bazel would still be read). envoy_api must
+  # be overridden alongside envoy -- it's an independent module (MODULE.bazel),
+  # not derived from @envoy the way it was under WORKSPACE, so overriding envoy
+  # alone would build fork Envoy source against upstream envoy_api protos.
+  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_module=envoy=${TMP_DIR}/${ENVOY_PREFIX}-${ENVOY_SHA} --override_module=envoy_api=${TMP_DIR}/${ENVOY_PREFIX}-${ENVOY_SHA}/api"
   curl -nsSfL "${ENVOY_REPOSITORY}/archive/${ENVOY_SHA}.tar.gz" | tar -C "${TMP_DIR}" -xz
 elif [[ "${ENVOY_REPOSITORY:-}" ]]; then
   TMP_DIR=$(mktemp -d -t envoy-XXXXXXXXXX)
   trap 'rm -rf ${TMP_DIR:?}' EXIT
   ENVOY_SHA="${ENVOY_SHA:-$(grep -Pom1 "^ENVOY_SHA = \"\K[a-zA-Z0-9]{40}" "$MODULE_BAZEL")}"
-  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_repository=envoy=${TMP_DIR}"
+  # See comment above: --override_module (with envoy_api alongside envoy) is
+  # required for a bzlmod module, not --override_repository.
+  BAZEL_BUILD_ARGS="${BAZEL_BUILD_ARGS} --override_module=envoy=${TMP_DIR} --override_module=envoy_api=${TMP_DIR}/api"
   # User passes a URl like https://github.com/foo/bar, we translate it to https://api.github.com/foo/bar/repos.
   api_url=${ENVOY_REPOSITORY/https:\/\/github.com/https:\/\/api.github.com/repos}
   # Contents in the tarball will be in a folder, so --strip=1 it so we don't have to deal with the changing name

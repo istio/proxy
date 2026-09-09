@@ -6,17 +6,6 @@
 # curl -sSL https://raw.githubusercontent.com/envoyproxy/envoy/master/.bazelrc > envoy.bazelrc
 import %workspace%/envoy.bazelrc
 
-# envoy_build_config (our //bazel:extension_config) is produced by an
-# Envoy-internal module extension that cannot be parameterized from
-# MODULE.bazel; override it the way Envoy's own docs recommend
-# (bazel/README.md: "Customize extension build config"). --override_repository
-# keys off the *canonical* repo name for an extension-generated repo (find it
-# with `bazel mod show_repo @envoy_build_config`), not the plain apparent
-# name -- the apparent name "envoy_build_config" is only what our own
-# MODULE.bazel's `use_repo(envoy_build_config_ext, "envoy_build_config")`
-# maps to it locally.
-common --override_repository=envoy++envoy_build_config_ext+envoy_build_config=%workspace%/bazel/extension_config
-
 # Istio override: increase JVM heap to 4GB for ARM64 builds (envoy.bazelrc sets 3GB)
 # The 3GB limit causes memory pressure during large downloads which breaks gRPC remote cache connections
 # Also increase direct buffer memory for large file transfers
