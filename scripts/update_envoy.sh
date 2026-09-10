@@ -15,7 +15,7 @@
 # limitations under the License.
 
 
-# Update the Envoy SHA in istio/proxy WORKSPACE with the first argument (aka ENVOY_SHA) and
+# Update the Envoy SHA in istio/proxy MODULE.bazel with the first argument (aka ENVOY_SHA) and
 # the second argument (aka ENVOY_SHA commit date)
 
 # Exit immediately for non zero status
@@ -30,10 +30,10 @@ UPDATE_BRANCH=${UPDATE_BRANCH:-"main"}
 ENVOY_SHA=${ENVOY_SHA:-""}
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-WORKSPACE=${ROOT}/WORKSPACE
+MODULE_BAZEL=${ROOT}/MODULE.bazel
 
-ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
-ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${WORKSPACE}")"
+ENVOY_ORG="$(grep -Pom1 "^ENVOY_ORG = \"\K[a-zA-Z-]+" "${MODULE_BAZEL}")"
+ENVOY_REPO="$(grep -Pom1 "^ENVOY_REPO = \"\K[a-zA-Z-]+" "${MODULE_BAZEL}")"
 
 # get latest commit for specified org/repo
 LATEST_SHA="$(git ls-remote https://github.com/"${ENVOY_ORG}"/"${ENVOY_REPO}" "refs/heads/$UPDATE_BRANCH" | awk '{ print $1}')"
@@ -52,15 +52,41 @@ SHA256=${SHAArr[0]}
 rm "${LATEST_SHA}".tar.gz
 
 # Update ENVOY_SHA commit date
-sed -i "s/Commit date: .*/Commit date: ${DATE}/" "${WORKSPACE}"
+sed -i "s/Commit date: .*/Commit date: ${DATE}/" "${MODULE_BAZEL}"
 
-# Update the dependency in istio/proxy WORKSPACE
-sed -i 's/ENVOY_SHA = .*/ENVOY_SHA = "'"$LATEST_SHA"'"/' "${WORKSPACE}"
-sed -i 's/ENVOY_SHA256 = .*/ENVOY_SHA256 = "'"$SHA256"'"/' "${WORKSPACE}"
+# Update the dependency in istio/proxy MODULE.bazel
+sed -i 's/ENVOY_SHA = .*/ENVOY_SHA = "'"$LATEST_SHA"'"/' "${MODULE_BAZEL}"
+sed -i 's/ENVOY_SHA256 = .*/ENVOY_SHA256 = "'"$SHA256"'"/' "${MODULE_BAZEL}"
 
 # Update .bazelversion and envoy.bazelrc
-curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelversion" > .bazelversion
-curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelrc" > envoy.bazelrc
+# -f (fail on 404/5xx) matters here: without it curl exits 0 and writes the
+# error body to the destination file, which later steps then treat as valid.
+curl -sSfL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelversion" > .bazelversion
+curl -sSfL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelrc" > envoy.bazelrc
 
 # Update VERSION.txt
-curl -sSL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/VERSION.txt" > ENVOY_VERSION.txt
+curl -sSfL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/VERSION.txt" > ENVOY_VERSION.txt
+
+# Keep MODULE.bazel's `bazel_dep(name = "envoy", ...)` and
+# `bazel_dep(name = "envoy_api", ...)` versions aligned with the version
+# Envoy itself declares in its own MODULE.bazel (== VERSION.txt) -- upstream
+# keeps both in lockstep, so both must be updated together or the module file
+# ends up internally inconsistent.
+ENVOY_MODULE_VERSION="$(cat ENVOY_VERSION.txt)"
+# Sanity-check before substituting: a bad/empty ENVOY_VERSION.txt must not be
+# written into MODULE.bazel as a version string.
+echo "${ENVOY_MODULE_VERSION}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-dev)?$' || {
+  echo "ENVOY_VERSION.txt has unexpected content: ${ENVOY_MODULE_VERSION}" >&2
+  exit 1
+}
+sed -i -E 's/bazel_dep\(name = "(envoy|envoy_api)", version = "[^"]*"\)/bazel_dep(name = "\1", version = "'"${ENVOY_MODULE_VERSION}"'")/' "${MODULE_BAZEL}"
+
+# Refresh MODULE.bazel.lock: bumping ENVOY_SHA/ENVOY_SHA256 above invalidates
+# the digests the lockfile recorded for Envoy-provided module extensions
+# (envoy_build_config_ext, envoy_repo_extension, envoy_toolchains_extension,
+# envoy_module_graph_extension). Without this, `bazel_get_workspace_status`
+# sees a lockfile refresh (triggered by Bazel's default
+# --lockfile_mode=update during loading) as an uncommitted change and stamps
+# BUILD_SCM_STATUS=Modified on released binaries, and any job passing
+# --lockfile_mode=error hard-fails on this bot's own PRs.
+bazel mod deps --lockfile_mode=update

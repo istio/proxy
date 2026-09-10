@@ -65,13 +65,13 @@ CHANGED_SOURCE_FILES=()
 while IFS='' read -r line; do CHANGED_SOURCE_FILES+=("$line"); done < <(git diff HEAD --name-only | grep -E '\.(h|c|cc|proto)$')
 
 BAZEL_FILES=()
-while IFS='' read -r line; do BAZEL_FILES+=("$line"); done < <(git ls-tree -r HEAD --name-only | grep -E '(\.bzl|BUILD|WORKSPACE)$' |grep -v 'extensions_build_config.bzl')
+while IFS='' read -r line; do BAZEL_FILES+=("$line"); done < <(git ls-tree -r HEAD --name-only | grep -E '(\.bzl|BUILD|WORKSPACE|MODULE\.bazel)$' |grep -v 'extensions_build_config.bzl')
 
 "${BUILDIFIER}" "${BAZEL_FILES[@]}" \
   || { echo "Could not run buildifier." ; exit 1 ; }
 
 CHANGED_BAZEL_FILES=()
-while IFS='' read -r line; do CHANGED_BAZEL_FILES+=("$line"); done < <(git diff HEAD --name-only | grep -E '(\.bzl|BUILD|WORKSPACE)$')
+while IFS='' read -r line; do CHANGED_BAZEL_FILES+=("$line"); done < <(git diff HEAD --name-only | grep -E '(\.bzl|BUILD|WORKSPACE|MODULE\.bazel)$')
 
 if [[ "${#CHANGED_SOURCE_FILES}" -ne 0 ]]; then
   echo -e "Source file(s) not formatted:\n${CHANGED_SOURCE_FILES[*]}"

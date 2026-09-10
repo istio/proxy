@@ -74,8 +74,10 @@ if [ "${DST}" == "none" ]; then
   DST=""
 fi
 
-# Expected glibc version from the hermetic sysroot configured in WORKSPACE.
-EXPECTED_GLIBC=$(grep -oP 'glibc_version\s*=\s*"\K[^"]+' WORKSPACE)
+# Expected glibc version from the hermetic sysroot configured in MODULE.bazel.
+# Anchored to the actual `sysroot_ext.setup(glibc_version = ...)` call (not
+# just any line mentioning glibc_version, which the surrounding comments do).
+EXPECTED_GLIBC="$(grep -oP '^\s+glibc_version = "\K[^"]+' MODULE.bazel)"
 
 # The proxy binary name.
 SHA="$(git rev-parse --verify HEAD)"
