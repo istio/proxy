@@ -81,6 +81,60 @@ echo "${ENVOY_MODULE_VERSION}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-dev)?$' || {
 }
 sed -i -E 's/bazel_dep\(name = "(envoy|envoy_api)", version = "[^"]*"\)/bazel_dep(name = "\1", version = "'"${ENVOY_MODULE_VERSION}"'")/' "${MODULE_BAZEL}"
 
+# Keep every other `bazel_dep` we declare pinned to the exact version Envoy
+# (or envoy_api) declares. Most of these are transitive deps we only declare
+# directly because envoy.bazelrc references them with unqualified `@repo`
+# labels; a version that drifts from Envoy's forces a second module
+# resolution (or an outright resolution failure) at build time.
+ENVOY_MODULE_FILES_DIR="$(mktemp -d)"
+trap 'rm -rf "${ENVOY_MODULE_FILES_DIR}"' EXIT
+curl -sSfL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/MODULE.bazel" > "${ENVOY_MODULE_FILES_DIR}/envoy.MODULE.bazel"
+curl -sSfL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/api/MODULE.bazel" > "${ENVOY_MODULE_FILES_DIR}/envoy_api.MODULE.bazel"
+
+# name<TAB>version pairs; envoy's own MODULE.bazel wins over envoy_api's when
+# both declare a dep (they are kept in lockstep upstream anyway).
+sed -nE 's/^bazel_dep\(name = "([^"]+)", version = "([^"]+)".*/\1\t\2/p' \
+  "${ENVOY_MODULE_FILES_DIR}/envoy.MODULE.bazel" "${ENVOY_MODULE_FILES_DIR}/envoy_api.MODULE.bazel" \
+  > "${ENVOY_MODULE_FILES_DIR}/versions.tsv"
+
+awk -v versions="${ENVOY_MODULE_FILES_DIR}/versions.tsv" '
+BEGIN {
+  FS = "\t"
+  while ((getline line < versions) > 0) {
+    split(line, kv, "\t")
+    # First occurrence wins (envoy/MODULE.bazel is read first).
+    if (!(kv[1] in upstream)) {
+      upstream[kv[1]] = kv[2]
+    }
+  }
+}
+{
+  line = $0
+  if (match(line, /^bazel_dep\(name = "[^"]+", version = "[^"]+"/)) {
+    name = line
+    sub(/^bazel_dep\(name = "/, "", name)
+    sub(/".*/, "", name)
+    # envoy/envoy_api are pinned to ENVOY_VERSION.txt above.
+    if (name != "envoy" && name != "envoy_api") {
+      if (name in upstream) {
+        sub(/version = "[^"]+"/, "version = \"" upstream[name] "\"", line)
+      } else {
+        print "WARNING: " name " is not declared by envoy; leaving version untouched" > "/dev/stderr"
+      }
+    }
+  }
+  print line
+}
+' "${MODULE_BAZEL}" > "${MODULE_BAZEL}.tmp"
+
+# Guard against a truncated/garbled rewrite clobbering MODULE.bazel.
+if [[ "$(wc -l < "${MODULE_BAZEL}.tmp")" -ne "$(wc -l < "${MODULE_BAZEL}")" ]]; then
+  echo "MODULE.bazel rewrite changed the line count; aborting" >&2
+  rm -f "${MODULE_BAZEL}.tmp"
+  exit 1
+fi
+mv "${MODULE_BAZEL}.tmp" "${MODULE_BAZEL}"
+
 # Refresh MODULE.bazel.lock: bumping ENVOY_SHA/ENVOY_SHA256 above invalidates
 # the digests the lockfile recorded for Envoy-provided module extensions
 # (envoy_build_config_ext, envoy_repo_extension, envoy_toolchains_extension,
