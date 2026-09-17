@@ -1,8 +1,0 @@
-Name: Requires test package
-Description: Dummy pkgconfig test package for testing Requires/Requires.private
-Version: 1.0.0
-Requires: public-dep >= 1
-Requires.private: private-dep >= 1
-Libs: -L/requires-test/lib -lrequires-test
-Cflags: -I/requires-test/include
-

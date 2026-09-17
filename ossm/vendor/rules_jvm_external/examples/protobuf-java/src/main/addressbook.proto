@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package rules.jvm.external;
+
+option java_package = "rules.jvm.external";
+option java_outer_classname = "AddressBookProtos";
+
+message Person {
+  required string name = 1;
+  required int32 id = 2;
+}

@@ -1,0 +1,17 @@
+{
+  "formatVersion": "1.1",
+  "component": { "group": "com.example", "module": "sample-jvm", "version": "1.0",
+    "attributes": { "org.gradle.status": "release" } },
+  "variants": [
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [{ "name": "sample-jvm-1.0.jar", "url": "sample-jvm-1.0.jar" }]
+    }
+  ]
+}

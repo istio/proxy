@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <groupId>com.example.prerelease</groupId>
+    <artifactId>test-artifact</artifactId>
+    <versioning>
+        <latest>11.0.12</latest>
+        <release>11.0.12</release>
+        <versions>
+            <version>11.0.0</version>
+            <version>11.0.11</version>
+            <version>11.0.12</version>
+            <version>7.0.1.alpha0</version>
+            <version>7.0.1.beta1</version>
+            <version>7.0.1</version>
+        </versions>
+        <lastUpdated>20221018071856</lastUpdated>
+    </versioning>
+</metadata>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <groupId>com.example.prerelease</groupId>
+    <artifactId>test-artifact</artifactId>
+    <versioning>
+        <latest>12.0.1.alpha4</latest>
+        <release>12.0.1.alpha4</release>
+        <versions>
+            <version>11.0.0</version>
+            <version>12.0.0.alpha0</version>
+            <version>12.0.0.beta1</version>
+            <version>12.0.0.milestone2</version>
+            <version>12.0.0.rc3</version>
+            <version>12.0.0.snapshot4</version>
+            <version>12.0.1.alpha4</version>
+            <version>7.0.0.M0</version>
+            <version>7.0.1</version>
+        </versions>
+        <lastUpdated>20221018071856</lastUpdated>
+    </versioning>
+</metadata>

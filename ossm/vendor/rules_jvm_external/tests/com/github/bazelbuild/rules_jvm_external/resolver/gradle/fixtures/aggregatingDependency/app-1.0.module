@@ -1,0 +1,56 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.example",
+    "module": "app",
+    "version": "1.0",
+    "attributes": { "org.gradle.status": "release" }
+  },
+  "variants": [
+    {
+      "name": "runtimeElements",
+      "attributes": {
+       "org.gradle.category": "library",
+       "org.gradle.libraryelements": "jar",
+       "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "com.example",
+          "module": "native-lib",
+          "version": { "requires": "1.0" },
+          "thirdPartyCompatibility": {
+            "artifactSelector": {
+              "name": "native-lib",
+              "type": "jar",
+              "extension": "jar",
+              "classifier": "osx-aarch_64"
+            }
+          }
+        },
+        {
+          "group": "com.example",
+          "module": "native-lib",
+          "version": { "requires": "1.0" },
+          "thirdPartyCompatibility": {
+            "artifactSelector": {
+              "name": "native-lib",
+              "type": "jar",
+              "extension": "jar",
+              "classifier": "osx-x86_64"
+            }
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "app-1.0.jar",
+          "url": "app-1.0.jar",
+          "size": 100,
+          "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+          "md5": "d41d8cd98f00b204e9800998ecf8427e"
+        }
+      ]
+    }
+  ]
+}

@@ -1,8 +1,0 @@
-#! /bin/sh
-
-set -e
-
-. ${srcdir}/common
-
-RESULT="-lcirc1 -lcirc2 -lcirc3"
-run_test --libs circular-1

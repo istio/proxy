@@ -1,5 +1,0 @@
-Name: tilde
-Description: tilde test module
-Version: 1.0
-Libs: -L~
-Cflags: -I~

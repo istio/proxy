@@ -1,8 +1,0 @@
-#! /bin/sh
-
-set -e
-
-. ${srcdir}/common
-
-RESULT="-lsimple -lm"
-run_test --static --libs simple

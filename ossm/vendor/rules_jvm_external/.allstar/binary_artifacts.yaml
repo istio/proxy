@@ -1,0 +1,5 @@
+# Ignore reason: Files are reviewed by the core committers. https://github.com/bazelbuild/rules_jvm_external/issues/808
+ignorePaths:
+- private/tools/prebuilt/hasher_deploy.jar
+- private/tools/prebuilt/list_packages_deploy.jar
+- private/tools/prebuilt/outdated_deploy.jar

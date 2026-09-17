@@ -1,5 +1,0 @@
-Name: Requires version test package 3
-Description: Test version comparisons in Requires
-Version: 1.0.0
-Requires: public-dep <= 1.0.0 simple < 999
-Requires.private: private-dep != 4.0

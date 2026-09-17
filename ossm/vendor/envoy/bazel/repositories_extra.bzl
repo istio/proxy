@@ -6,7 +6,7 @@ load("@envoy_toolshed//sysroot:sysroot.bzl", "setup_sysroots")
 load("@proxy_wasm_cpp_host//bazel/cargo/wasmtime/remote:crates.bzl", "crate_repositories")
 load("@rules_cc//cc:extensions.bzl", "compatibility_proxy_repo")
 load("@rules_java//java:rules_java_deps.bzl", java_compatibility_proxy_repo = "compatibility_proxy_repo")
-load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
+load("@rules_python//python:repositories.bzl", "py_repositories")
 load("@toolchains_llvm//toolchain:deps.bzl", "bazel_toolchain_dependencies")
 load("//bazel/external/cargo:crates.bzl", "raze_fetch_remote_crates")
 
@@ -34,12 +34,7 @@ def envoy_dependencies_extra(
     crate_repositories()
     py_repositories()
 
-    # Registers underscored Python minor version - eg `python3_10`
-    python_register_toolchains(
-        name = "python%s" % _python_minor_version(python_version),
-        python_version = python_version,
-        ignore_root_user_error = ignore_root_user_error,
-    )
+    native.register_toolchains("@rules_python//python/runtime_env_toolchains:all")
 
     aspect_bazel_lib_dependencies()
 

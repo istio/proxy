@@ -13,6 +13,7 @@ build --override_repository=bazel_features_version=%workspace%/ossm/vendor/bazel
 build --override_repository=bazel_gazelle=%workspace%/ossm/vendor/bazel_gazelle
 build --override_repository=bazel_gazelle_is_bazel_module=%workspace%/ossm/vendor/bazel_gazelle_is_bazel_module
 build --override_repository=bazel_skylib=%workspace%/ossm/vendor/bazel_skylib
+build --override_repository=benchmark=%workspace%/ossm/vendor/benchmark
 build --override_repository=boringssl=%workspace%/ossm/vendor/boringssl
 build --override_repository=brotli=%workspace%/ossm/vendor/brotli
 build --override_repository=bsd_tar_toolchains=%workspace%/ossm/vendor/bsd_tar_toolchains
@@ -30,9 +31,12 @@ build --override_repository=com_github_grpc_grpc=%workspace%/ossm/vendor/com_git
 build --override_repository=com_github_iancoleman_strcase=%workspace%/ossm/vendor/com_github_iancoleman_strcase
 build --override_repository=com_github_lyft_protoc_gen_star_v2=%workspace%/ossm/vendor/com_github_lyft_protoc_gen_star_v2
 build --override_repository=com_github_spf13_afero=%workspace%/ossm/vendor/com_github_spf13_afero
+build --override_repository=com_google_absl=%workspace%/ossm/vendor/com_google_absl
 build --override_repository=com_google_googleapis=%workspace%/ossm/vendor/com_google_googleapis
 build --override_repository=com_google_googleapis_imports=%workspace%/ossm/vendor/com_google_googleapis_imports
 build --override_repository=com_google_protobuf=%workspace%/ossm/vendor/com_google_protobuf
+build --override_repository=com_google_protobuf_protoc_linux_aarch_64=%workspace%/ossm/vendor/com_google_protobuf_protoc_linux_aarch_64
+build --override_repository=com_google_protobuf_protoc_linux_ppcle_64=%workspace%/ossm/vendor/com_google_protobuf_protoc_linux_ppcle_64
 build --override_repository=com_google_protobuf_protoc_linux_x86_64=%workspace%/ossm/vendor/com_google_protobuf_protoc_linux_x86_64
 build --override_repository=compatibility_proxy=%workspace%/ossm/vendor/compatibility_proxy
 build --override_repository=copy_directory_toolchains=%workspace%/ossm/vendor/copy_directory_toolchains
@@ -51,7 +55,6 @@ build --override_repository=flatbuffers=%workspace%/ossm/vendor/flatbuffers
 build --override_repository=fmt=%workspace%/ossm/vendor/fmt
 build --override_repository=fp16=%workspace%/ossm/vendor/fp16
 build --override_repository=fuzzing_pip3=%workspace%/ossm/vendor/fuzzing_pip3
-build --override_repository=gnumake_src=%workspace%/ossm/vendor/gnumake_src
 build --override_repository=googletest=%workspace%/ossm/vendor/googletest
 build --override_repository=googleurl=%workspace%/ossm/vendor/googleurl
 build --override_repository=gperftools=%workspace%/ossm/vendor/gperftools
@@ -70,8 +73,6 @@ build --override_repository=liburing=%workspace%/ossm/vendor/liburing
 build --override_repository=luajit=%workspace%/ossm/vendor/luajit
 build --override_repository=msgpack-cxx=%workspace%/ossm/vendor/msgpack-cxx
 build --override_repository=nghttp2=%workspace%/ossm/vendor/nghttp2
-build --override_repository=ninja_1.13.0_linux=%workspace%/ossm/vendor/ninja_1.13.0_linux
-build --override_repository=ninja_1.13.0_toolchains=%workspace%/ossm/vendor/ninja_1.13.0_toolchains
 build --override_repository=nlohmann_json=%workspace%/ossm/vendor/nlohmann_json
 build --override_repository=ocp-diag-core=%workspace%/ossm/vendor/ocp-diag-core
 build --override_repository=opentelemetry-cpp=%workspace%/ossm/vendor/opentelemetry-cpp
@@ -82,7 +83,6 @@ build --override_repository=org_golang_x_sys=%workspace%/ossm/vendor/org_golang_
 build --override_repository=org_golang_x_text=%workspace%/ossm/vendor/org_golang_x_text
 build --override_repository=org_golang_x_tools=%workspace%/ossm/vendor/org_golang_x_tools
 build --override_repository=package_metadata=%workspace%/ossm/vendor/package_metadata
-build --override_repository=pkgconfig_src=%workspace%/ossm/vendor/pkgconfig_src
 build --override_repository=platforms=%workspace%/ossm/vendor/platforms
 build --override_repository=prometheus_metrics_model=%workspace%/ossm/vendor/prometheus_metrics_model
 build --override_repository=proto-converter=%workspace%/ossm/vendor/proto-converter
@@ -106,7 +106,6 @@ build --override_repository=pypi__setuptools=%workspace%/ossm/vendor/pypi__setup
 build --override_repository=pypi__tomli=%workspace%/ossm/vendor/pypi__tomli
 build --override_repository=pypi__wheel=%workspace%/ossm/vendor/pypi__wheel
 build --override_repository=pypi__zipp=%workspace%/ossm/vendor/pypi__zipp
-build --override_repository=python3_12_toolchains=%workspace%/ossm/vendor/python3_12_toolchains
 build --override_repository=pythons_hub=%workspace%/ossm/vendor/pythons_hub
 build --override_repository=quiche=%workspace%/ossm/vendor/quiche
 build --override_repository=re2=%workspace%/ossm/vendor/re2
@@ -128,6 +127,7 @@ build --override_repository=rules_foreign_cc_framework_toolchains=%workspace%/os
 build --override_repository=rules_fuzzing=%workspace%/ossm/vendor/rules_fuzzing
 build --override_repository=rules_fuzzing_oss_fuzz=%workspace%/ossm/vendor/rules_fuzzing_oss_fuzz
 build --override_repository=rules_java=%workspace%/ossm/vendor/rules_java
+build --override_repository=rules_jvm_external=%workspace%/ossm/vendor/rules_jvm_external
 build --override_repository=rules_license=%workspace%/ossm/vendor/rules_license
 build --override_repository=rules_nodejs=%workspace%/ossm/vendor/rules_nodejs
 build --override_repository=rules_pkg=%workspace%/ossm/vendor/rules_pkg
@@ -163,5 +163,6 @@ build --override_repository=yaml-cpp=%workspace%/ossm/vendor/yaml-cpp
 build --override_repository=yq.bzl=%workspace%/ossm/vendor/yq.bzl
 build --override_repository=yq_toolchains=%workspace%/ossm/vendor/yq_toolchains
 build --override_repository=zipkin-api=%workspace%/ossm/vendor/zipkin-api
+build --override_repository=zlib=%workspace%/ossm/vendor/zlib
 build --override_repository=zlib-ng=%workspace%/ossm/vendor/zlib-ng
 build --override_repository=zstd=%workspace%/ossm/vendor/zstd

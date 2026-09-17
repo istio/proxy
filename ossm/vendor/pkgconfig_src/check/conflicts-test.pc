@@ -1,6 +1,0 @@
-Name: Conflicts test package
-Description: Dummy pkgconfig test package for testing Conflicts
-Version: 1.0.0
-Requires: public-dep
-Conflicts: simple
-

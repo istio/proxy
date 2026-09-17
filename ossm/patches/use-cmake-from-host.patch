@@ -1,0 +1,13 @@
+diff --git a/bazel/dependency_imports.bzl b/bazel/dependency_imports.bzl
+index c508c60402..fe37631823 100644
+--- a/bazel/dependency_imports.bzl
++++ b/bazel/dependency_imports.bzl
+@@ -45,7 +45,7 @@ def envoy_dependency_imports(
+         # - https://github.com/envoyproxy/envoy/issues/38951
+         cargo_bazel_lockfile = "@envoy//:Cargo.Bazel.lock"):
+     compatibility_proxy_repo()
+-    rules_foreign_cc_dependencies()
++    rules_foreign_cc_dependencies(register_default_tools = False, register_built_tools = False)
+     go_rules_dependencies()
+     go_register_toolchains(go_version)
+     if go_version != "host":

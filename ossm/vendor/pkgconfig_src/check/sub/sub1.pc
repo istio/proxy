@@ -1,5 +1,0 @@
-Name: Subdirectory package 1
-Description: Test package 1 for subdirectory
-Version: 1.0.0
-Libs: -L/sub/lib -lsub1
-Cflags: -I/sub/include

@@ -1,0 +1,10 @@
+exports_files([
+    "artifact_with_plus_repin_install.json",
+    "m2local_testing_with_pinned_file_install.json",
+    "manifest_stamp_testing_install.json",
+    "maven_install.json",
+    "policy_pinned_testing_install.json",
+    "regression_testing_coursier_install.json",
+    "regression_testing_maven_install.json",
+    "service_indexing_testing.json",
+])

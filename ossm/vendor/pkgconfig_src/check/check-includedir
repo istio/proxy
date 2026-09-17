@@ -1,8 +1,0 @@
-#! /bin/sh
-
-set -e
-
-. ${srcdir}/common
-
-RESULT="-I/usr/include/somedir"
-run_test --cflags includedir

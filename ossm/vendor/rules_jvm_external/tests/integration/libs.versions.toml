@@ -1,0 +1,16 @@
+[versions]
+# Maybe we should use a BOM for this?
+junitJupiter = "5.12.2"
+
+[libraries]
+# This has a `package` which needs to be taken into account
+comGoogleAndroidGmsPlayServicesTasks = { module = "com.google.android.gms:play-services-tasks", package = "aar", version = "18.1.0" }
+# The version for this comes from the guava-bom
+guava = { module = "com.google.guava:guava" }
+# This needs to be listed as a `bom_module` for resolution to succeed
+guavaBom = { module = "com.google.guava:guava-bom", version = "33.4.8-jre" }
+# This demonstrates we can read from the `versions` table
+junitApi = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junitJupiter" }
+
+[plugins]
+protobuf = { id = "com.google.protobuf", version = "0.9.5" }

@@ -1,5 +1,0 @@
-Name: Requires version test package 2
-Description: Test version comparisons in Requires
-Version: 1.0.0
-Requires: public-dep >= 1 simple > 0
-Requires.private: private-dep = 1.0.0

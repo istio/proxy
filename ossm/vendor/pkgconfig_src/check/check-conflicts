@@ -1,9 +1,0 @@
-#! /bin/sh
-
-set -e
-
-. ${srcdir}/common
-
-RESULT="-L/public-dep/lib -lpublic-dep"
-run_test --libs conflicts-test
-

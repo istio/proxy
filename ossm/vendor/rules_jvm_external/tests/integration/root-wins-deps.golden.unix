@@ -1,0 +1,6 @@
+@root_wins//:io/netty/netty-buffer/4.1.121.Final/netty-buffer-4.1.121.Final.jar
+@root_wins//:io/netty/netty-common/4.1.121.Final/netty-common-4.1.121.Final.jar
+@root_wins//:io_netty_netty_buffer
+@root_wins//:io_netty_netty_buffer_4_1_121_Final_extension
+@root_wins//:io_netty_netty_common
+@root_wins//:io_netty_netty_common_4_1_121_Final_extension

@@ -106,8 +106,10 @@ function copy_files() {
 }
 
 function run_bazel() {
-  # Fetch platform-specific java tools for arm64 (not fetched automatically on x86_64)
+  # Fetch platform-specific tools for arm64 (not fetched automatically on x86_64
+  # because these are execution-platform tools, not target-platform tools)
   bazel --output_base="${OUTPUT_BASE}" fetch @remote_java_tools_linux_aarch64//:all
+  bazel --output_base="${OUTPUT_BASE}" fetch @com_google_protobuf_protoc_linux_aarch_64//:all
 
   bazel --output_base="${OUTPUT_BASE}" fetch @gperftools//:all
 

@@ -1,5 +1,0 @@
-Name: Non-l flags required test package
-Description: Test package for checking order of non-L Libs & Cflags
-Version: 1.0.0
-Libs: /non-l-required.a -pthread
-Cflags: -I/non-l-required/include

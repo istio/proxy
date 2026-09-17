@@ -1,5 +1,0 @@
-Name: Subdirectory package 2
-Description: Test package 2 for subdirectory
-Version: 2.0.0
-Libs: -L/sub/lib -lsub2
-Cflags: -I/sub/include

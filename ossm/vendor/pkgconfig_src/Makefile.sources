@@ -1,8 +1,0 @@
-pkg_config_SOURCES = \
-	pkg.h \
-	pkg.c \
-	parse.h \
-	parse.c \
-	rpmvercmp.c \
-	rpmvercmp.h \
-	main.c

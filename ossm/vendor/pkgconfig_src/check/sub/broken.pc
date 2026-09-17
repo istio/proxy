@@ -1,4 +1,0 @@
-Name: Broken package
-Description: Module with broken .pc file
-Version: 1.0
-Name: 2nd name

@@ -1,0 +1,56 @@
+diff --git a/bazel/python_dependencies.bzl b/bazel/python_dependencies.bzl
+index 9a1f4e5..329a0b4 100644
+--- a/bazel/python_dependencies.bzl
++++ b/bazel/python_dependencies.bzl
+@@ -7,21 +7,21 @@ def envoy_python_dependencies():
+     load_packages()
+     pip_parse(
+         name = "base_pip3",
+-        python_interpreter_target = "@python3_12_host//:python",
++        python_interpreter = "/usr/bin/python3",
+         requirements_lock = "@envoy//tools/base:requirements.txt",
+         extra_pip_args = ["--require-hashes"],
+     )
+ 
+     pip_parse(
+         name = "dev_pip3",
+-        python_interpreter_target = "@python3_12_host//:python",
++        python_interpreter = "/usr/bin/python3",
+         requirements_lock = "@envoy//tools/dev:requirements.txt",
+         extra_pip_args = ["--require-hashes"],
+     )
+ 
+     pip_parse(
+         name = "fuzzing_pip3",
+-        python_interpreter_target = "@python3_12_host//:python",
++        python_interpreter = "/usr/bin/python3",
+         requirements_lock = "@rules_fuzzing//fuzzing:requirements.txt",
+         extra_pip_args = ["--require-hashes"],
+     )
+diff --git a/bazel/repositories_extra.bzl b/bazel/repositories_extra.bzl
+index a5abb10..4eea877 100644
+--- a/bazel/repositories_extra.bzl
++++ b/bazel/repositories_extra.bzl
+@@ -6,7 +6,7 @@ load("@envoy_toolshed//sysroot:sysroot.bzl", "setup_sysroots")
+ load("@proxy_wasm_cpp_host//bazel/cargo/wasmtime/remote:crates.bzl", "crate_repositories")
+ load("@rules_cc//cc:extensions.bzl", "compatibility_proxy_repo")
+ load("@rules_java//java:rules_java_deps.bzl", java_compatibility_proxy_repo = "compatibility_proxy_repo")
+-load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
++load("@rules_python//python:repositories.bzl", "py_repositories")
+ load("@toolchains_llvm//toolchain:deps.bzl", "bazel_toolchain_dependencies")
+ load("//bazel/external/cargo:crates.bzl", "raze_fetch_remote_crates")
+ 
+@@ -34,12 +34,7 @@ def envoy_dependencies_extra(
+     crate_repositories()
+     py_repositories()
+ 
+-    # Registers underscored Python minor version - eg `python3_10`
+-    python_register_toolchains(
+-        name = "python%s" % _python_minor_version(python_version),
+-        python_version = python_version,
+-        ignore_root_user_error = ignore_root_user_error,
+-    )
++    native.register_toolchains("@rules_python//python/runtime_env_toolchains:all")
+ 
+     aspect_bazel_lib_dependencies()
+ 
