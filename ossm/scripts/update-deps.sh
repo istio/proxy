@@ -147,8 +147,8 @@ function main() {
   init
   run_bazel
   copy_files
-  #patch_s390x
-  #patch_ppc64le
+  patch_s390x
+  patch_ppc64le
 
   echo
   echo "Done. Inspect the result with git status"

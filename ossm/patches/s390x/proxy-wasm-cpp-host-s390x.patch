@@ -1,10 +1,10 @@
 diff --git a/ossm/vendor/proxy_wasm_cpp_host/bazel/BUILD b/ossm/vendor/proxy_wasm_cpp_host/bazel/BUILD
-index 15f323fa7..23f677cb3 100644
+index 58b4aed78..4db441139 100644
 --- a/ossm/vendor/proxy_wasm_cpp_host/bazel/BUILD
 +++ b/ossm/vendor/proxy_wasm_cpp_host/bazel/BUILD
-@@ -52,21 +52,8 @@ config_setting(
+@@ -53,21 +53,8 @@
  )
-
+ 
  config_setting(
 -    name = "requested_crypto_system",
 -    values = {"define": "crypto=system"},
@@ -23,13 +23,13 @@ index 15f323fa7..23f677cb3 100644
 -    ],
 +    values = {"define": "crypto=system"},
  )
-
- exports_files(["tsan_suppressions.txt"])
+ 
+ # V8 library with pointer compression disabled using V8's Starlark transition.
 diff --git a/ossm/vendor/proxy_wasm_cpp_host/src/exports.cc b/ossm/vendor/proxy_wasm_cpp_host/src/exports.cc
-index 25ca06c9d..f95288047 100644
+index ea9c2358a..c0ead63d8 100644
 --- a/ossm/vendor/proxy_wasm_cpp_host/src/exports.cc
 +++ b/ossm/vendor/proxy_wasm_cpp_host/src/exports.cc
-@@ -266,7 +266,7 @@ Word register_shared_queue(Word queue_name_ptr, Word queue_name_size, Word token
+@@ -266,7 +266,7 @@
    if (result != WasmResult::Ok) {
      return result;
    }
@@ -38,7 +38,7 @@ index 25ca06c9d..f95288047 100644
      return WasmResult::InvalidMemoryAccess;
    }
    return WasmResult::Ok;
-@@ -298,7 +298,7 @@ Word resolve_shared_queue(Word vm_id_ptr, Word vm_id_size, Word queue_name_ptr,
+@@ -298,7 +298,7 @@
    if (result != WasmResult::Ok) {
      return result;
    }
@@ -47,7 +47,7 @@ index 25ca06c9d..f95288047 100644
      return WasmResult::InvalidMemoryAccess;
    }
    return WasmResult::Ok;
-@@ -524,12 +524,12 @@ Word http_call(Word uri_ptr, Word uri_size, Word header_pairs_ptr, Word header_p
+@@ -524,12 +524,12 @@
    uint32_t token = 0;
    // NB: try to write the token to verify the memory before starting the async
    // operation.
@@ -61,8 +61,8 @@ index 25ca06c9d..f95288047 100644
 +  context->wasm()->setDatatype(token_ptr, htowasm(token, context->wasmVm()->usesWasmByteOrder()));
    return result;
  }
-
-@@ -596,7 +596,7 @@ Word grpc_call(Word service_ptr, Word service_size, Word service_name_ptr, Word
+ 
+@@ -596,7 +596,7 @@
    if (result != WasmResult::Ok) {
      return result;
    }
@@ -71,7 +71,7 @@ index 25ca06c9d..f95288047 100644
      return WasmResult::InvalidMemoryAccess;
    }
    return WasmResult::Ok;
-@@ -621,7 +621,7 @@ Word grpc_stream(Word service_ptr, Word service_size, Word service_name_ptr, Wor
+@@ -621,7 +621,7 @@
    if (result != WasmResult::Ok) {
      return result;
    }
