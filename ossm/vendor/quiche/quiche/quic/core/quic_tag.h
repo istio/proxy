@@ -24,7 +24,10 @@ namespace quic {
 // just a mnemonic for the value 0x504d5845 (little-endian version of the ASCII
 // string E X M P).
 using QuicTag = uint32_t;
-using QuicTagValueMap = std::map<QuicTag, std::string>;
+struct QUICHE_NO_EXPORT QuicTagLess {
+  bool operator()(const QuicTag& a, const QuicTag& b) const;
+};
+using QuicTagValueMap = std::map<QuicTag, std::string, QuicTagLess>;
 using QuicTagVector = std::vector<QuicTag>;
 
 // MakeQuicTag returns a value given the four bytes. For example:

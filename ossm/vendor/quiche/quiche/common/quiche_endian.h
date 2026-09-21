@@ -19,27 +19,64 @@ enum Endianness {
   HOST_BYTE_ORDER      // little endian
 };
 
+enum HostEndianness {
+  BIG,
+  LITTLE
+};
+
 // Provide utility functions that convert from/to network order (big endian)
 // to/from host order (little endian).
 class QUICHE_EXPORT QuicheEndian {
  public:
-  // Convert |x| from host order (little endian) to network order (big endian).
-#if defined(__clang__) || \
-    (defined(__GNUC__) && \
-     ((__GNUC__ == 4 && __GNUC_MINOR__ >= 8) || __GNUC__ >= 5))
-  static uint16_t HostToNet16(uint16_t x) { return __builtin_bswap16(x); }
-  static uint32_t HostToNet32(uint32_t x) { return __builtin_bswap32(x); }
-  static uint64_t HostToNet64(uint64_t x) { return __builtin_bswap64(x); }
+  // Get host machine endianness
+#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && \
+    __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  static const quiche::HostEndianness HostEndianness = quiche::BIG;
 #else
-  static uint16_t HostToNet16(uint16_t x) { return PortableByteSwap(x); }
-  static uint32_t HostToNet32(uint32_t x) { return PortableByteSwap(x); }
-  static uint64_t HostToNet64(uint64_t x) { return PortableByteSwap(x); }
+  static const quiche::HostEndianness HostEndianness = quiche::LITTLE;
 #endif
 
-  // Convert |x| from network order (big endian) to host order (little endian).
+  // Convert byte order of |x|.
+ #if defined(__clang__) || \
+  (defined(__GNUC__) && \
+   ((__GNUC__ == 4 && __GNUC_MINOR__ >= 8) || __GNUC__ >= 5))
+  static uint16_t ByteSwap16(uint16_t x) { return __builtin_bswap16(x); }
+  static uint32_t ByteSwap32(uint32_t x) { return __builtin_bswap32(x); }
+  static uint64_t ByteSwap64(uint64_t x) { return __builtin_bswap64(x); }
+#else
+  static uint16_t ByteSwap16(uint16_t x) { return PortableByteSwap(x); }
+  static uint32_t ByteSwap32(uint32_t x) { return PortableByteSwap(x); }
+  static uint64_t ByteSwap64(uint64_t x) { return PortableByteSwap(x); }
+#endif
+
+  // Convert |x| from host order to network order (big endian).
+#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && \
+    __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  static uint16_t HostToNet16(uint16_t x) { return x; }
+  static uint32_t HostToNet32(uint32_t x) { return x; }
+  static uint64_t HostToNet64(uint64_t x) { return x; }
+#else
+  static uint16_t HostToNet16(uint16_t x) { return ByteSwap16(x); }
+  static uint32_t HostToNet32(uint32_t x) { return ByteSwap32(x); }
+  static uint64_t HostToNet64(uint64_t x) { return ByteSwap64(x); }
+#endif
+
+  // Convert |x| from network order (big endian) to host order.
   static uint16_t NetToHost16(uint16_t x) { return HostToNet16(x); }
   static uint32_t NetToHost32(uint32_t x) { return HostToNet32(x); }
   static uint64_t NetToHost64(uint64_t x) { return HostToNet64(x); }
+
+  // Convert |x| from host order to little endian order.
+#if defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__) && \
+    __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  static uint16_t HostToLittleEndian16(uint16_t x) { return ByteSwap16(x); }
+  static uint32_t HostToLittleEndian32(uint32_t x) { return ByteSwap32(x); }
+  static uint64_t HostToLittleEndian64(uint64_t x) { return ByteSwap64(x); }
+#else
+  static uint16_t HostToLittleEndian16(uint16_t x) { return x; }
+  static uint32_t HostToLittleEndian32(uint32_t x) { return x; }
+  static uint64_t HostToLittleEndian64(uint64_t x) { return x; }
+#endif
 
   // Left public for tests.
   template <typename T>

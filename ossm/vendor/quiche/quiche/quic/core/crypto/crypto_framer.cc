@@ -180,7 +180,7 @@ std::unique_ptr<QuicData> CryptoFramer::ConstructHandshakeMessage(
       return nullptr;
     }
 
-    if (it->first > kPAD && need_pad_tag) {
+    if (TagGreater(it->first, kPAD) && need_pad_tag) {
       need_pad_tag = false;
       if (!WritePadTag(&writer, pad_length, &end_offset)) {
         return nullptr;
@@ -207,7 +207,7 @@ std::unique_ptr<QuicData> CryptoFramer::ConstructHandshakeMessage(
   // Values
   for (auto it = message.tag_value_map().begin();
        it != message.tag_value_map().end(); ++it) {
-    if (it->first > kPAD && need_pad_value) {
+    if (TagGreater(it->first, kPAD) && need_pad_value) {
       need_pad_value = false;
       if (!writer.WriteRepeatedByte('-', pad_length)) {
         QUICHE_DCHECK(false) << "Failed to write padding.";
@@ -281,7 +281,7 @@ QuicErrorCode CryptoFramer::Process(absl::string_view input) {
       for (unsigned i = 0; i < num_entries_; ++i) {
         QuicTag tag;
         reader.ReadTag(&tag);
-        if (i > 0 && tag <= tags_and_lengths_[i - 1].first) {
+        if (i > 0 && !TagGreater(tag, tags_and_lengths_[i - 1].first)) {
           if (tag == tags_and_lengths_[i - 1].first) {
             error_detail_ = absl::StrCat("Duplicate tag:", tag);
             return QUIC_CRYPTO_DUPLICATE_TAG;

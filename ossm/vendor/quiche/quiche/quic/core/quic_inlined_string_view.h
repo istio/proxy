@@ -54,7 +54,7 @@ class QUICHE_NO_EXPORT QuicInlinedStringView {
     if (source.size() > kMaxInlinedSize) {
       ViewRep rep;
       rep.data = source.data();
-      rep.size = source.size();
+      rep.size = absl::endian::native == absl::endian::little ? source.size() : source.size() << 8;
       memcpy(&data_, &rep, sizeof(rep));
       set_last_byte(kNotInlinedMarker);
       return;
@@ -113,7 +113,8 @@ class QUICHE_NO_EXPORT QuicInlinedStringView {
     size_t size;
   };
   static_assert(sizeof(ViewRep) <= kSize);
-  static_assert(absl::endian::native == absl::endian::little);
+  static_assert(absl::endian::native == absl::endian::little
+              || (absl::endian::native == absl::endian::big && sizeof(size_t) > 4));
 
   // Accessors for ViewRep; necessary to work around C++ strict aliasing
   // limitations.  Clang will turn this into direct field access at `-O1`.
@@ -125,7 +126,7 @@ class QUICHE_NO_EXPORT QuicInlinedStringView {
   size_t view_rep_size() const {
     ViewRep rep;
     memcpy(&rep, data_, sizeof(rep));
-    return rep.size;
+    return absl::endian::native == absl::endian::little ? rep.size : rep.size >> 8;
   }
   // Those casts should be valid as long as uint8_t is unsigned char.
   const uint8_t& last_byte() const {

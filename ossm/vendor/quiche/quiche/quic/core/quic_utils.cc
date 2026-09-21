@@ -137,8 +137,8 @@ absl::uint128 QuicUtils::FNV1a_128_Hash_Three(absl::string_view data1,
 
 // static
 void QuicUtils::SerializeUint128Short(absl::uint128 v, uint8_t* out) {
-  const uint64_t lo = absl::Uint128Low64(v);
-  const uint64_t hi = absl::Uint128High64(v);
+  const uint64_t lo = quiche::QuicheEndian::HostToLittleEndian64(absl::Uint128Low64(v));
+  const uint64_t hi = quiche::QuicheEndian::HostToLittleEndian64(absl::Uint128High64(v));
   // This assumes that the system is little-endian.
   memcpy(out, &lo, sizeof(lo));
   memcpy(out + sizeof(lo), &hi, sizeof(hi) / 2);

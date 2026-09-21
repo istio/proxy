@@ -13,7 +13,6 @@ build --override_repository=bazel_features_version=%workspace%/ossm/vendor/bazel
 build --override_repository=bazel_gazelle=%workspace%/ossm/vendor/bazel_gazelle
 build --override_repository=bazel_gazelle_is_bazel_module=%workspace%/ossm/vendor/bazel_gazelle_is_bazel_module
 build --override_repository=bazel_skylib=%workspace%/ossm/vendor/bazel_skylib
-build --override_repository=benchmark=%workspace%/ossm/vendor/benchmark
 build --override_repository=boringssl=%workspace%/ossm/vendor/boringssl
 build --override_repository=brotli=%workspace%/ossm/vendor/brotli
 build --override_repository=bsd_tar_toolchains=%workspace%/ossm/vendor/bsd_tar_toolchains
@@ -31,12 +30,10 @@ build --override_repository=com_github_grpc_grpc=%workspace%/ossm/vendor/com_git
 build --override_repository=com_github_iancoleman_strcase=%workspace%/ossm/vendor/com_github_iancoleman_strcase
 build --override_repository=com_github_lyft_protoc_gen_star_v2=%workspace%/ossm/vendor/com_github_lyft_protoc_gen_star_v2
 build --override_repository=com_github_spf13_afero=%workspace%/ossm/vendor/com_github_spf13_afero
-build --override_repository=com_google_absl=%workspace%/ossm/vendor/com_google_absl
 build --override_repository=com_google_googleapis=%workspace%/ossm/vendor/com_google_googleapis
 build --override_repository=com_google_googleapis_imports=%workspace%/ossm/vendor/com_google_googleapis_imports
 build --override_repository=com_google_protobuf=%workspace%/ossm/vendor/com_google_protobuf
 build --override_repository=com_google_protobuf_protoc_linux_aarch_64=%workspace%/ossm/vendor/com_google_protobuf_protoc_linux_aarch_64
-build --override_repository=com_google_protobuf_protoc_linux_ppcle_64=%workspace%/ossm/vendor/com_google_protobuf_protoc_linux_ppcle_64
 build --override_repository=com_google_protobuf_protoc_linux_x86_64=%workspace%/ossm/vendor/com_google_protobuf_protoc_linux_x86_64
 build --override_repository=compatibility_proxy=%workspace%/ossm/vendor/compatibility_proxy
 build --override_repository=copy_directory_toolchains=%workspace%/ossm/vendor/copy_directory_toolchains
@@ -127,7 +124,6 @@ build --override_repository=rules_foreign_cc_framework_toolchains=%workspace%/os
 build --override_repository=rules_fuzzing=%workspace%/ossm/vendor/rules_fuzzing
 build --override_repository=rules_fuzzing_oss_fuzz=%workspace%/ossm/vendor/rules_fuzzing_oss_fuzz
 build --override_repository=rules_java=%workspace%/ossm/vendor/rules_java
-build --override_repository=rules_jvm_external=%workspace%/ossm/vendor/rules_jvm_external
 build --override_repository=rules_license=%workspace%/ossm/vendor/rules_license
 build --override_repository=rules_nodejs=%workspace%/ossm/vendor/rules_nodejs
 build --override_repository=rules_pkg=%workspace%/ossm/vendor/rules_pkg
@@ -163,6 +159,5 @@ build --override_repository=yaml-cpp=%workspace%/ossm/vendor/yaml-cpp
 build --override_repository=yq.bzl=%workspace%/ossm/vendor/yq.bzl
 build --override_repository=yq_toolchains=%workspace%/ossm/vendor/yq_toolchains
 build --override_repository=zipkin-api=%workspace%/ossm/vendor/zipkin-api
-build --override_repository=zlib=%workspace%/ossm/vendor/zlib
 build --override_repository=zlib-ng=%workspace%/ossm/vendor/zlib-ng
 build --override_repository=zstd=%workspace%/ossm/vendor/zstd

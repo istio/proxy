@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "quiche/quic/platform/api/quic_ip_address_family.h"
+#include "quiche/common/quiche_endian.h"
 
 namespace quic {
 
@@ -33,10 +34,10 @@ std::string QuicSocketAddressCoder::Encode() const {
   uint16_t address_family;
   switch (address_.host().address_family()) {
     case IpAddressFamily::IP_V4:
-      address_family = kIPv4;
+      address_family = quiche::QuicheEndian::HostToLittleEndian16(kIPv4);
       break;
     case IpAddressFamily::IP_V6:
-      address_family = kIPv6;
+      address_family = quiche::QuicheEndian::HostToLittleEndian16(kIPv6);
       break;
     default:
       return serialized;
@@ -44,7 +45,7 @@ std::string QuicSocketAddressCoder::Encode() const {
   serialized.append(reinterpret_cast<const char*>(&address_family),
                     sizeof(address_family));
   serialized.append(address_.host().ToPackedString());
-  uint16_t port = address_.port();
+  uint16_t port = quiche::QuicheEndian::HostToLittleEndian16(address_.port());
   serialized.append(reinterpret_cast<const char*>(&port), sizeof(port));
   return serialized;
 }

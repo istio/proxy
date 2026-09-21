@@ -1,4 +1,0 @@
-workspace(name = "rules_jvm_external")
-
-# Use this until we can use some pure-bzlmod approach
-android_sdk_repository(name = "androidsdk")

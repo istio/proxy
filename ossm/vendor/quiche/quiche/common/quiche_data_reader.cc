@@ -66,6 +66,9 @@ bool QuicheDataReader::ReadUInt32(uint32_t* result) {
   }
   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
     *result = quiche::QuicheEndian::NetToHost32(*result);
+  } else if (endianness_ == quiche::HOST_BYTE_ORDER
+             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
+    *result = quiche::QuicheEndian::ByteSwap32(*result);
   }
   return true;
 }
@@ -76,6 +79,9 @@ bool QuicheDataReader::ReadUInt64(uint64_t* result) {
   }
   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
     *result = quiche::QuicheEndian::NetToHost64(*result);
+  } else if (endianness_ == quiche::HOST_BYTE_ORDER
+             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
+    *result = quiche::QuicheEndian::ByteSwap64(*result);
   }
   return true;
 }
@@ -86,7 +92,13 @@ bool QuicheDataReader::ReadBytesToUInt64(size_t num_bytes, uint64_t* result) {
     return false;
   }
   if (endianness_ == quiche::HOST_BYTE_ORDER) {
-    return ReadBytes(result, num_bytes);
+    if (!ReadBytes(result, num_bytes)) {
+      return false;
+    }
+    if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
+      *result = quiche::QuicheEndian::ByteSwap64(*result);
+    }
+    return true;
   }
 
   if (!ReadBytes(reinterpret_cast<char*>(result) + sizeof(*result) - num_bytes,

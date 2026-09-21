@@ -92,6 +92,14 @@ def cc_toolchain_config(
             "clang",
             "glibc_unknown",
         ),
+        "linux-ppc64le": (
+            "clang-ppc64le-linux",
+            "ppc64le",
+            "glibc_unknown",
+            "clang",
+            "clang",
+            "glibc_unknown",
+        ),
         "linux-riscv64": (
             "clang-riscv64-linux",
             "riscv64",
@@ -103,6 +111,14 @@ def cc_toolchain_config(
         "linux-x86_64": (
             "clang-x86_64-linux",
             "k8",
+            "glibc_unknown",
+            "clang",
+            "clang",
+            "glibc_unknown",
+        ),
+        "linux-s390x": (
+            "clang-s390x-linux",
+            "s390x",
             "glibc_unknown",
             "clang",
             "clang",

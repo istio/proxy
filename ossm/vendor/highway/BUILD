@@ -133,6 +133,9 @@ COPTS = select({
     "@platforms//cpu:ppc64le": [
         "-DTOOLCHAIN_MISS_ASM_HWCAP_H"
     ],
+    "@platforms//cpu:s390x": [
+        "-DTOOLCHAIN_MISS_ASM_HWCAP_H"
+    ],
     "//conditions:default": [
     ],
 })

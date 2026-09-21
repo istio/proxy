@@ -263,7 +263,7 @@ bool MaybeUpdateSconePacket(const char* old_buffer, char* new_buffer,
 uint64_t SimpleRandom::RandUint64() {
   uint64_t result;
   RandBytes(&result, sizeof(result));
-  return result;
+  return quiche::QuicheEndian::HostToLittleEndian64(result);;
 }
 
 void SimpleRandom::RandBytes(void* data, size_t len) {
@@ -297,6 +297,7 @@ void SimpleRandom::FillBuffer() {
 
 void SimpleRandom::set_seed(uint64_t seed) {
   static_assert(sizeof(key_) == SHA256_DIGEST_LENGTH, "Key has to be 256 bits");
+  seed = quiche::QuicheEndian::HostToLittleEndian64(seed);
   SHA256(reinterpret_cast<const uint8_t*>(&seed), sizeof(seed), key_);
 
   memset(buffer_, 0, sizeof(buffer_));

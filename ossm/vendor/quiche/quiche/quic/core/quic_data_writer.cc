@@ -63,6 +63,9 @@ bool QuicDataWriter::WriteUFloat16(uint64_t value) {
 
   if (endianness() == quiche::NETWORK_BYTE_ORDER) {
     result = quiche::QuicheEndian::HostToNet16(result);
+  } else if (endianness() == quiche::HOST_BYTE_ORDER
+             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
+    result = quiche::QuicheEndian::ByteSwap16(result);
   }
   return WriteBytes(&result, sizeof(result));
 }

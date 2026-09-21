@@ -10,6 +10,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
+#include "quiche/common/quiche_endian.h"
+
 namespace quiche {
 
 void InternetChecksum::Update(const char* data, size_t size) {
@@ -20,7 +22,9 @@ void InternetChecksum::Update(const char* data, size_t size) {
     accumulator_ += v;
   }
   if (current < data + size) {
-    accumulator_ += *reinterpret_cast<const unsigned char*>(current);
+    uint16_t v = *reinterpret_cast<const unsigned char*>(current);
+    v = quiche::QuicheEndian::HostToLittleEndian16(v);
+    accumulator_ += v;
   }
 }
 

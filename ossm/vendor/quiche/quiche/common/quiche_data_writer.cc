@@ -35,6 +35,9 @@ bool QuicheDataWriter::WriteUInt8(uint8_t value) {
 bool QuicheDataWriter::WriteUInt16(uint16_t value) {
   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
     value = quiche::QuicheEndian::HostToNet16(value);
+  } else if (endianness_ == quiche::HOST_BYTE_ORDER
+             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
+    value = quiche::QuicheEndian::ByteSwap16(value);
   }
   return WriteBytes(&value, sizeof(value));
 }
@@ -42,6 +45,9 @@ bool QuicheDataWriter::WriteUInt16(uint16_t value) {
 bool QuicheDataWriter::WriteUInt32(uint32_t value) {
   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
     value = quiche::QuicheEndian::HostToNet32(value);
+  } else if (endianness_ == quiche::HOST_BYTE_ORDER
+             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
+    value = quiche::QuicheEndian::ByteSwap32(value);
   }
   return WriteBytes(&value, sizeof(value));
 }
@@ -49,6 +55,9 @@ bool QuicheDataWriter::WriteUInt32(uint32_t value) {
 bool QuicheDataWriter::WriteUInt64(uint64_t value) {
   if (endianness_ == quiche::NETWORK_BYTE_ORDER) {
     value = quiche::QuicheEndian::HostToNet64(value);
+  } else if (endianness_ == quiche::HOST_BYTE_ORDER
+             && quiche::QuicheEndian::HostEndianness == quiche::BIG) {
+    value = quiche::QuicheEndian::ByteSwap64(value);
   }
   return WriteBytes(&value, sizeof(value));
 }
@@ -58,6 +67,9 @@ bool QuicheDataWriter::WriteBytesToUInt64(size_t num_bytes, uint64_t value) {
     return false;
   }
   if (endianness_ == quiche::HOST_BYTE_ORDER) {
+    if (quiche::QuicheEndian::HostEndianness == quiche::BIG) {
+      value = quiche::QuicheEndian::ByteSwap64(value);
+    }
     return WriteBytes(&value, num_bytes);
   }
 
