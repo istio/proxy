@@ -14,3 +14,4 @@ vendor/**  linguist-vendored
 common/**  linguist-vendored
 archive/**  linquist-vendored
 **/vmlinux.h  linquist-vendored
+*.wasm binary -merge

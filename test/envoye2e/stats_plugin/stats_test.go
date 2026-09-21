@@ -377,11 +377,10 @@ func TestStatsGrpcStream(t *testing.T) {
 }
 
 func TestAttributeGen(t *testing.T) {
-	env.EnsureWasmFiles(t)
 	env.SkipTSan(t)
 	params := driver.NewTestParams(t, map[string]string{
 		"RequestCount":             "10",
-		"AttributeGenFilterConfig": "filename: " + env.GetBazelWorkspaceOrDie() + "/extensions/attributegen.wasm",
+		"AttributeGenFilterConfig": "filename: " + env.GetBazelWorkspaceOrDie() + "/testdata/wasm/attributegen.wasm",
 		"StatsFilterClientConfig":  driver.LoadTestJSON("testdata/stats/client_config.yaml"),
 		"StatsFilterServerConfig":  driver.LoadTestJSON("testdata/stats/request_classification_config.yaml"),
 		"ResponseCodeClass":        "2xx",
