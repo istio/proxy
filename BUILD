@@ -34,7 +34,6 @@ load("@envoy_build_config//:extensions_build_config.bzl", "OPENSSL_INCOMPATIBLE_
 
 envoy_cc_binary(
     name = "envoy",
-    repository = "@envoy",
     deps = [
         "@envoy//source/exe:envoy_main_entry_lib",
     ] + select({
