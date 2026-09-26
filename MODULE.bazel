@@ -47,23 +47,23 @@ bazel_dep(name = "re2", version = "2025-11-05.bcr.1")
 bazel_dep(name = "rules_cc", version = "0.2.25")
 bazel_dep(name = "rules_pkg", version = "1.3.0")
 bazel_dep(name = "rules_python", version = "2.2.0")
-bazel_dep(name = "rules_rust", version = "0.69.0.envoy")
+bazel_dep(name = "rules_rust", version = "0.74.0.envoy")
 
 # Same reasoning as grpc/librdkafka/libsxg above: only a transitive dep (via
 # envoy), but envoy.bazelrc references it unqualified. Version must match
 # envoy's own MODULE.bazel.
 bazel_dep(name = "zlib-ng", version = "2.3.3.bcr.2")
-bazel_dep(name = "envoy_toolshed", version = "0.4.15.envoy")
+bazel_dep(name = "envoy_toolshed", version = "0.5.0.envoy")
 
 bazel_dep(name = "googletest", version = "1.18.0.bcr.1", dev_dependency = True)
 
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc, ENVOY_VERSION.txt and .bazelrc if needed.
 #
-# Commit date: 2026-09-24
-ENVOY_SHA = "2be2835e6406154a639eed1d02ef0a414d2a6a1b"
+# Commit date: 2026-09-26
+ENVOY_SHA = "726d7acb73934085cbbccc83ea47fdd78b583d7e"
 
-ENVOY_SHA256 = "f0e2c124219ea5ed5e68be76701d3161e5fda71ad144ab6917a9efbf053d75f4"
+ENVOY_SHA256 = "10b58a6fccdfee6fed16a1caf9027f681e8d45ef757b0957a292545b4dd338da"
 
 ENVOY_ORG = "envoyproxy"
 
