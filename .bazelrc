@@ -20,8 +20,8 @@ build:remote --remote_timeout=7200
 # Istio specific Bazel build/test options.
 # ========================================
 
-# Enable libc++ and C++20 by default.
-build:linux --config=clang
+# This prevents Bazel from trying to detect the system C++ toolchain, which may be incompatible with Envoy's build.
+common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 
 # put /usr/local/bin before /usr/bin to avoid picking up wrong python3.6 when building envoy.tls.key_providers.cryptomb
 build:linux --action_env=PATH=/usr/local/bin:/bin:/usr/bin
