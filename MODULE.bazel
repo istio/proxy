@@ -61,9 +61,9 @@ bazel_dep(name = "googletest", version = "1.18.0.bcr.1", dev_dependency = True)
 # 2. Update .bazelversion, envoy.bazelrc, ENVOY_VERSION.txt and .bazelrc if needed.
 #
 # Commit date: 2026-09-30
-ENVOY_SHA = "086451ed9dbd9031ac2af7e271d8082d0f25e173"
+ENVOY_SHA = "f15dbecafda74aab1c88209bb59a0428e8e30e87"
 
-ENVOY_SHA256 = "79d03f4293d391bcc6c504bdb1a72a1225e29fb740a7ec09fe102239f7035ea2"
+ENVOY_SHA256 = "c076a1796731204d20b699af1ecb78114e6f6a16afab3d3475b1b51cc335a3d8"
 
 ENVOY_ORG = "envoyproxy"
 

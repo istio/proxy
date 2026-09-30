@@ -58,11 +58,12 @@ sed -i "s/Commit date: .*/Commit date: ${DATE}/" "${MODULE_BAZEL}"
 sed -i 's/ENVOY_SHA = .*/ENVOY_SHA = "'"$LATEST_SHA"'"/' "${MODULE_BAZEL}"
 sed -i 's/ENVOY_SHA256 = .*/ENVOY_SHA256 = "'"$SHA256"'"/' "${MODULE_BAZEL}"
 
-# Update .bazelversion and envoy.bazelrc
+# Update bazel key files
 # -f (fail on 404/5xx) matters here: without it curl exits 0 and writes the
 # error body to the destination file, which later steps then treat as valid.
 curl -sSfL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelversion" > .bazelversion
 curl -sSfL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/.bazelrc" > envoy.bazelrc
+curl -sSfL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/ci.bazelrc" > ci.bazelrc
 
 # Update VERSION.txt
 curl -sSfL "https://raw.githubusercontent.com/${ENVOY_ORG}/${ENVOY_REPO}/${LATEST_SHA}/VERSION.txt" > ENVOY_VERSION.txt

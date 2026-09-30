@@ -2,8 +2,7 @@
 # Envoy specific Bazel build/test options.
 # =====================================================================
 
-# Keep envoy.bazelrc up-to-date by run:
-# curl -sSL https://raw.githubusercontent.com/envoyproxy/envoy/master/.bazelrc > envoy.bazelrc
+# This file must be in sync with the upstream Envoy. Run `scripts/update_envoy.sh` to update it.
 import %workspace%/envoy.bazelrc
 
 # Istio override: increase JVM heap to 4GB for ARM64 builds (envoy.bazelrc sets 3GB)
