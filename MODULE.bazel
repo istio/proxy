@@ -42,7 +42,7 @@ bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "protobuf", version = "35.1.bcr.envoy")
 bazel_dep(name = "protoc-gen-validate", version = "1.3.3.envoy")
 bazel_dep(name = "proxy-wasm-cpp-host", version = "0.0.0-260704-f2db56a.envoy")
-bazel_dep(name = "quiche", version = "0.0.0-260922-7f07dc4.envoy")
+bazel_dep(name = "quiche", version = "0.0.0-261006-9e60ac2.envoy")
 bazel_dep(name = "re2", version = "2025-11-05.bcr.1")
 bazel_dep(name = "rules_cc", version = "0.2.25")
 bazel_dep(name = "rules_pkg", version = "1.3.0")
@@ -53,17 +53,17 @@ bazel_dep(name = "rules_rust", version = "0.74.0.envoy")
 # envoy), but envoy.bazelrc references it unqualified. Version must match
 # envoy's own MODULE.bazel.
 bazel_dep(name = "zlib-ng", version = "2.3.3.bcr.2")
-bazel_dep(name = "envoy_toolshed", version = "0.5.2.envoy")
+bazel_dep(name = "envoy_toolshed", version = "0.5.3.envoy")
 
 bazel_dep(name = "googletest", version = "1.18.0.bcr.1", dev_dependency = True)
 
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc, ENVOY_VERSION.txt and .bazelrc if needed.
 #
-# Commit date: 2026-10-08
-ENVOY_SHA = "fbc322a325e17018964e8ac0baee35421448fd96"
+# Commit date: 2026-10-09
+ENVOY_SHA = "c55022257b03b3410d9a56ab2edfbe3aa5b35026"
 
-ENVOY_SHA256 = "d38529f34cd0fa7170d940d7861ca4f3d41b586c3fd1d7ef44eba9e9a498944f"
+ENVOY_SHA256 = "730bd9cbbe51ea1167a7fd39babdac75d978a7d0bd6ba1032f417b161d599f63"
 
 ENVOY_ORG = "envoyproxy"
 
