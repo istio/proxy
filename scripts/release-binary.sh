@@ -181,7 +181,7 @@ do
 
     for f in "${BINARY_NAME}" "${SHA256_NAME}" "${DWP_NAME}"; do
       echo "Copying $(basename "${f}") to R2"
-      aws s3 cp "${f}" "${DST}/$(basename "${f}")" --endpoint-url "${ENDPOINT}"
+      aws s3 cp "${f}" "${DST}/$(basename "${f}")" --endpoint-url "${ENDPOINT}" --cli-read-timeout 0 --cli-connect-timeout 0
     done
   fi
 done
