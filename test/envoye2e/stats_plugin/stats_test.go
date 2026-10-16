@@ -1128,3 +1128,139 @@ func TestAdditionalLabels(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestStatsAppLabelPrecedence(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{
+		"RequestCount":            "10",
+		"StatsConfig":             driver.LoadTestData("testdata/bootstrap/stats.yaml.tmpl"),
+		"StatsFilterClientConfig": driver.LoadTestJSON("testdata/stats/client_config.yaml"),
+		"StatsFilterServerConfig": driver.LoadTestJSON("testdata/stats/server_config.yaml"),
+		"ElideServerMetadata":     "false",
+	}, envoye2e.ProxyE2ETests)
+	params.Vars["ClientMetadata"] = params.LoadTestData("testdata/client_node_metadata_app_label_precedence.json.tmpl")
+	params.Vars["ServerMetadata"] = params.LoadTestData("testdata/server_node_metadata_app_label_precedence.json.tmpl")
+	enableStats(t, params.Vars)
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			&driver.Update{
+				Node:      "client",
+				Version:   "0",
+				Clusters:  []string{params.LoadTestData("testdata/cluster/server.yaml.tmpl")},
+				Listeners: []string{params.LoadTestData("testdata/listener/client.yaml.tmpl")},
+			},
+			&driver.Update{Node: "server", Version: "0", Listeners: []string{params.LoadTestData("testdata/listener/server.yaml.tmpl")}},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.Repeat{
+				N: 10,
+				Step: &driver.HTTPCall{
+					Port: params.Ports.ClientPort,
+					Body: "hello, world!",
+				},
+			},
+			&driver.Stats{AdminPort: params.Ports.ClientAdmin, Matchers: map[string]driver.StatMatcher{
+				"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/client_request_total_app_label_precedence.yaml.tmpl"},
+			}},
+			&driver.Stats{AdminPort: params.Ports.ServerAdmin, Matchers: map[string]driver.StatMatcher{
+				"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/server_request_total_app_label_precedence.yaml.tmpl"},
+			}},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Conflicting qualified labels must leave client baggage app/version as productpage/v1
+// and waypoint destination app/version as the peer raw labels ratings/v2.
+func TestStatsWithBaggageWaypointProxyAppLabelPrecedence(t *testing.T) {
+	params := driver.NewTestParams(t, map[string]string{
+		// We are testing baggage-based metadata discovery, so no need for xDS-based metadata discovery
+		"EnableMetadataDiscovery": "false",
+		"RequestCount":            "10",
+		// This makes internal_outbound cluster populate endpoint metadata with original destination details
+		"EnableTunnelEndpointMetadata": "true",
+		// This overrides the server port from ServerPort to ServerTunnelPort, and the listener that can
+		// terminate HBONE listens on the ServerTunnelPort, so that's what we need.
+		"EnableOriginalDstPortOverride": "true",
+	}, envoye2e.ProxyE2ETests)
+
+	params.Vars["ClientMetadata"] = driver.LoadTestData("testdata/client_node_metadata_app_label_precedence.json.tmpl")
+	params.Vars["ServerMetadata"] = driver.LoadTestData("testdata/server_node_metadata_app_label_precedence.json.tmpl")
+	params.Vars["ServerClusterName"] = "internal_outbound"
+	params.Vars["ServerInternalAddress"] = "internal_inbound"
+	params.Vars["StatsFilterClientConfig"] = "disable_host_header_fallback: true\nreporter: SERVER_GATEWAY"
+	params.Vars["ClientHTTPFilters"] = driver.LoadTestData("testdata/filters/baggage_peer_metadata.yaml.tmpl") +
+		"\n" + driver.LoadTestData("testdata/filters/stats_outbound.yaml.tmpl")
+	// This filter is what modifies the default framework HTTP response to include the baggage field from
+	// the request as one of the headers in the response
+	params.Vars["ServerHTTPFilters"] = driver.LoadTestData("testdata/filters/respond_with_baggage.yaml.tmpl")
+	params.Vars["UpstreamNetworkFilters"] = driver.LoadTestData("testdata/filters/upstream_peer_metadata.yaml.tmpl")
+
+	clientBaggage := "k8s.deployment.name=productpage-v1,service.name=productpage-v1,app.name=productpage," +
+		"service.version=version-1,app.version=v1,k8s.namespace.name=default,k8s.cluster.name=client-cluster," +
+		"k8s.instance.name=productpage-v1-84975bc778-pxz2w"
+	testBaggage := "k8s.deployment.name=curl,service.name=curl,service.version=v1,k8s.namespace.name=default," +
+		"k8s.cluster.name=curl-cluster,k8s.instance.name=curl-xxxxxxxxxx-xxxxx"
+
+	if err := (&driver.Scenario{
+		Steps: []driver.Step{
+			&driver.XDS{},
+			&driver.Update{
+				Node: "client", Version: "0",
+				Clusters: []string{
+					params.LoadTestData("testdata/cluster/internal_outbound.yaml.tmpl"),
+					params.LoadTestData("testdata/cluster/original_dst.yaml.tmpl"),
+				},
+				Listeners: []string{
+					params.LoadTestData("testdata/listener/client.yaml.tmpl"),
+					params.LoadTestData("testdata/listener/baggage_peer_metadata.yaml.tmpl"),
+				},
+				Secrets: []string{
+					params.LoadTestData("testdata/secret/client.yaml.tmpl"),
+				},
+			},
+			&driver.Update{
+				Node: "server", Version: "0",
+				Clusters: []string{
+					params.LoadTestData("testdata/cluster/internal_inbound.yaml.tmpl"),
+				},
+				Listeners: []string{
+					params.LoadTestData("testdata/listener/terminate_connect.yaml.tmpl"),
+					params.LoadTestData("testdata/listener/server.yaml.tmpl"),
+				},
+				Secrets: []string{
+					params.LoadTestData("testdata/secret/server.yaml.tmpl"),
+				},
+			},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/client.yaml.tmpl")},
+			&driver.Envoy{Bootstrap: params.LoadTestData("testdata/bootstrap/server.yaml.tmpl")},
+			&driver.Sleep{Duration: 1 * time.Second},
+			&driver.Repeat{
+				N: 10,
+				Step: &driver.HTTPCall{
+					Port: params.Ports.ClientPort,
+					RequestHeaders: map[string]string{
+						"baggage": testBaggage,
+					},
+					ResponseCode: 200,
+					ResponseHeaders: map[string]string{
+						// This is what we got from the client
+						"baggage": clientBaggage,
+						// This is what the server got from the client
+						"request-baggage": clientBaggage,
+					},
+				},
+			},
+			&driver.Stats{
+				AdminPort: params.Ports.ClientAdmin,
+				Matchers: map[string]driver.StatMatcher{
+					"istio_requests_total": &driver.ExactStat{Metric: "testdata/metric/client_request_total_baggage_app_label_precedence.yaml.tmpl"},
+				},
+			},
+		},
+	}).Run(params); err != nil {
+		t.Fatal(err)
+	}
+}

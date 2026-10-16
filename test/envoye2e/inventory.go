@@ -63,5 +63,8 @@ func init() {
 		"TestTCPMXAdditionalLabels",
 		"TestStatsClientSidecarCONNECT",
 		"TestStatsWithBaggageWaypointProxy",
+		"TestStatsAppLabelPrecedence",
+		"TestTCPMetadataExchangeAppLabelPrecedence",
+		"TestStatsWithBaggageWaypointProxyAppLabelPrecedence",
 	}...)
 }
