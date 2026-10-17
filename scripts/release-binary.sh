@@ -181,7 +181,18 @@ do
 
     for f in "${BINARY_NAME}" "${SHA256_NAME}" "${DWP_NAME}"; do
       echo "Copying $(basename "${f}") to R2"
-      aws s3 cp "${f}" "${DST}/$(basename "${f}")" --endpoint-url "${ENDPOINT}" --cli-read-timeout 0 --cli-connect-timeout 0
+      # Large uploads intermittently fail on R2 with InvalidPart, so retry.
+      for attempt in 1 2 3; do
+        if aws s3 cp "${f}" "${DST}/$(basename "${f}")" --endpoint-url "${ENDPOINT}"; then
+          break
+        fi
+        if [ "${attempt}" -eq 3 ]; then
+          echo "Failed to copy $(basename "${f}") to R2 after ${attempt} attempts"
+          exit 1
+        fi
+        echo "Copy of $(basename "${f}") failed (attempt ${attempt}), retrying in 5s"
+        sleep 5
+      done
     done
   fi
 done
