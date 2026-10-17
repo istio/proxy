@@ -41,8 +41,8 @@ bazel_dep(name = "libsxg", version = "0.0.0-210708-beaa393.envoy")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "protobuf", version = "35.1.bcr.envoy")
 bazel_dep(name = "protoc-gen-validate", version = "1.3.3.envoy")
-bazel_dep(name = "proxy-wasm-cpp-host", version = "0.0.0-260704-f2db56a.envoy.1")
-bazel_dep(name = "quiche", version = "0.0.0-261013-132bfd9.envoy")
+bazel_dep(name = "proxy-wasm-cpp-host", version = "0.0.0-260704-f2db56a.envoy")
+bazel_dep(name = "quiche", version = "0.0.0-261006-9e60ac2.envoy")
 bazel_dep(name = "re2", version = "2025-11-05.bcr.1")
 bazel_dep(name = "rules_cc", version = "0.2.25")
 bazel_dep(name = "rules_pkg", version = "1.3.0")
@@ -53,17 +53,17 @@ bazel_dep(name = "rules_rust", version = "0.74.0.envoy")
 # envoy), but envoy.bazelrc references it unqualified. Version must match
 # envoy's own MODULE.bazel.
 bazel_dep(name = "zlib-ng", version = "2.3.3.bcr.2")
-bazel_dep(name = "envoy_toolshed", version = "0.5.4.envoy")
+bazel_dep(name = "envoy_toolshed", version = "0.5.3.envoy")
 
 bazel_dep(name = "googletest", version = "1.18.0.bcr.1", dev_dependency = True)
 
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc, ENVOY_VERSION.txt and .bazelrc if needed.
 #
-# Commit date: 2026-10-16
-ENVOY_SHA = "595b8a7e47756cd094bac8658cec0afc64223e2e"
+# Commit date: 2026-10-14
+ENVOY_SHA = "e74f47391444f1324862be064098f2e721bceb02"
 
-ENVOY_SHA256 = "62f2ccae6b9aed6fed4a90f4455ff5e9391529677ad71e8c8dfc6b1c6ed25451"
+ENVOY_SHA256 = "60b2606573753243fecb74493937a5dc227f2049dbf175e26e9cd0be8b96d6f6"
 
 ENVOY_ORG = "envoyproxy"
 
@@ -82,7 +82,7 @@ ENVOY_REPO = "envoy"
 # still reads the pinned archive's own MODULE.bazel unless the module itself
 # is overridden. Both envoy and envoy_api must be overridden together -- see
 # the envoy_api module below for why it isn't derived from envoy anymore.
-bazel_dep(name = "envoy", version = "1.41.0-dev")
+bazel_dep(name = "envoy", version = "1.40.1-dev")
 archive_override(
     module_name = "envoy",
     sha256 = ENVOY_SHA256,
@@ -97,7 +97,7 @@ archive_override(
 # ignored (confirmed: without this, `bazel mod graph` fails trying to
 # resolve envoy_api from the registries). We re-declare the same override
 # ourselves, pointed at the "api" subdirectory of the identical archive.
-bazel_dep(name = "envoy_api", version = "1.41.0-dev")
+bazel_dep(name = "envoy_api", version = "1.40.1-dev")
 archive_override(
     module_name = "envoy_api",
     sha256 = ENVOY_SHA256,
