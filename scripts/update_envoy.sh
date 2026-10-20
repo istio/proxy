@@ -25,8 +25,8 @@ set -u
 # Print commands
 set -x
 
-# Update to main as envoyproxy/proxy has updated.
-UPDATE_BRANCH=${UPDATE_BRANCH:-"main"}
+# Track Envoy's release/v1.40 branch, which istio/proxy release-1.32 is pinned to.
+UPDATE_BRANCH=${UPDATE_BRANCH:-"release/v1.40"}
 ENVOY_SHA=${ENVOY_SHA:-""}
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
