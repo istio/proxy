@@ -60,10 +60,10 @@ bazel_dep(name = "googletest", version = "1.18.0.bcr.1", dev_dependency = True)
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc, ENVOY_VERSION.txt and .bazelrc if needed.
 #
-# Commit date: 2026-11-07
-ENVOY_SHA = "2871f6c66c6a939a4cd3faab1a5d5d6d3ee2210f"
+# Commit date: 2026-11-08
+ENVOY_SHA = "fbab4cd902a6e9d999a1c2bcf9cb414aaa28d48f"
 
-ENVOY_SHA256 = "f1d67b0de2303fe9fb30fdf07c0458aea1a1d4ec8774ba2c2a9abab0f13708df"
+ENVOY_SHA256 = "68175255b56a2176ba77f47330f553c532b36babf14df95a1421ca54aa90bc4f"
 
 ENVOY_ORG = "envoyproxy"
 
