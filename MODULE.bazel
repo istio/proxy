@@ -85,6 +85,8 @@ ENVOY_REPO = "envoy"
 bazel_dep(name = "envoy", version = "1.41.0-dev")
 archive_override(
     module_name = "envoy",
+    patch_strip = 1,
+    patches = ["//bazel:patches/envoy-zstd-stream-inflation-accounting.patch"],
     sha256 = ENVOY_SHA256,
     strip_prefix = ENVOY_REPO + "-" + ENVOY_SHA,
     urls = ["https://github.com/" + ENVOY_ORG + "/" + ENVOY_REPO + "/archive/" + ENVOY_SHA + ".tar.gz"],

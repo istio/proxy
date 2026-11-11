@@ -14,3 +14,5 @@
 #
 ################################################################################
 #
+
+exports_files(["patches/envoy-zstd-stream-inflation-accounting.patch"])
