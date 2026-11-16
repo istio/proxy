@@ -849,11 +849,11 @@ TEST_F(MoqtMessageSpecificTest, SubscribeInvalidForward) {
 
 TEST_F(MoqtMessageSpecificTest, SubscribeInvalidFilter) {
   char subscribe[] = {
-      0x03, 0x00, 0x0f, 0x01,        // id
+      0x03, 0x00, 0x0e, 0x01,        // id
       0x01, 0x03, 0x66, 0x6f, 0x6f,  // track_namespace = "foo"
       0x04, 0x61, 0x62, 0x63, 0x64,  // track_name = "abcd"
       0x01,                          // 1 parameter
-      0x21, 0x01, 0x10               // filter_type = 0x10
+      0x21, 0x10                     // filter_type = 0x10
   };
   absl::StatusOr<std::vector<AnyMoqtControlMessage>> parsed =
       ParseAllMessages(absl::string_view(subscribe, sizeof(subscribe)),
@@ -1127,7 +1127,7 @@ TEST_F(MoqtMessageSpecificTest, SubscribeNoParameters) {
   EXPECT_FALSE(message.parameters.object_delivery_timeout.has_value());
   EXPECT_FALSE(message.parameters.subgroup_delivery_timeout.has_value());
   EXPECT_FALSE(message.parameters.forward_has_value());
-  EXPECT_FALSE(message.parameters.subscription_filter.has_value());
+  EXPECT_FALSE(message.parameters.location_filter.has_value());
   EXPECT_FALSE(message.parameters.group_order.has_value());
   EXPECT_FALSE(message.parameters.oack_window_size.has_value());
   EXPECT_TRUE(message.parameters.authorization_tokens.empty());
@@ -1153,13 +1153,13 @@ TEST_F(MoqtMessageSpecificTest, SubscribeUnknownParameter) {
             MoqtError::kProtocolViolation);
 }
 
-TEST_F(MoqtMessageSpecificTest, LargestObject) {
+TEST_F(MoqtMessageSpecificTest, NextObject) {
   char subscribe[] = {
-      0x03, 0x00, 0x0f, 0x01,        // request_id = 1
+      0x03, 0x00, 0x0e, 0x01,        // request_id = 1
       0x01, 0x03, 0x66, 0x6f, 0x6f,  // track_namespace = "foo"
       0x04, 0x61, 0x62, 0x63, 0x64,  // track_name = "abcd"
       0x01,                          // 1 parameter
-      0x21, 0x01, 0x02,              // filter_type = kLargestObject
+      0x21, 0x05,                    // filter_type = kNextObject
   };
   absl::StatusOr<std::vector<AnyMoqtControlMessage>> parsed =
       ParseAllMessages(absl::string_view(subscribe, sizeof(subscribe)),
@@ -1167,9 +1167,9 @@ TEST_F(MoqtMessageSpecificTest, LargestObject) {
   ASSERT_TRUE(parsed.ok());
   ASSERT_EQ(parsed->size(), 1);
   MoqtSubscribe message = std::get<MoqtSubscribe>((*parsed)[0]);
-  ASSERT_TRUE(message.parameters.subscription_filter.has_value());
-  SubscriptionFilter& filter = *message.parameters.subscription_filter;
-  EXPECT_TRUE(filter.type() == MoqtFilterType::kLargestObject);
+  ASSERT_TRUE(message.parameters.location_filter.has_value());
+  LocationFilter& filter = *message.parameters.location_filter;
+  EXPECT_EQ(filter, LocationFilter::NextObjectFilter());
 }
 
 TEST_F(MoqtMessageSpecificTest, InvalidDeliveryOrder) {
@@ -1187,13 +1187,13 @@ TEST_F(MoqtMessageSpecificTest, InvalidDeliveryOrder) {
             MoqtError::kProtocolViolation);
 }
 
-TEST_F(MoqtMessageSpecificTest, NextGroupStart) {
+TEST_F(MoqtMessageSpecificTest, RelativeStart) {
   char subscribe[] = {
       0x03, 0x00, 0x0f, 0x01,        // id
       0x01, 0x03, 0x66, 0x6f, 0x6f,  // track_namespace = "foo"
       0x04, 0x61, 0x62, 0x63, 0x64,  // track_name = "abcd"
       0x01,                          // 1 parameter
-      0x21, 0x01, 0x01,              // filter_type = kNextGroupStart
+      0x21, 0x01, 0x02,              // filter_type = kRelativeStart, offset = 2
   };
   absl::StatusOr<std::vector<AnyMoqtControlMessage>> parsed =
       ParseAllMessages(absl::string_view(subscribe, sizeof(subscribe)),
@@ -1201,19 +1201,19 @@ TEST_F(MoqtMessageSpecificTest, NextGroupStart) {
   ASSERT_TRUE(parsed.ok());
   ASSERT_EQ(parsed->size(), 1);
   MoqtSubscribe message = std::get<MoqtSubscribe>((*parsed)[0]);
-  ASSERT_TRUE(message.parameters.subscription_filter.has_value());
-  SubscriptionFilter& filter = *message.parameters.subscription_filter;
-  EXPECT_TRUE(filter.type() == MoqtFilterType::kNextGroupStart);
+  ASSERT_TRUE(message.parameters.location_filter.has_value());
+  LocationFilter& filter = *message.parameters.location_filter;
+  EXPECT_EQ(filter, LocationFilter::RelativeStartFilter(2));
 }
 
-TEST_F(MoqtMessageSpecificTest, AbsoluteRange) {
+TEST_F(MoqtMessageSpecificTest, AbsoluteStartGroupEnd) {
   char subscribe[] = {
-      0x03, 0x00, 0x12, 0x01,        // id
+      0x03, 0x00, 0x11, 0x01,        // id
       0x01, 0x03, 0x66, 0x6f, 0x6f,  // track_namespace = "foo"
       0x04, 0x61, 0x62, 0x63, 0x64,  // track_name = "abcd"
       0x01,                          // 1 parameter
-      0x21, 0x04, 0x04, 0x04, 0x01,
-      0x03  // filter_type = kAbsoluteRange
+      0x21, 0x03, 0x04, 0x01,
+      0x03  // filter_type = kAbsoluteStartGroupEnd
             // (4,1) to 7
   };
   absl::StatusOr<std::vector<AnyMoqtControlMessage>> parsed =
@@ -1222,37 +1222,58 @@ TEST_F(MoqtMessageSpecificTest, AbsoluteRange) {
   ASSERT_TRUE(parsed.ok());
   ASSERT_EQ(parsed->size(), 1);
   MoqtSubscribe message = std::get<MoqtSubscribe>((*parsed)[0]);
-  ASSERT_TRUE(message.parameters.subscription_filter.has_value());
-  SubscriptionFilter& filter = *message.parameters.subscription_filter;
-  EXPECT_TRUE(filter.type() == MoqtFilterType::kAbsoluteRange &&
-              filter.start() == Location(4, 1) && filter.end_group() == 7);
+  ASSERT_TRUE(message.parameters.location_filter.has_value());
+  LocationFilter& filter = *message.parameters.location_filter;
+  EXPECT_TRUE(filter.start() == Location(4, 1) && filter.end_group() == 7);
 }
 
-TEST_F(MoqtMessageSpecificTest, AbsoluteRangeEndGroupTooLow) {
+TEST_F(MoqtMessageSpecificTest, AbsoluteRange) {
   char subscribe[] = {
       0x03, 0x00, 0x12, 0x01,        // id
       0x01, 0x03, 0x66, 0x6f, 0x6f,  // track_namespace = "foo"
       0x04, 0x61, 0x62, 0x63, 0x64,  // track_name = "abcd"
       0x01,                          // 1 parameter
-      0x21, 0x04, 0x04, 0x04, 0x01, 0xff, 0xff,
-      0xff, 0xff, 0xff, 0xff, 0xff, 0xff  // filter_type = kAbsoluteRange
-                                          // (4,1) to 3
+      0x21, 0x04, 0x04, 0x01, 0x03,
+      0x05  // filter_type = kAbsoluteRange
+            // (4,1) to (7,5)
+  };
+  absl::StatusOr<std::vector<AnyMoqtControlMessage>> parsed =
+      ParseAllMessages(absl::string_view(subscribe, sizeof(subscribe)),
+                       kDefaultMoqtVersion, kRawQuic);
+  ASSERT_TRUE(parsed.ok());
+  ASSERT_EQ(parsed->size(), 1);
+  MoqtSubscribe message = std::get<MoqtSubscribe>((*parsed)[0]);
+  ASSERT_TRUE(message.parameters.location_filter.has_value());
+  LocationFilter& filter = *message.parameters.location_filter;
+  EXPECT_TRUE(filter.start() == Location(4, 1) &&
+              filter.end() == Location(7, 5));
+}
+
+TEST_F(MoqtMessageSpecificTest, AbsoluteStartGroupEndGroupTooLow) {
+  char subscribe[] = {
+      0x03, 0x00, 0x19, 0x01,        // id
+      0x01, 0x03, 0x66, 0x6f, 0x6f,  // track_namespace = "foo"
+      0x04, 0x61, 0x62, 0x63, 0x64,  // track_name = "abcd"
+      0x01,                          // 1 parameter
+      0x21, 0x03, 0x04, 0x01, 0xff, 0xff, 0xff,
+      0xff, 0xff, 0xff, 0xff, 0xff  // filter_type = kAbsoluteStartGroupEnd
+                                    // (4,1) to 3
   };
   absl::StatusOr<std::vector<AnyMoqtControlMessage>> parsed =
       ParseAllMessages(absl::string_view(subscribe, sizeof(subscribe)),
                        kDefaultMoqtVersion, kRawQuic);
   EXPECT_EQ(ExtractMoqtErrorForStatus(parsed.status()),
-            MoqtError::kKeyValueFormattingError);
+            MoqtError::kProtocolViolation);
 }
 
-TEST_F(MoqtMessageSpecificTest, AbsoluteRangeExactlyOneGroup) {
+TEST_F(MoqtMessageSpecificTest, AbsoluteStartGroupEndExactlyOneGroup) {
   char subscribe[] = {
-      0x03, 0x00, 0x12, 0x01,        // id
+      0x03, 0x00, 0x11, 0x01,        // id
       0x01, 0x03, 0x66, 0x6f, 0x6f,  // track_namespace = "foo"
       0x04, 0x61, 0x62, 0x63, 0x64,  // track_name = "abcd"
       0x01,                          // 1 parameter
-      0x21, 0x04, 0x04, 0x04, 0x01,
-      0x00  // filter_type = kAbsoluteRange
+      0x21, 0x03, 0x04, 0x01,
+      0x00  // filter_type = kAbsoluteStartGroupEnd
             // (4,1) to 4
   };
   absl::StatusOr<std::vector<AnyMoqtControlMessage>> parsed =
@@ -1261,20 +1282,76 @@ TEST_F(MoqtMessageSpecificTest, AbsoluteRangeExactlyOneGroup) {
   ASSERT_TRUE(parsed.ok());
   ASSERT_EQ(parsed->size(), 1);
   MoqtSubscribe message = std::get<MoqtSubscribe>((*parsed)[0]);
-  EXPECT_EQ(message.parameters.subscription_filter->end_group(), 4);
+  EXPECT_EQ(message.parameters.location_filter->end_group(), 4);
+}
+
+TEST_F(MoqtMessageSpecificTest, AbsoluteRangeEndGroupTooLow) {
+  char subscribe[] = {
+      0x03, 0x00, 0x1a, 0x01,        // id
+      0x01, 0x03, 0x66, 0x6f, 0x6f,  // track_namespace = "foo"
+      0x04, 0x61, 0x62, 0x63, 0x64,  // track_name = "abcd"
+      0x01,                          // 1 parameter
+      0x21, 0x04, 0x04, 0x01, 0xff, 0xff, 0xff,
+      0xff, 0xff, 0xff, 0xff, 0xff, 0x05  // filter_type = kAbsoluteRange
+                                          // (4,1) to (3,5) (overflow on group
+                                          // delta)
+  };
+  absl::StatusOr<std::vector<AnyMoqtControlMessage>> parsed =
+      ParseAllMessages(absl::string_view(subscribe, sizeof(subscribe)),
+                       kDefaultMoqtVersion, kRawQuic);
+  EXPECT_EQ(ExtractMoqtErrorForStatus(parsed.status()),
+            MoqtError::kProtocolViolation);
+}
+
+TEST_F(MoqtMessageSpecificTest, AbsoluteRangeEndObjectTooLow) {
+  char subscribe[] = {
+      0x03, 0x00, 0x12, 0x01,        // id
+      0x01, 0x03, 0x66, 0x6f, 0x6f,  // track_namespace = "foo"
+      0x04, 0x61, 0x62, 0x63, 0x64,  // track_name = "abcd"
+      0x01,                          // 1 parameter
+      0x21, 0x04, 0x04, 0x02, 0x00,
+      0x01  // filter_type = kAbsoluteRange
+            // (4,2) to (4,1)
+  };
+  absl::StatusOr<std::vector<AnyMoqtControlMessage>> parsed =
+      ParseAllMessages(absl::string_view(subscribe, sizeof(subscribe)),
+                       kDefaultMoqtVersion, kRawQuic);
+  EXPECT_EQ(ExtractMoqtErrorForStatus(parsed.status()),
+            MoqtError::kProtocolViolation);
+}
+
+TEST_F(MoqtMessageSpecificTest, AbsoluteRangeExactlyOneObject) {
+  char subscribe[] = {
+      0x03, 0x00, 0x12, 0x01,        // id
+      0x01, 0x03, 0x66, 0x6f, 0x6f,  // track_namespace = "foo"
+      0x04, 0x61, 0x62, 0x63, 0x64,  // track_name = "abcd"
+      0x01,                          // 1 parameter
+      0x21, 0x04, 0x04, 0x01, 0x00,
+      0x01  // filter_type = kAbsoluteRange
+            // (4,1) to (4,1)
+  };
+  absl::StatusOr<std::vector<AnyMoqtControlMessage>> parsed =
+      ParseAllMessages(absl::string_view(subscribe, sizeof(subscribe)),
+                       kDefaultMoqtVersion, kRawQuic);
+  ASSERT_TRUE(parsed.ok());
+  ASSERT_EQ(parsed->size(), 1);
+  MoqtSubscribe message = std::get<MoqtSubscribe>((*parsed)[0]);
+  EXPECT_EQ(
+      message.parameters.location_filter,
+      LocationFilter::AbsoluteRangeFilter(Location(4, 1), Location(4, 1)));
 }
 
 TEST_F(MoqtMessageSpecificTest, RequestUpdateEndGroupTooLow) {
   char request_update[] = {
-      0x02, 0x00, 0x08, 0x02,  // request ID
-      0x01, 0x21, 0x04, 0x04, 0x04, 0x01, 0xff,
-      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,  // filter
+      0x02, 0x00, 0x0e, 0x02,  // request ID
+      0x01, 0x21, 0x03, 0x04, 0x01, 0xff, 0xff,
+      0xff, 0xff, 0xff, 0xff, 0xff, 0xff,  // filter
   };
   absl::StatusOr<std::vector<AnyMoqtControlMessage>> parsed = ParseAllMessages(
       absl::string_view(request_update, sizeof(request_update)),
       kDefaultMoqtVersion, kRawQuic);
   EXPECT_EQ(ExtractMoqtErrorForStatus(parsed.status()),
-            MoqtError::kKeyValueFormattingError);
+            MoqtError::kProtocolViolation);
 }
 
 TEST_F(MoqtMessageSpecificTest, ObjectAckNegativeDelta) {

@@ -5,6 +5,7 @@
 #ifndef QUICHE_QUIC_MOQT_TOOLS_MOQT_MOCK_VISITOR_H_
 #define QUICHE_QUIC_MOQT_TOOLS_MOQT_MOCK_VISITOR_H_
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -313,7 +314,7 @@ class MockSessionToUniStreamInterface : public SessionToUniStreamInterface {
   MockSessionToUniStreamInterface() = default;
   ~MockSessionToUniStreamInterface() override = default;
 
-  MOCK_METHOD(bool, deliver_partial_objects, (), (const, override));
+  MOCK_METHOD(size_t, max_undelivered_object, (), (const, override));
   MOCK_METHOD(void, OnMalformedTrack, (ObjectSubscriber*), (override));
   MOCK_METHOD(quiche::QuicheWeakPtr<ObjectSubscriber>, GetSubscribe, (uint64_t),
               (override));

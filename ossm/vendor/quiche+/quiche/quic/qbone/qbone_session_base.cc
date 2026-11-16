@@ -7,20 +7,26 @@
 #include <netinet/icmp6.h>
 #include <netinet/ip6.h>
 
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <utility>
 
 #include "absl/strings/string_view.h"
-#include "quiche/quic/core/quic_data_reader.h"
+#include "absl/types/span.h"
+#include "quiche/quic/core/frames/quic_stream_frame.h"
+#include "quiche/quic/core/quic_config.h"
+#include "quiche/quic/core/quic_connection.h"
+#include "quiche/quic/core/quic_constants.h"
+#include "quiche/quic/core/quic_crypto_stream.h"
+#include "quiche/quic/core/quic_session.h"
+#include "quiche/quic/core/quic_stream.h"
 #include "quiche/quic/core/quic_types.h"
-#include "quiche/quic/platform/api/quic_exported_stats.h"
-#include "quiche/quic/platform/api/quic_logging.h"
-#include "quiche/quic/platform/api/quic_testvalue.h"
+#include "quiche/quic/core/quic_versions.h"
+#include "quiche/quic/platform/api/quic_bug_tracker.h"
 #include "quiche/quic/qbone/platform/icmp_packet.h"
-#include "quiche/quic/qbone/qbone_constants.h"
+#include "quiche/quic/qbone/qbone_stream.h"
 #include "quiche/common/platform/api/quiche_command_line_flags.h"
-#include "quiche/common/platform/api/quiche_logging.h"
 #include "quiche/common/quiche_buffer_allocator.h"
 #include "quiche/common/quiche_mem_slice.h"
 
@@ -130,60 +136,46 @@ void QboneSessionBase::SendPacketToPeer(absl::string_view packet) {
     return;
   }
 
-  if (send_packets_as_datagrams_) {
-    quiche::QuicheMemSlice slice(quiche::QuicheBuffer::Copy(
-        connection()->helper()->GetStreamSendBufferAllocator(), packet));
-    switch (SendDatagram(absl::MakeSpan(&slice, 1), /*flush=*/true).status) {
-      case DATAGRAM_STATUS_SUCCESS:
-        break;
-      case DATAGRAM_STATUS_TOO_LARGE: {
-        if (packet.size() < sizeof(ip6_hdr)) {
-          QUIC_BUG(quic_bug_10987_2)
-              << "Dropped malformed packet: IPv6 header too short";
-          break;
-        }
-        auto* header = reinterpret_cast<const ip6_hdr*>(packet.begin());
-        icmp6_hdr icmp_header{};
-        icmp_header.icmp6_type = ICMP6_PACKET_TOO_BIG;
-        icmp_header.icmp6_mtu =
-            connection()->GetGuaranteedLargestDatagramPayload();
-
-        CreateIcmpPacket(header->ip6_dst, header->ip6_src, icmp_header, packet,
-                         [this](absl::string_view icmp_packet) {
-                           SendErrorPacketToNetwork(icmp_packet);
-                         });
+  quiche::QuicheMemSlice slice(quiche::QuicheBuffer::Copy(
+      connection()->helper()->GetStreamSendBufferAllocator(), packet));
+  switch (SendDatagram(absl::MakeSpan(&slice, 1), /*flush=*/true).status) {
+    case DATAGRAM_STATUS_SUCCESS:
+      break;
+    case DATAGRAM_STATUS_TOO_LARGE: {
+      if (packet.size() < sizeof(ip6_hdr)) {
+        QUIC_BUG(quic_bug_10987_2)
+            << "Dropped malformed packet: IPv6 header too short";
         break;
       }
-      case DATAGRAM_STATUS_ENCRYPTION_NOT_ESTABLISHED:
-        QUIC_BUG(quic_bug_10987_3)
-            << "DATAGRAM_STATUS_ENCRYPTION_NOT_ESTABLISHED";
-        break;
-      case DATAGRAM_STATUS_UNSUPPORTED:
-        QUIC_BUG(quic_bug_10987_4) << "DATAGRAM_STATUS_UNSUPPORTED";
-        break;
-      case DATAGRAM_STATUS_BLOCKED:
-        QUIC_BUG(quic_bug_10987_5) << "DATAGRAM_STATUS_BLOCKED";
-        break;
-      case DATAGRAM_STATUS_SETTINGS_NOT_RECEIVED:
-        QUIC_BUG(quic_bug_10987_8) << "DATAGRAM_STATUS_SETTINGS_NOT_RECEIVED";
-        break;
-      case DATAGRAM_STATUS_INTERNAL_ERROR:
-        QUIC_BUG(quic_bug_10987_6) << "DATAGRAM_STATUS_INTERNAL_ERROR";
-        break;
+      auto* header = reinterpret_cast<const ip6_hdr*>(packet.begin());
+      icmp6_hdr icmp_header{};
+      icmp_header.icmp6_type = ICMP6_PACKET_TOO_BIG;
+      icmp_header.icmp6_mtu =
+          connection()->GetGuaranteedLargestDatagramPayload();
+
+      CreateIcmpPacket(header->ip6_dst, header->ip6_src, icmp_header, packet,
+                       [this](absl::string_view icmp_packet) {
+                         SendErrorPacketToNetwork(icmp_packet);
+                       });
+      break;
     }
-    return;
+    case DATAGRAM_STATUS_ENCRYPTION_NOT_ESTABLISHED:
+      QUIC_BUG(quic_bug_10987_3)
+          << "DATAGRAM_STATUS_ENCRYPTION_NOT_ESTABLISHED";
+      break;
+    case DATAGRAM_STATUS_UNSUPPORTED:
+      QUIC_BUG(quic_bug_10987_4) << "DATAGRAM_STATUS_UNSUPPORTED";
+      break;
+    case DATAGRAM_STATUS_BLOCKED:
+      QUIC_BUG(quic_bug_10987_5) << "DATAGRAM_STATUS_BLOCKED";
+      break;
+    case DATAGRAM_STATUS_SETTINGS_NOT_RECEIVED:
+      QUIC_BUG(quic_bug_10987_8) << "DATAGRAM_STATUS_SETTINGS_NOT_RECEIVED";
+      break;
+    case DATAGRAM_STATUS_INTERNAL_ERROR:
+      QUIC_BUG(quic_bug_10987_6) << "DATAGRAM_STATUS_INTERNAL_ERROR";
+      break;
   }
-
-  // QBONE streams are ephemeral.
-  QuicStream* stream = CreateOutgoingStream();
-  if (!stream) {
-    QUIC_BUG(quic_bug_10987_7) << "Failed to create an outgoing QBONE stream.";
-    return;
-  }
-
-  QboneWriteOnlyStream* qbone_stream =
-      static_cast<QboneWriteOnlyStream*>(stream);
-  qbone_stream->WritePacketToQuicStream(packet);
 }
 
 uint64_t QboneSessionBase::GetNumEphemeralPackets() const {

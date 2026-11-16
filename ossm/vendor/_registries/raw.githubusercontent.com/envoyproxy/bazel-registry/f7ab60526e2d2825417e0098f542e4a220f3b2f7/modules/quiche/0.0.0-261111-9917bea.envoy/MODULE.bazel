@@ -1,0 +1,18 @@
+module(
+    name = "quiche",
+    version = "0.0.0-261111-9917bea.envoy",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "abseil-cpp", version = "20260107.0")
+bazel_dep(name = "boringssl", version = "0.20260508.0")
+bazel_dep(name = "googleurl", version = "0.0.0-221103-dd4080f.envoy")
+bazel_dep(name = "nghttp2", version = "1.66.0.envoy")
+bazel_dep(name = "protobuf", version = "35.1.bcr.envoy", repo_name = "com_google_protobuf")
+bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
+
+quiche = use_extension("//:extensions.bzl", "quiche")
+use_repo(quiche, "quiche_deps")

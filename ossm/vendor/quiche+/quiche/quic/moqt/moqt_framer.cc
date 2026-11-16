@@ -170,44 +170,74 @@ class WireAuthToken {
   const AuthToken& token_;
 };
 
-class WireSubscriptionFilter {
+class WireLocationFilter {
  public:
-  explicit WireSubscriptionFilter(const SubscriptionFilter& filter)
-      : filter_(filter) {}
+  explicit WireLocationFilter(const LocationFilter& filter) : filter_(filter) {}
   size_t GetLengthOnWire() {
-    switch (filter_.type()) {
-      case MoqtFilterType::kNextGroupStart:
-      case MoqtFilterType::kLargestObject:
-        return quiche::ComputeLengthOnWire(WireMoqVarInt(filter_.type()));
-      case MoqtFilterType::kAbsoluteStart:
-        return quiche::ComputeLengthOnWire(WireMoqVarInt(filter_.type()),
-                                           WireLocation(filter_.start()));
-      case MoqtFilterType::kAbsoluteRange:
-        return quiche::ComputeLengthOnWire(
-            WireMoqVarInt(filter_.type()), WireLocation(filter_.start()),
-            WireMoqVarInt(filter_.end_group() - filter_.start().group));
+    if (filter_.is_next_object()) {
+      return quiche::ComputeLengthOnWire(
+          WireMoqVarInt(MoqtLocationFilterType::kNextObject));
     }
+    if (filter_.relative_start_offset().has_value()) {
+      return quiche::ComputeLengthOnWire(
+          WireMoqVarInt(MoqtLocationFilterType::kRelativeStart),
+          WireMoqVarInt(*filter_.relative_start_offset()));
+    }
+    if (filter_.end() == Location(kMaxGroupId, kMaxObjectId)) {
+      if (filter_.start() == Location(0, 0)) {
+        return quiche::ComputeLengthOnWire(
+            WireMoqVarInt(MoqtLocationFilterType::kNoFilter));
+      }
+      return quiche::ComputeLengthOnWire(
+          WireMoqVarInt(MoqtLocationFilterType::kAbsoluteStart),
+          WireLocation(filter_.start()));
+    }
+    if (filter_.end().object == kMaxObjectId) {
+      return quiche::ComputeLengthOnWire(
+          WireMoqVarInt(MoqtLocationFilterType::kAbsoluteStartGroupEnd),
+          WireLocation(filter_.start()),
+          WireMoqVarInt(filter_.end_group() - filter_.start().group));
+    }
+    return quiche::ComputeLengthOnWire(
+        WireMoqVarInt(MoqtLocationFilterType::kAbsoluteRange),
+        WireLocation(filter_.start()),
+        WireMoqVarInt(filter_.end_group() - filter_.start().group),
+        WireMoqVarInt(filter_.end().object));
   }
   absl::Status SerializeIntoWriter(quiche::QuicheDataWriter& writer) {
-    switch (filter_.type()) {
-      case MoqtFilterType::kNextGroupStart:
-      case MoqtFilterType::kLargestObject:
-        return quiche::SerializeIntoWriter(writer,
-                                           WireMoqVarInt(filter_.type()));
-      case MoqtFilterType::kAbsoluteStart:
-        return quiche::SerializeIntoWriter(writer,
-                                           WireMoqVarInt(filter_.type()),
-                                           WireLocation(filter_.start()));
-      case MoqtFilterType::kAbsoluteRange:
-        return quiche::SerializeIntoWriter(
-            writer, WireMoqVarInt(filter_.type()),
-            WireLocation(filter_.start()),
-            WireMoqVarInt(filter_.end_group() - filter_.start().group));
+    if (filter_.is_next_object()) {
+      return quiche::SerializeIntoWriter(
+          writer, WireMoqVarInt(MoqtLocationFilterType::kNextObject));
     }
+    if (filter_.relative_start_offset().has_value()) {
+      return quiche::SerializeIntoWriter(
+          writer, WireMoqVarInt(MoqtLocationFilterType::kRelativeStart),
+          WireMoqVarInt(*filter_.relative_start_offset()));
+    }
+    if (filter_.end() == Location(kMaxGroupId, kMaxObjectId)) {
+      if (filter_.start() == Location(0, 0)) {
+        return quiche::SerializeIntoWriter(
+            writer, WireMoqVarInt(MoqtLocationFilterType::kNoFilter));
+      }
+      return quiche::SerializeIntoWriter(
+          writer, WireMoqVarInt(MoqtLocationFilterType::kAbsoluteStart),
+          WireLocation(filter_.start()));
+    }
+    if (filter_.end().object == kMaxObjectId) {
+      return quiche::SerializeIntoWriter(
+          writer, WireMoqVarInt(MoqtLocationFilterType::kAbsoluteStartGroupEnd),
+          WireLocation(filter_.start()),
+          WireMoqVarInt(filter_.end_group() - filter_.start().group));
+    }
+    return quiche::SerializeIntoWriter(
+        writer, WireMoqVarInt(MoqtLocationFilterType::kAbsoluteRange),
+        WireLocation(filter_.start()),
+        WireMoqVarInt(filter_.end_group() - filter_.start().group),
+        WireMoqVarInt(filter_.end().object));
   }
 
  private:
-  const SubscriptionFilter& filter_;
+  const LocationFilter& filter_;
 };
 
 class WireTrackNamespace {
@@ -271,7 +301,7 @@ class WireMessageParameters {
     if (parameters_.subscriber_priority.has_value()) {
       ++num_parameters_;
     }
-    if (parameters_.subscription_filter.has_value()) {
+    if (parameters_.location_filter.has_value()) {
       ++num_parameters_;
     }
     if (parameters_.group_order.has_value()) {
@@ -345,11 +375,10 @@ class WireMessageParameters {
           WireMoqVarInt(key_delta(MessageParameter::kSubscriberPriority)),
           WireUint8(*parameters_.subscriber_priority));
     }
-    if (parameters_.subscription_filter.has_value()) {
-      WireSubscriptionFilter filter(*parameters_.subscription_filter);
+    if (parameters_.location_filter.has_value()) {
       length += quiche::ComputeLengthOnWire(
-          WireMoqVarInt(key_delta(MessageParameter::kSubscriptionFilter)),
-          WireMoqVarInt(filter.GetLengthOnWire()), filter);
+          WireMoqVarInt(key_delta(MessageParameter::kLocationFilter)),
+          WireLocationFilter(*parameters_.location_filter));
     }
     if (parameters_.group_order.has_value()) {
       length += quiche::ComputeLengthOnWire(
@@ -439,12 +468,10 @@ class WireMessageParameters {
           WireMoqVarInt(key_delta(MessageParameter::kSubscriberPriority)),
           WireUint8(*parameters_.subscriber_priority)));
     }
-    if (parameters_.subscription_filter.has_value()) {
-      WireSubscriptionFilter filter(*parameters_.subscription_filter);
+    if (parameters_.location_filter.has_value()) {
       QUICHE_RETURN_IF_ERROR(quiche::SerializeIntoWriter(
-          writer,
-          WireMoqVarInt(key_delta(MessageParameter::kSubscriptionFilter)),
-          WireMoqVarInt(filter.GetLengthOnWire()), filter));
+          writer, WireMoqVarInt(key_delta(MessageParameter::kLocationFilter)),
+          WireLocationFilter(*parameters_.location_filter)));
     }
     if (parameters_.group_order.has_value()) {
       QUICHE_RETURN_IF_ERROR(quiche::SerializeIntoWriter(

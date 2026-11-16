@@ -48,6 +48,18 @@ printf 'raw' > "$WORK/cov/x.profraw"; printf 'lcov' > "$WORK/cov/_cc_coverage.da
 "$MERGER" --coverage_dir="$WORK/cov" --output_file="$WORK/cov/_coverage.dat"
 [[ "$(ls -A "$WORK/cov")" == "_coverage.dat" ]]
 grep -q '^DA:2,0$' "$WORK/cov/_coverage.dat"
+# A report nested deeper in the directory keeps the entry that holds it.
+printf 'raw' > "$WORK/cov/x.profraw"; mkdir -p "$WORK/cov/sub/deeper" "$WORK/cov/other"
+printf 'lcov' > "$WORK/cov/other/_cc_coverage.dat"
+"$MERGER" --coverage_dir="$WORK/cov" --output_file="$WORK/cov/sub/deeper/report.dat"
+[[ "$(ls -A "$WORK/cov")" == "sub" ]]
+grep -q '^DA:2,0$' "$WORK/cov/sub/deeper/report.dat"
+# As does one reached through a different spelling of the same path.
+rm -rf -- "$WORK/cov"/*; mkdir "$WORK/cov/sub"; printf 'raw' > "$WORK/cov/.hidden"
+"$MERGER" --coverage_dir="$WORK/cov/" --output_file="$WORK/cov/./sub/../sub/report.dat"
+[[ "$(ls -A "$WORK/cov")" == "sub" ]]
+grep -q '^DA:2,0$' "$WORK/cov/sub/report.dat"
+rm -rf -- "$WORK/cov/sub"
 printf 'raw' > "$WORK/cov/x.profraw"
 IS_COVERAGE_SPAWN=1 "$MERGER" --coverage_dir="$WORK/cov" --output_file="$WORK/split.dat"
 [[ -f "$WORK/cov/x.profraw" ]]

@@ -81,7 +81,7 @@ TEST_F(MoqtServerTest, NewSessionHasAlarmFactory) {
 
 TEST_F(MoqtServerTest, CustomSessionParameters) {
   MoqtSessionParameters parameters;
-  parameters.deliver_partial_objects = true;
+  parameters.max_undelivered_object = 0;
   parameters.perspective = quic::Perspective::IS_CLIENT;
   MoqtServer server(
       quic::test::crypto_test_utils::ProofSourceForTesting(),
@@ -98,7 +98,7 @@ TEST_F(MoqtServerTest, CustomSessionParameters) {
                                                        std::move(headers)});
   QUICHE_EXPECT_OK(response.status());
   ASSERT_NE(session_, nullptr);
-  EXPECT_TRUE(MoqtSessionPeer::GetParameters(session_).deliver_partial_objects);
+  EXPECT_EQ(MoqtSessionPeer::GetParameters(session_).max_undelivered_object, 0);
   EXPECT_EQ(MoqtSessionPeer::GetParameters(session_).perspective,
             quic::Perspective::IS_SERVER);
 }

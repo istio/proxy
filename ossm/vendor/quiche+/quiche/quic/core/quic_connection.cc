@@ -616,6 +616,18 @@ void QuicConnection::SetFromConfig(const QuicConfig& config) {
       config.HasClientSentConnectionOption(kCDFR, perspective_)) {
     defer_send_in_response_to_packets_ = true;
   }
+  if (version().IsIetfQuic() &&
+      config.HasClientSentConnectionOption(kCPLP, perspective_) &&
+      GetQuicReloadableFlag(quic_coalesce_ping_with_last_packet)) {
+    QUIC_RELOADABLE_FLAG_COUNT(quic_coalesce_ping_with_last_packet);
+    coalesce_ping_with_last_packet_ = true;
+  }
+
+  if (perspective_ == Perspective::IS_CLIENT && version().IsIetfQuic() &&
+      (config.HasClientRequestedIndependentOption(kDAOP, perspective_) ||
+       config.HasClientSentConnectionOption(kDAOP, perspective_))) {
+    allow_deferring_ack_only_packets_ = true;
+  }
 
   if (config.HasClientRequestedIndependentOption(kINVC, perspective_)) {
     send_connection_close_for_invalid_version_ = true;
@@ -1845,8 +1857,49 @@ bool QuicConnection::OnPathChallengeFrame(const QuicPathChallengeFrame& frame) {
     // Only respond to the 1st PATH_CHALLENGE in the packet.
     return true;
   }
-  should_proactively_validate_peer_address_on_path_challenge_ = false;
-  // UpdatePacketContent() may start reverse path validation.
+  bool should_proactively_validate_peer_address = false;
+  const QuicSocketAddress current_effective_peer_address =
+      last_received_packet_info_.source_address;
+  if (version().IsIetfQuic() && perspective_ == Perspective::IS_SERVER &&
+      !IsDefaultPath(last_received_packet_info_.destination_address,
+                     current_effective_peer_address) &&
+      !IsAlternativePath(last_received_packet_info_.destination_address,
+                         current_effective_peer_address)) {
+    QUIC_DVLOG(1)
+        << "The peer is probing a new path with effective peer address "
+        << current_effective_peer_address << ",  self address "
+        << last_received_packet_info_.destination_address;
+    if (!default_path_.validated) {
+      // Skip reverse path validation because either handshake hasn't
+      // completed or the connection is validating the default path. Using
+      // PATH_CHALLENGE to validate alternative client address before
+      // handshake gets comfirmed is meaningless because anyone can respond to
+      // it. If the connection is validating the default path, this
+      // alternative path is currently the only validated path which shouldn't
+      // be overridden.
+      QUIC_DVLOG(1) << "The connection hasn't finished handshake or is "
+                       "validating a recent peer address change.";
+      QUIC_BUG_IF(quic_bug_12714_30,
+                  IsHandshakeConfirmed() && !alternative_path_.validated)
+          << "No validated peer address to send after handshake comfirmed.";
+    } else if (!IsReceivedPeerAddressValidated()) {
+      QuicConnectionId client_connection_id;
+      std::optional<StatelessResetToken> stateless_reset_token;
+      FindMatchingOrNewClientConnectionIdOrToken(
+          default_path_, alternative_path_,
+          GetDestinationConnectionId(last_received_packet_info_),
+          &client_connection_id, &stateless_reset_token);
+      // Only override alternative path state upon receiving a
+      // PATH_CHALLENGE from an unvalidated peer address, and the connection
+      // isn't validating a recent peer migration.
+      alternative_path_ =
+          PathState(last_received_packet_info_.destination_address,
+                    current_effective_peer_address, client_connection_id,
+                    GetDestinationConnectionId(last_received_packet_info_),
+                    stateless_reset_token);
+      should_proactively_validate_peer_address = true;
+    }
+  }
   if (!UpdatePacketContent(PATH_CHALLENGE_FRAME)) {
     return false;
   }
@@ -1873,7 +1926,7 @@ bool QuicConnection::OnPathChallengeFrame(const QuicPathChallengeFrame& frame) {
     QuicPacketCreator::ScopedPeerAddressContext context(
         &packet_creator_, direct_peer_address_to_respond, client_cid,
         server_cid);
-    if (should_proactively_validate_peer_address_on_path_challenge_) {
+    if (should_proactively_validate_peer_address) {
       // Conditions to proactively validate peer address:
       // The perspective is server
       // The PATH_CHALLENGE is received on an unvalidated alternative path.
@@ -2989,7 +3042,8 @@ void QuicConnection::OnCanWrite() {
     }
     const QuicTime ack_timeout =
         uber_received_packet_manager_.GetEarliestAckTimeout();
-    if (ack_timeout.IsInitialized() &&
+    // ScopedAckDeferrer sends due ACKs when it goes out of scope.
+    if (!defer_ack_only_packets_ && ack_timeout.IsInitialized() &&
         ack_timeout <= clock_->ApproximateNow()) {
       // Send an ACK now because either 1) we were write blocked when we last
       // tried to send an ACK, or 2) both ack alarm and send alarm were set to
@@ -3002,7 +3056,8 @@ void QuicConnection::OnCanWrite() {
   } else {
     const QuicTime ack_timeout =
         uber_received_packet_manager_.GetEarliestAckTimeout();
-    if (ack_timeout.IsInitialized() &&
+    // ScopedAckDeferrer sends due ACKs when it goes out of scope.
+    if (!defer_ack_only_packets_ && ack_timeout.IsInitialized() &&
         ack_timeout <= clock_->ApproximateNow()) {
       // Send an ACK now because either 1) we were write blocked when we last
       // tried to send an ACK, or 2) both ack alarm and send alarm were set to
@@ -5151,32 +5206,35 @@ QuicConnection::ScopedPacketFlusher::~ScopedPacketFlusher() {
   }
 
   if (active_) {
-    const QuicTime ack_timeout =
-        connection_->uber_received_packet_manager_.GetEarliestAckTimeout();
-    if (ack_timeout.IsInitialized()) {
-      if (ack_timeout <= connection_->clock_->ApproximateNow() &&
-          !connection_->CanWrite(NO_RETRANSMITTABLE_DATA)) {
-        // Cancel ACK alarm if connection is write blocked, and ACK will be
-        // sent when connection gets unblocked.
-        connection_->ack_alarm().Cancel();
-      } else if (!connection_->ack_alarm().IsSet() ||
-                 connection_->ack_alarm().deadline() > ack_timeout) {
-        connection_->ack_alarm().Update(ack_timeout, QuicTime::Delta::Zero());
+    // ScopedAckDeferrer handles pending ACKs when it goes out of scope.
+    if (!connection_->defer_ack_only_packets_) {
+      const QuicTime ack_timeout =
+          connection_->uber_received_packet_manager_.GetEarliestAckTimeout();
+      if (ack_timeout.IsInitialized()) {
+        if (ack_timeout <= connection_->clock_->ApproximateNow() &&
+            !connection_->CanWrite(NO_RETRANSMITTABLE_DATA)) {
+          // Cancel ACK alarm if connection is write blocked, and ACK will be
+          // sent when connection gets unblocked.
+          connection_->ack_alarm().Cancel();
+        } else if (!connection_->ack_alarm().IsSet() ||
+                   connection_->ack_alarm().deadline() > ack_timeout) {
+          connection_->ack_alarm().Update(ack_timeout, QuicTime::Delta::Zero());
+        }
       }
-    }
-    if (connection_->ack_alarm().IsSet() &&
-        connection_->ack_alarm().deadline() <=
-            connection_->clock_->ApproximateNow()) {
-      // An ACK needs to be sent right now. This ACK did not get bundled
-      // because either there was no data to write or packets were marked as
-      // received after frames were queued in the generator.
-      if (connection_->send_alarm().IsSet() &&
-          connection_->send_alarm().deadline() <=
+      if (connection_->ack_alarm().IsSet() &&
+          connection_->ack_alarm().deadline() <=
               connection_->clock_->ApproximateNow()) {
-        // If send alarm will go off soon, let send alarm send the ACK.
-        connection_->ack_alarm().Cancel();
-      } else {
-        connection_->SendAllPendingAcks();
+        // An ACK needs to be sent right now. This ACK did not get bundled
+        // because either there was no data to write or packets were marked as
+        // received after frames were queued in the generator.
+        if (connection_->send_alarm().IsSet() &&
+            connection_->send_alarm().deadline() <=
+                connection_->clock_->ApproximateNow()) {
+          // If send alarm will go off soon, let send alarm send the ACK.
+          connection_->ack_alarm().Cancel();
+        } else {
+          connection_->SendAllPendingAcks();
+        }
       }
     }
 
@@ -5189,6 +5247,10 @@ QuicConnection::ScopedPacketFlusher::~ScopedPacketFlusher() {
     // coalescer.
     if (connection_->version().IsIetfQuic()) {
       connection_->MaybeCoalescePacketOfHigherSpace();
+      if (connection_->coalesce_ping_with_last_packet_) {
+        connection_->packet_creator_.FlushCurrentPacket();
+        connection_->MaybeCoalescePingOfLowerSpace();
+      }
     }
     connection_->packet_creator_.Flush();
     if (connection_->version().IsIetfQuic()) {
@@ -5237,6 +5299,35 @@ QuicConnection::ScopedPacketFlusher::~ScopedPacketFlusher() {
   }
   QUICHE_DCHECK_EQ(active_,
                    !connection_->packet_creator_.PacketFlusherAttached());
+}
+
+QuicConnection::ScopedAckDeferrer::ScopedAckDeferrer(QuicConnection* connection)
+    : connection_(connection), active_(false) {
+  if (connection_ == nullptr || !connection_->connected() ||
+      !connection_->SupportsMultiplePacketNumberSpaces() ||
+      !connection_->allow_deferring_ack_only_packets_) {
+    return;
+  }
+  if (!connection_->defer_ack_only_packets_) {
+    active_ = true;
+    connection_->defer_ack_only_packets_ = true;
+  }
+}
+
+QuicConnection::ScopedAckDeferrer::~ScopedAckDeferrer() {
+  if (!active_) {
+    return;
+  }
+  connection_->defer_ack_only_packets_ = false;
+  if (!connection_->connected() ||
+      connection_->packet_creator_.PacketFlusherAttached() ||
+      !connection_->uber_received_packet_manager_.GetEarliestAckTimeout()
+           .IsInitialized()) {
+    return;
+  }
+  // Now that deferral has ended, ~ScopedPacketFlusher() sends any due ACKs or
+  // updates the ACK alarm for the whole batch.
+  ScopedPacketFlusher flusher(connection_);
 }
 
 QuicConnection::ScopedEncryptionLevelContext::ScopedEncryptionLevelContext(
@@ -5850,49 +5941,9 @@ bool QuicConnection::UpdatePacketContent(QuicFrameType type) {
       MaybeStartIetfPeerMigration();
       return connected_;
     }
-    QuicSocketAddress current_effective_peer_address =
-        last_received_packet_info_.source_address;
     if (IsDefaultPath(last_received_packet_info_.destination_address,
                       last_received_packet_info_.source_address)) {
       return connected_;
-    }
-    if (type == PATH_CHALLENGE_FRAME &&
-        !IsAlternativePath(last_received_packet_info_.destination_address,
-                           current_effective_peer_address)) {
-      QUIC_DVLOG(1)
-          << "The peer is probing a new path with effective peer address "
-          << current_effective_peer_address << ",  self address "
-          << last_received_packet_info_.destination_address;
-      if (!default_path_.validated) {
-        // Skip reverse path validation because either handshake hasn't
-        // completed or the connection is validating the default path. Using
-        // PATH_CHALLENGE to validate alternative client address before
-        // handshake gets comfirmed is meaningless because anyone can respond to
-        // it. If the connection is validating the default path, this
-        // alternative path is currently the only validated path which shouldn't
-        // be overridden.
-        QUIC_DVLOG(1) << "The connection hasn't finished handshake or is "
-                         "validating a recent peer address change.";
-        QUIC_BUG_IF(quic_bug_12714_30,
-                    IsHandshakeConfirmed() && !alternative_path_.validated)
-            << "No validated peer address to send after handshake comfirmed.";
-      } else if (!IsReceivedPeerAddressValidated()) {
-        QuicConnectionId client_connection_id;
-        std::optional<StatelessResetToken> stateless_reset_token;
-        FindMatchingOrNewClientConnectionIdOrToken(
-            default_path_, alternative_path_,
-            GetDestinationConnectionId(last_received_packet_info_),
-            &client_connection_id, &stateless_reset_token);
-        // Only override alternative path state upon receiving a
-        // PATH_CHALLENGE from an unvalidated peer address, and the connection
-        // isn't validating a recent peer migration.
-        alternative_path_ =
-            PathState(last_received_packet_info_.destination_address,
-                      current_effective_peer_address, client_connection_id,
-                      GetDestinationConnectionId(last_received_packet_info_),
-                      stateless_reset_token);
-        should_proactively_validate_peer_address_on_path_challenge_ = true;
-      }
     }
     MaybeUpdateBytesReceivedFromAlternativeAddress(
         last_received_packet_info_.length);
@@ -6272,6 +6323,54 @@ void QuicConnection::MaybeCoalescePacketOfHigherSpace() {
   }
 }
 
+void QuicConnection::MaybeCoalescePingOfLowerSpace() {
+  if (!connected() || !packet_creator_.HasSoftMaxPacketLength() ||
+      sent_packet_manager_.pending_timer_transmission_count() > 0) {
+    return;
+  }
+  if (fill_coalesced_packet_) {
+    QUIC_BUG(quic_coalesce_ping_reentrant);
+    return;
+  }
+  const QuicUnackedPacketMap& unacked_packets =
+      sent_packet_manager_.unacked_packets();
+  if (unacked_packets.empty() ||
+      !unacked_packets.HasRetransmittableFrames(*unacked_packets.rbegin())) {
+    return;
+  }
+
+  const EncryptionLevel last_level = unacked_packets.rbegin()->encryption_level;
+  for (EncryptionLevel level : {ENCRYPTION_INITIAL, ENCRYPTION_HANDSHAKE}) {
+    if (level >= last_level || !framer_.HasEncrypterOfEncryptionLevel(level) ||
+        coalesced_packet_.ContainsPacketOfEncryptionLevel(level) ||
+        (perspective_ == Perspective::IS_CLIENT &&
+         level == ENCRYPTION_INITIAL && handshake_packet_sent_)) {
+      continue;
+    }
+    const QuicPacketNumber largest_sent =
+        unacked_packets.GetLargestSentRetransmittableOfPacketNumberSpace(
+            QuicUtils::GetPacketNumberSpace(level));
+    if (!largest_sent.IsInitialized() ||
+        !unacked_packets.IsUnacked(largest_sent) ||
+        !unacked_packets.HasRetransmittableFrames(largest_sent)) {
+      continue;
+    }
+    ScopedEncryptionLevelContext context(this, level);
+    if (!packet_creator_.HasSoftMaxPacketLength() ||
+        packet_creator_.BytesFree() <
+            QuicPacketCreator::MinPlaintextPacketSize(
+                version(), PACKET_1BYTE_PACKET_NUMBER)) {
+      continue;
+    }
+    QUIC_DVLOG(1) << ENDPOINT << "Coalescing PING of encryption level: "
+                  << EncryptionLevelToString(level);
+    SetTransmissionType(NOT_RETRANSMISSION);
+    fill_coalesced_packet_ = true;
+    SendControlFrame(QuicFrame(QuicPingFrame()));
+    fill_coalesced_packet_ = false;
+  }
+}
+
 bool QuicConnection::FlushCoalescedPacket() {
   ScopedCoalescedPacketClearer clearer(&coalesced_packet_);
   if (!connected_) {
@@ -6297,7 +6396,8 @@ bool QuicConnection::FlushCoalescedPacket() {
 
   char buffer[kMaxOutgoingPacketSize];
   const size_t length = packet_creator_.SerializeCoalescedPacket(
-      coalesced_packet_, buffer, coalesced_packet_.max_packet_length());
+      coalesced_packet_, buffer, coalesced_packet_.max_packet_length(),
+      coalesce_ping_with_last_packet_);
   if (length == 0) {
     if (connected_) {
       CloseConnection(QUIC_FAILED_TO_SERIALIZE_PACKET,
@@ -6439,7 +6539,7 @@ void QuicConnection::EnableOutgoingReceiveTimestamps(uint32_t max_timestamps,
   }
   max_timestamps = std::min(max_timestamps, kMaxReceiveTimestampsToSend);
 
-  uber_received_packet_manager_.set_save_timestamps(true);
+  uber_received_packet_manager_.SaveReceiveTimestamps(max_timestamps);
   framer_.set_peer_max_receive_timestamps_per_ack(max_timestamps);
   framer_.set_peer_receive_timestamps_exponent(exponent);
 }

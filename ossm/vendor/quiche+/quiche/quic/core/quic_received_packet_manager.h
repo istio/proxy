@@ -113,9 +113,8 @@ class QUICHE_EXPORT QuicReceivedPacketManager {
     max_ack_ranges_ = max_ack_ranges;
   }
 
-  void set_save_timestamps(bool save_timestamps) {
-    save_timestamps_ = save_timestamps;
-  }
+  void SaveReceiveTimestamps(size_t max_timestamps);
+  bool save_timestamps() const { return max_timestamps_ > 0; }
 
   void set_receive_timestamp_basis(QuicTime receive_timestamp_basis) {
     receive_timestamp_basis_ = receive_timestamp_basis;
@@ -180,8 +179,9 @@ class QUICHE_EXPORT QuicReceivedPacketManager {
   // Needed for calculating ack_delay_time.
   QuicTime time_largest_observed_;
 
-  // If true, save timestamps in the ack_frame_.
-  bool save_timestamps_;
+  // Maximum number of receive timestamps to save in ack_frame_. 0 means
+  // timestamps are not saved.
+  size_t max_timestamps_;
 
   // Least packet number received from peer.
   QuicPacketNumber least_received_packet_number_;

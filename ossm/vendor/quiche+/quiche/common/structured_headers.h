@@ -350,17 +350,30 @@ class QUICHE_EXPORT Dictionary {
   using mapped_type = ParameterizedMember;
   using value_type = DictionaryMember;
 
+  // Tag type to assert that the vector passed to the constructor already
+  // contains unique keys.
+  struct unique_keys_t {
+    constexpr explicit unique_keys_t() = default;
+  };
+  static constexpr unique_keys_t unique_keys{};
+
   Dictionary() noexcept;
   Dictionary(const Dictionary&);
   Dictionary(Dictionary&&) noexcept;
-  // NOTE(b/580863224): |members| should not contain duplicate keys. This
-  // constructor currently stores |members| without deduplicating, causing
-  // key-based accessors (find(), at(), operator[]) to return the first entry
-  // for a duplicate key while SerializeDictionary() emits all entries (which
-  // resolves to the last entry when re-parsed per RFC 8941 Section 4.2.2).
-  // Use operator[](absl::string_view) when duplicate keys need to overwrite
-  // earlier values or when you cannot statically guarantee that the keys are
-  // unique.
+
+  // |members| must not contain duplicate keys (enforced via QUICHE_DCHECK). Use
+  // operator[](absl::string_view) when duplicate keys need to overwrite earlier
+  // values or when you cannot statically guarantee that the keys are unique.
+  Dictionary(unique_keys_t, std::vector<DictionaryMember> members) noexcept;
+
+  // Deprecated (b/580863224): Prefer Dictionary(Dictionary::unique_keys, ...)
+  // when keys are guaranteed unique, or operator[](absl::string_view) when
+  // duplicate keys need to overwrite earlier values or when you cannot
+  // statically guarantee that the keys are unique. This constructor stores
+  // |members| without deduplicating, causing key-based accessors (find(), at(),
+  // operator[]) to return the first entry for a duplicate key while
+  // SerializeDictionary() emits all entries (which resolves to the last entry
+  // when re-parsed per RFC 8941 Section 4.2.2).
   explicit Dictionary(std::vector<DictionaryMember> members) noexcept;
   ~Dictionary();
   Dictionary& operator=(const Dictionary&);

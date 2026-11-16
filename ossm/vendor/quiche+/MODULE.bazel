@@ -1,6 +1,6 @@
 module(
     name = "quiche",
-    version = "0.0.0-261105-35cbd03.envoy",
+    version = "0.0.0-261111-9917bea.envoy",
     compatibility_level = 1,
 )
 

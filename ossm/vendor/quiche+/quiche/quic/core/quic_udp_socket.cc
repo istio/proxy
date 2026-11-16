@@ -208,6 +208,16 @@ bool QuicUdpSocketApi::EnableReceiveTtlForV6(QuicUdpSocketFd fd) {
 #endif
 }
 
+bool QuicUdpSocketApi::EnableUdpGro(QuicUdpSocketFd fd) {
+#if defined(__linux__) && defined(SOL_UDP)
+  int enable_gro = 1;
+  return 0 == setsockopt(fd, SOL_UDP, UDP_GRO, &enable_gro, sizeof(enable_gro));
+#else
+  (void)fd;
+  return false;
+#endif
+}
+
 size_t QuicUdpSocketApi::ForEachGroSegment(
     const ReadPacketResult& result,
     quiche::UnretainedCallback<void(const ReadPacketResult&)> packet_sink) {

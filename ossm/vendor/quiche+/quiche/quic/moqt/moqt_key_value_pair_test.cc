@@ -14,6 +14,7 @@
 #include "quiche/quic/moqt/moqt_priority.h"
 #include "quiche/quic/moqt/moqt_types.h"
 #include "quiche/quic/platform/api/quic_test.h"
+#include "quiche/common/platform/api/quiche_expect_bug.h"
 #include "quiche/common/test_tools/quiche_test_utils.h"
 
 namespace moqt::test {
@@ -61,28 +62,49 @@ TEST_F(AuthTokenTest, UseValue) {
   EXPECT_EQ(token.value, "token");
 }
 
-class SubscriptionFilterTest : public quic::test::QuicTest {};
+class LocationFilterTest : public quic::test::QuicTest {};
 
-TEST_F(SubscriptionFilterTest, NextGroupStart) {
-  SubscriptionFilter filter(MoqtFilterType::kNextGroupStart);
-  EXPECT_EQ(filter.type(), (MoqtFilterType::kNextGroupStart));
-  EXPECT_FALSE(filter.WindowKnown());
-  filter.OnLargestObject(Location(3, 6));
+TEST_F(LocationFilterTest, NoFilter) {
+  LocationFilter filter = LocationFilter::NoLocationFilter();
   EXPECT_TRUE(filter.WindowKnown());
-  EXPECT_EQ(filter.type(), (MoqtFilterType::kNextGroupStart));
+  EXPECT_TRUE(filter.InWindow(Location(0, 0)));
+  EXPECT_TRUE(filter.InWindow(0));
+}
+
+TEST_F(LocationFilterTest, RelativeStart) {
+  LocationFilter filter = LocationFilter::RelativeStartFilter(0);
+  EXPECT_FALSE(filter.WindowKnown());
+  EXPECT_FALSE(filter.is_next_object());
+  EXPECT_EQ(filter.relative_start_offset(), 0);
+  filter.ConvertRelativeToAbsolute(Location(3, 6));
+  EXPECT_TRUE(filter.WindowKnown());
+  EXPECT_EQ(filter.relative_start_offset(), std::nullopt);
   EXPECT_TRUE(filter.InWindow(Location(4, 0)));
   EXPECT_FALSE(filter.InWindow(Location(3, 7)));
   EXPECT_TRUE(filter.InWindow(4));
   EXPECT_FALSE(filter.InWindow(3));
 }
 
-TEST_F(SubscriptionFilterTest, LargestObject) {
-  SubscriptionFilter filter(MoqtFilterType::kLargestObject);
-  EXPECT_EQ(filter.type(), (MoqtFilterType::kLargestObject));
+TEST_F(LocationFilterTest, RelativeStartWithOffset) {
+  LocationFilter filter = LocationFilter::RelativeStartFilter(2);
   EXPECT_FALSE(filter.WindowKnown());
-  filter.OnLargestObject(Location(3, 6));
-  EXPECT_EQ(filter.type(), (MoqtFilterType::kLargestObject));
+  EXPECT_FALSE(filter.is_next_object());
+  EXPECT_EQ(filter.relative_start_offset(), 2);
+  filter.ConvertRelativeToAbsolute(Location(3, 6));
   EXPECT_TRUE(filter.WindowKnown());
+  EXPECT_EQ(filter.start(), Location(2, 0));
+  EXPECT_TRUE(filter.InWindow(Location(2, 0)));
+  EXPECT_FALSE(filter.InWindow(Location(1, 7)));
+}
+
+TEST_F(LocationFilterTest, NextObject) {
+  LocationFilter filter = LocationFilter::NextObjectFilter();
+  EXPECT_FALSE(filter.WindowKnown());
+  EXPECT_TRUE(filter.is_next_object());
+  EXPECT_EQ(filter.relative_start_offset(), std::nullopt);
+  filter.ConvertRelativeToAbsolute(Location(3, 6));
+  EXPECT_TRUE(filter.WindowKnown());
+  EXPECT_FALSE(filter.is_next_object());
   EXPECT_TRUE(filter.InWindow(Location(4, 0)));
   EXPECT_TRUE(filter.InWindow(Location(3, 7)));
   EXPECT_FALSE(filter.InWindow(Location(3, 6)));
@@ -91,20 +113,17 @@ TEST_F(SubscriptionFilterTest, LargestObject) {
   EXPECT_FALSE(filter.InWindow(2));
 }
 
-TEST_F(SubscriptionFilterTest, LargestObjectNoObjectsYet) {
-  SubscriptionFilter filter(MoqtFilterType::kLargestObject);
-  EXPECT_EQ(filter.type(), (MoqtFilterType::kLargestObject));
+TEST_F(LocationFilterTest, NextObjectNoObjectsYet) {
+  LocationFilter filter = LocationFilter::NextObjectFilter();
   EXPECT_FALSE(filter.WindowKnown());
-  filter.OnLargestObject(std::nullopt);
-  EXPECT_EQ(filter.type(), (MoqtFilterType::kLargestObject));
+  filter.ConvertRelativeToAbsolute(std::nullopt);
   EXPECT_TRUE(filter.WindowKnown());
   EXPECT_TRUE(filter.InWindow(Location(0, 0)));
   EXPECT_TRUE(filter.InWindow(0));
 }
 
-TEST_F(SubscriptionFilterTest, AbsoluteStart) {
-  SubscriptionFilter filter(Location(3, 6));
-  EXPECT_EQ(filter.type(), (MoqtFilterType::kAbsoluteStart));
+TEST_F(LocationFilterTest, AbsoluteStart) {
+  LocationFilter filter = LocationFilter::AbsoluteStartFilter(Location(3, 6));
   EXPECT_TRUE(filter.WindowKnown());
   EXPECT_TRUE(filter.InWindow(Location(4, 0)));
   EXPECT_TRUE(filter.InWindow(Location(3, 6)));
@@ -114,12 +133,13 @@ TEST_F(SubscriptionFilterTest, AbsoluteStart) {
   EXPECT_FALSE(filter.InWindow(2));
 }
 
-TEST_F(SubscriptionFilterTest, AbsoluteRange) {
-  SubscriptionFilter filter(Location(3, 6), 5);
-  EXPECT_EQ(filter.type(), (MoqtFilterType::kAbsoluteRange));
+TEST_F(LocationFilterTest, AbsoluteStartGroupEnd) {
+  LocationFilter filter =
+      LocationFilter::AbsoluteStartGroupEndFilter(Location(3, 6), 5);
   EXPECT_TRUE(filter.WindowKnown());
   EXPECT_EQ(filter.start(), Location(3, 6));
   EXPECT_EQ(filter.end_group(), 5);
+  EXPECT_EQ(filter.end(), Location(5, kMaxObjectId));
   EXPECT_TRUE(filter.InWindow(Location(4, 0)));
   EXPECT_TRUE(filter.InWindow(Location(3, 6)));
   EXPECT_TRUE(filter.InWindow(Location(5, kMaxObjectId)));
@@ -129,6 +149,67 @@ TEST_F(SubscriptionFilterTest, AbsoluteRange) {
   EXPECT_TRUE(filter.InWindow(3));
   EXPECT_FALSE(filter.InWindow(2));
   EXPECT_FALSE(filter.InWindow(6));
+}
+
+TEST_F(LocationFilterTest, AbsoluteRange) {
+  LocationFilter filter =
+      LocationFilter::AbsoluteRangeFilter(Location(3, 6), Location(5, 10));
+  EXPECT_TRUE(filter.WindowKnown());
+  EXPECT_EQ(filter.start(), Location(3, 6));
+  EXPECT_EQ(filter.end_group(), 5);
+  EXPECT_EQ(filter.end(), Location(5, 10));
+  EXPECT_TRUE(filter.InWindow(Location(4, 0)));
+  EXPECT_TRUE(filter.InWindow(Location(3, 6)));
+  EXPECT_TRUE(filter.InWindow(Location(5, 10)));
+  EXPECT_FALSE(filter.InWindow(Location(5, 11)));
+  EXPECT_FALSE(filter.InWindow(Location(3, 5)));
+  EXPECT_FALSE(filter.InWindow(Location(6, 0)));
+  EXPECT_TRUE(filter.InWindow(5));
+  EXPECT_TRUE(filter.InWindow(3));
+  EXPECT_FALSE(filter.InWindow(2));
+  EXPECT_FALSE(filter.InWindow(6));
+
+  LocationFilter single_object =
+      LocationFilter::AbsoluteRangeFilter(Location(3, 6), Location(3, 6));
+  EXPECT_TRUE(single_object.WindowKnown());
+  EXPECT_EQ(single_object.start(), Location(3, 6));
+  EXPECT_EQ(single_object.end(), Location(3, 6));
+  EXPECT_TRUE(single_object.InWindow(Location(3, 6)));
+  EXPECT_FALSE(single_object.InWindow(Location(3, 5)));
+  EXPECT_FALSE(single_object.InWindow(Location(3, 7)));
+}
+
+TEST_F(LocationFilterTest, TrimEndLocation) {
+  LocationFilter filter = LocationFilter::RelativeStartFilter(2);
+  filter.ConvertRelativeToAbsolute(Location(3, 6));
+  EXPECT_TRUE(filter.WindowKnown());
+  EXPECT_EQ(filter.start(), Location(2, 0));
+  EXPECT_EQ(filter.end(), Location(kMaxGroupId, kMaxObjectId));
+  EXPECT_THAT(filter.TrimEndLocation(Location(1, 9)),
+              quiche::test::StatusIs(absl::StatusCode::kOutOfRange));
+  EXPECT_EQ(filter.end(), Location(kMaxGroupId, kMaxObjectId));
+  QUICHE_EXPECT_OK(filter.TrimEndLocation(Location(3, 6)));
+  EXPECT_EQ(filter.end(), Location(3, 6));
+  EXPECT_TRUE(filter.InWindow(Location(3, 6)));
+  EXPECT_FALSE(filter.InWindow(Location(3, 7)));
+  QUICHE_EXPECT_OK(filter.TrimEndLocation(Location(4, 0)));
+  EXPECT_EQ(filter.end(), Location(3, 6));
+}
+
+TEST_F(LocationFilterTest, InvalidConstructors) {
+  LocationFilter filter = LocationFilter::NoLocationFilter();
+  EXPECT_QUICHE_BUG(
+      filter = LocationFilter::AbsoluteStartGroupEndFilter(Location(3, 6), 2),
+      "End group is before start location");
+  EXPECT_EQ(filter, LocationFilter::NoLocationFilter());
+  EXPECT_QUICHE_BUG(filter = LocationFilter::AbsoluteRangeFilter(
+                        Location(3, 6), Location(3, 5)),
+                    "End location is before start location");
+  EXPECT_EQ(filter, LocationFilter::NoLocationFilter());
+  EXPECT_QUICHE_BUG(filter = LocationFilter::AbsoluteRangeFilter(
+                        Location(3, 6), Location(2, 10)),
+                    "End location is before start location");
+  EXPECT_EQ(filter, LocationFilter::NoLocationFilter());
 }
 
 class MessageParametersTest : public quic::test::QuicTest {};
@@ -162,25 +243,25 @@ TEST_F(MessageParametersTest, Update) {
   EXPECT_EQ(p1.track_namespace_prefix, TrackNamespace({"bar"}));
 }
 
-TEST_F(MessageParametersTest, UpdateSubscriptionFilter) {
+TEST_F(MessageParametersTest, UpdateLocationFilter) {
   // 1. Uninitialized existing filter gets initialized on Update even if
   // largest_object is not set.
-  MessageParameters params_no_largest(MoqtFilterType::kLargestObject);
-  EXPECT_FALSE(params_no_largest.subscription_filter->WindowKnown());
+  MessageParameters params_no_largest(LocationFilter::NextObjectFilter());
+  EXPECT_FALSE(params_no_largest.location_filter->WindowKnown());
   params_no_largest.Update(MessageParameters());
-  EXPECT_TRUE(params_no_largest.subscription_filter->WindowKnown());
-  EXPECT_EQ(params_no_largest.subscription_filter->start(), Location(0, 0));
+  EXPECT_TRUE(params_no_largest.location_filter->WindowKnown());
+  EXPECT_EQ(params_no_largest.location_filter->start(), Location(0, 0));
 
   // 2. Uninitialized existing filter gets initialized with largest_object on
   // Update.
-  MessageParameters params(MoqtFilterType::kLargestObject);
+  MessageParameters params(LocationFilter::NextObjectFilter());
   params.set_forward(false);
-  EXPECT_FALSE(params.subscription_filter->WindowKnown());
+  EXPECT_FALSE(params.location_filter->WindowKnown());
   MessageParameters update1;
   update1.largest_object = Location(1, 2);
   params.Update(update1);
-  EXPECT_TRUE(params.subscription_filter->WindowKnown());
-  EXPECT_EQ(params.subscription_filter->start(), Location(1, 3));
+  EXPECT_TRUE(params.location_filter->WindowKnown());
+  EXPECT_EQ(params.location_filter->start(), Location(1, 3));
 
   // 3. Once the filter window is known, subsequent Updates do not re-initialize
   // it even if largest_object or forward changes.
@@ -189,14 +270,14 @@ TEST_F(MessageParametersTest, UpdateSubscriptionFilter) {
   update2.set_forward(true);
   params.Update(update2);
   EXPECT_TRUE(params.forward());
-  EXPECT_EQ(params.subscription_filter->start(), Location(1, 3));
+  EXPECT_EQ(params.location_filter->start(), Location(1, 3));
 
   // 4. New filter in Update is initialized with largest_object.
-  MessageParameters update3(MoqtFilterType::kNextGroupStart);
+  MessageParameters update3(LocationFilter::RelativeStartFilter(0));
   update3.largest_object = Location(3, 1);
   params.Update(update3);
-  EXPECT_TRUE(params.subscription_filter->WindowKnown());
-  EXPECT_EQ(params.subscription_filter->start(), Location(4, 0));
+  EXPECT_TRUE(params.location_filter->WindowKnown());
+  EXPECT_EQ(params.location_filter->start(), Location(4, 0));
 }
 
 class TrackPropertiesTest : public quic::test::QuicTest {};

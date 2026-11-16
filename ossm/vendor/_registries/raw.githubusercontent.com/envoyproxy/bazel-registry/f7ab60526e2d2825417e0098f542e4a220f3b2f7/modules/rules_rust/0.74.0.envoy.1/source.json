@@ -1,0 +1,11 @@
+{
+  "url": "https://github.com/bazelbuild/rules_rust/releases/download/0.74.0/rules_rust-0.74.0.tar.gz",
+  "integrity": "sha256-2LzB4RHpgnDcAxcuIu96+cL5TzJpgBYYorg9IIkPjfU=",
+  "patch_strip": 1,
+  "patches": {
+    "rules_rust.patch": "sha256-PRG4HycRs1/zr0A150RSpLn3WcmoIcXrOwMv+66JgU0=",
+    "rules_rust_shared_exec_tools.patch": "sha256-ejM9mrMDg6SlTPyioJxBjleL1gjgKv38PmxnWPGwBu8=",
+    "rules_rust_crate_lockfile.patch": "sha256-pxsbC3hxguuJ4k8Do6M4hzot02iy34jCq09Q73lh6BQ="
+  },
+  "strip_prefix": ""
+}

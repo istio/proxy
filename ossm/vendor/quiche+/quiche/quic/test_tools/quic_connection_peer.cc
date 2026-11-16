@@ -669,6 +669,12 @@ bool QuicConnectionPeer::GetSpinBitEnabled(QuicConnection* connection) {
 }
 
 // static
+void QuicConnectionPeer::SetAllowDeferringAckOnlyPackets(
+    QuicConnection* connection, bool allow) {
+  connection->allow_deferring_ack_only_packets_ = allow;
+}
+
+// static
 QuicConnection::ReceivedPacketInfo&
 QuicConnectionPeer::GetLastReceivedPacketInfo(QuicConnection* connection) {
   return connection->last_received_packet_info_;

@@ -176,10 +176,15 @@ class QUICHE_EXPORT MoqtSession : public MoqtSessionInterface,
   webtransport::Session* session() override {
     return is_closing_ ? nullptr : session_;
   }
+  uint64_t NextRequestId() override {
+    uint64_t id = next_request_id_;
+    next_request_id_ += 2;
+    return id;
+  }
 
   // SessionToUniStreamInterface implementation.
-  bool deliver_partial_objects() const override {
-    return parameters_.deliver_partial_objects;
+  size_t max_undelivered_object() const override {
+    return parameters_.max_undelivered_object;
   }
   // Called when the incoming track is malformed per Section 2.5 of
   // draft-ietf-moqt-moq-transport-12. Unsubscribe and notify the application so
@@ -408,12 +413,6 @@ class QUICHE_EXPORT MoqtSession : public MoqtSessionInterface,
   // Handlers for the control messages on the main control stream.
   absl::Status OnControlMessage(const MoqtSetup& message);
   absl::Status OnControlMessage(const MoqtGoAway& message);
-
-  uint64_t NextRequestId() {
-    uint64_t id = next_request_id_;
-    next_request_id_ += 2;
-    return id;
-  }
 
   bool is_closing_ = false;
   webtransport::Session* session_;

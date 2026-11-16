@@ -61,8 +61,9 @@ class LiveSubscriberTest : public quic::test::QuicTest {
   }
 
   MockLiveSubscriberVisitor visitor_;
-  MoqtSubscribe subscribe_ = {/*request_id=*/1, FullTrackName("foo", "bar"),
-                              MessageParameters(Location(2, 0))};
+  MoqtSubscribe subscribe_ = {
+      /*request_id=*/1, FullTrackName("foo", "bar"),
+      MessageParameters(LocationFilter::AbsoluteStartFilter(Location(2, 0)))};
   MockBidiStream stream_;
   webtransport::test::MockStream wt_stream_;
   LiveSubscriber track_;
@@ -117,20 +118,18 @@ TEST_F(LiveSubscriberTest, UpdateLargestObjectValidation) {
   EXPECT_EQ(track_.const_parameters().largest_object, Location(3, 0));
 }
 
-TEST_F(LiveSubscriberTest, OnObjectOrOkAnchorsFilterWithLargestObject) {
-  MoqtSubscribe subscribe = {/*request_id=*/2, FullTrackName("foo", "bar"),
-                             MessageParameters(MoqtFilterType::kLargestObject)};
+TEST_F(LiveSubscriberTest, OnObjectOrOkAnchorsFilterWithoutLargestObject) {
+  MoqtSubscribe subscribe = {
+      /*request_id=*/2, FullTrackName("foo", "bar"),
+      MessageParameters(LocationFilter::NextObjectFilter())};
   LiveSubscriber subscriber(subscribe, &visitor_, &stream_);
-  EXPECT_FALSE(
-      subscriber.const_parameters().subscription_filter->WindowKnown());
+  EXPECT_FALSE(subscriber.const_parameters().location_filter->WindowKnown());
 
   EXPECT_CALL(visitor_, OnReply);
-  SubscribeOkData ok_data;
-  ok_data.parameters.largest_object = Location(2, 3);
-  subscriber.OnObjectOrOk(ok_data);
-  EXPECT_TRUE(subscriber.const_parameters().subscription_filter->WindowKnown());
-  EXPECT_EQ(subscriber.const_parameters().subscription_filter->start(),
-            Location(2, 4));
+  subscriber.OnObjectOrOk(SubscribeOkData{});
+  EXPECT_TRUE(subscriber.const_parameters().location_filter->WindowKnown());
+  EXPECT_EQ(subscriber.const_parameters().location_filter->start(),
+            Location(0, 0));
   EXPECT_CALL(visitor_, OnPublishDone).Times(testing::AtLeast(1));
 }
 

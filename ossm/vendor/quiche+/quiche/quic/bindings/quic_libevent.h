@@ -60,7 +60,7 @@ class QUICHE_EXPORT LibeventQuicEventLoop : public QuicEventLoop {
  private:
   void ActivateArtificialEvents();
 
-  class AlarmFactory : public QuicAlarmFactory {
+  class QUICHE_EXPORT AlarmFactory : public QuicAlarmFactory {
    public:
     AlarmFactory(LibeventQuicEventLoop* loop) : loop_(loop) {}
 

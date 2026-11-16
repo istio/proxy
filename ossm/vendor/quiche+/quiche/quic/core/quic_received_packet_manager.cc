@@ -45,7 +45,7 @@ QuicReceivedPacketManager::QuicReceivedPacketManager(QuicConnectionStats* stats)
     : ack_frame_updated_(false),
       max_ack_ranges_(0),
       time_largest_observed_(QuicTime::Zero()),
-      save_timestamps_(false),
+      max_timestamps_(0),
       stats_(stats),
       num_retransmittable_packets_received_since_last_ack_sent_(0),
       min_received_before_ack_decimation_(kMinReceivedBeforeAckDecimation),
@@ -111,10 +111,10 @@ void QuicReceivedPacketManager::RecordPacketReceived(
   ack_frame_.packets.Add(packet_number);
   MaybeTrimAckRanges();
 
-  if (save_timestamps_) {
+  if (save_timestamps()) {
     if (!receive_timestamp_basis_.IsInitialized()) {
       QUIC_BUG(missing_receive_timestamp_basis)
-          << "`save_timestamps_` is set to true, but "
+          << "`SaveReceiveTimestamps` was called, but "
              "`receive_timestamp_basis_` is not set";
     }
 
@@ -133,6 +133,14 @@ void QuicReceivedPacketManager::RecordPacketReceived(
           << ack_frame_.received_packet_times.back().second.ToDebuggingValue()
           << " to " << receive_time->ToDebuggingValue();
     } else {
+      if (ack_frame_.received_packet_times.size() >= max_timestamps_) {
+        // Drop the oldest timestamp to keep at most `max_timestamps_` most
+        // recent entries, as recommended in the draft.
+        // Because the limit for `max_timestamps_` is fairly small, erasing from
+        // the front is fast despite `received_packet_times` being a vector.
+        ack_frame_.received_packet_times.erase(
+            ack_frame_.received_packet_times.begin());
+      }
       ack_frame_.received_packet_times.push_back(
           std::make_pair(packet_number, *receive_time));
     }
@@ -481,6 +489,16 @@ void QuicReceivedPacketManager::OnAckFrequencyFrame(
   ack_frequency_ = frame.ack_eliciting_threshold + 1;
   local_max_ack_delay_ = frame.requested_max_ack_delay;
   reordering_threshold_ = frame.reordering_threshold;
+}
+
+void QuicReceivedPacketManager::SaveReceiveTimestamps(size_t max_timestamps) {
+  max_timestamps_ = max_timestamps;
+  if (ack_frame_.received_packet_times.size() > max_timestamps_) {
+    ack_frame_.received_packet_times.erase(
+        ack_frame_.received_packet_times.begin(),
+        ack_frame_.received_packet_times.begin() +
+            (ack_frame_.received_packet_times.size() - max_timestamps_));
+  }
 }
 
 }  // namespace quic

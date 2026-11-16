@@ -425,7 +425,16 @@ void IncomingDataStream::OnObjectMessage(const MoqtObject& message,
                   << " priority " << message.publisher_priority << " length "
                   << payload.size() << " length " << message.payload_length
                   << (end_of_message ? "F" : "");
-  if (!session_->deliver_partial_objects()) {
+  if (session_->max_undelivered_object() > 0) {
+    if (message.payload_length > session_->max_undelivered_object()) {
+      status_ = MoqtStreamErrorToStatus(
+          kResetCodeExcessiveLoad,
+          absl::StrCat("Object too large: ", message.payload_length, " > ",
+                       session_->max_undelivered_object()));
+      stream_->SendStopSending(kResetCodeExcessiveLoad);
+      Detach();
+      return;
+    }
     if (!end_of_message) {  // Buffer partial object.
       if (partial_object_.empty()) {
         // Avoid redundant allocations by reserving the appropriate amount of

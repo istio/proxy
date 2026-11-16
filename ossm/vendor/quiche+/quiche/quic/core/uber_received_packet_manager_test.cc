@@ -159,7 +159,7 @@ TEST_F(UberReceivedPacketManagerTest, DontWaitForPacketsBefore) {
 
 TEST_F(UberReceivedPacketManagerTest, GetUpdatedAckFrame) {
   manager_->EnableMultiplePacketNumberSpacesSupport(Perspective::IS_CLIENT);
-  manager_->set_save_timestamps(true);
+  manager_->SaveReceiveTimestamps(1000);
 
   QuicTime two_ms =
       clock_.ApproximateNow() + QuicTime::Delta::FromMilliseconds(2);
@@ -237,7 +237,7 @@ TEST_F(UberReceivedPacketManagerTest, LimitAckRanges) {
 
 TEST_F(UberReceivedPacketManagerTest, IgnoreOutOfOrderTimestamps) {
   manager_->EnableMultiplePacketNumberSpacesSupport(Perspective::IS_CLIENT);
-  manager_->set_save_timestamps(true);
+  manager_->SaveReceiveTimestamps(1000);
 
   EXPECT_FALSE(manager_->IsAckFrameUpdated());
   RecordPacketReceipt(1, clock_.ApproximateNow());
@@ -254,7 +254,7 @@ TEST_F(UberReceivedPacketManagerTest, IgnoreOutOfOrderTimestamps) {
 }
 
 TEST_F(UberReceivedPacketManagerTest, CannotEnableTimestampsForNonIetfQuic) {
-  EXPECT_QUIC_BUG(manager_->set_save_timestamps(true),
+  EXPECT_QUIC_BUG(manager_->SaveReceiveTimestamps(1000),
                   "Trying to enable QUIC receive timestamps for non-IETF QUIC");
 }
 
@@ -606,7 +606,7 @@ TEST_F(UberReceivedPacketManagerTest, ImmediateAckFrameTriggersAck) {
 TEST_F(UberReceivedPacketManagerTest,
        SaveTimestampsOnlyForApplicationDataPacketNumberSpace) {
   manager_->EnableMultiplePacketNumberSpacesSupport(Perspective::IS_SERVER);
-  manager_->set_save_timestamps(true);
+  manager_->SaveReceiveTimestamps(1000);
 
   const QuicTime basis = clock_.ApproximateNow();
   const QuicTime initial_time = basis + QuicTime::Delta::FromMilliseconds(1);

@@ -195,7 +195,7 @@ absl::StatusOr<std::string> SerializeInitHeader(
   }
   std::optional<std::string> result =
       quiche::structured_headers::SerializeDictionary(
-          Dictionary(std::move(members)));
+          Dictionary(Dictionary::unique_keys, std::move(members)));
   if (!result.has_value()) {
     return absl::InternalError("Failed to serialize the dictionary");
   }

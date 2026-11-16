@@ -5,6 +5,7 @@
 #ifndef QUICHE_QUIC_MOQT_MOQT_SESSION_INTERFACE_H_
 #define QUICHE_QUIC_MOQT_MOQT_SESSION_INTERFACE_H_
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -40,8 +41,8 @@ struct QUICHE_EXPORT MoqtSessionParameters {
   MoqtSessionParameters() = default;
   explicit MoqtSessionParameters(quic::Perspective perspective)
       : perspective(perspective), using_webtrans(true) {}
-  explicit MoqtSessionParameters(bool deliver_partial_objects)
-      : deliver_partial_objects(deliver_partial_objects) {}
+  explicit MoqtSessionParameters(size_t max_undelivered_object)
+      : max_undelivered_object(max_undelivered_object) {}
   MoqtSessionParameters(quic::Perspective perspective, std::string path,
                         std::string authority)
       : perspective(perspective),
@@ -51,7 +52,11 @@ struct QUICHE_EXPORT MoqtSessionParameters {
   bool operator==(const MoqtSessionParameters& other) const = default;
 
   std::string version = std::string(kDefaultMoqtVersion);
-  bool deliver_partial_objects = false;
+  // If zero, partial object payloads are always delivered. If non-zero, the
+  // session will buffer objects up to this size before delivering. If an
+  // object is larger than the specified limit, the session will reset the
+  // stream.
+  size_t max_undelivered_object = 64 * 1024 * 1024;  // 64 MB
   quic::Perspective perspective = quic::Perspective::IS_SERVER;
   bool using_webtrans = true;
   std::string path;
@@ -95,7 +100,13 @@ class MoqtSessionInterface {
   virtual bool SubscribeUpdate(const FullTrackName& name,
                                const MessageParameters& parameters,
                                MoqtResponseCallback response_callback) = 0;
-  // Used by the publisher of a PUBLISH message.
+  // Used by the publisher of a subscription. If |parameters| contains an
+  // AUTHORIZATION_TOKEN and it's a PUBLISH, it will send REQUEST_UPDATE. If
+  // |parameters| contains a LOCATION_FILTER or FORWARD, it will send
+  // PUBLISH_STATE_NOTIFY with the parameters plus LARGEST_OBJECT. Returns false
+  // if sending either message fails. |response_callback| will be invoked when
+  // REQUEST_UPDATE receives a response. The callback is ignored if the function
+  // returns false (meaning no REQUEST_UPDATE was sent).
   virtual bool PublishUpdate(const FullTrackName& name,
                              const MessageParameters& parameters,
                              MoqtResponseCallback response_callback) = 0;

@@ -4,12 +4,14 @@
 
 #include "quiche/quic/moqt/moqt_key_value_pair.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <optional>
 #include <string>
 #include <variant>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "quiche/quic/core/quic_time.h"
 #include "quiche/quic/moqt/moqt_priority.h"
@@ -50,27 +52,37 @@ KeyValuePairList::ValueVector KeyValuePairList::Get(uint64_t key) const {
   return values;
 }
 
-void SubscriptionFilter::OnLargestObject(
+void LocationFilter::ConvertRelativeToAbsolute(
     const std::optional<Location>& largest_object) {
   switch (type_) {
-    case MoqtFilterType::kAbsoluteStart:
-    case MoqtFilterType::kAbsoluteRange:
-      break;
-    case MoqtFilterType::kNextGroupStart:
-      if (largest_object.has_value()) {
-        start_ = Location(largest_object->group + 1, 0);
-      } else {
+    case MoqtLocationFilterType::kRelativeStart:
+      type_ = MoqtLocationFilterType::kAbsoluteStart;
+      if (!largest_object.has_value() ||
+          largest_object->group + 1 < start_.group) {
         start_ = Location(0, 0);
+        break;
       }
+      start_ = Location(largest_object->group + 1 - start_.group, 0);
       break;
-    case MoqtFilterType::kLargestObject:
-      if (largest_object.has_value()) {
-        start_ = largest_object->Next();
-      } else {
-        start_ = Location(0, 0);
+    case MoqtLocationFilterType::kNextObject:
+      type_ = MoqtLocationFilterType::kAbsoluteStart;
+      if (!largest_object.has_value()) {
+        break;
       }
+      start_ = largest_object->Next();
       break;
+    default:
+      return;
   }
+  type_ = MoqtLocationFilterType::kAbsoluteStart;
+}
+
+absl::Status LocationFilter::TrimEndLocation(const Location& end_location) {
+  if (end_location < start()) {
+    return absl::OutOfRangeError("End location is before start location");
+  }
+  end_ = std::min(end_, end_location);
+  return absl::OkStatus();
 }
 
 void MessageParameters::Update(const MessageParameters& other) {
@@ -97,8 +109,8 @@ void MessageParameters::Update(const MessageParameters& other) {
   if (other.subscriber_priority.has_value()) {
     subscriber_priority = other.subscriber_priority;
   }
-  if (other.subscription_filter.has_value()) {
-    subscription_filter = other.subscription_filter;
+  if (other.location_filter.has_value()) {
+    location_filter = other.location_filter;
   }
   // GROUP_ORDER cannot be updated.
   if (other.new_group_request.has_value()) {
@@ -110,8 +122,8 @@ void MessageParameters::Update(const MessageParameters& other) {
   if (other.oack_window_size.has_value()) {
     oack_window_size = other.oack_window_size;
   }
-  if (subscription_filter.has_value() && !subscription_filter->WindowKnown()) {
-    subscription_filter->OnLargestObject(largest_object);
+  if (location_filter.has_value() && !location_filter->WindowKnown()) {
+    location_filter->ConvertRelativeToAbsolute(largest_object);
   }
 }
 

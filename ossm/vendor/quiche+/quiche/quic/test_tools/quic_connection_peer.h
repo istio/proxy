@@ -274,6 +274,9 @@ class QuicConnectionPeer {
 
   static bool GetSpinBitEnabled(QuicConnection* connection);
 
+  static void SetAllowDeferringAckOnlyPackets(QuicConnection* connection,
+                                              bool allow);
+
   static QuicConnection::ReceivedPacketInfo& GetLastReceivedPacketInfo(
       QuicConnection* connection);
 };

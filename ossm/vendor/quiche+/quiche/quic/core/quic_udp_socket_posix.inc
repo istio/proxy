@@ -27,6 +27,8 @@
 
 #if defined(__linux__)
 #include <alloca.h>
+// For SOL_UDP, which UDP GRO uses.
+#include <netinet/udp.h>
 // For SO_TIMESTAMPING.
 #include <linux/net_tstamp.h>
 #endif

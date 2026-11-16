@@ -5,6 +5,7 @@
 #ifndef QUICHE_QUIC_MOQT_TEST_TOOLS_MOQT_SESSION_PEER_H_
 #define QUICHE_QUIC_MOQT_TEST_TOOLS_MOQT_SESSION_PEER_H_
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -218,6 +219,10 @@ class MoqtSessionPeer {
 
   static const MoqtSessionParameters& GetParameters(MoqtSession* session) {
     return session->parameters_;
+  }
+
+  static void SetMaxUndeliveredObject(MoqtSession* session, size_t value) {
+    session->parameters_.max_undelivered_object = value;
   }
 
   static std::optional<uint64_t> NextQueuedStreamIdToServer(

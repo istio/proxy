@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <functional>
 #include <memory>
 #include <queue>
@@ -12,13 +14,28 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "quiche/quic/core/crypto/proof_verifier.h"
+#include "quiche/quic/core/crypto/quic_compressed_certs_cache.h"
+#include "quiche/quic/core/crypto/quic_crypto_client_config.h"
+#include "quiche/quic/core/crypto/quic_crypto_proof.h"
 #include "quiche/quic/core/crypto/quic_crypto_server_config.h"
+#include "quiche/quic/core/crypto/quic_random.h"
 #include "quiche/quic/core/io/quic_default_event_loop.h"
 #include "quiche/quic/core/io/quic_event_loop.h"
 #include "quiche/quic/core/proto/crypto_server_config_proto.h"
 #include "quiche/quic/core/quic_alarm_factory.h"
+#include "quiche/quic/core/quic_connection.h"
 #include "quiche/quic/core/quic_default_clock.h"
+#include "quiche/quic/core/quic_packet_writer.h"
+#include "quiche/quic/core/quic_packets.h"
+#include "quiche/quic/core/quic_time.h"
+#include "quiche/quic/core/quic_types.h"
+#include "quiche/quic/core/quic_versions.h"
 #include "quiche/quic/platform/api/quic_expect_bug.h"
+#include "quiche/quic/platform/api/quic_flags.h"
+#include "quiche/quic/platform/api/quic_ip_address.h"
+#include "quiche/quic/platform/api/quic_ip_address_family.h"
+#include "quiche/quic/platform/api/quic_socket_address.h"
 #include "quiche/quic/platform/api/quic_test.h"
 #include "quiche/quic/platform/api/quic_test_loopback.h"
 #include "quiche/quic/qbone/bonnet/mock_qbone_client_packet_exchanger.h"
@@ -26,13 +43,16 @@
 #include "quiche/quic/qbone/qbone_client_session.h"
 #include "quiche/quic/qbone/qbone_constants.h"
 #include "quiche/quic/qbone/qbone_control_placeholder.pb.h"
+#include "quiche/quic/qbone/qbone_control_stream.h"
 #include "quiche/quic/qbone/qbone_packet_processor_test_tools.h"
+#include "quiche/quic/qbone/qbone_packet_writer.h"
 #include "quiche/quic/qbone/qbone_server_session.h"
 #include "quiche/quic/test_tools/crypto_test_utils.h"
 #include "quiche/quic/test_tools/mock_clock.h"
 #include "quiche/quic/test_tools/mock_connection_id_generator.h"
 #include "quiche/quic/test_tools/quic_connection_peer.h"
 #include "quiche/quic/test_tools/quic_test_utils.h"
+#include "quiche/common/platform/api/quiche_reference_counted.h"
 #include "quiche/common/quiche_callbacks.h"
 
 namespace quic {
@@ -429,99 +449,6 @@ class QboneSessionTest : public QuicTestWithParam<ParsedQuicVersion> {
     EXPECT_THAT(written_packets, Contains(expected));
   }
 
-  // Test handshake establishment and sending/receiving of data for two
-  // directions.
-  void TestStreamConnection(bool use_datagrams) {
-    ASSERT_TRUE(server_peer_->OneRttKeysAvailable());
-    ASSERT_TRUE(client_peer_->OneRttKeysAvailable());
-    ASSERT_TRUE(server_peer_->IsEncryptionEstablished());
-    ASSERT_TRUE(client_peer_->IsEncryptionEstablished());
-
-    // Create an outgoing stream from the client and say hello.
-    QUIC_LOG(INFO) << "Sending client -> server";
-    client_peer_->ProcessPacketFromNetwork(TestPacketIn("hello"));
-    client_peer_->ProcessPacketFromNetwork(TestPacketIn("world"));
-    runner_.Run();
-    // The server should see the data, the client hasn't received
-    // anything yet.
-    EXPECT_THAT(server_writer_->data(),
-                ElementsAre(TestPacketOut("hello"), TestPacketOut("world")));
-    EXPECT_TRUE(client_packets_to_network_.empty());
-    EXPECT_EQ(0u, server_peer_->GetNumActiveStreams());
-    EXPECT_EQ(0u, client_peer_->GetNumActiveStreams());
-
-    // Let's pretend some service responds.
-    QUIC_LOG(INFO) << "Sending server -> client";
-    server_peer_->ProcessPacketFromNetwork(TestPacketIn("Hello Again"));
-    server_peer_->ProcessPacketFromNetwork(TestPacketIn("Again"));
-    runner_.Run();
-    EXPECT_THAT(server_writer_->data(),
-                ElementsAre(TestPacketOut("hello"), TestPacketOut("world")));
-    EXPECT_THAT(
-        client_packets_to_network_,
-        ElementsAre(TestPacketOut("Hello Again"), TestPacketOut("Again")));
-    EXPECT_EQ(0u, server_peer_->GetNumActiveStreams());
-    EXPECT_EQ(0u, client_peer_->GetNumActiveStreams());
-
-    // Try to send long payloads that are larger than the QUIC MTU but
-    // smaller than the QBONE max size.
-    // This should trigger the non-ephemeral stream code path.
-    std::string long_data(
-        QboneConstants::kMaxQbonePacketBytes - sizeof(ip6_hdr) - 1, 'A');
-    QUIC_LOG(INFO) << "Sending server -> client long data";
-    server_peer_->ProcessPacketFromNetwork(TestPacketIn(long_data));
-    runner_.Run();
-    if (use_datagrams) {
-      ExpectICMPTooBigResponse(
-          server_writer_->data(),
-          server_peer_->connection()->GetGuaranteedLargestDatagramPayload(),
-          TestPacketOut(long_data));
-    } else {
-      EXPECT_THAT(client_packets_to_network_,
-                  Contains(TestPacketOut(long_data)));
-    }
-    EXPECT_THAT(server_writer_->data(),
-                Not(Contains(TestPacketOut(long_data))));
-    EXPECT_EQ(0u, server_peer_->GetNumActiveStreams());
-    EXPECT_EQ(0u, client_peer_->GetNumActiveStreams());
-
-    QUIC_LOG(INFO) << "Sending client -> server long data";
-    client_peer_->ProcessPacketFromNetwork(TestPacketIn(long_data));
-    runner_.Run();
-    if (use_datagrams) {
-      ExpectICMPTooBigResponse(
-          client_packets_to_network_,
-          client_peer_->connection()->GetGuaranteedLargestDatagramPayload(),
-          TestPacketIn(long_data));
-    } else {
-      EXPECT_THAT(server_writer_->data(), Contains(TestPacketOut(long_data)));
-    }
-    EXPECT_FALSE(client_peer_->EarlyDataAccepted());
-    EXPECT_FALSE(client_peer_->ReceivedInchoateReject());
-    EXPECT_THAT(client_peer_->GetNumReceivedServerConfigUpdates(), Eq(0));
-
-    if (!use_datagrams) {
-      EXPECT_THAT(client_peer_->GetNumStreamedPackets(), Eq(1));
-      EXPECT_THAT(server_peer_->GetNumStreamedPackets(), Eq(1));
-    }
-
-    if (use_datagrams) {
-      EXPECT_THAT(client_peer_->GetNumEphemeralPackets(), Eq(0));
-      EXPECT_THAT(server_peer_->GetNumEphemeralPackets(), Eq(0));
-      EXPECT_THAT(client_peer_->GetNumDatagramPackets(), Eq(2));
-      EXPECT_THAT(server_peer_->GetNumDatagramPackets(), Eq(2));
-    } else {
-      EXPECT_THAT(client_peer_->GetNumEphemeralPackets(), Eq(2));
-      EXPECT_THAT(server_peer_->GetNumEphemeralPackets(), Eq(2));
-      EXPECT_THAT(client_peer_->GetNumDatagramPackets(), Eq(0));
-      EXPECT_THAT(server_peer_->GetNumDatagramPackets(), Eq(0));
-    }
-
-    // All streams are ephemeral and should be gone.
-    EXPECT_EQ(0u, server_peer_->GetNumActiveStreams());
-    EXPECT_EQ(0u, client_peer_->GetNumActiveStreams());
-  }
-
   // Test that client and server are not connected after handshake failure.
   void TestDisconnectAfterFailedHandshake() {
     EXPECT_FALSE(client_peer_->IsEncryptionEstablished());
@@ -560,20 +487,76 @@ INSTANTIATE_TEST_SUITE_P(Tests, QboneSessionTest,
                          ::testing::ValuesIn(GetTestParams()),
                          ::testing::PrintToStringParamName());
 
-TEST_P(QboneSessionTest, StreamConnection) {
-  CreateClientAndServerSessions();
-  client_peer_->set_send_packets_as_datagrams(false);
-  server_peer_->set_send_packets_as_datagrams(false);
-  StartHandshake();
-  TestStreamConnection(false);
-}
-
 TEST_P(QboneSessionTest, Datagrams) {
   CreateClientAndServerSessions();
-  client_peer_->set_send_packets_as_datagrams(true);
-  server_peer_->set_send_packets_as_datagrams(true);
   StartHandshake();
-  TestStreamConnection(true);
+  // Test handshake establishment and sending/receiving of data for two
+  // directions.
+  ASSERT_TRUE(server_peer_->OneRttKeysAvailable());
+  ASSERT_TRUE(client_peer_->OneRttKeysAvailable());
+  ASSERT_TRUE(server_peer_->IsEncryptionEstablished());
+  ASSERT_TRUE(client_peer_->IsEncryptionEstablished());
+
+  // Create an outgoing stream from the client and say hello.
+  QUIC_LOG(INFO) << "Sending client -> server";
+  client_peer_->ProcessPacketFromNetwork(TestPacketIn("hello"));
+  client_peer_->ProcessPacketFromNetwork(TestPacketIn("world"));
+  runner_.Run();
+  // The server should see the data, the client hasn't received
+  // anything yet.
+  EXPECT_THAT(server_writer_->data(),
+              ElementsAre(TestPacketOut("hello"), TestPacketOut("world")));
+  EXPECT_TRUE(client_packets_to_network_.empty());
+  EXPECT_EQ(0u, server_peer_->GetNumActiveStreams());
+  EXPECT_EQ(0u, client_peer_->GetNumActiveStreams());
+
+  // Let's pretend some service responds.
+  QUIC_LOG(INFO) << "Sending server -> client";
+  server_peer_->ProcessPacketFromNetwork(TestPacketIn("Hello Again"));
+  server_peer_->ProcessPacketFromNetwork(TestPacketIn("Again"));
+  runner_.Run();
+  EXPECT_THAT(server_writer_->data(),
+              ElementsAre(TestPacketOut("hello"), TestPacketOut("world")));
+  EXPECT_THAT(
+      client_packets_to_network_,
+      ElementsAre(TestPacketOut("Hello Again"), TestPacketOut("Again")));
+  EXPECT_EQ(0u, server_peer_->GetNumActiveStreams());
+  EXPECT_EQ(0u, client_peer_->GetNumActiveStreams());
+
+  // Try to send long payloads that are larger than the QUIC MTU but
+  // smaller than the QBONE max size.
+  std::string long_data(
+      QboneConstants::kMaxQbonePacketBytes - sizeof(ip6_hdr) - 1, 'A');
+  QUIC_LOG(INFO) << "Sending server -> client long data";
+  server_peer_->ProcessPacketFromNetwork(TestPacketIn(long_data));
+  runner_.Run();
+  ExpectICMPTooBigResponse(
+      server_writer_->data(),
+      server_peer_->connection()->GetGuaranteedLargestDatagramPayload(),
+      TestPacketOut(long_data));
+  EXPECT_THAT(server_writer_->data(), Not(Contains(TestPacketOut(long_data))));
+  EXPECT_EQ(0u, server_peer_->GetNumActiveStreams());
+  EXPECT_EQ(0u, client_peer_->GetNumActiveStreams());
+
+  QUIC_LOG(INFO) << "Sending client -> server long data";
+  client_peer_->ProcessPacketFromNetwork(TestPacketIn(long_data));
+  runner_.Run();
+  ExpectICMPTooBigResponse(
+      client_packets_to_network_,
+      client_peer_->connection()->GetGuaranteedLargestDatagramPayload(),
+      TestPacketIn(long_data));
+  EXPECT_FALSE(client_peer_->EarlyDataAccepted());
+  EXPECT_FALSE(client_peer_->ReceivedInchoateReject());
+  EXPECT_THAT(client_peer_->GetNumReceivedServerConfigUpdates(), Eq(0));
+
+  EXPECT_THAT(client_peer_->GetNumEphemeralPackets(), Eq(0));
+  EXPECT_THAT(server_peer_->GetNumEphemeralPackets(), Eq(0));
+  EXPECT_THAT(client_peer_->GetNumDatagramPackets(), Eq(2));
+  EXPECT_THAT(server_peer_->GetNumDatagramPackets(), Eq(2));
+
+  // All streams are ephemeral and should be gone.
+  EXPECT_EQ(0u, server_peer_->GetNumActiveStreams());
+  EXPECT_EQ(0u, client_peer_->GetNumActiveStreams());
 }
 
 TEST_P(QboneSessionTest, ClientRejection) {

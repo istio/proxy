@@ -193,7 +193,7 @@ TEST_F(MoqtSubscribeRequestStreamTest, ReceiveRequestOk) {
                   quic::QuicTimeDelta::FromSeconds(30));
       };
   parameters_.subscriber_priority = 20;
-  parameters_.subscription_filter.emplace(MoqtFilterType::kLargestObject);
+  parameters_.location_filter = LocationFilter::NextObjectFilter();
   QUICHE_EXPECT_OK(stream_->SendRequestUpdate(kRequestId, parameters_,
                                               std::move(callback),
                                               MoqtMessageType::kSubscribe));
@@ -209,9 +209,8 @@ TEST_F(MoqtSubscribeRequestStreamTest, ReceiveRequestOk) {
             quic::QuicTimeDelta::FromSeconds(30));
   EXPECT_EQ(stream_->track()->const_parameters().largest_object,
             Location(2, 4));
-  ASSERT_TRUE(
-      stream_->track()->const_parameters().subscription_filter.has_value());
-  EXPECT_EQ(stream_->track()->const_parameters().subscription_filter->start(),
+  ASSERT_TRUE(stream_->track()->const_parameters().location_filter.has_value());
+  EXPECT_EQ(stream_->track()->const_parameters().location_filter->start(),
             Location(2, 5));
   EXPECT_TRUE(callback_called);
 
@@ -259,6 +258,34 @@ TEST_F(MoqtSubscribeRequestStreamTest, ReceivePublishDone) {
   publish_done.stream_count = 5;
   EXPECT_CALL(mock_subscribe_visitor_, OnPublishDone(track_name_));
   QUICHE_EXPECT_OK(stream_->OnControlMessage(publish_done));
+  EXPECT_CALL(mock_remove_callback_, Call);
+}
+
+TEST_F(MoqtSubscribeRequestStreamTest, ReceivePublishStateNotify) {
+  MoqtPublishStateNotify notify;
+  notify.parameters.largest_object = Location(3, 4);
+  notify.parameters.set_forward(false);
+  notify.parameters.location_filter = LocationFilter::NextObjectFilter();
+  QUICHE_EXPECT_OK(
+      stream_->OnRawControlMessage(GenericMessageToRawControlMessage(notify)));
+  EXPECT_EQ(stream_->track()->const_parameters().largest_object,
+            Location(3, 4));
+  EXPECT_FALSE(stream_->track()->const_parameters().forward());
+  ASSERT_TRUE(stream_->track()->const_parameters().location_filter.has_value());
+  EXPECT_TRUE(
+      stream_->track()->const_parameters().location_filter->WindowKnown());
+  EXPECT_EQ(stream_->track()->const_parameters().location_filter->start(),
+            Location(3, 5));
+
+  // A subsequent PUBLISH_STATE_NOTIFY with a smaller LARGEST_OBJECT is
+  // rejected.
+  MoqtPublishStateNotify bad_notify;
+  bad_notify.parameters.largest_object = Location(3, 3);
+  bad_notify.parameters.set_forward(true);
+  EXPECT_THAT(stream_->OnRawControlMessage(
+                  GenericMessageToRawControlMessage(bad_notify)),
+              quiche::test::StatusIs(absl::StatusCode::kInvalidArgument,
+                                     "LARGEST_OBJECT cannot be decreased"));
   EXPECT_CALL(mock_remove_callback_, Call);
 }
 
@@ -440,6 +467,18 @@ TEST_F(MoqtSubscribeResponseStreamTest, ReceiveObjectAck) {
   QUICHE_EXPECT_OK(stream_->OnControlMessage(ack));
   // Test cleanup.
   EXPECT_CALL(mock_remove_callback_, Call(_));
+}
+
+TEST_F(MoqtSubscribeResponseStreamTest, ReceivePublishStateNotifyRejected) {
+  MoqtPublishStateNotify notify;
+  notify.parameters.largest_object = Location(1, 0);
+  notify.parameters.set_forward(false);
+  EXPECT_THAT(
+      stream_->OnRawControlMessage(GenericMessageToRawControlMessage(notify)),
+      quiche::test::StatusIs(
+          absl::StatusCode::kInvalidArgument,
+          "Received an unexpected message of type PUBLISH_STATE_NOTIFY on a "
+          "subscribe response stream"));
 }
 
 }  // namespace

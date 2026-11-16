@@ -1,0 +1,413 @@
+module(
+    name = "envoy_toolshed",
+    version = "0.5.22.envoy",
+    bazel_compatibility = [">=7.2.1"],
+)
+
+bazel_dep(name = "abseil-cpp", version = "20260817.0")
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+bazel_dep(name = "bazel_skylib", version = "1.9.2")
+bazel_dep(name = "boringssl", version = "0.20260813.0")
+bazel_dep(name = "buildifier_prebuilt", version = "10.0.1", repo_name = "buildifier")
+bazel_dep(name = "envoy_toolshed_jq", version = "0.5.22.envoy")
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "rules_cc", version = "0.2.25")
+bazel_dep(name = "rules_pkg", version = "1.3.0")
+bazel_dep(name = "rules_python", version = "2.4.5")
+bazel_dep(name = "rules_shell", version = "0.8.0")
+bazel_dep(name = "zstd", version = "1.5.7.bcr.3")
+
+#############################################################################################
+# deps: dev
+#############################################################################################
+
+bazel_dep(name = "curl", version = "8.11.0.bcr.4", dev_dependency = True)
+bazel_dep(name = "git", version = "2.55.0", dev_dependency = True)
+
+# Source pigz: the bins release (`//pigz/source:pigz_packages`) and toolshed's tests only.
+# Keep in sync with VERSIONS["pigz"].
+bazel_dep(name = "pigz", version = "2.8.bcr.3", dev_dependency = True)
+bazel_dep(name = "zlib-ng", version = "2.3.3.bcr.2", dev_dependency = True)
+
+# pigz against zlib-ng (zlib-compatible, faster at the same level) rather than zlib. The label is
+# canonical: the patched module still depends on `zlib`, so `@zlib-ng` is not visible from it.
+single_version_override(
+    module_name = "pigz",
+    patch_strip = 0,
+    patches = ["//pigz/private:pigz-zlib-ng.patch"],
+    version = "2.8.bcr.3",
+)
+
+bazel_dep(name = "protobuf", version = "35.1.bcr.envoy", dev_dependency = True, repo_name = "com_google_protobuf")
+bazel_dep(name = "rules_foreign_cc", version = "0.16.0", dev_dependency = True)
+bazel_dep(name = "rules_jq", version = "0.0.0", dev_dependency = True)
+bazel_dep(name = "sq", version = "1.4.0.envoy", dev_dependency = True)
+bazel_dep(name = "toolchains_llvm", version = "1.9.1.envoy", dev_dependency = True)
+bazel_dep(name = "v8", version = "14.6.202.10.envoy.1", dev_dependency = True)
+
+
+
+#############################################################################################
+# toolchains
+#############################################################################################
+
+bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
+bazel_lib_toolchains.jq(version = "1.7")
+bazel_lib_toolchains.yq()
+bazel_lib_toolchains.tar()
+use_repo(bazel_lib_toolchains, "bsd_tar_toolchains", "jq", "jq_toolchains", "yq", "yq_toolchains")
+
+buildifier_prebuilt = use_extension("@buildifier//:defs.bzl", "buildifier_prebuilt_deps_extension")
+buildifier_prebuilt.toolchains()
+use_repo(buildifier_prebuilt, "buildifier_prebuilt_toolchains")
+
+PYTHON_VERSION_DEFAULT = "3.12"
+
+PYTHON_VERSIONS = [
+    "3.11",
+    "3.12",
+]
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+
+[
+    python.toolchain(
+        is_default = python_version == PYTHON_VERSION_DEFAULT,
+        python_version = python_version,
+    )
+    for python_version in PYTHON_VERSIONS
+]
+
+use_repo(python, "python_3_11_host", "python_3_12_host")
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+
+[
+    pip.parse(
+        hub_name = "website_pip3",
+        python_version = python_version,
+        requirements_lock = "//website:requirements.txt",
+    )
+    for python_version in PYTHON_VERSIONS
+]
+
+use_repo(pip, "website_pip3")
+
+[
+    pip.parse(
+        hub_name = "cve_pip3",
+        python_version = python_version,
+        requirements_lock = "//dependency/cve:requirements_lock.txt",
+    )
+    for python_version in PYTHON_VERSIONS
+]
+
+use_repo(pip, "cve_pip3")
+
+reachability_test_ext = use_extension("//dependency/test:reachability_test_extension.bzl", "reachability_test_extension", dev_dependency = True)
+use_repo(reachability_test_ext, "apparent_excluded_repo", "apparent_excluded_transitive_repo")
+
+arch_alias_ext = use_extension("//repository:extensions.bzl", "arch_alias_extension", dev_dependency = True)
+arch_alias_ext.alias(
+    name = "toolshed_arch_alias_smoke",
+    aarch64 = "//platforms/rbe:linux_arm64",
+    amd64 = "//platforms/rbe:linux_x64",
+)
+use_repo(arch_alias_ext, "toolshed_arch_alias_smoke")
+
+# Load llvm_source for compile targets
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "llvm_source",
+    build_file_content = """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])""",
+    dev_dependency = True,
+    sha256 = "ad18b70e287954c3d62bc7e0b86e7b7af2adf87bcfce21c15fe717f101d7aace",
+    strip_prefix = "llvm-project-llvmorg-22.1.8",
+    url = "https://github.com/llvm/llvm-project/archive/llvmorg-22.1.8.tar.gz",
+)
+
+cert_epoch_ext = use_extension("//certs:extensions.bzl", "cert_epoch_extension")
+use_repo(cert_epoch_ext, "cert_epoch")
+
+git_prebuilt_ext = use_extension("//git:extensions.bzl", "git_prebuilt_extension")
+git_prebuilt_ext.setup()
+use_repo(git_prebuilt_ext, "cacert", "git_toolchains")
+
+hunspell_prebuilt_ext = use_extension("//hunspell:extensions.bzl", "hunspell_prebuilt_extension")
+use_repo(hunspell_prebuilt_ext, "hunspell_toolchains")
+
+pigz_prebuilt_ext = use_extension("//pigz:extensions.bzl", "pigz_prebuilt_extension")
+use_repo(pigz_prebuilt_ext, "pigz_toolchains")
+
+# Source hunspell and en_US dictionary: the bins release, toolshed's tests, and the source
+# toolchain consumers fall back to where there is no prebuilt (eg macOS). Fetched only if built.
+# Keep in sync with VERSIONS["hunspell"] and VERSIONS["dictionary_en"].
+http_archive(
+    name = "hunspell_src",
+    build_file = "//hunspell/private:hunspell.BUILD.bazel",
+    sha256 = "9c650ace31d4d8cc1da925a9507c3de1d50f1a54857af2f72429f517d5d53467",
+    strip_prefix = "hunspell-1.7.6",
+    url = "https://github.com/hunspell/hunspell/releases/download/v1.7.6/hunspell-1.7.6.tar.gz",
+)
+
+http_archive(
+    name = "dictionary_en",
+    build_file = "//hunspell/private:dictionary_en.BUILD.bazel",
+    sha256 = "160cba5e6c0230d43d70b0c929e498566ff2c3c4bcf840318d98ce28e31ee756",
+    strip_prefix = "package",
+    url = "https://registry.npmjs.org/dictionary-en/-/dictionary-en-4.0.0.tgz",
+)
+
+sq_prebuilt_ext = use_extension("//pgp:extensions.bzl", "sq_prebuilt_extension")
+sq_prebuilt_ext.setup()
+use_repo(sq_prebuilt_ext, "sq_toolchains")
+
+# Base sysroots shared by the LLVM and GCC toolchains.
+sysroot_ext = use_extension("//sysroot:extensions.bzl", "sysroot_extension", dev_dependency = True)
+sysroot_ext.setup()
+use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
+
+# libstdc++13 sysroot variant, exercised by //sysroot/test. Not used by the
+# toolchains: GCC supplies its own libstdc++ and must stay on the base sysroot.
+sysroot_ext.setup(
+    name_prefix = "libstdcxx",
+    stdcc_version = "13",
+)
+use_repo(sysroot_ext, "libstdcxx_sysroot_linux_amd64", "libstdcxx_sysroot_linux_arm64")
+
+macos_sysroot_test_repo = use_repo_rule("//sysroot:sysroot.bzl", "macos_sysroot")
+
+macos_sysroot_test_repo(
+    name = "sysroot_macos_empty",
+    dev_dependency = True,
+    version = "test",
+)
+
+macos_sysroot_build_ext = use_extension("//sysroot:extensions.bzl", "macos_sysroot_build_extension", dev_dependency = True)
+use_repo(macos_sysroot_build_ext, "macos_sdk_pkg", "pkgutil_linux_amd64")
+
+# Prebuilt wee8 repos plus the @wee8_source fallback used by //v8:wee8 on
+# platforms with no prebuilt. Consumers opt in to a source build with
+# `setup(source = "@v8//:wee8")`; toolshed does so only in its dev graph so v8
+# stays a dev dependency.
+wee8_prebuilt_ext = use_extension("//v8:extensions.bzl", "wee8_prebuilt_extension")
+wee8_prebuilt_ext.setup()
+use_repo(wee8_prebuilt_ext, "wee8_prebuilt_aarch64", "wee8_prebuilt_aarch64_libstdcxx", "wee8_prebuilt_x86_64", "wee8_prebuilt_x86_64_libstdcxx", "wee8_source")
+
+wee8_source_ext = use_extension("//v8:extensions.bzl", "wee8_prebuilt_extension", dev_dependency = True)
+wee8_source_ext.setup(source = "@v8//:wee8")
+
+# Setup sanitizer libraries (MSAN and TSAN) - example for downstream consumers
+# Uncomment to use in your MODULE.bazel:
+# sanitizer_ext = use_extension("@envoy_toolshed//compile:extensions.bzl", "sanitizer_extension")
+# sanitizer_ext.setup()  # Uses default versions from VERSIONS
+# # Or with custom versions:
+# # sanitizer_ext.setup(
+# #     msan_version = "0.1.34",
+# #     msan_sha256 = "534e5e6893f177f891d78d6e85a80c680c84f0abd64681f8ddbf2f5457e97a52",
+# #     tsan_version = "0.1.34",
+# #     tsan_sha256 = "2cd571a07014972ff9bc0f189c5725c2ea121aeab0daa4c27ef171842ea13985",
+# # )
+# use_repo(sanitizer_ext, "msan_libs", "tsan_libs")
+
+# Setup prebuilt libcxx for cross-compilation - example for downstream consumers
+# Uncomment to use in your MODULE.bazel:
+# libcxx_libs_ext = use_extension("@envoy_toolshed//compile:extensions.bzl", "libcxx_libs_extension")
+# libcxx_libs_ext.setup()
+# use_repo(libcxx_libs_ext, "libcxx_libs_aarch64", "libcxx_libs_x86_64")
+
+# Consumers configure their own grcov repository for coverage_report.
+grcov_ext = use_extension("//coverage/grcov:extensions.bzl", "grcov_extension", dev_dependency = True)
+grcov_ext.setup()
+use_repo(grcov_ext, "grcov")
+
+# Setup glint for code style linting - example for downstream consumers
+# Uncomment to use in your MODULE.bazel:
+# glint_ext = use_extension("@envoy_toolshed//format/glint:extensions.bzl", "glint_extension")
+# glint_ext.setup(bins_release_version = "0.1.21")
+# use_repo(glint_ext, "glint")
+
+gcc = use_extension("//toolchains/gcc:extensions.bzl", "gcc_extension", dev_dependency = True)
+gcc.toolchain(
+    name = "gcc_linux_x86_64",
+    arch = "x86_64",
+    dwp = "@llvm_minimal_linux_x64//:bin/llvm-dwp",
+    lld = "@llvm_minimal_linux_x64//:bin/lld",
+    sysroot = "@sysroot_linux_amd64//sysroot",
+)
+gcc.toolchain(
+    name = "gcc_linux_aarch64",
+    arch = "aarch64",
+    dwp = "@llvm_minimal_linux_x64//:bin/llvm-dwp",
+    lld = "@llvm_minimal_linux_x64//:bin/lld",
+    sysroot = "@sysroot_linux_arm64//sysroot",
+)
+use_repo(gcc, "gcc_host", "gcc_host_platform", "gcc_linux_aarch64", "gcc_linux_x86_64")
+
+# This needs to be before llvm to win in transitions.
+register_toolchains(
+    "//toolchains/gcc:linux_x64_toolchain",
+    "//toolchains/gcc:linux_arm64_toolchain",
+    # The fallback, after the archives.
+    "//toolchains/gcc:linux_host_toolchain",
+    dev_dependency = True,
+)
+
+# Configure LLVM toolchain
+
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency = True)
+llvm.cxx_cross_lib(
+    name = "llvm_toolchain",
+    label = "@libcxx_libs_aarch64",
+    targets = ["linux-aarch64"],
+)
+llvm.cxx_cross_lib(
+    name = "llvm_toolchain",
+    label = "@libcxx_libs_x86_64",
+    targets = ["linux-x86_64"],
+)
+
+# The base sysroot ships libgcc_s.so.1 (+ an unversioned libgcc_s.so ld script)
+# but no libgcc.a/libgcc_eh.a or GCC crt objects. Use compiler-rt for builtins
+# and crt files; keep libgcc_s as the (as-needed) fallback unwinder so
+# libunwind=False still resolves _Unwind_* while libunwind=True leaves no
+# libgcc_s NEEDED entry.
+llvm.toolchain(
+    name = "llvm_toolchain",
+    extra_link_flags = {
+        "linux-aarch64": [
+            "-rtlib=compiler-rt",
+            "-unwindlib=libgcc",
+        ],
+        "linux-x86_64": [
+            "-rtlib=compiler-rt",
+            "-unwindlib=libgcc",
+        ],
+    },
+    llvm_version = "22.1.8",
+)
+llvm.toolchain_root(
+    name = "llvm_toolchain",
+    label = "@llvm_minimal_linux_x64",
+    targets = ["linux-x86_64"],
+)
+llvm.toolchain_root(
+    name = "llvm_toolchain",
+    label = "@llvm_minimal_linux_arm64",
+    targets = ["linux-aarch64"],
+)
+llvm.toolchain_root(
+    name = "llvm_toolchain",
+    label = "@llvm_minimal_macos_arm64",
+    targets = ["darwin-aarch64"],
+)
+llvm.sysroot(
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_amd64//sysroot",
+    targets = ["linux-x86_64"],
+)
+llvm.sysroot(
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_arm64//sysroot",
+    targets = ["linux-aarch64"],
+)
+llvm.extra_exec_compatible_with(
+    name = "llvm_toolchain",
+    constraints = ["//compile:llvm_worker"],
+)
+use_repo(llvm, "llvm_toolchain")
+
+register_toolchains(
+    "@llvm_toolchain//:all",
+    dev_dependency = True,
+)
+
+# Stub OpenPGP signer used by //pgp/test analysis tests. It is registered first
+# in dev mode so those tests resolve the stub instead of the default `sq` signer.
+register_toolchains(
+    "//pgp/test:stub_toolchain",
+    dev_dependency = True,
+)
+
+# Prebuilt sq toolchains are registered after the stub so dev-only analysis
+# tests still resolve the stub first, and before the dev-only source fallback.
+register_toolchains("@sq_toolchains//:all")
+
+sq_source_ext = use_extension("//pgp:extensions.bzl", "sq_source_extension", dev_dependency = True)
+sq_source_ext.setup(sq = "@sq//:sq_from_source")
+use_repo(sq_source_ext, "envoy_toolshed_sq_source")
+
+register_toolchains(
+    "@envoy_toolshed_sq_source//:source_toolchain",
+    dev_dependency = True,
+)
+
+# Prebuilt git toolchains are registered first so constrained matches win before
+# the unconstrained source fallback.
+register_toolchains("@git_toolchains//:all")
+
+git_source_ext = use_extension("//git:extensions.bzl", "git_source_extension", dev_dependency = True)
+git_source_ext.setup(
+    cacert = "@cacert//file",
+    git = "@git//:git",
+    git_remote_http = "@git//:git-remote-http",
+    ssl_lib = "@curl//:ssl_lib",
+    templates = "@git//:templates",
+)
+use_repo(git_source_ext, "envoy_toolshed_git_source")
+
+register_toolchains(
+    "@envoy_toolshed_git_source//:source_toolchain",
+    dev_dependency = True,
+)
+
+# Test-only toolchain over the host's git, exercising the hub's host fallback mechanism
+# on this host (see //git/test:toolchain_host_test). Not registered: tests force it.
+git_host_test = use_repo_rule("//git/test:host_repo.bzl", "git_host_test")
+
+git_host_test(
+    name = "envoy_toolshed_git_host_test",
+    dev_dependency = True,
+)
+
+# Prebuilt hunspell toolchains first, so constrained matches win before the source fallback,
+# which is registered for consumers too: platforms without a prebuilt build hunspell from source.
+register_toolchains("@hunspell_toolchains//:all")
+
+register_toolchains(
+    "//hunspell/source:source_toolchain_linux",
+    "//hunspell/source:source_toolchain_macos",
+)
+
+# pigz: the prebuilt toolchains, then (toolshed only) the source build, then a toolchain that
+# fails, naming the platform without a pigz. Consumers get the prebuilts only: a consumer that
+# wants pigz elsewhere registers its own source toolchain (see //pigz:README.md).
+register_toolchains("@pigz_toolchains//:all")
+
+register_toolchains(
+    "//pigz/source:source_toolchain_linux",
+    "//pigz/source:source_toolchain_macos",
+    dev_dependency = True,
+)
+
+register_toolchains("//pigz:unavailable_toolchain")
+
+libcxx_ext = use_extension("//compile:extensions.bzl", "libcxx_extension", dev_dependency = True)
+use_repo(libcxx_ext, "llvm_libcxx_aarch64", "llvm_libcxx_x86_64")
+
+libcxx_libs_ext = use_extension("//compile:extensions.bzl", "libcxx_libs_extension", dev_dependency = True)
+libcxx_libs_ext.setup()
+use_repo(libcxx_libs_ext, "libcxx_libs_aarch64", "libcxx_libs_x86_64")
+
+# Set up raw LLVM tarball download repos needed to build //compile:llvm_minimal_* targets.
+# These are dev_dependency only — consumers use the llvm_minimal_* http_archive repos instead.
+llvm_minimal_build_ext = use_extension("//compile:extensions.bzl", "llvm_minimal_build_extension", dev_dependency = True)
+use_repo(llvm_minimal_build_ext, "llvm_tarball_linux_arm64", "llvm_tarball_linux_x86_64", "llvm_tarball_macos_arm64")
+
+llvm_minimal_ext = use_extension("//compile:extensions.bzl", "llvm_minimal_extension", dev_dependency = True)
+llvm_minimal_ext.setup()
+use_repo(llvm_minimal_ext, "llvm_minimal_linux_arm64", "llvm_minimal_linux_x64", "llvm_minimal_macos_arm64")
+
+llvm_toolchain_alias_ext = use_extension("//compile:extensions.bzl", "llvm_toolchain_alias_extension", dev_dependency = True)
+use_repo(llvm_toolchain_alias_ext, "llvm_toolchain_llvm")

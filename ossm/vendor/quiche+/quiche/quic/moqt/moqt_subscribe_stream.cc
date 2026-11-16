@@ -175,6 +175,14 @@ absl::Status MoqtSubscribeRequestStream::OnControlMessage(
   return absl::OkStatus();
 }
 
+absl::Status MoqtSubscribeRequestStream::OnControlMessage(
+    const MoqtPublishStateNotify& message) {
+  if (track_ == nullptr) {
+    return absl::OkStatus();
+  }
+  return track_->Update(message.parameters);
+}
+
 void MoqtSubscribeRequestStream::Detach() {
   if (remove_callback_ != nullptr) {
     LiveSubscriber::RemoveCallback remove_callback =
@@ -261,7 +269,7 @@ absl::Status MoqtSubscribeResponseStream::OnControlMessage(
     return SendRequestError(RequestErrorCode::kInternalError, std::nullopt,
                             "no subscription");
   }
-  if (!subscription_->established() || IncomingUpdatesQueued()) {
+  if (!subscription_->largest_object_known() || IncomingUpdatesQueued()) {
     // There are requests waiting in the queue. Buffer this one.
     QueueIncomingUpdate(message.parameters);
     return absl::OkStatus();

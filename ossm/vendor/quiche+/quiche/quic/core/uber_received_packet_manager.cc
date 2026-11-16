@@ -233,14 +233,14 @@ void UberReceivedPacketManager::set_max_ack_ranges(size_t max_ack_ranges) {
   }
 }
 
-void UberReceivedPacketManager::set_save_timestamps(bool save_timestamps) {
-  if (!supports_multiple_packet_number_spaces_ && save_timestamps) {
+void UberReceivedPacketManager::SaveReceiveTimestamps(size_t max_timestamps) {
+  if (!supports_multiple_packet_number_spaces_ && max_timestamps > 0) {
     QUIC_BUG(recv_timestamps_with_gquic)
         << "Trying to enable QUIC receive timestamps for non-IETF QUIC";
     return;
   }
-  received_packet_managers_[APPLICATION_DATA].set_save_timestamps(
-      save_timestamps);
+  received_packet_managers_[APPLICATION_DATA].SaveReceiveTimestamps(
+      max_timestamps);
 }
 
 void UberReceivedPacketManager::set_receive_timestamp_basis(

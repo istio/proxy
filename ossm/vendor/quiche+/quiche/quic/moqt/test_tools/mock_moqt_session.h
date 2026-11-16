@@ -57,6 +57,7 @@ class MockSessionToPublisherInterface : public SessionToPublisherInterface {
   MOCK_METHOD(const quic::QuicClock*, clock, (), (override));
   MOCK_METHOD(MoqtTraceRecorder&, trace_recorder, (), (override));
   MOCK_METHOD(webtransport::Session*, session, (), (override));
+  MOCK_METHOD(uint64_t, NextRequestId, (), (override));
 
   quiche::QuicheWeakPtrFactory<SessionToPublisherInterface> weak_ptr_factory_;
 };

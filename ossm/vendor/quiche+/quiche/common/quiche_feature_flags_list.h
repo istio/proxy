@@ -25,6 +25,7 @@ QUICHE_FLAG(bool, quiche_reloadable_flag_quic_bundle_crypto_retransmits, false, 
 QUICHE_FLAG(bool, quiche_reloadable_flag_quic_clear_packet_on_serialization_failure, false, false, "If true, clear QuicPacketCreator state when serialization failure.")
 QUICHE_FLAG(bool, quiche_reloadable_flag_quic_client_check_blockage_before_on_can_write, false, false, "If true, quic clients will only call OnCanWrite() upon write events if the writer is unblocked.")
 QUICHE_FLAG(bool, quiche_reloadable_flag_quic_close_on_idle_timeout, false, false, "If true, closes the connection if it has exceeded the idle timeout when deciding whether to open a stream.")
+QUICHE_FLAG(bool, quiche_reloadable_flag_quic_coalesce_ping_with_last_packet, false, false, "When true, QuicConnection coalesces a PING frame of a lower encryption level with the last packet of a flight during the handshake when an earlier packet in that lower space is unacknowledged.")
 QUICHE_FLAG(bool, quiche_reloadable_flag_quic_conservative_bursts, false, false, "If true, set burst token to 2 in cwnd bootstrapping experiment.")
 QUICHE_FLAG(bool, quiche_reloadable_flag_quic_conservative_cwnd_and_pacing_gains, false, false, "If true, uses conservative cwnd gain and pacing gain when cwnd gets bootstrapped.")
 QUICHE_FLAG(bool, quiche_reloadable_flag_quic_default_enable_5rto_blackhole_detection2, true, true, "If true, default-enable 5RTO blachole detection.")

@@ -581,8 +581,15 @@ bool MoqtSession::SubscribeUpdate(const FullTrackName& name,
 bool MoqtSession::PublishUpdate(const FullTrackName& name,
                                 const MessageParameters& parameters,
                                 MoqtResponseCallback response_callback) {
-  // TODO(martinduke): Implement this.
-  return false;
+  if (is_closing_) {
+    return true;
+  }
+  QUICHE_DCHECK(name.IsValid());
+  auto it = subscribed_track_names_.find(name);
+  if (it == subscribed_track_names_.end()) {
+    return true;
+  }
+  return it->second->PublishUpdate(parameters, std::move(response_callback));
 }
 
 void MoqtSession::Unsubscribe(const FullTrackName& name) {
@@ -616,7 +623,7 @@ bool MoqtSession::Publish(
   }
   auto it = subscribed_track_names_.find(name);
   if (it != subscribed_track_names_.end()) {
-    if (it->second->established()) {
+    if (it->second->largest_object_known()) {
       QUICHE_DLOG(INFO) << ENDPOINT << "Tried to send PUBLISH for track "
                         << name << " which is already published";
       return false;
@@ -654,7 +661,7 @@ bool MoqtSession::Publish(
   MessageParameters sanitized_parameters = parameters;
   SanitizeParameters(sanitized_parameters, MoqtMessageType::kPublish);
   auto publish_state = std::make_unique<LivePublisher>(
-      framer_, publisher, stream_visitor.get(), next_request_id_,
+      framer_, publisher, stream_visitor.get(), NextRequestId(),
       next_local_track_alias_, sanitized_parameters,
       weak_ptr_factory_for_publishers_.Create(), true);
   LivePublisher* publisher_ptr = publish_state.get();
@@ -663,7 +670,8 @@ bool MoqtSession::Publish(
   MoqtPublishRequestStream* stream_visitor_ptr = stream_visitor.get();
   stream->SetVisitor(std::move(stream_visitor));
   stream_visitor_ptr->BindStream(stream);
-  next_request_id_ += 2;
+  subscribed_track_names_.emplace(name, publisher_ptr);
+  published_subscriptions_.emplace(publisher_ptr->request_id(), publisher_ptr);
   ++next_local_track_alias_;
   publisher->AddObjectListener(publisher_ptr, sanitized_parameters);
   return true;
@@ -747,8 +755,7 @@ std::unique_ptr<MoqtFetchTask> MoqtSession::RelativeJoiningFetch(
     const MessageParameters& parameters) {
   QUICHE_DCHECK(name.IsValid());
   MessageParameters subscribe_parameters = parameters;
-  subscribe_parameters.subscription_filter.emplace(
-      MoqtFilterType::kLargestObject);
+  subscribe_parameters.location_filter = LocationFilter::NextObjectFilter();
   uint64_t subscribe_request_id = next_request_id_;
   if (!Subscribe(name, visitor, subscribe_parameters)) {
     return nullptr;

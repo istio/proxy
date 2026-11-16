@@ -489,19 +489,34 @@ TEST_F(MoqtFramerSimpleTest, AllDatagramTypes) {
 }
 
 TEST_F(MoqtFramerSimpleTest, AllSubscribeInputs) {
-  for (auto filter :
-       {MoqtFilterType::kNextGroupStart, MoqtFilterType::kLargestObject,
-        MoqtFilterType::kAbsoluteStart, MoqtFilterType::kAbsoluteRange}) {
+  for (auto filter : {MoqtLocationFilterType::kNoFilter,
+                      MoqtLocationFilterType::kRelativeStart,
+                      MoqtLocationFilterType::kAbsoluteStart,
+                      MoqtLocationFilterType::kAbsoluteStartGroupEnd,
+                      MoqtLocationFilterType::kAbsoluteRange,
+                      MoqtLocationFilterType::kNextObject}) {
     MessageParameters parameters = SubscribeForTest();
     switch (filter) {
-      case MoqtFilterType::kAbsoluteRange:
-        parameters.subscription_filter.emplace(Location(4, 3));
+      case MoqtLocationFilterType::kNoFilter:
+        parameters.location_filter = LocationFilter::NoLocationFilter();
         break;
-      case MoqtFilterType::kAbsoluteStart:
-        parameters.subscription_filter.emplace(Location(4, 3), 5);
+      case MoqtLocationFilterType::kRelativeStart:
+        parameters.location_filter = LocationFilter::RelativeStartFilter(2);
         break;
-      default:
-        parameters.subscription_filter.emplace(filter);
+      case MoqtLocationFilterType::kAbsoluteStart:
+        parameters.location_filter =
+            LocationFilter::AbsoluteStartFilter(Location(4, 3));
+        break;
+      case MoqtLocationFilterType::kAbsoluteStartGroupEnd:
+        parameters.location_filter =
+            LocationFilter::AbsoluteStartGroupEndFilter(Location(4, 3), 5);
+        break;
+      case MoqtLocationFilterType::kAbsoluteRange:
+        parameters.location_filter =
+            LocationFilter::AbsoluteRangeFilter(Location(4, 3), Location(5, 2));
+        break;
+      case MoqtLocationFilterType::kNextObject:
+        parameters.location_filter = LocationFilter::NextObjectFilter();
         break;
     }
     MoqtSubscribe subscribe = {/*request_id=*/3, FullTrackName({"foo", "abcd"}),
