@@ -19,6 +19,7 @@
 #include "absl/strings/string_view.h"
 #include "quiche/quic/moqt/moqt_bidi_stream.h"
 #include "quiche/quic/moqt/moqt_error.h"
+#include "quiche/quic/moqt/moqt_fetch_task.h"
 #include "quiche/quic/moqt/moqt_framer.h"
 #include "quiche/quic/moqt/moqt_key_value_pair.h"
 #include "quiche/quic/moqt/moqt_messages.h"
@@ -44,7 +45,8 @@ LivePublisher::LivePublisher(
       bidi_stream_(bidi_stream),
       visitor_(visitor),
       request_id_(request_id),
-      established_(is_publish),
+      largest_object_known_(is_publish),
+      is_publish_(is_publish),
       track_alias_(track_alias),
       framer_(framer),
       parameters_(parameters),
@@ -129,6 +131,53 @@ void LivePublisher::Update(const MessageParameters& parameters,
   }
 }
 
+bool LivePublisher::PublishUpdate(const MessageParameters& parameters,
+                                  MoqtResponseCallback response_callback) {
+  SessionToPublisherInterface* session_info = visitor();
+  if (session_info == nullptr) {
+    return false;
+  }
+  bool send_request_update =
+      !parameters.authorization_tokens.empty() && is_publish_;
+  bool send_notify =
+      parameters.location_filter.has_value() || parameters.forward_has_value();
+  if (!send_request_update && !send_notify) {
+    return false;
+  }
+  if (send_notify) {
+    if (!largest_object_known_) {
+      QUICHE_BUG(moqt_publish_notify_before_largest_object_known)
+          << "PublishUpdate called before largest_object_known_ is set";
+      return false;
+    }
+    MoqtPublishStateNotify notify;
+    notify.parameters.location_filter = parameters.location_filter;
+    if (parameters.forward_has_value()) {
+      notify.parameters.set_forward(parameters.forward());
+    }
+    if (track_publisher_ != nullptr) {
+      notify.parameters.largest_object = track_publisher_->largest_location();
+    }
+    // Because notify.parameters is custom-built, calling SanitizeParameters()
+    // is a no-op. Don't bother to call it.
+    parameters_.Update(notify.parameters);
+    if (!bidi_stream_
+             ->SendOrBufferMessage(framer_.SerializePublishStateNotify(notify))
+             .ok()) {
+      return false;
+    }
+  }
+  if (!send_request_update) {
+    std::move(response_callback)(MessageParameters());
+    return true;
+  }
+  return bidi_stream_
+      ->SendRequestUpdate(session_info->NextRequestId(), parameters,
+                          std::move(response_callback),
+                          MoqtMessageType::kPublish)
+      .ok();
+}
+
 void LivePublisher::ResetAllStreams() {
   if (ignore_reset_all_streams_) {
     return;
@@ -148,14 +197,19 @@ void LivePublisher::OnSubscribeAccepted() {
       track_publisher_->properties().object_delivery_timeout();
   default_publisher_priority_ =
       track_publisher_->properties().default_publisher_priority();
-  if (established_) {
-    return;  // It's a PUBLISH.
+  if (is_publish_) {
+    return;
   }
-  established_ = true;
+  if (largest_object_known_) {
+    QUICHE_BUG(moqt_subscribe_accepted_called_twice)
+        << "OnSubscribeAccepted called more than once";
+    return;
+  }
+  largest_object_known_ = true;
   parameters_.largest_object = track_publisher_->largest_location();
-  if (parameters_.subscription_filter.has_value() &&
-      !parameters_.subscription_filter->WindowKnown()) {
-    parameters_.subscription_filter->OnLargestObject(
+  if (parameters_.location_filter.has_value() &&
+      !parameters_.location_filter->WindowKnown()) {
+    parameters_.location_filter->ConvertRelativeToAbsolute(
         parameters_.largest_object);
   }
   MoqtSubscribeOk subscribe_ok;

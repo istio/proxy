@@ -503,9 +503,12 @@ class QUICHE_EXPORT QuicPacketCreator {
                                         EncryptionLevel level);
 
   // Serializes |coalesced| to provided |buffer|, returns coalesced packet
-  // length if serialization succeeds. Otherwise, returns 0.
+  // length if serialization succeeds. Otherwise, returns 0. If
+  // |allow_unpadded_server_initial| is true, a coalesced server INITIAL packet
+  // without CRYPTO frames will not be padded to the max packet length.
   size_t SerializeCoalescedPacket(const QuicCoalescedPacket& coalesced,
-                                  char* buffer, size_t buffer_len);
+                                  char* buffer, size_t buffer_len,
+                                  bool allow_unpadded_server_initial = false);
 
   // Returns true if max_packet_length_ is currently a soft value.
   bool HasSoftMaxPacketLength() const;

@@ -16,6 +16,7 @@
 #include "absl/algorithm/container.h"
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/functional/overload.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
@@ -239,7 +240,7 @@ class StructuredHeaderParser {
       SkipOWS();
       if (input_.empty()) return std::nullopt;
     }
-    return Dictionary(std::move(members));
+    return Dictionary(Dictionary::unique_keys, std::move(members));
   }
 
   // Parses a Parameterised List ([SH09] 4.2.5).
@@ -994,6 +995,20 @@ Dictionary::Dictionary(const Dictionary&) = default;
 Dictionary& Dictionary::operator=(const Dictionary&) = default;
 Dictionary::Dictionary(Dictionary&&) noexcept = default;
 Dictionary& Dictionary::operator=(Dictionary&&) noexcept = default;
+Dictionary::Dictionary(unique_keys_t,
+                       std::vector<DictionaryMember> members) noexcept
+    : members_(std::move(members)) {
+  QUICHE_DCHECK([this] {
+    absl::flat_hash_set<absl::string_view> keys;
+    keys.reserve(members_.size());
+    for (const auto& [key, unused_value] : members_) {
+      if (!keys.insert(key).second) {
+        return false;
+      }
+    }
+    return true;
+  }()) << "Dictionary initialized with duplicate keys";
+}
 Dictionary::Dictionary(std::vector<DictionaryMember> members) noexcept
     : members_(std::move(members)) {}
 Dictionary::~Dictionary() = default;

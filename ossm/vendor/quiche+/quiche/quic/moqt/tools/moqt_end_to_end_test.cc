@@ -130,7 +130,7 @@ TEST_F(MoqtEndToEndTest, HandshakeFailed404) {
 
 TEST_F(MoqtEndToEndTest, CustomParametersHandshake) {
   MoqtSessionParameters server_parameters;
-  server_parameters.deliver_partial_objects = true;
+  server_parameters.max_undelivered_object = 0;
   MoqtSession* server_session = nullptr;
   auto server_backend = [&](absl::string_view /*path*/)
       -> absl::StatusOr<MoqtConfigureSessionCallback> {
@@ -170,8 +170,8 @@ TEST_F(MoqtEndToEndTest, CustomParametersHandshake) {
                 .max_auth_token_cache_size,
             200);
   ASSERT_NE(server_session, nullptr);
-  EXPECT_TRUE(
-      MoqtSessionPeer::GetParameters(server_session).deliver_partial_objects);
+  EXPECT_EQ(
+      MoqtSessionPeer::GetParameters(server_session).max_undelivered_object, 0);
 }
 
 }  // namespace

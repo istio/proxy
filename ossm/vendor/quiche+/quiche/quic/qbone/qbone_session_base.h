@@ -5,15 +5,18 @@
 #ifndef QUICHE_QUIC_QBONE_QBONE_SESSION_BASE_H_
 #define QUICHE_QUIC_QBONE_QBONE_SESSION_BASE_H_
 
+#include <cstdint>
 #include <memory>
 
 #include "absl/strings/string_view.h"
-#include "quiche/quic/core/quic_crypto_server_stream_base.h"
+#include "quiche/quic/core/frames/quic_stream_frame.h"
+#include "quiche/quic/core/quic_config.h"
+#include "quiche/quic/core/quic_connection.h"
 #include "quiche/quic/core/quic_crypto_stream.h"
-#include "quiche/quic/core/quic_error_codes.h"
 #include "quiche/quic/core/quic_session.h"
+#include "quiche/quic/core/quic_types.h"
+#include "quiche/quic/core/quic_versions.h"
 #include "quiche/quic/platform/api/quic_export.h"
-#include "quiche/quic/qbone/qbone_packet_writer.h"
 #include "quiche/quic/qbone/qbone_stream.h"
 
 namespace quic {
@@ -55,10 +58,6 @@ class QUIC_EXPORT_PRIVATE QboneSessionBase : public QuicSession {
   // session used an ephemeral stream instead.
   uint64_t GetNumFallbackToStream() const;
 
-  void set_send_packets_as_datagrams(bool send_packets_as_datagrams) {
-    send_packets_as_datagrams_ = send_packets_as_datagrams;
-  }
-
  protected:
   virtual std::unique_ptr<QuicCryptoStream> CreateCryptoStream() = 0;
   virtual void SendErrorPacketToNetwork(absl::string_view packet) = 0;
@@ -79,14 +78,9 @@ class QUIC_EXPORT_PRIVATE QboneSessionBase : public QuicSession {
   // returns an unowned pointer to the stream for convenience.
   QuicStream* ActivateDataStream(std::unique_ptr<QuicStream> stream);
 
-  // Accepts a given packet from the network and writes it out to the QUIC
-  // stream. This will send as a QUIC Datagram or create an ephemeral stream per
-  // packet.
+  // Accepts a given packet from the network and writes it out as a QUIC
+  // Datagram.
   void SendPacketToPeer(absl::string_view packet);
-
-  // If true, send QUIC DATAGRAM (aka DATAGRAM) frames instead of ephemeral
-  // streams. Note that receiving DATAGRAM frames is always supported.
-  bool send_packets_as_datagrams_ = true;
 
  private:
   // Used for the crypto handshake.

@@ -4,6 +4,7 @@
 
 #include "quiche/quic/moqt/moqt_uni_stream.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -637,8 +638,8 @@ class IncomingDataStreamTest : public quic::test::QuicTest {
       : mock_stream_(14),
         ftn_("foo", "bar"),
         subscribe_message_(1, ftn_, MessageParameters()) {
-    EXPECT_CALL(session_, deliver_partial_objects())
-        .WillRepeatedly(Return(false));
+    EXPECT_CALL(session_, max_undelivered_object())
+        .WillRepeatedly(Return(1000));
     track_ = std::make_unique<LiveSubscriber>(subscribe_message_, &visitor_,
                                               nullptr);
     track_->set_track_alias(2);
@@ -751,8 +752,18 @@ TEST_F(IncomingDataStreamTest, OnObjectMessageBufferPartialObject) {
   stream_->OnObjectMessage(object, "bar", true);
 }
 
+TEST_F(IncomingDataStreamTest, OnObjectMessageExceedsMaxUndeliveredObject) {
+  ProcessStreamType(MoqtDataStreamType::Subgroup(0, 0, false, 0x80, true));
+  ProcessAlias(2);
+  MoqtObject object = kDefaultObject;
+  object.payload_length = 1001;
+  EXPECT_CALL(visitor_, OnObjectFragment).Times(0);
+  stream_->OnObjectMessage(object, "foo", false);
+  EXPECT_TRUE(mock_stream_.was_reset());
+}
+
 TEST_F(IncomingDataStreamTest, OnObjectMessageDontBufferPartialObject) {
-  EXPECT_CALL(session_, deliver_partial_objects()).WillRepeatedly(Return(true));
+  EXPECT_CALL(session_, max_undelivered_object()).WillRepeatedly(Return(0));
   ProcessStreamType(MoqtDataStreamType::Subgroup(0, 0, false, 0x80, true));
   ProcessAlias(2);
   MoqtObject object = kDefaultObject;
@@ -790,7 +801,7 @@ TEST_F(IncomingDataStreamTest, OnObjectMessageDontBufferPartialObject) {
 }
 
 TEST_F(IncomingDataStreamTest, PartialObjectFetch) {
-  EXPECT_CALL(session_, deliver_partial_objects()).WillRepeatedly(Return(true));
+  EXPECT_CALL(session_, max_undelivered_object()).WillRepeatedly(Return(0));
 
   uint8_t stream_header[] = {0x05, 0x03};
   mock_stream_.Receive(

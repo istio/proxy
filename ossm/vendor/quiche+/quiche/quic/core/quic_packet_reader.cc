@@ -4,9 +4,13 @@
 
 #include "quiche/quic/core/quic_packet_reader.h"
 
+#include <cstddef>
+#include <vector>
+
 #include "absl/base/macros.h"
 #include "quiche/quic/core/quic_packets.h"
 #include "quiche/quic/core/quic_process_packet_interface.h"
+#include "quiche/quic/core/quic_time.h"
 #include "quiche/quic/core/quic_udp_socket.h"
 #include "quiche/quic/core/quic_utils.h"
 #include "quiche/quic/platform/api/quic_bug_tracker.h"
@@ -19,18 +23,37 @@
 
 namespace quic {
 
-QuicPacketReader::QuicPacketReader()
-    : read_buffers_(kNumPacketsPerReadMmsgCall),
-      read_results_(kNumPacketsPerReadMmsgCall) {
-  QUICHE_DCHECK_EQ(read_buffers_.size(), read_results_.size());
-  for (size_t i = 0; i < read_results_.size(); ++i) {
-    read_results_[i].packet_buffer.buffer = read_buffers_[i].packet_buffer;
-    read_results_[i].packet_buffer.buffer_len =
-        sizeof(read_buffers_[i].packet_buffer);
+namespace {
 
-    read_results_[i].control_buffer.buffer = read_buffers_[i].control_buffer;
-    read_results_[i].control_buffer.buffer_len =
-        sizeof(read_buffers_[i].control_buffer);
+// Points each of |read_results| at the matching buffer in |read_buffers|.
+template <typename ReadBufferType>
+void AttachBuffers(std::vector<ReadBufferType>& read_buffers,
+                   QuicUdpSocketApi::ReadPacketResults& read_results) {
+  QUICHE_DCHECK_EQ(read_buffers.size(), read_results.size());
+  for (size_t i = 0; i < read_results.size(); ++i) {
+    read_results[i].packet_buffer.buffer = read_buffers[i].packet_buffer;
+    read_results[i].packet_buffer.buffer_len =
+        sizeof(read_buffers[i].packet_buffer);
+
+    read_results[i].control_buffer.buffer = read_buffers[i].control_buffer;
+    read_results[i].control_buffer.buffer_len =
+        sizeof(read_buffers[i].control_buffer);
+  }
+}
+
+}  // namespace
+
+QuicPacketReader::QuicPacketReader() : QuicPacketReader(Options()) {}
+
+QuicPacketReader::QuicPacketReader(Options options)
+    : gro_enabled_(options.enable_gro),
+      read_results_(kNumPacketsPerReadMmsgCall) {
+  if (gro_enabled_) {
+    gro_read_buffers_.resize(kNumPacketsPerReadMmsgCall);
+    AttachBuffers(gro_read_buffers_, read_results_);
+  } else {
+    read_buffers_.resize(kNumPacketsPerReadMmsgCall);
+    AttachBuffers(read_buffers_, read_results_);
   }
 }
 
@@ -40,9 +63,11 @@ bool QuicPacketReader::ReadAndDispatchPackets(
     int fd, int port, const QuicClock& clock, ProcessPacketInterface* processor,
     QuicPacketCount* packets_dropped) {
   // Reset all read_results for reuse.
+  const size_t packet_buffer_length = gro_enabled_
+                                          ? sizeof(GroReadBuffer::packet_buffer)
+                                          : sizeof(ReadBuffer::packet_buffer);
   for (size_t i = 0; i < read_results_.size(); ++i) {
-    read_results_[i].Reset(
-        /*packet_buffer_length=*/sizeof(read_buffers_[i].packet_buffer));
+    read_results_[i].Reset(packet_buffer_length);
   }
 
   // Use clock.Now() as the packet receipt time, the time between packet
@@ -61,6 +86,9 @@ bool QuicPacketReader::ReadAndDispatchPackets(
   QUIC_CODE_COUNT(quic_record_tos_byte);
   // Note ToS bit will also populate ECN codepoint.
   info_bits.Set(QuicUdpPacketInfoBit::TOS);
+  if (gro_enabled_) {
+    info_bits.Set(QuicUdpPacketInfoBit::IS_GRO);
+  }
   size_t packets_read =
       socket_api_.ReadMultiplePackets(fd, info_bits, &read_results_);
   if (GetQuicReloadableFlag(quic_move_clock_now)) {
@@ -79,52 +107,65 @@ bool QuicPacketReader::ReadAndDispatchPackets(
       continue;
     }
 
-    if (!result.packet_info.HasValue(QuicUdpPacketInfoBit::PEER_ADDRESS)) {
-      QUIC_BUG(quic_bug_10329_1) << "Unable to get peer socket address.";
-      continue;
-    }
-
-    QuicSocketAddress peer_address =
-        result.packet_info.peer_address().Normalized();
-
-    QuicIpAddress self_ip = GetSelfIpFromPacketInfo(
-        result.packet_info, peer_address.host().IsIPv6());
-    if (!self_ip.IsInitialized()) {
-      QUIC_BUG(quic_bug_10329_2) << "Unable to get self IP address.";
-      continue;
-    }
-
-    bool has_ttl = result.packet_info.HasValue(QuicUdpPacketInfoBit::TTL);
-    int ttl = has_ttl ? result.packet_info.ttl() : 0;
-    if (!has_ttl) {
-      QUIC_CODE_COUNT(quic_packet_reader_no_ttl);
-    }
-
-    char* headers = nullptr;
-    size_t headers_length = 0;
-    if (result.packet_info.HasValue(
-            QuicUdpPacketInfoBit::GOOGLE_PACKET_HEADER)) {
-      headers = result.packet_info.google_packet_headers().buffer;
-      headers_length = result.packet_info.google_packet_headers().buffer_len;
+    if (gro_enabled_) {
+      // The result may be a GRO train of several packets.
+      socket_api_.ForEachGroSegment(
+          result, [&](const QuicUdpSocketApi::ReadPacketResult& segment) {
+            DispatchPacket(segment, now, port, processor);
+          });
     } else {
-      QUIC_CODE_COUNT(quic_packet_reader_no_google_packet_header);
+      DispatchPacket(result, now, port, processor);
     }
-    uint32_t flow_label = 0;
-    if (result.packet_info.HasValue(QuicUdpPacketInfoBit::V6_FLOW_LABEL)) {
-      flow_label = result.packet_info.flow_label();
-    }
-
-    QuicReceivedPacket packet(
-        result.packet_buffer.buffer, result.packet_buffer.buffer_len, now,
-        /*owns_buffer=*/false, ttl, has_ttl, headers, headers_length,
-        /*owns_header_buffer=*/false, result.packet_info.ecn_codepoint(),
-        result.packet_info.GetTos(), flow_label);
-    QuicSocketAddress self_address(self_ip, port);
-    processor->ProcessPacket(self_address, peer_address, packet);
   }
 
   // We may not have read all of the packets available on the socket.
   return packets_read == kNumPacketsPerReadMmsgCall;
+}
+
+void QuicPacketReader::DispatchPacket(
+    const QuicUdpSocketApi::ReadPacketResult& result, QuicTime now, int port,
+    ProcessPacketInterface* processor) {
+  if (!result.packet_info.HasValue(QuicUdpPacketInfoBit::PEER_ADDRESS)) {
+    QUIC_BUG(quic_bug_10329_1) << "Unable to get peer socket address.";
+    return;
+  }
+
+  QuicSocketAddress peer_address =
+      result.packet_info.peer_address().Normalized();
+
+  QuicIpAddress self_ip =
+      GetSelfIpFromPacketInfo(result.packet_info, peer_address.host().IsIPv6());
+  if (!self_ip.IsInitialized()) {
+    QUIC_BUG(quic_bug_10329_2) << "Unable to get self IP address.";
+    return;
+  }
+
+  bool has_ttl = result.packet_info.HasValue(QuicUdpPacketInfoBit::TTL);
+  int ttl = has_ttl ? result.packet_info.ttl() : 0;
+  if (!has_ttl) {
+    QUIC_CODE_COUNT(quic_packet_reader_no_ttl);
+  }
+
+  char* headers = nullptr;
+  size_t headers_length = 0;
+  if (result.packet_info.HasValue(QuicUdpPacketInfoBit::GOOGLE_PACKET_HEADER)) {
+    headers = result.packet_info.google_packet_headers().buffer;
+    headers_length = result.packet_info.google_packet_headers().buffer_len;
+  } else {
+    QUIC_CODE_COUNT(quic_packet_reader_no_google_packet_header);
+  }
+  uint32_t flow_label = 0;
+  if (result.packet_info.HasValue(QuicUdpPacketInfoBit::V6_FLOW_LABEL)) {
+    flow_label = result.packet_info.flow_label();
+  }
+
+  QuicReceivedPacket packet(
+      result.packet_buffer.buffer, result.packet_buffer.buffer_len, now,
+      /*owns_buffer=*/false, ttl, has_ttl, headers, headers_length,
+      /*owns_header_buffer=*/false, result.packet_info.ecn_codepoint(),
+      result.packet_info.GetTos(), flow_label);
+  QuicSocketAddress self_address(self_ip, port);
+  processor->ProcessPacket(self_address, peer_address, packet);
 }
 
 // static

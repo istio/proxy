@@ -97,7 +97,7 @@ void ChatClient::OnIncomingPublishNamespace(
     }
     return;
   }
-  MessageParameters subscribe_parameters(MoqtFilterType::kLargestObject);
+  MessageParameters subscribe_parameters(LocationFilter::NextObjectFilter());
   subscribe_parameters.authorization_tokens.emplace_back(
       AuthTokenType::kOutOfBand, std::string(GetUsername(my_track_name_)));
   // session_ could be nullptr if we get unsolicited PUBLISH_NAMESPACE at the
@@ -251,7 +251,7 @@ bool ChatClient::PublishNamespaceAndSubscribeNamespace() {
   // There might already be published namespaces that have populated
   // other_users_. Subscribe to their tracks now.
   for (const auto& track_name : other_users_) {
-    MessageParameters subscribe_parameters(MoqtFilterType::kLargestObject);
+    MessageParameters subscribe_parameters(LocationFilter::NextObjectFilter());
     subscribe_parameters.authorization_tokens.emplace_back(
         AuthTokenType::kOutOfBand, std::string(GetUsername(my_track_name_)));
     if (session_->Subscribe(track_name, &remote_track_visitor_,

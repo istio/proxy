@@ -1240,11 +1240,9 @@ def _crate_impl(module_ctx):
             if cfg.lockfile:
                 module_ctx.watch(cfg.lockfile)
 
-    metadata_kwargs = {}
-    if bazel_features.external_deps.extension_metadata_has_reproducible:
-        metadata_kwargs["reproducible"] = reproducible
-
-    return module_ctx.extension_metadata(**metadata_kwargs)
+    # Never `reproducible`: the result is recorded in MODULE.bazel.lock, so a new Bazel server does
+    # not re-evaluate the extension, which fetches the host tools and runs `cargo-bazel`.
+    return module_ctx.extension_metadata()
 
 _FROM_COMMON_ATTRS = {
     "cargo_config": CRATES_VENDOR_ATTRS["cargo_config"],

@@ -45,8 +45,8 @@ void SetFillTimeout(MessageParameters& p) {
 }
 void SetForward(MessageParameters& p) { p.set_forward(true); }
 void SetSubscriberPriority(MessageParameters& p) { p.subscriber_priority = 8; }
-void SetSubscriptionFilter(MessageParameters& p) {
-  p.subscription_filter = SubscriptionFilter(MoqtFilterType::kNextGroupStart);
+void SetLocationFilter(MessageParameters& p) {
+  p.location_filter = LocationFilter::RelativeStartFilter(0);
 }
 void SetGroupOrder(MessageParameters& p) {
   p.group_order = MoqtGroupOrder::kAscending;
@@ -69,7 +69,7 @@ constexpr ParameterMutator kAllParameterMutators[] = {
     SetFillTimeout,
     SetForward,
     SetSubscriberPriority,
-    SetSubscriptionFilter,
+    SetLocationFilter,
     SetGroupOrder,
     SetNewGroupRequest,
     SetTrackNamespacePrefix,
@@ -148,7 +148,7 @@ TEST(MoqtMessagesTest, ParametersAllowedAndSanitizedByMessage) {
       MoqtMessageType::kSubscribe,
       MakeParameters({SetSubgroupDeliveryTimeout, SetAuthorizationTokens,
                       SetRendezvousTimeout, SetObjectDeliveryTimeout,
-                      SetForward, SetSubscriberPriority, SetSubscriptionFilter,
+                      SetForward, SetSubscriberPriority, SetLocationFilter,
                       SetGroupOrder, SetNewGroupRequest, SetOackWindowSize}),
       ParametersAllowedByMessage, SanitizeParameters);
 
@@ -163,7 +163,7 @@ TEST(MoqtMessagesTest, ParametersAllowedAndSanitizedByMessage) {
 
   VerifyParameterHandling(
       MoqtMessageType::kPublishStateNotify,
-      MakeParameters({SetLargestObject, SetForward, SetSubscriptionFilter}),
+      MakeParameters({SetLargestObject, SetForward, SetLocationFilter}),
       ParametersAllowedByMessage, SanitizeParameters);
 
   VerifyParameterHandling(
@@ -209,7 +209,7 @@ TEST(MoqtMessagesTest, ParametersAllowedAndSanitizedByRequestUpdate) {
         type,
         MakeParameters({SetSubgroupDeliveryTimeout, SetAuthorizationTokens,
                         SetObjectDeliveryTimeout, SetForward,
-                        SetSubscriberPriority, SetSubscriptionFilter,
+                        SetSubscriberPriority, SetLocationFilter,
                         SetNewGroupRequest, SetOackWindowSize}),
         ParametersAllowedByRequestUpdate, SanitizeUpdateParameters);
   }
@@ -256,7 +256,7 @@ TEST(MoqtMessagesTest, ParametersAllowedAndSanitizedByRequestOk) {
       MoqtMessageType::kPublish,
       MakeParameters({SetSubgroupDeliveryTimeout, SetObjectDeliveryTimeout,
                       SetExpires, SetForward, SetSubscriberPriority,
-                      SetSubscriptionFilter, SetGroupOrder, SetNewGroupRequest,
+                      SetLocationFilter, SetGroupOrder, SetNewGroupRequest,
                       SetOackWindowSize}),
       ParametersAllowedByRequestOk, SanitizeRequestOkParameters);
 

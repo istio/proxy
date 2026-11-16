@@ -1,0 +1,31 @@
+load("@@envoy_toolshed+//pigz:defs.bzl", "pigz_toolchain")
+
+pigz_toolchain(
+    name = "linux_aarch64_impl",
+    pigz = "@@envoy_toolshed++pigz_prebuilt_extension+pigz_prebuilt_linux_aarch64//:pigz",
+)
+
+toolchain(
+    name = "linux_aarch64",
+    toolchain = ":linux_aarch64_impl",
+    toolchain_type = "@@envoy_toolshed+//pigz:toolchain_type",
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+pigz_toolchain(
+    name = "linux_x86_64_impl",
+    pigz = "@@envoy_toolshed++pigz_prebuilt_extension+pigz_prebuilt_linux_x86_64//:pigz",
+)
+
+toolchain(
+    name = "linux_x86_64",
+    toolchain = ":linux_x86_64_impl",
+    toolchain_type = "@@envoy_toolshed+//pigz:toolchain_type",
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)

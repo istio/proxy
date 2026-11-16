@@ -5,6 +5,7 @@
 #ifndef QUICHE_QUIC_MOQT_MOQT_UNI_STREAM_H_
 #define QUICHE_QUIC_MOQT_MOQT_UNI_STREAM_H_
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -141,7 +142,7 @@ class QUICHE_EXPORT OutgoingSubgroupStream : public OutgoingUniStream {
     }
   }
 
-  class DeliveryTimeoutDelegate
+  class QUICHE_EXPORT DeliveryTimeoutDelegate
       : public quic::QuicAlarm::DelegateWithoutContext {
    public:
     explicit DeliveryTimeoutDelegate(OutgoingSubgroupStream* stream)
@@ -227,7 +228,7 @@ class QUICHE_EXPORT OutgoingFetchStream : public OutgoingUniStream {
 class SessionToUniStreamInterface {
  public:
   virtual ~SessionToUniStreamInterface() = default;
-  virtual bool deliver_partial_objects() const = 0;
+  virtual size_t max_undelivered_object() const = 0;
   virtual void OnMalformedTrack(ObjectSubscriber* name) = 0;
   virtual quiche::QuicheWeakPtr<ObjectSubscriber> GetSubscribe(
       uint64_t track_alias) = 0;

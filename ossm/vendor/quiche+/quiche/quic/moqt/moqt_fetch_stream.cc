@@ -360,7 +360,7 @@ absl::Status MoqtFetchResponseStream::OnControlMessage(
       return absl::InvalidArgumentError(
           "Joining Fetch for non-forwarding subscribe");
     }
-    if (subscription->established()) {
+    if (subscription->largest_object_known()) {
       const std::optional<Location> largest_object =
           subscription->parameters().largest_object;
       if (!largest_object.has_value()) {

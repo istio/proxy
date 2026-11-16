@@ -39,7 +39,7 @@ class QUICHE_EXPORT MetadataDecoder {
   const QuicHeaderList& headers() { return decoder_.headers(); }
 
  private:
-  class MetadataHeadersDecoder
+  class QUICHE_EXPORT MetadataHeadersDecoder
       : public QpackDecodedHeadersAccumulator::Visitor {
    public:
     // QpackDecodedHeadersAccumulator::Visitor

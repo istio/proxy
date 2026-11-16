@@ -70,12 +70,30 @@ fi
 
 "$merger" "$@"
 
+physical_dir() { (cd -- "$1" 2>/dev/null && pwd -P); }
+
 if [[ "$CLEAN_COVERAGE_DIR" == 1 && "${IS_COVERAGE_SPAWN:-}" != 1 && -n "$coverage_dir" && -d "$coverage_dir" ]]; then
-    if [[ -f "$output_file" ]]; then
-        # Should Bazel have placed the merged report inside the directory.
-        find "$coverage_dir" -mindepth 1 -maxdepth 1 ! -samefile "$output_file" -exec rm -rf -- {} +
-    else
-        find "$coverage_dir" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+    had_output=0
+    [[ -f "$output_file" ]] && had_output=1
+    coverage_dir="$(physical_dir "$coverage_dir")"
+    # Should Bazel have placed the merged report inside the directory, at any depth, keep the
+    # top-level entry that holds it.
+    keep=
+    output_parent="$(physical_dir "$(dirname -- "$output_file")")" || output_parent=
+    if [[ -n "$output_parent" ]]; then
+        output_path="${output_parent}/$(basename -- "$output_file")"
+        if [[ "$output_path" == "$coverage_dir"/* ]]; then
+            relative="${output_path#"$coverage_dir"/}"
+            keep="${coverage_dir}/${relative%%/*}"
+        fi
+    fi
+    for entry in "$coverage_dir"/* "$coverage_dir"/.[!.]* "$coverage_dir"/..?*; do
+        [[ -e "$entry" || -L "$entry" ]] || continue
+        [[ "$entry" == "$keep" ]] && continue
+        rm -rf -- "$entry"
+    done
+    if [[ "$had_output" == 1 && ! -f "$output_file" ]]; then
+        fail "Cleaning ${coverage_dir} removed the merged report ${output_file}"
     fi
 fi
 

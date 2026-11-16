@@ -21,14 +21,15 @@ struct Location {
   uint64_t group = 0;
   uint64_t object = 0;
 
-  Location() = default;
-  Location(uint64_t group, uint64_t object) : group(group), object(object) {}
+  constexpr Location() = default;
+  constexpr Location(uint64_t group, uint64_t object)
+      : group(group), object(object) {}
 
   // Location order as described in
   // https://moq-wg.github.io/moq-transport/draft-ietf-moq-transport.html#location-structure
   auto operator<=>(const Location&) const = default;
 
-  Location Next() const {
+  constexpr Location Next() const {
     if (object == kMaxObjectId) {
       if (group == kMaxObjectId) {
         return Location(0, 0);

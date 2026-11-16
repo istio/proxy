@@ -249,6 +249,14 @@ class QUICHE_EXPORT QuicUdpSocketApi {
   bool EnableReceiveTtlForV4(QuicUdpSocketFd fd);
   bool EnableReceiveTtlForV6(QuicUdpSocketFd fd);
 
+  // Enables UDP generic receive offload (GRO) on |fd|. The kernel may then
+  // coalesce back-to-back datagrams of the same size from the same peer into a
+  // GRO train, which a read returns as a single result. Only enable this if
+  // every reader of |fd| requests QuicUdpPacketInfoBit::IS_GRO and has packet
+  // buffers large enough for a whole train (see ForEachGroSegment); otherwise
+  // trains are lost. Returns false if UDP GRO is not supported.
+  bool EnableUdpGro(QuicUdpSocketFd fd);
+
   // Wait for |fd| to become readable, up to |timeout|.
   // Return true if |fd| is readable upon return.
   bool WaitUntilReadable(QuicUdpSocketFd fd, QuicTime::Delta timeout);

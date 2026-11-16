@@ -160,32 +160,55 @@ bool ParseAuthToken(absl::string_view field, std::vector<AuthToken>& out) {
   return true;
 }
 
-absl::Status ParseSubscriptionFilter(absl::string_view field,
-                                     std::optional<SubscriptionFilter>& out) {
-  quic::QuicDataReader reader(field);
-  uint64_t value;
-  if (!reader.ReadMoqVarInt(&value)) {
-    return KeyValueFormatError("Unable to read subscription filter type");
+absl::Status ParseLocationFilter(quic::QuicDataReader& reader,
+                                 std::optional<LocationFilter>& out) {
+  uint64_t type;
+  if (!reader.ReadMoqVarInt(&type)) {
+    return absl::InvalidArgumentError("Unable to read location filter type");
   }
-  uint64_t group, object;
-  switch (static_cast<MoqtFilterType>(value)) {
-    case MoqtFilterType::kLargestObject:
-    case MoqtFilterType::kNextGroupStart:
-      out.emplace(static_cast<MoqtFilterType>(value));
+  uint64_t group, object, end_group, end_object;
+  switch (static_cast<MoqtLocationFilterType>(type)) {
+    case MoqtLocationFilterType::kNoFilter:
+      out = LocationFilter::NoLocationFilter();
       break;
-    case MoqtFilterType::kAbsoluteStart:
+    case MoqtLocationFilterType::kNextObject:
+      out = LocationFilter::NextObjectFilter();
+      break;
+    case MoqtLocationFilterType::kRelativeStart:
+      if (!reader.ReadMoqVarInt(&group)) {
+        return absl::InvalidArgumentError("Invalid RelativeStart filter");
+      }
+      out = LocationFilter::RelativeStartFilter(group);
+      break;
+    case MoqtLocationFilterType::kAbsoluteStart:
       if (!reader.ReadMoqVarInt(&group) || !reader.ReadMoqVarInt(&object)) {
-        return KeyValueFormatError("Invalid AbsoluteStart filter");
+        return absl::InvalidArgumentError("Invalid AbsoluteStart filter");
       }
-      out.emplace(Location(group, object));
+      out = LocationFilter::AbsoluteStartFilter(Location(group, object));
       break;
-    case MoqtFilterType::kAbsoluteRange:
+    case MoqtLocationFilterType::kAbsoluteStartGroupEnd:
       if (!reader.ReadMoqVarInt(&group) || !reader.ReadMoqVarInt(&object) ||
-          !reader.ReadMoqVarInt(&value)) {
-        return KeyValueFormatError("Invalid AbsoluteRange filter");
+          !reader.ReadMoqVarInt(&end_group)) {
+        return absl::InvalidArgumentError(
+            "Invalid AbsoluteStartGroupEnd filter");
       }
-      QUICHE_RETURN_IF_ERROR(SafeIncrementByWithStatus(value, group));
-      out.emplace(Location(group, object), value);
+      QUICHE_RETURN_IF_ERROR(SafeIncrementByWithStatus(end_group, group));
+      out = LocationFilter::AbsoluteStartGroupEndFilter(Location(group, object),
+                                                        end_group);
+      break;
+    case MoqtLocationFilterType::kAbsoluteRange:
+      if (!reader.ReadMoqVarInt(&group) || !reader.ReadMoqVarInt(&object) ||
+          !reader.ReadMoqVarInt(&end_group) ||
+          !reader.ReadMoqVarInt(&end_object)) {
+        return absl::InvalidArgumentError("Invalid AbsoluteRange filter");
+      }
+      QUICHE_RETURN_IF_ERROR(SafeIncrementByWithStatus(end_group, group));
+      if (Location(end_group, end_object) < Location(group, object)) {
+        return absl::InvalidArgumentError(
+            "End object comes before start object");
+      }
+      out = LocationFilter::AbsoluteRangeFilter(
+          Location(group, object), Location(end_group, end_object));
       break;
     default:  // invalid filter type
       return absl::InvalidArgumentError("Invalid filter type");
@@ -362,15 +385,12 @@ absl::StatusOr<MessageParameters> ParseMessageParameters(
         }
         params.subscriber_priority = static_cast<MoqtPriority>(value8);
         break;
-      case MessageParameter::kSubscriptionFilter:
-        if (params.subscription_filter.has_value()) {
+      case MessageParameter::kLocationFilter:
+        if (params.location_filter.has_value()) {
           return absl::InvalidArgumentError("Duplicate Message Parameter");
         }
-        if (!reader.ReadStringPieceMoqVarInt(&value_str)) {
-          return absl::InvalidArgumentError("Parameter parsing error");
-        }
         QUICHE_RETURN_IF_ERROR(
-            ParseSubscriptionFilter(value_str, params.subscription_filter));
+            ParseLocationFilter(reader, params.location_filter));
         break;
       case MessageParameter::kGroupOrder:
         if (params.group_order.has_value()) {
@@ -1638,9 +1658,7 @@ void MoqtDataParser::ParseNextItemFromStream() {
             // stream is reset, probably because OnObjectMessage() caused
             // something to happen to the stream or the session.
             no_more_data_ = true;
-            if (!done) {
-              ParseError("FIN received at an unexpected point in the stream");
-            }
+            return;
           }
         } else {
           absl::StrAppend(&metadata_.properties,

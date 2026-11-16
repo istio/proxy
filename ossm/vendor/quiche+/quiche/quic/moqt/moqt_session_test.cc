@@ -101,7 +101,8 @@ MessageParameters SubscribeForTest() {
                                                "bar");
   parameters.set_forward(true);
   parameters.subscriber_priority = 0x20;
-  parameters.subscription_filter.emplace(Location(4, 1));
+  parameters.location_filter =
+      LocationFilter::AbsoluteStartFilter(Location(4, 1));
   parameters.group_order = MoqtGroupOrder::kDescending;
   return parameters;
 }
@@ -813,8 +814,7 @@ TEST_F(MoqtSessionTest, SubscribeDoNotForward) {
   MockTrackPublisher* track = CreateTrackPublisher();
   MoqtSubscribe request = DefaultSubscribe();
   request.parameters.set_forward(false);
-  request.parameters.subscription_filter.emplace(
-      MoqtFilterType::kLargestObject);
+  request.parameters.location_filter = LocationFilter::NextObjectFilter();
   MoqtObjectListener* listener =
       ReceiveSubscribeSynchronousOk(track, request, bidi_wrapper_.get());
   // forward=false, so incoming objects are ignored.
@@ -828,7 +828,8 @@ TEST_F(MoqtSessionTest, SubscribeAbsoluteStartNoDataYet) {
       ResponseStream(kSubscribeByte));
   MockTrackPublisher* track = CreateTrackPublisher();
   MoqtSubscribe request = DefaultSubscribe();
-  request.parameters.subscription_filter.emplace(Location(1, 0));
+  request.parameters.location_filter =
+      LocationFilter::AbsoluteStartFilter(Location(1, 0));
   MoqtObjectListener* listener =
       ReceiveSubscribeSynchronousOk(track, request, bidi_wrapper_.get());
   // Window was not set to (0, 0) by SUBSCRIBE acceptance.
@@ -842,8 +843,7 @@ TEST_F(MoqtSessionTest, SubscribeNextGroup) {
       ResponseStream(kSubscribeByte));
   MockTrackPublisher* track = CreateTrackPublisher();
   MoqtSubscribe request = DefaultSubscribe();
-  request.parameters.subscription_filter.emplace(
-      MoqtFilterType::kNextGroupStart);
+  request.parameters.location_filter = LocationFilter::RelativeStartFilter(0);
   SetLargestId(track, Location(10, 20));
   MoqtObjectListener* listener =
       ReceiveSubscribeSynchronousOk(track, request, bidi_wrapper_.get());
@@ -866,7 +866,8 @@ TEST_F(MoqtSessionTest, TwoSubscribesForTrack) {
   ReceiveSubscribeSynchronousOk(track, request, bidi_wrapper_.get());
 
   request.request_id = 3;
-  request.parameters.subscription_filter.emplace(Location(12, 0));
+  request.parameters.location_filter =
+      LocationFilter::AbsoluteStartFilter(Location(12, 0));
   webtransport::test::MockStream bidi_stream_2;
   auto bidi_wrapper_2 = std::make_unique<MoqtBidiStreamTestWrapper>(
       ResponseStream(kSubscribeByte, &bidi_stream_2));
@@ -889,7 +890,8 @@ TEST_F(MoqtSessionTest, UnsubscribeAllowsSecondSubscribe) {
 
   // Subscribe again, succeeds.
   request.request_id = 3;
-  request.parameters.subscription_filter.emplace(Location(12, 0));
+  request.parameters.location_filter =
+      LocationFilter::AbsoluteStartFilter(Location(12, 0));
   bidi_wrapper_ = std::make_unique<MoqtBidiStreamTestWrapper>(
       ResponseStream(kSubscribeByte));
   ReceiveSubscribeSynchronousOk(track, request, bidi_wrapper_.get(),
@@ -972,8 +974,7 @@ TEST_F(MoqtSessionTest, SubscribeWithOk) {
 TEST_F(MoqtSessionTest, SubscribeNextGroupWithOk) {
   PrepareRequestStream(bidi_wrapper_);
   MoqtSubscribe subscribe = DefaultLocalSubscribe();
-  subscribe.parameters.subscription_filter.emplace(
-      MoqtFilterType::kNextGroupStart);
+  subscribe.parameters.location_filter = LocationFilter::RelativeStartFilter(0);
   EXPECT_CALL(mock_bidi_stream_,
               Writev(SerializedControlMessage(subscribe), _));
   session_.Subscribe(FullTrackName("foo", "bar"), &remote_track_visitor_,
@@ -994,7 +995,8 @@ TEST_F(MoqtSessionTest, OutgoingSubscribeUpdate) {
   EXPECT_CALL(mock_bidi_stream_,
               Writev(ControlMessageOfType(MoqtMessageType::kSubscribe), _));
   MessageParameters parameters(SubscribeForTest());
-  parameters.subscription_filter.emplace(Location(1, 0), 10);
+  parameters.location_filter =
+      LocationFilter::AbsoluteStartGroupEndFilter(Location(1, 0), 10);
   session_.Subscribe(FullTrackName("foo", "bar"), &remote_track_visitor_,
                      parameters);
   MoqtSubscribeOk ok(/*track_alias=*/2, MessageParameters(), TrackProperties());
@@ -1003,7 +1005,8 @@ TEST_F(MoqtSessionTest, OutgoingSubscribeUpdate) {
   EXPECT_CALL(mock_bidi_stream_,
               Writev(ControlMessageOfType(MoqtMessageType::kRequestUpdate), _));
   MessageParameters update_parameters;
-  update_parameters.subscription_filter.emplace(Location(2, 1), 9);
+  update_parameters.location_filter =
+      LocationFilter::AbsoluteStartGroupEndFilter(Location(2, 1), 9);
   // Set to a non-null value to ensure that the callback is called.
   bool got_response = false;
   EXPECT_TRUE(session_.SubscribeUpdate(
@@ -1044,7 +1047,7 @@ TEST_F(MoqtSessionTest, SubscribeWithError) {
   EXPECT_CALL(mock_bidi_stream_,
               Writev(ControlMessageOfType(MoqtMessageType::kSubscribe), _));
   MessageParameters parameters(SubscribeForTest());
-  parameters.subscription_filter.emplace(MoqtFilterType::kLargestObject);
+  parameters.location_filter = LocationFilter::NextObjectFilter();
   session_.Subscribe(FullTrackName("foo", "bar"), &remote_track_visitor_,
                      parameters);
   MoqtRequestError error(RequestErrorCode::kInvalidRange, std::nullopt,
@@ -1439,7 +1442,7 @@ TEST_F(MoqtSessionTest, DatagramOutOfWindow) {
   EXPECT_CALL(mock_bidi_stream_,
               Writev(ControlMessageOfType(MoqtMessageType::kSubscribe), _));
   MessageParameters params;
-  params.subscription_filter.emplace(Location(1, 0));
+  params.location_filter = LocationFilter::AbsoluteStartFilter(Location(1, 0));
   session_.Subscribe(ftn, &remote_track_visitor_, params);
   MoqtSubscribeOk ok(2, MessageParameters(),
                      TrackProperties(std::nullopt, std::nullopt, std::nullopt,
@@ -1837,8 +1840,7 @@ TEST_F(MoqtSessionTest, FullFetchDeliveryWithFlowControl) {
 TEST_F(MoqtSessionTest, IncomingRelativeJoiningFetch) {
   MoqtSubscribe subscribe = DefaultSubscribe();
   // Give it the latest object filter.
-  subscribe.parameters.subscription_filter.emplace(
-      MoqtFilterType::kLargestObject);
+  subscribe.parameters.location_filter = LocationFilter::NextObjectFilter();
   bidi_wrapper_ = std::make_unique<MoqtBidiStreamTestWrapper>(
       ResponseStream(kSubscribeByte));
   MockTrackPublisher* track = CreateTrackPublisher();
@@ -1862,8 +1864,7 @@ TEST_F(MoqtSessionTest, IncomingRelativeJoiningFetch) {
 TEST_F(MoqtSessionTest, IncomingAbsoluteJoiningFetch) {
   MoqtSubscribe subscribe = DefaultSubscribe();
   // Give it the latest object filter.
-  subscribe.parameters.subscription_filter.emplace(
-      MoqtFilterType::kLargestObject);
+  subscribe.parameters.location_filter = LocationFilter::NextObjectFilter();
   bidi_wrapper_ = std::make_unique<MoqtBidiStreamTestWrapper>(
       ResponseStream(kSubscribeByte));
   MockTrackPublisher* track = CreateTrackPublisher();
@@ -1937,7 +1938,7 @@ TEST_F(MoqtSessionTest, IncomingJoiningFetchAfterRequestUpdate) {
   SetLargestId(track, Location(4, 10));
   MessageParameters update_parameters;
   update_parameters.set_forward(true);
-  update_parameters.subscription_filter.emplace(MoqtFilterType::kLargestObject);
+  update_parameters.location_filter = LocationFilter::NextObjectFilter();
   MessageParameters expected_ok_parameters;
   expected_ok_parameters.largest_object = Location(4, 10);
   EXPECT_CALL(
@@ -1945,8 +1946,8 @@ TEST_F(MoqtSessionTest, IncomingJoiningFetchAfterRequestUpdate) {
       Writev(SerializedControlMessage(MoqtRequestOk{expected_ok_parameters}),
              _));
   bidi_wrapper_->ReceiveMessage(MoqtRequestUpdate{3, update_parameters});
-  ASSERT_TRUE(subscription->parameters().subscription_filter.has_value());
-  EXPECT_EQ(subscription->parameters().subscription_filter->start(),
+  ASSERT_TRUE(subscription->parameters().location_filter.has_value());
+  EXPECT_EQ(subscription->parameters().location_filter->start(),
             Location(4, 11));
 
   webtransport::test::MockStream fetch_stream;
@@ -1970,7 +1971,7 @@ TEST_F(MoqtSessionTest, SendJoiningFetch) {
   PrepareRequestStream(subscribe_wrapper, &subscribe_stream);
   MoqtSubscribe expected_subscribe(
       0, FullTrackName("foo", "bar"),
-      MessageParameters(MoqtFilterType::kLargestObject));
+      MessageParameters(LocationFilter::NextObjectFilter()));
   MoqtFetch expected_fetch(2, JoiningFetchRelative(0, 1), MessageParameters());
   EXPECT_CALL(subscribe_stream,
               Writev(SerializedControlMessage(expected_subscribe), _));
@@ -2399,7 +2400,7 @@ TEST_F(MoqtSessionTest, ReceiveGoAwayEnforcement) {
   // New requests not allowed.
   EXPECT_CALL(mock_bidi_stream_, Writev).Times(0);
   MessageParameters parameters = SubscribeForTest();
-  parameters.subscription_filter.emplace(MoqtFilterType::kLargestObject);
+  parameters.location_filter = LocationFilter::NextObjectFilter();
   EXPECT_FALSE(session_.Subscribe(FullTrackName("foo", "bar"),
                                   &remote_track_visitor_, parameters));
   TrackNamespace prefix({"foo"});
@@ -2464,7 +2465,7 @@ TEST_F(MoqtSessionTest, SendGoAwayEnforcement) {
 
   // Block all outgoing PUBLISH_NAMESPACE, GOAWAY,etc.
   MessageParameters parameters = SubscribeForTest();
-  parameters.subscription_filter.emplace(MoqtFilterType::kLargestObject);
+  parameters.location_filter = LocationFilter::NextObjectFilter();
   EXPECT_FALSE(session_.Subscribe(FullTrackName({"foo"}, "bar"),
                                   &remote_track_visitor_, parameters));
   TrackNamespace prefix({"foo"});
@@ -2633,7 +2634,7 @@ TEST_F(MoqtSessionTest, FinReportedToVisitor) {
   EXPECT_CALL(mock_bidi_stream_,
               Writev(ControlMessageOfType(MoqtMessageType::kSubscribe), _));
   MessageParameters parameters = SubscribeForTest();
-  parameters.subscription_filter.emplace(MoqtFilterType::kLargestObject);
+  parameters.location_filter = LocationFilter::NextObjectFilter();
   EXPECT_TRUE(session_.Subscribe(FullTrackName("foo", "bar"),
                                  &remote_track_visitor_, parameters));
   MoqtSubscribeOk ok(/*track_alias=*/2, MessageParameters(), TrackProperties());
@@ -2671,7 +2672,7 @@ TEST_F(MoqtSessionTest, ResetReportedToVisitor) {
   EXPECT_CALL(mock_bidi_stream_,
               Writev(ControlMessageOfType(MoqtMessageType::kSubscribe), _));
   MessageParameters parameters = SubscribeForTest();
-  parameters.subscription_filter.emplace(MoqtFilterType::kLargestObject);
+  parameters.location_filter = LocationFilter::NextObjectFilter();
   EXPECT_TRUE(session_.Subscribe(FullTrackName("foo", "bar"),
                                  &remote_track_visitor_, parameters));
   MoqtSubscribeOk ok(/*track_alias=*/2, MessageParameters(), TrackProperties());
@@ -2901,6 +2902,73 @@ TEST_F(MoqtSessionTest, PublishAfterGoaway) {
   EXPECT_FALSE(session_.Publish(
       track_publisher, MessageParameters(), TrackProperties(),
       [&](std::variant<MessageParameters, MoqtRequestErrorInfo>) {}));
+}
+
+TEST_F(MoqtSessionTest, PublishUpdateOnPublish) {
+  CreateTrackPublisher();
+  std::shared_ptr<MoqtTrackPublisher> track_publisher =
+      publisher_.GetTrack(kDefaultTrackName());
+
+  PrepareRequestStream(bidi_wrapper_);
+  EXPECT_CALL(mock_bidi_stream_,
+              Writev(ControlMessageOfType(MoqtMessageType::kPublish), _))
+      .WillOnce(Return(absl::OkStatus()));
+
+  ASSERT_TRUE(session_.Publish(
+      track_publisher, MessageParameters(), TrackProperties(),
+      [](std::variant<MessageParameters, MoqtRequestErrorInfo>) {}));
+  bidi_wrapper_->ReceiveMessage(MoqtRequestOk());
+
+  // Unknown track returns true.
+  MessageParameters update_params;
+  update_params.authorization_tokens.emplace_back(AuthTokenType::kOutOfBand,
+                                                  "token");
+  EXPECT_TRUE(session_.PublishUpdate(
+      FullTrackName("unknown", "track"), update_params,
+      [](std::variant<MessageParameters, MoqtRequestErrorInfo>) {}));
+
+  MoqtRequestUpdate expected_update;
+  expected_update.request_id = 2;
+  expected_update.parameters.authorization_tokens =
+      update_params.authorization_tokens;
+  EXPECT_CALL(mock_bidi_stream_,
+              Writev(SerializedControlMessage(expected_update), _))
+      .WillOnce(Return(absl::OkStatus()));
+
+  bool update_callback_called = false;
+  EXPECT_TRUE(session_.PublishUpdate(
+      kDefaultTrackName(), update_params,
+      [&](std::variant<MessageParameters, MoqtRequestErrorInfo> resp) {
+        update_callback_called = true;
+        EXPECT_TRUE(std::holds_alternative<MessageParameters>(resp));
+      }));
+  EXPECT_FALSE(update_callback_called);
+  bidi_wrapper_->ReceiveMessage(MoqtRequestOk());
+  EXPECT_TRUE(update_callback_called);
+}
+
+TEST_F(MoqtSessionTest, PublishUpdateOnSubscribe) {
+  bidi_wrapper_ = std::make_unique<MoqtBidiStreamTestWrapper>(
+      ResponseStream(kSubscribeByte));
+  MoqtSubscribe request = DefaultSubscribe();
+  MockTrackPublisher* track = CreateTrackPublisher();
+  ReceiveSubscribeSynchronousOk(track, request, bidi_wrapper_.get());
+
+  MessageParameters notify_params;
+  notify_params.set_forward(false);
+  MoqtPublishStateNotify expected_notify;
+  expected_notify.parameters.set_forward(false);
+  EXPECT_CALL(mock_bidi_stream_,
+              Writev(SerializedControlMessage(expected_notify), _))
+      .WillOnce(Return(absl::OkStatus()));
+  bool callback_called = false;
+  EXPECT_TRUE(session_.PublishUpdate(
+      kDefaultTrackName(), notify_params,
+      [&](std::variant<MessageParameters, MoqtRequestErrorInfo> resp) {
+        callback_called = true;
+        EXPECT_TRUE(std::holds_alternative<MessageParameters>(resp));
+      }));
+  EXPECT_TRUE(callback_called);
 }
 
 TEST_F(MoqtSessionTest, IncomingPublishAbortsPendingSubscribe) {

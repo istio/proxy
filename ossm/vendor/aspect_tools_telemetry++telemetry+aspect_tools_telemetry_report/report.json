@@ -3,8 +3,8 @@
     "arch": "amd64",
     "bazel_version": "9.3.2",
     "bazelisk": false,
-    "ci": true,
-    "counter": "318",
+    "ci": false,
+    "counter": null,
     "deps": {
       "aspect_rules_esbuild": "0.23.0",
       "aspect_tools_telemetry": "0.2.6"
@@ -14,10 +14,10 @@
     "has_bazel_tool": false,
     "has_bazel_workspace": false,
     "id": "32e2475bab5f905a93c78a402780f4aebf8e8457",
-    "org": "openshift-service-mesh",
+    "org": null,
     "os": "linux",
-    "runner": "github-actions",
+    "runner": null,
     "shell": null,
-    "user": "2ed1c6e6f8e6f9c47871a3954b96a46f3972f8e8"
+    "user": "ac5736fc92774bd367ec207d972cb2d5f74d6972"
   }
 }

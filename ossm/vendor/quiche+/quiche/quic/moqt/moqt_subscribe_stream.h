@@ -48,6 +48,7 @@ class MoqtSubscribeRequestStream : public MoqtBidiStreamBase {
   absl::Status OnControlMessage(const MoqtRequestError& message);
   absl::Status OnControlMessage(const MoqtSubscribeOk& message);
   absl::Status OnControlMessage(const MoqtPublishDone& message);
+  absl::Status OnControlMessage(const MoqtPublishStateNotify& message);
 
   LiveSubscriber* track() const { return track_.get(); }
   void Detach() override;

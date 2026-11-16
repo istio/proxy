@@ -145,8 +145,8 @@ class LiveSubscriber : public ObjectSubscriber {
 
   bool InWindow(Location location) const override {
     return const_parameters().forward() &&
-           (!const_parameters().subscription_filter.has_value() ||
-            const_parameters().subscription_filter->InWindow(location));
+           (!const_parameters().location_filter.has_value() ||
+            const_parameters().location_filter->InWindow(location));
   }
 
   MoqtPriority default_publisher_priority() const {

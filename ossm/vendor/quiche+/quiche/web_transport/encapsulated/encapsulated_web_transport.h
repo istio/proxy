@@ -135,7 +135,7 @@ class QUICHE_EXPORT EncapsulatedSession
   // here, CanWrite() will start returning false.
   static constexpr size_t kDefaultMaxBufferedStreamData = 16 * 1024;
 
-  class InnerStream : public Stream {
+  class QUICHE_EXPORT InnerStream : public Stream {
    public:
     InnerStream(EncapsulatedSession* session, StreamId id);
     InnerStream(const InnerStream&) = delete;

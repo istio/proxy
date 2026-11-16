@@ -29,7 +29,7 @@ struct AllowedParameters {
   bool fill_timeout = false;
   bool forward = false;
   bool subscriber_priority = false;
-  bool subscription_filter = false;
+  bool location_filter = false;
   bool group_order = false;
   bool new_group_request = false;
   bool track_namespace_prefix = false;
@@ -41,7 +41,7 @@ constexpr AllowedParameters kCommonSubscriberParameters{
     .object_delivery_timeout = true,
     .forward = true,
     .subscriber_priority = true,
-    .subscription_filter = true,
+    .location_filter = true,
     .new_group_request = true,
     .oack_window_size = true,
 };
@@ -71,7 +71,7 @@ AllowedParameters GetAllowedParametersForMessage(MoqtMessageType message_type) {
       return AllowedParameters{
           .largest_object = true,
           .forward = true,
-          .subscription_filter = true,
+          .location_filter = true,
       };
     case MoqtMessageType::kFetch:
       return AllowedParameters{
@@ -215,8 +215,7 @@ bool CheckAllowedParameters(const MessageParameters& parameters,
          (allowed.forward || !parameters.forward_has_value()) &&
          (allowed.subscriber_priority ||
           !parameters.subscriber_priority.has_value()) &&
-         (allowed.subscription_filter ||
-          !parameters.subscription_filter.has_value()) &&
+         (allowed.location_filter || !parameters.location_filter.has_value()) &&
          (allowed.group_order || !parameters.group_order.has_value()) &&
          (allowed.new_group_request ||
           !parameters.new_group_request.has_value()) &&
@@ -254,8 +253,8 @@ void ApplyAllowedParameters(MessageParameters& parameters,
   if (!allowed.subscriber_priority) {
     parameters.subscriber_priority.reset();
   }
-  if (!allowed.subscription_filter) {
-    parameters.subscription_filter.reset();
+  if (!allowed.location_filter) {
+    parameters.location_filter.reset();
   }
   if (!allowed.group_order) {
     parameters.group_order.reset();

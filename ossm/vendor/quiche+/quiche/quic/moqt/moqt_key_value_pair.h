@@ -20,6 +20,7 @@
 #include "quiche/quic/moqt/moqt_names.h"
 #include "quiche/quic/moqt/moqt_priority.h"
 #include "quiche/quic/moqt/moqt_types.h"
+#include "quiche/common/platform/api/quiche_bug_tracker.h"
 #include "quiche/common/platform/api/quiche_export.h"
 #include "quiche/common/platform/api/quiche_logging.h"
 #include "quiche/common/quiche_callbacks.h"
@@ -102,54 +103,102 @@ struct AuthToken {
   std::optional<std::string> value;
 };
 
-enum class QUICHE_EXPORT MoqtFilterType : uint64_t {
-  kNextGroupStart = 0x1,
-  kLargestObject = 0x2,
-  kAbsoluteStart = 0x3,
+enum class QUICHE_EXPORT MoqtLocationFilterType : uint8_t {
+  kNoFilter = 0x0,
+  kRelativeStart = 0x1,
+  kAbsoluteStart = 0x2,
+  kAbsoluteStartGroupEnd = 0x3,
   kAbsoluteRange = 0x4,
+  kNextObject = 0x5,
 };
-class QUICHE_EXPORT SubscriptionFilter {
- public:
-  // Constructors prevent illegal constructions.
-  explicit SubscriptionFilter(MoqtFilterType type) : type_(type) {
-    QUICHE_DCHECK(type == MoqtFilterType::kNextGroupStart ||
-                  type == MoqtFilterType::kLargestObject);
-  }
-  explicit SubscriptionFilter(Location start)
-      : type_(MoqtFilterType::kAbsoluteStart), start_(start) {}
-  SubscriptionFilter(Location start, uint64_t end_group)
-      : type_(MoqtFilterType::kAbsoluteRange),
-        start_(start),
-        end_group_(end_group) {
-    QUICHE_DCHECK(end_group >= start.group);
-  }
 
-  MoqtFilterType type() const { return type_; }
-  Location start() const { return start_.value_or(Location(0, 0)); }
-  uint64_t end_group() const { return end_group_; }
+class QUICHE_EXPORT LocationFilter {
+ public:
+  // Factory functions
+  static LocationFilter NoLocationFilter() {
+    return LocationFilter(MoqtLocationFilterType::kNoFilter, Location(0, 0),
+                          Location(kMaxGroupId, kMaxObjectId));
+  }
+  static LocationFilter RelativeStartFilter(uint64_t start_group) {
+    return LocationFilter(MoqtLocationFilterType::kRelativeStart,
+                          Location(start_group, 0),
+                          Location(kMaxGroupId, kMaxObjectId));
+  }
+  static LocationFilter AbsoluteStartFilter(Location start) {
+    return LocationFilter(MoqtLocationFilterType::kAbsoluteStart, start,
+                          Location(kMaxGroupId, kMaxObjectId));
+  }
+  static LocationFilter AbsoluteStartGroupEndFilter(Location start,
+                                                    uint64_t end_group) {
+    if (end_group < start.group) {
+      QUICHE_BUG(moqt_end_before_start) << "End group is before start location";
+      return NoLocationFilter();
+    }
+    return LocationFilter(MoqtLocationFilterType::kAbsoluteStartGroupEnd, start,
+                          Location(end_group, kMaxObjectId));
+  }
+  static LocationFilter AbsoluteRangeFilter(Location start, Location end) {
+    if (end < start) {
+      QUICHE_BUG(moqt_end_before_start)
+          << "End location is before start location";
+      return NoLocationFilter();
+    }
+    return LocationFilter(MoqtLocationFilterType::kAbsoluteRange, start, end);
+  }
+  static LocationFilter NextObjectFilter() {
+    return LocationFilter(MoqtLocationFilterType::kNextObject, Location(0, 0),
+                          Location(kMaxGroupId, kMaxObjectId));
+  }
+  ~LocationFilter() = default;
+  LocationFilter(const LocationFilter& other) = default;
+  LocationFilter& operator=(const LocationFilter& other) = default;
+
+  Location start() const {
+    return type_ == MoqtLocationFilterType::kRelativeStart ? Location(0, 0)
+                                                           : start_;
+  }
+  uint64_t end_group() const { return end_.group; }
+  Location end() const { return end_; }
+  std::optional<uint64_t> relative_start_offset() const {
+    return type_ == MoqtLocationFilterType::kRelativeStart
+               ? std::optional<uint64_t>(start_.group)
+               : std::nullopt;
+  }
+  bool is_next_object() const {
+    return type_ == MoqtLocationFilterType::kNextObject;
+  }
   // If true, the filter does not depend on knowing LargestObject, or we
   // already know LargestObject. A Subscriber cannot have an unknown window,
   // because it can't process an object without getting the track alias from
-  // the SubscribeOk.
-  bool WindowKnown() const { return start_.has_value(); }
+  // the SubscribeOk. Do not call for FETCH.
+  bool WindowKnown() const {
+    return type_ != MoqtLocationFilterType::kRelativeStart &&
+           type_ != MoqtLocationFilterType::kNextObject;
+  }
   // Publishers should not call InWindow() if !WindowKnown(), as they should
   // not forward objects without knowing the window.
   bool InWindow(Location location) const {
-    return location >= start() && location.group <= end_group_;
+    return location >= start() && location <= end();
   }
   bool InWindow(uint64_t group) const {
-    return (group >= start().group) && group <= end_group_;
+    return (group >= start().group) && group <= end().group;
   }
+
   // Update the filter when LargestObject is learned. If the type is
-  // LargestObject or NextGroupStart, changes the type to AbsoluteStart.
-  void OnLargestObject(const std::optional<Location>& largest_object);
-  SubscriptionFilter& operator=(const SubscriptionFilter& other) = default;
-  bool operator==(const SubscriptionFilter& other) const = default;
+  // RelativeStart or NextObject, sets start_. Only used for subscriptions.
+  void ConvertRelativeToAbsolute(const std::optional<Location>& largest_object);
+  // Only used for FETCH. Sets end_. If end_ < start_, returns a status that
+  // maps to kOutOfRange.
+  absl::Status TrimEndLocation(const Location& end_location);
+
+  bool operator==(const LocationFilter& other) const = default;
 
  private:
-  MoqtFilterType type_;
-  std::optional<Location> start_;
-  uint64_t end_group_ = kMaxGroupId;
+  LocationFilter(MoqtLocationFilterType type, Location start, Location end)
+      : type_(type), start_(start), end_(end) {}
+  MoqtLocationFilterType type_;
+  Location start_;
+  Location end_;
 };
 
 // Setup Options.
@@ -201,7 +250,7 @@ enum class MessageParameter : uint64_t {
   kFillTimeout = 0x0a,
   kForward = 0x10,
   kSubscriberPriority = 0x20,
-  kSubscriptionFilter = 0x21,
+  kLocationFilter = 0x21,
   kGroupOrder = 0x22,
   kNewGroupRequest = 0x32,
   kTrackNamespacePrefix = 0x34,
@@ -222,13 +271,9 @@ constexpr quic::QuicTimeDelta kMaxRendezvousTimeout =
 struct MessageParameters {
   MessageParameters() = default;
   MessageParameters(const MessageParameters&) = default;
-  // Constructors for subscription filters with Auth tokens.
-  MessageParameters(const MoqtFilterType& filter_type) {
-    subscription_filter.emplace(filter_type);
-  }
-  MessageParameters(const Location& location) {
-    subscription_filter.emplace(location);
-  }
+  // Constructor for a LocationFilter.
+  explicit MessageParameters(const LocationFilter& filter)
+      : location_filter(filter) {}
 
   // If |other| has a value in a particular field, replace the current value
   // with it. Otherwise, leave unchanged.
@@ -246,7 +291,7 @@ struct MessageParameters {
   void clear_forward() { forward_.reset(); }
   bool forward_has_value() const { return forward_.has_value(); }
   std::optional<MoqtPriority> subscriber_priority;
-  std::optional<SubscriptionFilter> subscription_filter;
+  std::optional<LocationFilter> location_filter;
   std::optional<MoqtGroupOrder> group_order;
   std::optional<uint64_t> new_group_request;
   std::optional<TrackNamespace> track_namespace_prefix;

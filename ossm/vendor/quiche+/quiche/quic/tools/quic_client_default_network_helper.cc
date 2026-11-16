@@ -12,6 +12,7 @@
 #include "absl/cleanup/cleanup.h"
 #include "quiche/quic/core/io/quic_event_loop.h"
 #include "quiche/quic/core/io/socket.h"
+#include "quiche/quic/core/quic_connection.h"
 #include "quiche/quic/core/quic_default_packet_writer.h"
 #include "quiche/quic/core/quic_packets.h"
 #include "quiche/quic/core/quic_types.h"
@@ -154,11 +155,15 @@ void QuicClientDefaultNetworkHelper::OnSocketEvent(
     int times_to_read = max_reads_per_event_loop_;
     bool more_to_read = true;
     QuicPacketCount packets_dropped = 0;
-    while (client_->connected() && more_to_read && times_to_read > 0) {
-      more_to_read = packet_reader_->ReadAndDispatchPackets(
-          fd, GetLatestClientAddress().port(), *client_->helper()->GetClock(),
-          this, overflow_supported_ ? &packets_dropped : nullptr);
-      --times_to_read;
+    {
+      QuicConnection::ScopedAckDeferrer ack_deferrer(
+          client_->connected() ? client_->session()->connection() : nullptr);
+      while (client_->connected() && more_to_read && times_to_read > 0) {
+        more_to_read = packet_reader_->ReadAndDispatchPackets(
+            fd, GetLatestClientAddress().port(), *client_->helper()->GetClock(),
+            this, overflow_supported_ ? &packets_dropped : nullptr);
+        --times_to_read;
+      }
     }
     if (packets_dropped_ < packets_dropped) {
       QUIC_LOG(ERROR)

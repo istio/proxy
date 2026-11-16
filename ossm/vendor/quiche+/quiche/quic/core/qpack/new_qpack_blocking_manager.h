@@ -27,7 +27,7 @@ class QUICHE_EXPORT NewQpackBlockingManager {
  public:
   // "IndexSet" is a misnomer. It actually keeps track of the min and max of a
   // set of indices.
-  class IndexSet {
+  class QUICHE_EXPORT IndexSet {
    public:
     IndexSet() = default;
     IndexSet(std::initializer_list<uint64_t> indices);  // Test only.

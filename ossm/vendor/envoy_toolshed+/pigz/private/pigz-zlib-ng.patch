@@ -1,0 +1,11 @@
+--- BUILD.bazel
++++ BUILD.bazel
+@@ -25,7 +25,7 @@
+         "-lpthread",
+     ],
+     visibility = ["//visibility:public"],
+-    deps = ["@zopfli", "@zlib"],
++    deps = ["@zopfli", "@@zlib-ng+//:zlib"],
+ )
+ 
+ alias(

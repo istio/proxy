@@ -1191,7 +1191,8 @@ size_t QuicPacketCreator::BuildConnectivityProbingPacket(
 }
 
 size_t QuicPacketCreator::SerializeCoalescedPacket(
-    const QuicCoalescedPacket& coalesced, char* buffer, size_t buffer_len) {
+    const QuicCoalescedPacket& coalesced, char* buffer, size_t buffer_len,
+    bool allow_unpadded_server_initial) {
   if (HasPendingFrames()) {
     QUIC_BUG(quic_bug_10752_18)
         << ENDPOINT << "Try to serialize coalesced packet with pending frames";
@@ -1207,10 +1208,13 @@ size_t QuicPacketCreator::SerializeCoalescedPacket(
     // Padding coalesced packet containing initial packet to full.
     padding_size = coalesced.max_packet_length() - coalesced.length();
     if (framer_->perspective() == Perspective::IS_SERVER &&
-        QuicUtils::ContainsFrameType(
-            coalesced.initial_packet()->retransmittable_frames,
-            CONNECTION_CLOSE_FRAME)) {
-      // Do not pad server initial connection close packet.
+        (QuicUtils::ContainsFrameType(
+             coalesced.initial_packet()->retransmittable_frames,
+             CONNECTION_CLOSE_FRAME) ||
+         (allow_unpadded_server_initial && coalesced.NumberOfPackets() > 1 &&
+          coalesced.initial_packet()->has_crypto_handshake == NOT_HANDSHAKE))) {
+      // Do not pad server initial connection close packet or coalesced server
+      // initial packet without CRYPTO frames.
       padding_size = 0;
     }
     initial_length = ReserializeInitialPacketInCoalescedPacket(

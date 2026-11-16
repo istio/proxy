@@ -58,7 +58,7 @@ MoqtRelay::MoqtRelay(std::unique_ptr<quic::ProofSource> proof_source,
           [this](absl::string_view path) {
             return IncomingSessionHandler(path);
           },
-          MoqtSessionParameters(/*deliver_partial_objects=*/true))) {
+          MoqtSessionParameters(/*max_undelivered_object=*/0))) {
   quiche::QuicheIpAddress bind_ip_address;
   QUICHE_CHECK(bind_ip_address.FromString(bind_address));
   // CreateUDPSocketAndListen() creates the event loop that we will pass to
@@ -91,7 +91,7 @@ std::unique_ptr<moqt::MoqtClient> MoqtRelay::CreateClient(
   } else {
     verifier = quic::CreateDefaultProofVerifier(server_id.host());
   }
-  MoqtSessionParameters parameters(/*deliver_partial_objects=*/true);
+  MoqtSessionParameters parameters(/*max_undelivered_object=*/0);
   return std::make_unique<moqt::MoqtClient>(
       peer_address, server_id, std::move(verifier), event_loop, parameters);
 }

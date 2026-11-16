@@ -34,6 +34,7 @@
 #include "quiche/quic/moqt/moqt_session_interface.h"
 #include "quiche/quic/moqt/moqt_types.h"
 #include "quiche/quic/moqt/test_tools/moqt_mock_visitor.h"
+#include "quiche/quic/moqt/test_tools/moqt_session_peer.h"
 #include "quiche/quic/moqt/test_tools/moqt_simulator_harness.h"
 #include "quiche/quic/test_tools/quic_test_utils.h"
 #include "quiche/quic/test_tools/simulator/link.h"
@@ -108,7 +109,7 @@ class MoqtIntegrationTest : public quiche::test::QuicheTest {
                 std::variant<SubscribeOkData, MoqtRequestErrorInfo> response) {
               received_ok = std::holds_alternative<SubscribeOkData>(response);
             });
-    MessageParameters parameters(MoqtFilterType::kLargestObject);
+    MessageParameters parameters(LocationFilter::NextObjectFilter());
     client_->session()->Subscribe(track_name, visitor, parameters);
 
     bool success =
@@ -269,7 +270,7 @@ TEST_F(MoqtIntegrationTest, PublishNamespaceSuccessSubscribeInResponse) {
         absl::StatusOr<FullTrackName> track_name =
             FullTrackName::Create(track_namespace, "/catalog");
         QUICHE_ASSERT_OK(track_name.status());
-        MessageParameters parameters(MoqtFilterType::kLargestObject);
+        MessageParameters parameters(LocationFilter::NextObjectFilter());
         server_->session()->Subscribe(*track_name, &subscribe_visitor_,
                                       parameters);
       });
@@ -358,7 +359,7 @@ TEST_F(MoqtIntegrationTest, SendMultipleGroups) {
   EstablishSession();
   MoqtKnownTrackPublisher publisher;
   server_->session()->set_publisher(&publisher);
-  MessageParameters parameters(MoqtFilterType::kLargestObject);
+  MessageParameters parameters(LocationFilter::NextObjectFilter());
 
   for (MoqtForwardingPreference forwarding_preference :
        {MoqtForwardingPreference::kSubgroup,
@@ -599,7 +600,7 @@ TEST_F(MoqtIntegrationTest, SubscribeCurrentObjectOk) {
               std::variant<SubscribeOkData, MoqtRequestErrorInfo> response) {
             received_ok = std::holds_alternative<SubscribeOkData>(response);
           });
-  MessageParameters parameters(MoqtFilterType::kLargestObject);
+  MessageParameters parameters(LocationFilter::NextObjectFilter());
   client_->session()->Subscribe(full_track_name, &subscribe_visitor_,
                                 parameters);
   bool success =
@@ -630,7 +631,7 @@ TEST_F(MoqtIntegrationTest, SubscribeNextGroupOk) {
               std::variant<SubscribeOkData, MoqtRequestErrorInfo> response) {
             received_ok = std::holds_alternative<SubscribeOkData>(response);
           });
-  MessageParameters parameters(MoqtFilterType::kNextGroupStart);
+  MessageParameters parameters(LocationFilter::RelativeStartFilter(0));
   client_->session()->Subscribe(full_track_name, &subscribe_visitor_,
                                 parameters);
   bool success =
@@ -649,7 +650,7 @@ TEST_F(MoqtIntegrationTest, SubscribeError) {
             received_ok =
                 std::holds_alternative<MoqtRequestErrorInfo>(response);
           });
-  MessageParameters parameters(MoqtFilterType::kLargestObject);
+  MessageParameters parameters(LocationFilter::NextObjectFilter());
   client_->session()->Subscribe(full_track_name, &subscribe_visitor_,
                                 parameters);
   bool success =
@@ -681,7 +682,7 @@ TEST_F(MoqtIntegrationTest, CleanPublishDone) {
   EXPECT_TRUE(success);
 
   // Reject this subscribe because there already is one.
-  MessageParameters parameters(MoqtFilterType::kLargestObject);
+  MessageParameters parameters(LocationFilter::NextObjectFilter());
   EXPECT_FALSE(client_->session()->Subscribe(full_track_name,
                                              &subscribe_visitor_, parameters));
   queue->RemoveAllSubscriptions();  // Induce a PUBLISH_DONE.
@@ -730,7 +731,7 @@ TEST_F(MoqtIntegrationTest, ObjectAcks) {
         ack_function(100, 200, quic::QuicTimeDelta::FromMicroseconds(456));
       });
 
-  MessageParameters parameters(MoqtFilterType::kLargestObject);
+  MessageParameters parameters(LocationFilter::NextObjectFilter());
   parameters.oack_window_size = quic::QuicTimeDelta::FromMilliseconds(100);
   client_->session()->Subscribe(full_track_name, &subscribe_visitor_,
                                 parameters);
@@ -783,7 +784,7 @@ TEST_F(MoqtIntegrationTest, SubgroupDeliveryTimeout) {
   EXPECT_CALL(subscribe_visitor_, OnStreamReset).WillOnce([&]() {
     stream_reset = true;
   });
-  MessageParameters parameters(MoqtFilterType::kLargestObject);
+  MessageParameters parameters(LocationFilter::NextObjectFilter());
   // Set delivery timeout to ~ 1 RTT: any loss is fatal.
   parameters.subgroup_delivery_timeout =
       quic::QuicTimeDelta::FromMilliseconds(100);
@@ -836,7 +837,7 @@ TEST_F(MoqtIntegrationTest, ObjectDeliveryTimeout) {
   EXPECT_CALL(subscribe_visitor_, OnStreamReset).WillOnce([&]() {
     stream_reset = true;
   });
-  MessageParameters parameters(MoqtFilterType::kLargestObject);
+  MessageParameters parameters(LocationFilter::NextObjectFilter());
   // Set delivery timeout to ~ 1 RTT.
   parameters.object_delivery_timeout =
       quic::QuicTimeDelta::FromMilliseconds(100);
@@ -921,7 +922,7 @@ TEST_F(MoqtIntegrationTest, RecordTrace) {
       std::make_shared<MoqtOutgoingQueue>(FullTrackName{"test", "subgroup"});
   publisher.Add(queue);
 
-  MessageParameters parameters(MoqtFilterType::kLargestObject);
+  MessageParameters parameters(LocationFilter::NextObjectFilter());
   server_->session()->Subscribe(FullTrackName("test", "subgroup"),
                                 &subscribe_visitor_, parameters);
   bool subscribed = false;
@@ -1343,7 +1344,7 @@ TEST_F(MoqtIntegrationTest, RelayForwardsObjectAcks) {
                 std::holds_alternative<SubscribeOkData>(response);
           });
 
-  MessageParameters parameters(MoqtFilterType::kLargestObject);
+  MessageParameters parameters(LocationFilter::NextObjectFilter());
   parameters.oack_window_size = quic::QuicTimeDelta::FromMilliseconds(100);
   EXPECT_CALL(monitoring,
               OnObjectAckSupportKnown(std::optional<quic::QuicTimeDelta>(
@@ -1444,7 +1445,7 @@ TEST_F(MoqtIntegrationTest, SubscribeWithNewGroupRequest) {
   queue->AddObject(quiche::QuicheMemSlice::Copy("object 1"), /*key=*/true);
   queue->AddObject(quiche::QuicheMemSlice::Copy("object 2"), /*key=*/false);
 
-  MessageParameters parameters(MoqtFilterType::kNextGroupStart);
+  MessageParameters parameters(LocationFilter::RelativeStartFilter(0));
   parameters.new_group_request = 0;
   client_->session()->Subscribe(track_name, &subscribe_visitor_, parameters);
 
@@ -1497,8 +1498,7 @@ TEST_F(MoqtIntegrationTest, PublishWithNewGroupRequest) {
         dynamic_groups = properties.dynamic_groups();
         MessageParameters ok_parameters;
         ok_parameters.new_group_request = 0;
-        ok_parameters.subscription_filter =
-            SubscriptionFilter(MoqtFilterType::kNextGroupStart);
+        ok_parameters.location_filter = LocationFilter::RelativeStartFilter(0);
         std::move(callback)(ok_parameters);
         return &subscribe_visitor_;
       };
@@ -1528,6 +1528,54 @@ TEST_F(MoqtIntegrationTest, PublishWithNewGroupRequest) {
   EXPECT_TRUE(success);
   EXPECT_EQ(largest_id, Location(0, 1));
   EXPECT_TRUE(dynamic_groups);
+}
+
+TEST_F(MoqtIntegrationTest, MaxUndeliveredObjectExceeded) {
+  EstablishSession();
+  MoqtSessionPeer::SetMaxUndeliveredObject(client_->session(), 500);
+  FullTrackName full_track_name("foo", "bar");
+
+  MoqtKnownTrackPublisher publisher;
+  server_->session()->set_publisher(&publisher);
+  auto queue = std::make_shared<TestTrackPublisher>(full_track_name);
+  publisher.Add(queue);
+
+  SubscribeLatestObject(full_track_name, &subscribe_visitor_);
+
+  EXPECT_CALL(client_callbacks_.session_terminated_callback, Call(_)).Times(0);
+  EXPECT_CALL(server_callbacks_.session_terminated_callback, Call(_)).Times(0);
+
+  // Send a small first object on group 0 so the stream index is registered,
+  // followed by a 5000-byte object (> 1 MTU and > max_undelivered_object = 500)
+  // on group 0, and a small object on group 1 to verify the session stays alive
+  // and delivers subsequent streams.
+  EXPECT_CALL(subscribe_visitor_,
+              OnObjectFragment(full_track_name,
+                               MetadataLocationAndStatus(
+                                   Location{0, 0}, MoqtObjectStatus::kNormal),
+                               "first", /*offset=*/0));
+  bool stream_reset = false;
+  EXPECT_CALL(subscribe_visitor_,
+              OnStreamReset(full_track_name, DataStreamIndex{0, 0}))
+      .WillOnce([&]() { stream_reset = true; });
+  bool small_received = false;
+  EXPECT_CALL(subscribe_visitor_,
+              OnObjectFragment(full_track_name,
+                               MetadataLocationAndStatus(
+                                   Location{1, 0}, MoqtObjectStatus::kNormal),
+                               "small", /*offset=*/0))
+      .WillOnce([&]() { small_received = true; });
+  EXPECT_CALL(subscribe_visitor_,
+              OnStreamFin(full_track_name, DataStreamIndex{1, 0}));
+
+  queue->AddObject(Location{0, 0}, 0, "first", false);
+  std::string large_data(5000, 'a');
+  queue->AddObject(Location{0, 1}, 0, large_data, true);
+  queue->AddObject(Location{1, 0}, 0, "small", true);
+
+  bool success = test_harness_.RunUntilWithDefaultTimeout(
+      [&]() { return stream_reset && small_received; });
+  EXPECT_TRUE(success);
 }
 
 }  // namespace

@@ -48,7 +48,7 @@ class QuicReceivedPacketManagerTest : public QuicTest {
     clock_.AdvanceTime(QuicTime::Delta::FromSeconds(1));
     rtt_stats_.UpdateRtt(kMinRttMs, QuicTime::Delta::Zero(), QuicTime::Zero());
     received_manager_.set_receive_timestamp_basis(clock_.ApproximateNow());
-    received_manager_.set_save_timestamps(true);
+    received_manager_.SaveReceiveTimestamps(kMaxReceiveTimestampsToSend);
   }
 
   void RecordPacketReceipt(uint64_t packet_number) {
@@ -202,7 +202,7 @@ TEST_F(QuicReceivedPacketManagerTest, TrimAckRangesEarly) {
 }
 
 TEST_F(QuicReceivedPacketManagerTest, TrimmedAckRangesRemovedFromTimestamps) {
-  received_manager_.set_save_timestamps(true);
+  received_manager_.SaveReceiveTimestamps(kMaxReceiveTimestampsToSend);
   received_manager_.set_max_ack_ranges(2);
 
   RecordPacketReceipt(
@@ -269,7 +269,7 @@ TEST_F(QuicReceivedPacketManagerTest, IgnoreTimestampsEarlierThanBasis) {
 }
 
 TEST_F(QuicReceivedPacketManagerTest, SaveOutOfOrderPackets) {
-  received_manager_.set_save_timestamps(true);
+  received_manager_.SaveReceiveTimestamps(kMaxReceiveTimestampsToSend);
   EXPECT_FALSE(received_manager_.ack_frame_updated());
   RecordPacketReceipt(1, clock_.ApproximateNow());
   EXPECT_TRUE(received_manager_.ack_frame_updated());
@@ -281,6 +281,46 @@ TEST_F(QuicReceivedPacketManagerTest, SaveOutOfOrderPackets) {
   RecordPacketReceipt(
       3, clock_.ApproximateNow() + QuicTime::Delta::FromMilliseconds(3));
   EXPECT_EQ(3u, received_manager_.ack_frame().received_packet_times.size());
+}
+
+TEST_F(QuicReceivedPacketManagerTest, EvictOldestTimestampsWhenLimitExceeded) {
+  constexpr size_t kMaxTimestamps = 3;
+  received_manager_.SaveReceiveTimestamps(kMaxTimestamps);
+
+  for (uint64_t i = 1; i <= 5; ++i) {
+    RecordPacketReceipt(
+        i, clock_.ApproximateNow() + QuicTime::Delta::FromMilliseconds(i));
+  }
+
+  // Only the 3 most recent timestamps (packets 3, 4, 5) should be retained.
+  const auto& timestamps = received_manager_.ack_frame().received_packet_times;
+  ASSERT_EQ(kMaxTimestamps, timestamps.size());
+  EXPECT_EQ(QuicPacketNumber(3), timestamps[0].first);
+  EXPECT_EQ(QuicPacketNumber(4), timestamps[1].first);
+  EXPECT_EQ(QuicPacketNumber(5), timestamps[2].first);
+}
+
+TEST_F(QuicReceivedPacketManagerTest, TruncateExistingTimestampsOnLowerLimit) {
+  received_manager_.SaveReceiveTimestamps(5);
+  for (uint64_t i = 1; i <= 5; ++i) {
+    RecordPacketReceipt(
+        i, clock_.ApproximateNow() + QuicTime::Delta::FromMilliseconds(i));
+  }
+  EXPECT_EQ(5u, received_manager_.ack_frame().received_packet_times.size());
+
+  received_manager_.SaveReceiveTimestamps(2);
+  const auto& timestamps = received_manager_.ack_frame().received_packet_times;
+  ASSERT_EQ(2u, timestamps.size());
+  EXPECT_EQ(QuicPacketNumber(4), timestamps[0].first);
+  EXPECT_EQ(QuicPacketNumber(5), timestamps[1].first);
+
+  received_manager_.SaveReceiveTimestamps(0);
+  EXPECT_FALSE(received_manager_.save_timestamps());
+  EXPECT_TRUE(received_manager_.ack_frame().received_packet_times.empty());
+
+  RecordPacketReceipt(
+      6, clock_.ApproximateNow() + QuicTime::Delta::FromMilliseconds(6));
+  EXPECT_TRUE(received_manager_.ack_frame().received_packet_times.empty());
 }
 
 TEST_F(QuicReceivedPacketManagerTest, HasMissingPackets) {

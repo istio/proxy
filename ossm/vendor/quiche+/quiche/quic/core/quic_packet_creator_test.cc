@@ -4860,6 +4860,41 @@ TEST_P(QuicPacketCreatorTest, SconePacketWithInitialPacketBufferOverflow) {
       "Client: Failed to encrypt packet number 1");
 }
 
+TEST_P(QuicPacketCreatorTest, SerializeCoalescedServerInitialPingNotPadded) {
+  if (!VersionIsIetfQuic(creator_.transport_version())) {
+    return;
+  }
+  QuicFramerPeer::SetPerspective(&client_framer_, Perspective::IS_SERVER);
+
+  QuicCoalescedPacket coalesced;
+  quiche::SimpleBufferAllocator allocator;
+  QuicSocketAddress self_address(QuicIpAddress::Loopback4(), 1);
+  QuicSocketAddress peer_address(QuicIpAddress::Loopback4(), 2);
+
+  creator_.set_encryption_level(ENCRYPTION_HANDSHAKE);
+  frames_.push_back(QuicFrame(QuicPingFrame()));
+  SerializedPacket handshake_packet = SerializeAllFrames(frames_);
+  frames_.clear();
+  ASSERT_TRUE(coalesced.MaybeCoalescePacket(
+      handshake_packet, self_address, peer_address, &allocator,
+      creator_.max_packet_length(), ECN_NOT_ECT, 0));
+
+  creator_.set_encryption_level(ENCRYPTION_INITIAL);
+  frames_.push_back(QuicFrame(QuicPingFrame()));
+  SerializedPacket initial_packet = SerializeAllFrames(frames_);
+  frames_.clear();
+  ASSERT_TRUE(coalesced.MaybeCoalescePacket(
+      initial_packet, self_address, peer_address, &allocator,
+      creator_.max_packet_length(), ECN_NOT_ECT, 0));
+
+  char buffer[kMaxOutgoingPacketSize];
+  size_t coalesced_length = creator_.SerializeCoalescedPacket(
+      coalesced, buffer, kMaxOutgoingPacketSize,
+      /*allow_unpadded_server_initial=*/true);
+  EXPECT_EQ(coalesced.length(), coalesced_length);
+  EXPECT_LT(coalesced_length, coalesced.max_packet_length());
+}
+
 }  // namespace
 }  // namespace test
 }  // namespace quic

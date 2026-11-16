@@ -98,7 +98,8 @@ inline MessageParameters SubscribeForTest() {
   parameters.rendezvous_timeout = quic::QuicTimeDelta::FromMilliseconds(100);
   parameters.set_forward(true);
   parameters.subscriber_priority = 0x20;
-  parameters.subscription_filter.emplace(Location(4, 1));
+  parameters.location_filter =
+      LocationFilter::AbsoluteStartFilter(Location(4, 1));
   parameters.group_order = MoqtGroupOrder::kDescending;
   return parameters;
 }
@@ -721,7 +722,7 @@ class QUICHE_NO_EXPORT SubscribeMessage : public TestMessageBase {
   }
 
   void ExpandVarints() override {
-    ExpandVarintsImpl("vvv---v----vv--vv-----vvv-v-vv---v-");
+    ExpandVarintsImpl("vvv---v----vv--vv-----vvv-v-vvvvv-");
   }
 
   MessageStructuredData structured_data() const override {
@@ -736,8 +737,8 @@ class QUICHE_NO_EXPORT SubscribeMessage : public TestMessageBase {
   };
 
  private:
-  uint8_t raw_packet_[38] = {
-      0x03, 0x00, 0x23, 0x01,        // request_id = 1
+  uint8_t raw_packet_[37] = {
+      0x03, 0x00, 0x22, 0x01,        // request_id = 1
       0x01, 0x03, 0x66, 0x6f, 0x6f,  // track_namespace = "foo"
       0x04, 0x61, 0x62, 0x63, 0x64,  // track_name = "abcd"
       0x07,                          // 7 parameters
@@ -746,8 +747,8 @@ class QUICHE_NO_EXPORT SubscribeMessage : public TestMessageBase {
       0x01, 0x64,                                // rendezvous_timeout = 100 ms
       0x0c, 0x01,                                // forward = true
       0x10, 0x20,                                // subscriber_priority = 0x20
-      0x01, 0x03, 0x03, 0x04, 0x01,  // filter_type = kAbsoluteStart (4, 1)
-      0x01, 0x02,                    // group_order = kDescending
+      0x01, 0x02, 0x04, 0x01,  // filter_type = kAbsoluteStart (4, 1)
+      0x01, 0x02,              // group_order = kDescending
   };
 };
 
@@ -917,7 +918,8 @@ class QUICHE_NO_EXPORT RequestUpdateMessage : public TestMessageBase {
         quic::QuicTimeDelta::FromMilliseconds(10000);
     request_update_.parameters.set_forward(true);
     request_update_.parameters.subscriber_priority = 0xaa;
-    request_update_.parameters.subscription_filter.emplace(Location(3, 1), 5);
+    request_update_.parameters.location_filter =
+        LocationFilter::AbsoluteStartGroupEndFilter(Location(3, 1), 5);
     request_update_.parameters.track_namespace_prefix = TrackNamespace({"bar"});
   }
 
@@ -934,20 +936,20 @@ class QUICHE_NO_EXPORT RequestUpdateMessage : public TestMessageBase {
     return true;
   }
 
-  void ExpandVarints() override { ExpandVarintsImpl("vvv--v-v-vv----vvv---"); }
+  void ExpandVarints() override { ExpandVarintsImpl("vvv--v-v-vvvvvvvv---"); }
 
   MessageStructuredData structured_data() const override {
     return TestMessageBase::MessageStructuredData(request_update_);
   }
 
  private:
-  uint8_t raw_packet_[24] = {
-      0x02, 0x00, 0x15, 0x02,              // request_id = 2
+  uint8_t raw_packet_[23] = {
+      0x02, 0x00, 0x14, 0x02,              // request_id = 2
       0x05,                                // Five parameters
       0x02, 0xa7, 0x10,                    // object_delivery_timeout = 10000
       0x0e, 0x01,                          // forward = true
       0x10, 0xaa,                          // subscriber_priority = 0xaa
-      0x01, 0x04, 0x04, 0x03, 0x01, 0x02,  // Absolute Range: (3, 1) to 5
+      0x01, 0x03, 0x03, 0x01, 0x02,        // AbsoluteStartGroupEnd: (3, 1) to 5
       0x13, 0x01, 0x03, 0x62, 0x61, 0x72,  // prefix = "bar"
   };
 
@@ -1651,8 +1653,8 @@ class QUICHE_NO_EXPORT PublishStateNotifyMessage : public TestMessageBase {
     SetWireImage(raw_packet_, sizeof(raw_packet_));
     publish_state_notify_.parameters.largest_object = Location(10, 1);
     publish_state_notify_.parameters.set_forward(true);
-    publish_state_notify_.parameters.subscription_filter.emplace(Location(3, 1),
-                                                                 5);
+    publish_state_notify_.parameters.location_filter =
+        LocationFilter::AbsoluteStartGroupEndFilter(Location(3, 1), 5);
   }
 
   bool EqualFieldValues(const MessageStructuredData& values) const override {
@@ -1664,19 +1666,19 @@ class QUICHE_NO_EXPORT PublishStateNotifyMessage : public TestMessageBase {
     return true;
   }
 
-  void ExpandVarints() override { ExpandVarintsImpl("vvvvv-vv----"); }
+  void ExpandVarints() override { ExpandVarintsImpl("vvvvv-vvvvv"); }
 
   MessageStructuredData structured_data() const override {
     return TestMessageBase::MessageStructuredData(publish_state_notify_);
   }
 
  private:
-  uint8_t raw_packet_[15] = {
-      0x22, 0x00, 0x0c,
-      0x03,                                // 3 parameters
-      0x09, 0x0a, 0x01,                    // largest_object = (10, 1)
-      0x07, 0x01,                          // forward = true
-      0x11, 0x04, 0x04, 0x03, 0x01, 0x02,  // Absolute Range: (3, 1) to 5
+  uint8_t raw_packet_[14] = {
+      0x22, 0x00, 0x0b,
+      0x03,                          // 3 parameters
+      0x09, 0x0a, 0x01,              // largest_object = (10, 1)
+      0x07, 0x01,                    // forward = true
+      0x11, 0x03, 0x03, 0x01, 0x02,  // AbsoluteStartGroupEnd: (3, 1) to 5
   };
 
   MoqtPublishStateNotify publish_state_notify_ = {

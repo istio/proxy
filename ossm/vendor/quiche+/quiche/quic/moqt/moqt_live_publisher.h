@@ -18,6 +18,7 @@
 #include "quiche/quic/core/quic_time.h"
 #include "quiche/quic/moqt/moqt_bidi_stream.h"
 #include "quiche/quic/moqt/moqt_error.h"
+#include "quiche/quic/moqt/moqt_fetch_task.h"
 #include "quiche/quic/moqt/moqt_framer.h"
 #include "quiche/quic/moqt/moqt_key_value_pair.h"
 #include "quiche/quic/moqt/moqt_messages.h"
@@ -89,6 +90,7 @@ class QUICHE_EXPORT SessionToPublisherInterface {
   virtual const quic::QuicClock* clock() = 0;
   virtual MoqtTraceRecorder& trace_recorder() = 0;
   virtual webtransport::Session* session() = 0;
+  virtual uint64_t NextRequestId() = 0;
 };
 
 // State for delivery of objects via a subscription, whether initiated by a
@@ -137,9 +139,9 @@ class LivePublisher : public MoqtObjectListener, public LivePublisherInterface {
   // LivePublisherInterface implementation.
   bool InWindow(Location location) override {
     return parameters_.forward() &&
-           (!parameters_.subscription_filter.has_value() ||
-            (parameters_.subscription_filter->WindowKnown() &&
-             parameters_.subscription_filter->InWindow(location)));
+           (!parameters_.location_filter.has_value() ||
+            (parameters_.location_filter->WindowKnown() &&
+             parameters_.location_filter->InWindow(location)));
   };
   const quic::QuicClock* clock() override {
     if (visitor() == nullptr) {
@@ -176,10 +178,17 @@ class LivePublisher : public MoqtObjectListener, public LivePublisherInterface {
   // Called when the parameters_ need an update and will generate REQUEST_OK or
   // REQUEST_ERROR, unless from_request_ok is true (which requires no response).
   void Update(const MessageParameters& parameters, bool from_request_ok);
+  // Change the parameters for the subscription, whether initiated by PUBLISH or
+  // SUBSCRIBE. Sends REQUEST_UPDATE and/or PUBLISH_STATE_NOTIFY depending on
+  // which |parameters| are included.
+  // Returns true if all required messages were sent, and |response_callback|
+  // will be (or has already been) invoked.
+  bool PublishUpdate(const MessageParameters& parameters,
+                     MoqtResponseCallback response_callback);
 
   bool can_have_joining_fetch() const { return parameters_.forward(); }
 
-  bool established() const { return established_; }
+  bool largest_object_known() const { return largest_object_known_; }
 
   quiche::QuicheWeakPtr<LivePublisherInterface> GetWeakPtr() {
     return weak_ptr_factory_.Create();
@@ -203,9 +212,9 @@ class LivePublisher : public MoqtObjectListener, public LivePublisherInterface {
   // subscriber.
   bool InWindow(uint64_t group) {
     return parameters_.forward() &&
-           (!parameters_.subscription_filter.has_value() ||
-            (parameters_.subscription_filter->WindowKnown() &&
-             parameters_.subscription_filter->InWindow(group)));
+           (!parameters_.location_filter.has_value() ||
+            (parameters_.location_filter->WindowKnown() &&
+             parameters_.location_filter->InWindow(group)));
   }
 
   void SendDatagram(Location sequence);
@@ -257,8 +266,10 @@ class LivePublisher : public MoqtObjectListener, public LivePublisherInterface {
   MoqtBidiStreamBase* absl_nonnull bidi_stream_;
   quiche::QuicheWeakPtr<SessionToPublisherInterface> visitor_;
   uint64_t request_id_;
-  // Subscription is in the ESTABLISHED state.
-  bool established_;
+  // True once LARGEST_OBJECT has been determined (always true for PUBLISH, and
+  // set on SUBSCRIBE_OK for SUBSCRIBE).
+  bool largest_object_known_;
+  const bool is_publish_;
   const uint64_t track_alias_;
   MoqtFramer framer_;
   // These are (mostly) the parameters from the SUBSCRIBE message. However,

@@ -1,0 +1,15 @@
+module(
+    name = "envoy_toolshed_jq",
+    version = "0.5.22.envoy",
+    bazel_compatibility = [">=7.2.1"],
+)
+
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+bazel_dep(name = "bazel_skylib", version = "1.9.2")
+bazel_dep(name = "rules_jq", version = "0.0.1.envoy")
+bazel_dep(name = "rules_shell", version = "0.8.0")
+
+# yq for the module tests; jq comes from `rules_jq` (`//:jq`).
+bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
+bazel_lib_toolchains.yq()
+use_repo(bazel_lib_toolchains, "yq", "yq_toolchains")

@@ -1090,6 +1090,24 @@ class QUICHE_EXPORT QuicConnection
     const bool handshake_packet_sent_;
   };
 
+  // While in scope on an IETF QUIC connection, suppresses sending standalone
+  // ACK-only packets (e.g. while processing a batch of packets from recvmmsg)
+  // while still allowing outgoing data or control packets to opportunistically
+  // bundle pending ACKs. When the outermost deferrer goes out of scope, sends
+  // any due ACKs or updates the ACK alarm once for the batch. |connection| may
+  // be nullptr; if non-null, it must outlive the ScopedAckDeferrer.
+  class QUICHE_EXPORT ScopedAckDeferrer {
+   public:
+    explicit ScopedAckDeferrer(QuicConnection* connection);
+    ScopedAckDeferrer(const ScopedAckDeferrer&) = delete;
+    ScopedAckDeferrer& operator=(const ScopedAckDeferrer&) = delete;
+    ~ScopedAckDeferrer();
+
+   private:
+    QuicConnection* connection_;
+    bool active_;
+  };
+
   class QUICHE_EXPORT ScopedEncryptionLevelContext {
    public:
     ScopedEncryptionLevelContext(QuicConnection* connection,
@@ -2009,6 +2027,12 @@ class QUICHE_EXPORT QuicConnection
   // Tries to fill coalesced packet with data of higher packet space.
   void MaybeCoalescePacketOfHigherSpace();
 
+  // Tries to coalesce a PING packet of a lower encryption level (INITIAL or
+  // HANDSHAKE) with the last packet of a flight when that space has
+  // unacknowledged retransmittable data and there is available space in the
+  // coalesced packet.
+  void MaybeCoalescePingOfLowerSpace();
+
   // Serialize and send coalesced_packet. Returns false if serialization fails
   // or the write causes errors, otherwise, returns true.
   bool FlushCoalescedPacket();
@@ -2557,9 +2581,6 @@ class QUICHE_EXPORT QuicConnection
   bool in_probe_time_out_ : 1 = false;
   // If true, upon seeing a new client address, validate the client address.
   bool validate_client_addresses_ : 1 = false;
-  // Indicates whether we should proactively validate peer address on a
-  // PATH_CHALLENGE received.
-  bool should_proactively_validate_peer_address_on_path_challenge_ : 1 = false;
   // If SCONE is enabled, maybe send a SCONE packet.
   void MaybeSendSconePacket();
   // If true, send connection close packet on INVALID_VERSION.
@@ -2609,6 +2630,10 @@ class QUICHE_EXPORT QuicConnection
   bool spin_bit_enabled_ : 1 = false;
   bool fix_mtu_discovery_ : 1 = GetQuicReloadableFlag(quic_fix_mtu_discovery);
   bool send_acks_after_on_can_write_ : 1 = false;
+  bool coalesce_ping_with_last_packet_ : 1 = false;
+  // Set by the client-only DAOP connection option.
+  bool allow_deferring_ack_only_packets_ : 1 = false;
+  bool defer_ack_only_packets_ : 1 = false;
 };
 
 }  // namespace quic

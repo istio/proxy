@@ -105,6 +105,7 @@ class MoqtPublishResponseStream : public MoqtBidiStreamBase {
   absl::Status OnControlMessage(const MoqtRequestOk& message);
   absl::Status OnControlMessage(const MoqtRequestError& message);
   absl::Status OnControlMessage(const MoqtPublishDone& message);
+  absl::Status OnControlMessage(const MoqtPublishStateNotify& message);
 
   LiveSubscriber* track() { return subscriber_.get(); }
 

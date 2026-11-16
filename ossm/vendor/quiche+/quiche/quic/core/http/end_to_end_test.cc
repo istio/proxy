@@ -7870,15 +7870,14 @@ TEST_P(EndToEndTest, CustomTransportParameters) {
     ASSERT_TRUE(Initialize());
     return;
   }
-  constexpr auto kCustomParameter =
+  static constexpr auto kCustomParameter =
       static_cast<TransportParameters::TransportParameterId>(0xff34);
   client_config_.custom_transport_parameters_to_send()[kCustomParameter] =
       "test";
   NiceMock<MockQuicConnectionDebugVisitor> visitor;
   connection_debug_visitor_ = &visitor;
   EXPECT_CALL(visitor, OnTransportParametersSent(_))
-      .WillOnce([kCustomParameter](
-                    const TransportParameters& transport_parameters) {
+      .WillOnce([](const TransportParameters& transport_parameters) {
         auto it = transport_parameters.custom_parameters.find(kCustomParameter);
         ASSERT_NE(it, transport_parameters.custom_parameters.end());
         EXPECT_EQ(it->second, "test");

@@ -34,7 +34,7 @@ build --repo_env=ENVOY_TOOLSHED_SKIP_LLVM_MINIMAL_DOWNLOAD=1
 # does not depend on the build host's libstdc++.so.6 GLIBCXX versions at runtime.
 build --action_env=BAZEL_LINKLIBS=-l%:libstdc++.a
 build --repo_env=BAZEL_USE_LIBSTDCPP=True
-build --action_env=Clang_DIR=/usr/lib64/llvm21
+build --action_env=Clang_DIR=/usr/lib64/llvm22
 
 # Build wee8 (V8) from source instead of envoy_toolshed's prebuilt libwee8.a.
 # The prebuilt (~124MB) exceeds GitHub's 100MB file limit, so it cannot live in

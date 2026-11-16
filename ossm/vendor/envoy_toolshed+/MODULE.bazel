@@ -1,6 +1,6 @@
 module(
     name = "envoy_toolshed",
-    version = "0.5.20.envoy",
+    version = "0.5.22.envoy",
     bazel_compatibility = [">=7.2.1"],
 )
 
@@ -9,7 +9,7 @@ bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
 bazel_dep(name = "bazel_skylib", version = "1.9.2")
 bazel_dep(name = "boringssl", version = "0.20260813.0")
 bazel_dep(name = "buildifier_prebuilt", version = "10.0.1", repo_name = "buildifier")
-bazel_dep(name = "envoy_toolshed_jq", version = "0.5.20.envoy")
+bazel_dep(name = "envoy_toolshed_jq", version = "0.5.22.envoy")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.25")
 bazel_dep(name = "rules_pkg", version = "1.3.0")
@@ -23,6 +23,21 @@ bazel_dep(name = "zstd", version = "1.5.7.bcr.3")
 
 bazel_dep(name = "curl", version = "8.11.0.bcr.4", dev_dependency = True)
 bazel_dep(name = "git", version = "2.55.0", dev_dependency = True)
+
+# Source pigz: the bins release (`//pigz/source:pigz_packages`) and toolshed's tests only.
+# Keep in sync with VERSIONS["pigz"].
+bazel_dep(name = "pigz", version = "2.8.bcr.3", dev_dependency = True)
+bazel_dep(name = "zlib-ng", version = "2.3.3.bcr.2", dev_dependency = True)
+
+# pigz against zlib-ng (zlib-compatible, faster at the same level) rather than zlib. The label is
+# canonical: the patched module still depends on `zlib`, so `@zlib-ng` is not visible from it.
+single_version_override(
+    module_name = "pigz",
+    patch_strip = 0,
+    patches = ["//pigz/private:pigz-zlib-ng.patch"],
+    version = "2.8.bcr.3",
+)
+
 bazel_dep(name = "protobuf", version = "35.1.bcr.envoy", dev_dependency = True, repo_name = "com_google_protobuf")
 bazel_dep(name = "rules_foreign_cc", version = "0.16.0", dev_dependency = True)
 bazel_dep(name = "rules_jq", version = "0.0.0", dev_dependency = True)
@@ -121,6 +136,9 @@ use_repo(git_prebuilt_ext, "cacert", "git_toolchains")
 
 hunspell_prebuilt_ext = use_extension("//hunspell:extensions.bzl", "hunspell_prebuilt_extension")
 use_repo(hunspell_prebuilt_ext, "hunspell_toolchains")
+
+pigz_prebuilt_ext = use_extension("//pigz:extensions.bzl", "pigz_prebuilt_extension")
+use_repo(pigz_prebuilt_ext, "pigz_toolchains")
 
 # Source hunspell and en_US dictionary: the bins release, toolshed's tests, and the source
 # toolchain consumers fall back to where there is no prebuilt (eg macOS). Fetched only if built.
@@ -361,6 +379,19 @@ register_toolchains(
     "//hunspell/source:source_toolchain_linux",
     "//hunspell/source:source_toolchain_macos",
 )
+
+# pigz: the prebuilt toolchains, then (toolshed only) the source build, then a toolchain that
+# fails, naming the platform without a pigz. Consumers get the prebuilts only: a consumer that
+# wants pigz elsewhere registers its own source toolchain (see //pigz:README.md).
+register_toolchains("@pigz_toolchains//:all")
+
+register_toolchains(
+    "//pigz/source:source_toolchain_linux",
+    "//pigz/source:source_toolchain_macos",
+    dev_dependency = True,
+)
+
+register_toolchains("//pigz:unavailable_toolchain")
 
 libcxx_ext = use_extension("//compile:extensions.bzl", "libcxx_extension", dev_dependency = True)
 use_repo(libcxx_ext, "llvm_libcxx_aarch64", "llvm_libcxx_x86_64")

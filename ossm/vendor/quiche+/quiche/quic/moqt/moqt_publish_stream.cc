@@ -304,4 +304,12 @@ absl::Status MoqtPublishResponseStream::OnControlMessage(
   return absl::OkStatus();
 }
 
+absl::Status MoqtPublishResponseStream::OnControlMessage(
+    const MoqtPublishStateNotify& message) {
+  if (subscriber_ == nullptr) {
+    return absl::OkStatus();
+  }
+  return subscriber_->Update(message.parameters);
+}
+
 }  // namespace moqt

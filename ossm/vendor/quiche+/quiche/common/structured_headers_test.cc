@@ -717,6 +717,23 @@ TEST(StructuredHeaderTest, DictionaryConstructors) {
   EXPECT_EQ(2U, dict_init.size());
   EXPECT_EQ(member0, dict_init.at(key0));
   EXPECT_EQ(member1, dict_init.at(key1));
+
+  const Dictionary dict_unique(Dictionary::unique_keys,
+                               {{key0, member0}, {key1, member1}});
+  EXPECT_FALSE(dict_unique.empty());
+  EXPECT_EQ(2U, dict_unique.size());
+  EXPECT_EQ(member0, dict_unique.at(key0));
+  EXPECT_EQ(member1, dict_unique.at(key1));
+}
+
+TEST(StructuredHeaderDeathTest, DictionaryUniqueKeysDuplicate) {
+  const ParameterizedMember member0(Item(Item::string, "Applepie"));
+  const ParameterizedMember member1(Item(Item::byte_sequence, "hello"));
+
+  EXPECT_QUICHE_DEBUG_DEATH(
+      Dictionary(Dictionary::unique_keys,
+                 {{"key0", member0}, {"key1", member1}, {"key0", member0}}),
+      "Dictionary initialized with duplicate keys");
 }
 
 TEST(StructuredHeaderTest, DictionaryClear) {
