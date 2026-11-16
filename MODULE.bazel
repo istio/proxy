@@ -350,7 +350,7 @@ use_repo(java_toolchains, "local_jdk")
 # `BAZEL_USE_HOST_SYSROOT=True`).
 #
 # llvm_version only needs a correct *major* (it drives the clang resource-dir
-# lookup, e.g. /usr/lib/clang/21); with a `path` root nothing is downloaded.
+# lookup, e.g. /usr/lib/clang/22); with a `path` root nothing is downloaded.
 # Keep the major in sync with the clang shipped in the build container.
 # dev_dependency to match the `toolchains_llvm` bazel_dep above (declared dev
 # because downstream modules bring their own toolchain); OSSM only ever builds
@@ -363,7 +363,7 @@ llvm = use_extension(
 llvm.toolchain(
     name = "llvm_host",
     cxx_standard = {"": "c++20"},
-    llvm_version = "21.1.0",
+    llvm_version = "22.1.0",
     # Link the host libstdc++ statically (`-l:libstdc++.a` + `-stdlib=libstdc++`)
     # instead of toolchains_llvm's default bundled libc++, matching the
     # `BAZEL_LINKLIBS=-l%:libstdc++.a` / `BAZEL_USE_LIBSTDCPP=True` that
@@ -395,7 +395,7 @@ use_repo(llvm, "llvm_host")
 # auto-detected from `<path>/bin/clang --version`; keep `path` in sync with the
 # build container's LLVM prefix (same /usr root as @llvm_host).
 #
-# NOTE: this must stay /usr, not a versioned prefix like /usr/lib64/llvm21.
+# NOTE: this must stay /usr, not a versioned prefix like /usr/lib64/llvm22.
 # On RHEL/UBI the clang resource dir (the builtin stddef.h the openssl prefixer
 # needs) lives at /usr/lib/clang/<major>/include -- OUTSIDE the versioned
 # prefix -- and libclang-cpp/libLLVM live in /usr/lib64. Only /usr sees all of
