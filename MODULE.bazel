@@ -63,7 +63,7 @@ bazel_dep(name = "rules_rust", version = "0.74.0.envoy.1")
 #     `--tool_java_runtime_version=local_jdk`).
 # Versions must match what envoy's own MODULE.bazel declares to avoid a second
 # resolution.
-bazel_dep(name = "rules_foreign_cc", version = "0.16.0")
+bazel_dep(name = "rules_foreign_cc", version = "0.17.0")
 bazel_dep(name = "rules_java", version = "9.9.0")
 
 # Same reasoning as grpc/librdkafka/libsxg above: only a transitive dep (via
