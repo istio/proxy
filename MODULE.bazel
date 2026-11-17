@@ -53,17 +53,17 @@ bazel_dep(name = "rules_rust", version = "0.74.0.envoy.1")
 # envoy), but envoy.bazelrc references it unqualified. Version must match
 # envoy's own MODULE.bazel.
 bazel_dep(name = "zlib-ng", version = "2.3.3.bcr.2")
-bazel_dep(name = "envoy_toolshed", version = "0.5.20.envoy")
+bazel_dep(name = "envoy_toolshed", version = "0.5.22.envoy")
 
 bazel_dep(name = "googletest", version = "1.18.0.bcr.1", dev_dependency = True)
 
 # 1. Determine SHA256 `wget https://github.com/envoyproxy/envoy/archive/$COMMIT.tar.gz && sha256sum $COMMIT.tar.gz`
 # 2. Update .bazelversion, envoy.bazelrc, ENVOY_VERSION.txt and .bazelrc if needed.
 #
-# Commit date: 2026-11-12
-ENVOY_SHA = "1de4e1f8ebedeae9bb754db52e03212654360441"
+# Commit date: 2026-11-17
+ENVOY_SHA = "a4093647d04cced1ad7a4924a1cb29583a191056"
 
-ENVOY_SHA256 = "daebc32a9ff316daf52b147c8b82a963653dde9732b470ad838af1ddb48147c7"
+ENVOY_SHA256 = "226224e5f8df88f595e1b3990da23eda37b8360ad6f2c7286f08de1597137a02"
 
 ENVOY_ORG = "envoyproxy"
 
