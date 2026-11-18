@@ -1,0 +1,20 @@
+load("@tar.bzl", "tar")
+
+# See `Case 3` in examples/assertion
+genrule(
+    name = "10mb_file",
+    outs = ["10mb_file.out"],
+    cmd = "head -c 10485760 < /dev/urandom > $@",
+    local = True,
+    tags = ["manual"],
+)
+
+[
+    tar(
+        name = "layer_%s" % i,
+        srcs = ["10mb_file"],
+        tags = ["manual"],
+        visibility = ["//examples/assertion:__pkg__"],
+    )
+    for i in range(2)
+]

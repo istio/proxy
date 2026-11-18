@@ -1,0 +1,28 @@
+bcr_test_module:
+  module_path: "e2e/smoke"
+  matrix:
+    bazel: ["7.x", "8.x"]
+    # TODO(#97): add windows
+    platform: ["debian11", "ubuntu2204"]
+  tasks:
+    test_linux:
+      name: "Run test module"
+      bazel: ${{ bazel }}
+      platform: ${{ platform }}
+      test_targets:
+        - "//..."
+        # BCR workers have no Docker CLI/daemon. test_tar and test_tar_created
+        # cover metadata and creation time without Docker; GitHub CI runs both.
+        - "-//:test"
+        - "-//:docker_created"
+        - "-//:test_created"
+    test_macos:
+      name: "Run test module"
+      bazel: ${{ bazel }}
+      platform: macos
+      test_targets:
+        - "//..."
+        # Keep the same daemonless coverage as Linux.
+        - "-//:test"
+        - "-//:docker_created"
+        - "-//:test_created"

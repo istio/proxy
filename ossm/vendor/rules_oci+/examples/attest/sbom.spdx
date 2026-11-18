@@ -1,0 +1,57 @@
+SPDXVersion: SPDX-2.2
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: hello
+DocumentNamespace: https://swinslow.net/spdx-examples/example1/hello-v3
+Creator: Person: Steve Winslow (steve@swinslow.net)
+Creator: Tool: github.com/spdx/tools-golang/builder
+Creator: Tool: github.com/spdx/tools-golang/idsearcher
+Created: 2021-08-26T01:46:00Z
+
+##### Package: hello
+
+PackageName: hello
+SPDXID: SPDXRef-Package-hello
+PackageDownloadLocation: git+https://github.com/swinslow/spdx-examples.git#example1/content
+FilesAnalyzed: true
+PackageVerificationCode: 9d20237bb72087e87069f96afb41c6ca2fa2a342
+PackageLicenseConcluded: GPL-3.0-or-later
+PackageLicenseInfoFromFiles: GPL-3.0-or-later
+PackageLicenseDeclared: GPL-3.0-or-later
+PackageCopyrightText: NOASSERTION
+
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-Package-hello
+
+FileName: /build/hello
+SPDXID: SPDXRef-hello-binary
+FileType: BINARY
+FileChecksum: SHA1: 20291a81ef065ff891b537b64d4fdccaf6f5ac02
+FileChecksum: SHA256: 83a33ff09648bb5fc5272baca88cf2b59fd81ac4cc6817b86998136af368708e
+FileChecksum: MD5: 08a12c966d776864cc1eb41fd03c3c3d
+LicenseConcluded: GPL-3.0-or-later
+LicenseInfoInFile: NOASSERTION
+FileCopyrightText: NOASSERTION
+
+FileName: /src/Makefile
+SPDXID: SPDXRef-Makefile
+FileType: SOURCE
+FileChecksum: SHA1: 69a2e85696fff1865c3f0686d6c3824b59915c80
+FileChecksum: SHA256: 5da19033ba058e322e21c90e6d6d859c90b1b544e7840859c12cae5da005e79c
+FileChecksum: MD5: 559424589a4f3f75fd542810473d8bc1
+LicenseConcluded: GPL-3.0-or-later
+LicenseInfoInFile: GPL-3.0-or-later
+FileCopyrightText: NOASSERTION
+
+FileName: /src/hello.c
+SPDXID: SPDXRef-hello-src
+FileType: SOURCE
+FileChecksum: SHA1: 20862a6d08391d07d09344029533ec644fac6b21
+FileChecksum: SHA256: b4e5ca56d1f9110ca94ed0bf4e6d9ac11c2186eb7cd95159c6fdb50e8db5a823
+FileChecksum: MD5: 935054fe899ca782e11003bbae5e166c
+LicenseConcluded: GPL-3.0-or-later
+LicenseInfoInFile: GPL-3.0-or-later
+FileCopyrightText: Copyright Contributors to the spdx-examples project.
+
+Relationship: SPDXRef-hello-binary GENERATED_FROM SPDXRef-hello-src
+Relationship: SPDXRef-hello-binary GENERATED_FROM SPDXRef-Makefile
+Relationship: SPDXRef-Makefile BUILD_TOOL_OF SPDXRef-Package-hello

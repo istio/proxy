@@ -1,0 +1,12 @@
+bazel_dep(name = "rules_oci", version = "0.0.0")
+bazel_dep(name = "aspect_bazel_lib", version = "2.21.1")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "tar.bzl", version = "0.7.0")
+bazel_dep(name = "rules_rust", version = "0.45.1")
+bazel_dep(name = "hermetic_cc_toolchain", version = "3.1.0")
+
+local_path_override(
+    module_name = "rules_oci",
+    path = "../..",
+)

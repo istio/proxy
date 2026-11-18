@@ -1,0 +1,18 @@
+{
+  "homepage": "https://github.com/bazel-contrib/rules_oci",
+  "maintainers": [
+    {
+      "email": "alex@aspect.dev",
+      "github": "alexeagle",
+      "name": "Alex Eagle"
+    },
+    {
+      "email": "sahin@aspect.dev",
+      "github": "thesayyn",
+      "name": "Şahin Yort"
+    }
+  ],
+  "repository": ["github:bazel-contrib/rules_oci"],
+  "versions": [],
+  "yanked_versions": {}
+}

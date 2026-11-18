@@ -1,0 +1,61 @@
+load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
+load("@rules_oci//oci:defs.bzl", "oci_image")
+load("@tar.bzl", "tar")
+load("//examples:assert.bzl", "assert_oci_config")
+
+tar(
+    name = "app",
+    srcs = ["test.bash"],
+)
+
+# Use the value of --embed_label under --stamp, otherwise use a deterministic constant
+# value to ensure cache hits for actions that depend on this.
+expand_template(
+    name = "labels",
+    out = "labels.txt",
+    stamp_substitutions = {"0.0.0": "{{BUILD_EMBED_LABEL}}"},
+    template = [
+        "org.opencontainers.image.version=0.0.0",
+        "org.opencontainers.image.source=https://github.com/bazel-contrib/rules_oci=",
+    ],
+)
+
+oci_image(
+    name = "image",
+    base = "@ubuntu",
+    cmd = ["test.sh"],
+    labels = ":labels",
+    tars = [":app"],
+)
+
+assert_oci_config(
+    name = "assert_labels_from_file",
+    image = ":image",
+    labels_eq = {
+        "org.opencontainers.image.ref.name": "ubuntu",
+        "org.opencontainers.image.version": "0.0.0",
+        "org.opencontainers.image.source": "https://github.com/bazel-contrib/rules_oci=",
+    },
+)
+
+# Test again, using the macro-provided syntax sugar where labels is a dict.
+oci_image(
+    name = "image_labels_dict",
+    base = "@ubuntu",
+    cmd = ["test.sh"],
+    labels = {
+        "org.opencontainers.image.version": "0.0.0",
+        "org.opencontainers.image.source": "https://github.com/bazel-contrib/rules_oci=",
+    },
+    tars = [":app"],
+)
+
+assert_oci_config(
+    name = "assert_labels_dict",
+    image = ":image_labels_dict",
+    labels_eq = {
+        "org.opencontainers.image.ref.name": "ubuntu",
+        "org.opencontainers.image.version": "0.0.0",
+        "org.opencontainers.image.source": "https://github.com/bazel-contrib/rules_oci=",
+    },
+)

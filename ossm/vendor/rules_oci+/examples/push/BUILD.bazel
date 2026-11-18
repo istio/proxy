@@ -1,0 +1,118 @@
+load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
+load("@rules_multirun//:defs.bzl", "command", "multirun")
+load("//oci:defs.bzl", "oci_image", "oci_image_index", "oci_push")
+
+oci_image(
+    name = "image",
+    architecture = "amd64",
+    entrypoint = ["/fail"],
+    os = "linux",
+)
+
+oci_push(
+    name = "push_image",
+    image = ":image",
+    remote_tags = ["latest"],
+    repository = "index.docker.io:9899/<ORG>/image",
+)
+
+oci_push(
+    name = "push_image_repository_file",
+    image = ":image",
+    remote_tags = ["latest"],
+    repository_file = ":repository.txt",
+)
+
+oci_push(
+    name = "push_image_wo_tags",
+    image = ":image",
+    repository = "index.docker.io/<ORG>/image",
+)
+
+oci_push(
+    name = "push_image_wo_repository",
+    image = ":image",
+    remote_tags = ["latest"],
+)
+
+oci_image_index(
+    name = "image_index",
+    images = [
+        ":image",
+    ],
+)
+
+# Use the value of --embed_label under --stamp, otherwise use a deterministic constant
+# value to ensure cache hits for actions that depend on this.
+expand_template(
+    name = "stamped",
+    out = "_stamped.tags.txt",
+    stamp_substitutions = {"0.0.0": "{{BUILD_EMBED_LABEL}}"},
+    template = [
+        "0.0.0",
+        "nightly",
+    ],
+)
+
+######
+# Demonstration of how to push to more than one repository
+REPOS = {
+    "index": "index.docker.io/<ORG>/image",
+    "ECR": "aws_account_id.dkr.ecr.us-west-2.amazonaws.com",
+}
+
+[
+    oci_push(
+        name = "push_image_" + k,
+        image = ":image_index",
+        remote_tags = ":stamped",
+        repository = v,
+    )
+    for (k, v) in REPOS.items()
+]
+
+[
+    command(
+        name = k,
+        command = "push_image_" + k,
+    )
+    for k in REPOS.keys()
+]
+
+multirun(
+    name = "push_all",
+    commands = REPOS.keys(),
+)
+
+sh_test(
+    name = "test",
+    srcs = ["test.bash"],
+    args = [
+        "$(CRANE_BIN)",
+        "$(location :push_image)",
+        "$(location :push_image_index)",
+        "$(location :push_image_repository_file)",
+        "$(location :push_image_wo_tags)",
+        "$(location :push_image_wo_repository)",
+    ],
+    data = [
+        ":push_image",
+        ":push_image_index",
+        ":push_image_repository_file",
+        ":push_image_wo_tags",
+        ":push_image_wo_repository",
+        "@oci_crane_toolchains//:current_toolchain",
+    ],
+    toolchains = [
+        "@oci_crane_toolchains//:current_toolchain",
+    ],
+)
+
+sh_test(
+    name = "test_push_image_wo_repository_fails",
+    srcs = ["test_push_image_wo_repository_fails.bash"],
+    args = ["$(location :push_image_wo_repository)"],
+    data = [
+        ":push_image_wo_repository",
+    ],
+)

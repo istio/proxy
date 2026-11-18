@@ -1,0 +1,98 @@
+load("@aspect_bazel_lib//lib:bats.bzl", "bats_test")
+
+[
+    bats_test(
+        name = "test_oci_pull_auth_%s" % name,
+        size = "large",
+        srcs = [
+            "oci_pull_auth_tests.bats",
+        ],
+        args = [
+            "--timing",
+        ],
+        data = glob([
+            "credential-helper/**",
+            "empty/**/*",
+            "ca/*",
+        ]) + [
+            "wksp",
+            "//registry:auth",
+            "@ocix_crane_toolchains//:current_toolchain",
+        ],
+        env = {
+            "WKSP": "$(location :wksp)",
+            "CRANE_BIN": "$(location @ocix_crane_toolchains//:current_toolchain)",
+            "REGISTRY": "$(rootpath //registry:auth)",
+            "OCI_DIR": "empty",
+            "BAZEL_FLAGS": flags,
+        },
+        tags = [
+            "exclusive",
+            "local",
+            "no-remote",
+            "no-remote-exec",
+        ],
+    )
+    for (name, flags) in [
+        ("bzlmod", "--enable_bzlmod"),
+    ]
+]
+
+[
+    bats_test(
+        name = "test_oci_pull_%s" % name,
+        size = "large",
+        srcs = [
+            "oci_pull_tests.bats",
+        ],
+        args = [
+            "--verbose-run",
+            "--timing",
+            "--trace",
+        ],
+        data = [":wksp"],
+        env = {
+            "WKSP": "$(location :wksp)",
+            "BAZEL_FLAGS": flags,
+        },
+        tags = [
+            "exclusive",
+            "local",
+            "no-remote",
+            "no-remote-exec",
+        ],
+    )
+    for (name, flags) in [
+        ("bzlmod", "--enable_bzlmod"),
+    ]
+]
+
+[
+    bats_test(
+        name = "test_oci_load_%s" % name,
+        size = "large",
+        srcs = [
+            "oci_load_tests.bats",
+        ],
+        args = [
+            "--verbose-run",
+            "--timing",
+            "--trace",
+        ],
+        data = [":wksp"],
+        env = {
+            "WKSP": "$(location :wksp)",
+            "BAZEL_FLAGS": flags,
+        },
+        tags = [
+            "exclusive",
+            "local",
+            "no-remote",
+            "no-remote-exec",
+        ],
+    )
+    for (name, flags) in [
+        ("bzlmod_legacy_runfiles", "--enable_bzlmod --legacy_external_runfiles"),
+        ("bzlmod_nolegacy_runfiles", "--enable_bzlmod --nolegacy_external_runfiles"),
+    ]
+]

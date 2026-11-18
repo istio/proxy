@@ -1,0 +1,27 @@
+load("//oci:defs.bzl", "oci_image", "oci_load")
+
+_ARCH = [
+    "amd64",
+    "arm64",
+]
+
+# most container runtimes only support `zstd` or `gzip` compression
+# any other compression algorithm is simply is runtime error.
+# we decompress the tar archive with bsdtar and recompress with a
+# known compression algorithm.
+
+[
+    oci_image(
+        name = "image_" + architecture,
+        architecture = architecture,
+        os = "linux",
+        tars = ["@bash_amd64//:layer"],
+    )
+    for architecture in _ARCH
+]
+
+oci_load(
+    name = "load",
+    image = ":image_amd64",
+    repo_tags = ["test:test"],
+)

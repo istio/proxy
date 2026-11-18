@@ -1,0 +1,4 @@
+
+common --repository_cache=
+
+startup --host_jvm_args=-Djavax.net.ssl.trustStore=../ca/cacerts --host_jvm_args=-Djavax.net.ssl.trustStorePassword=changeit

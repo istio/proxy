@@ -1,0 +1,12 @@
+load("@rules_oci//oci:defs.bzl", "oci_image")
+
+# See e2e/smoke folder
+oci_image(
+    name = "empty",
+    architecture = "amd64",
+    labels = {
+        "org.opencontainers.image.ref.name": "ubuntu",
+    },
+    os = "linux",
+    visibility = ["//visibility:public"],
+)

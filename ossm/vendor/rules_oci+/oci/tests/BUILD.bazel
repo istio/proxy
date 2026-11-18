@@ -1,0 +1,88 @@
+load("@aspect_bazel_lib//lib:diff_test.bzl", "diff_test")
+load("@aspect_bazel_lib//lib:run_binary.bzl", "run_binary")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load(":pull_tests.bzl", "parse_image_test", "parse_www_authenticate_test")
+
+IMAGES_TO_TEST = {
+    "linux/amd64": {
+        "distroless_java": "gcr.io/distroless/java17@sha256:161a1d97d592b3f1919801578c3a47c8e932071168a96267698f4b669c24c76d",
+        "distroless_static_linux_amd64": "gcr.io/distroless/static@sha256:c3c3d0230d487c0ad3a0d87ad03ee02ea2ff0b3dcce91ca06a1019e07de05f12",
+        "fluxcd_flux_single": "docker.io/fluxcd/flux:1.25.4",
+        "chainguard_static_linux_amd64": "cgr.dev/chainguard/static:latest",
+    },
+    "linux/arm64/v8": {
+        "ubuntu_linux_arm64_v8": "ubuntu@sha256:67211c14fa74f070d27cc59d69a7fa9aeff8e28ea118ef3babc295a0428a6d21",
+    },
+}
+
+genrule(
+    name = "crane_gen",
+    outs = ["crane.sh"],
+    cmd = "echo '$(CRANE_BIN) $$@' >> $@",
+    toolchains = ["@oci_crane_toolchains//:current_toolchain"],
+)
+
+# Use crane to pull images as a comparison for our oci_pull repository rule
+[
+    run_binary(
+        name = "pull_{}".format(repo_name),
+        args = [
+            "pull",
+            reference,
+            "$@",
+            "--platform",
+            platform,
+            "--format=oci",
+        ],
+        execution_requirements = {
+            "local": "1",  # needs to run locally to able to use credential helpers
+        },
+        out_dirs = [repo_name],
+        progress_message = "Pulling {reference} for {platform}".format(
+            platform = platform,
+            reference = reference,
+        ),
+        tags = ["requires-network"],
+        tool = "crane.sh",
+        visibility = ["//visibility:public"],
+    )
+    for platform in IMAGES_TO_TEST.keys()
+    for repo_name, reference in IMAGES_TO_TEST[platform].items()
+]
+
+[
+    diff_test(
+        name = "test_{}".format(repo_name),
+        file1 = "pull_" + repo_name,
+        file2 = "@{}".format(
+            repo_name,
+        ),
+    )
+    for platform in IMAGES_TO_TEST.keys()
+    for repo_name, reference in IMAGES_TO_TEST[platform].items()
+]
+
+# assert than we don't break fetching these
+build_test(
+    name = "pull_test",
+    targets = [
+        "@aws_lambda_python",
+        "@debian",
+        "@debian_latest",
+        "@debian_stable",
+        "@gitlab_assets_ce",
+        # TODO: https://github.com/bazel-contrib/rules_oci/issues/193
+        # "@apollo_router",
+        "@ecr_lambda_python",
+        "@from_rules_docker",
+        "@ubuntu",
+        "@es_kibana_image",
+        "@quay_clair_image",
+        "@nvidia_k8s_device_plugin_image",
+        "@envoyproxy_gateway_helm",
+    ],
+)
+
+parse_image_test(name = "parse_image_test")
+
+parse_www_authenticate_test(name = "parse_www_authenticate_test")

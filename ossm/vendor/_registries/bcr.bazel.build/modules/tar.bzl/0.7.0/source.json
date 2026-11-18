@@ -1,0 +1,10 @@
+{
+    "integrity": "sha256-oNZAZKWY16HlgZbRfeDe7W09LYv+FAftnmiyTDHDjo0=",
+    "strip_prefix": "tar.bzl-0.7.0",
+    "docs_url": "https://github.com/bazel-contrib/tar.bzl/releases/download/v0.7.0/tar.bzl-v0.7.0.docs.tar.gz",
+    "url": "https://github.com/bazel-contrib/tar.bzl/releases/download/v0.7.0/tar.bzl-v0.7.0.tar.gz",
+    "patches": {
+        "module_dot_bazel_version.patch": "sha256-frsBhBgZ8ebQY9T+FPE9kDcqbRXQCd3P1A38PdRGwNY="
+    },
+    "patch_strip": 1
+}

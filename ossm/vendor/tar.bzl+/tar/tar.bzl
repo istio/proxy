@@ -33,8 +33,8 @@ tar(
 ```
 """
 
-load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
-load("@aspect_bazel_lib//lib:utils.bzl", "propagate_common_rule_attributes")
+load("@bazel_lib//lib:expand_template.bzl", "expand_template")
+load("@bazel_lib//lib:utils.bzl", "propagate_common_rule_attributes")
 load("@bazel_skylib//lib:partial.bzl", "partial")
 load("@bazel_skylib//lib:types.bzl", "types")
 load("//tar/private:tar.bzl", _tar = "tar", _tar_lib = "tar_lib")

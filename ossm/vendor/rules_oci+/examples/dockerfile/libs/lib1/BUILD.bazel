@@ -1,0 +1,5 @@
+filegroup(
+    name = "lib1",
+    srcs = glob(["*.py"]),
+    visibility = ["//visibility:public"],
+)

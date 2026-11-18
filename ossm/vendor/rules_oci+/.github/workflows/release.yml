@@ -1,0 +1,35 @@
+# Cut a release whenever a new tag is pushed to the repo.
+name: Release
+
+on:
+  # Can be triggered from the tag.yaml workflow
+  workflow_call:
+    inputs:
+      tag_name:
+        required: true
+        type: string
+    secrets:
+      BCR_PUBLISH_TOKEN:
+        required: true
+  # Or, developers can manually push a tag from their clone
+  push:
+    tags:
+      - "v*.*.*"
+permissions:
+  id-token: write
+  attestations: write
+  contents: write
+jobs:
+  release:
+    uses: bazel-contrib/.github/.github/workflows/release_ruleset.yaml@v7.2.0
+    with:
+      release_files: rules_oci-*.tar.gz
+      prerelease: false
+      tag_name: ${{ inputs.tag_name || github.ref_name }}
+  publish:
+    needs: release
+    uses: ./.github/workflows/publish.yaml
+    with:
+      tag_name: ${{ inputs.tag_name || github.ref_name }}
+    secrets:
+      BCR_PUBLISH_TOKEN: ${{ secrets.BCR_PUBLISH_TOKEN }}

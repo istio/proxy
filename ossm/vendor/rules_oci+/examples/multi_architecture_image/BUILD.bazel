@@ -1,0 +1,46 @@
+load("@aspect_bazel_lib//lib:testing.bzl", "assert_contains")
+load("@tar.bzl", "tar")
+load("//oci:defs.bzl", "oci_image", "oci_image_index", "oci_load")
+load(":transition.bzl", "multi_arch")
+
+tar(
+    name = "app",
+    srcs = ["test.bash"],
+)
+
+oci_image(
+    name = "image",
+    base = "@ubuntu",
+    cmd = ["examples/multi_architecture_image/test.bash"],
+    entrypoint = ["bash"],
+    tars = [":app"],
+)
+
+multi_arch(
+    name = "images",
+    image = ":image",
+    platforms = [
+        "//examples:linux_arm64",
+        "//examples:linux_amd64",
+    ],
+)
+
+oci_image_index(
+    name = "index",
+    images = [
+        ":images",
+    ],
+)
+
+oci_load(
+    name = "load",
+    format = "oci",
+    image = ":index",
+    repo_tags = ["my-repository:latest"],
+)
+
+assert_contains(
+    name = "check_digest",
+    actual = ":index.digest",
+    expected = "sha256:a2b8ae94672721788b67874f27cf3574fada3ccccc69f483bcb43de653573fe0",
+)

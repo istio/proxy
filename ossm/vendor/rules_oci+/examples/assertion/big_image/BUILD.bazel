@@ -1,0 +1,92 @@
+load("@tar.bzl", "tar")
+load("//oci:defs.bzl", "oci_image", "oci_load")
+
+# These numbers were gathered on a `Apple M2 Pro`
+# Darwin Kernel Version 23.2.0: Wed Nov 15 21:55:06 PST 2023; root:xnu-10002.61.3~2/RELEASE_ARM64_T6020
+# 10 CPU x 32GB RAM
+
+# 1- Create an image with 10 layers 3GiB each.
+# Perf: `< 50s`
+N_BASE_LAYERS = 10
+
+genrule(
+    name = "3gib_file",
+    outs = ["3gib_file.out"],
+    cmd = "head -c 314572800 < /dev/urandom > $@",
+    local = True,
+    tags = ["manual"],
+)
+
+[
+    tar(
+        name = "blayer_%s" % i,
+        srcs = ["3gib_file"],
+        compress = "gzip",
+        mtree = [
+            "%s.dat uid=0 gid=0 mode=0755 type=file contents=$(location :3gib_file)" % i,
+        ],
+        tags = ["manual"],
+    )
+    for i in range(0, 5)
+]
+
+[
+    tar(
+        name = "blayer_%s" % i,
+        srcs = ["3gib_file"],
+        compress = "zstd",
+        mtree = [
+            "%s.dat uid=0 gid=0 mode=0755 type=file contents=$(location :3gib_file)" % i,
+        ],
+        tags = ["manual"],
+    )
+    for i in range(5, 10)
+]
+
+oci_image(
+    name = "base",
+    architecture = "arm64",
+    os = "linux",
+    tags = ["manual"],
+    tars = [":blayer_%s" % i for i in range(N_BASE_LAYERS)],
+)
+
+oci_load(
+    name = "evil",
+    image = ":base",
+    repo_tags = ["hello:test"],
+    tags = ["manual"],
+)
+
+# 2- Create an image that extends the base without adding additional layers
+# Perf: `< 2s` if bazel doesn't permit tree artifact symlinks
+# Perf: `< 0.5s` if bazel permits tree artifact symlinks
+oci_image(
+    name = "extended_wo_tars",
+    base = ":base",
+    tags = ["manual"],
+)
+
+# 3- Create an image that extends the base with additional layers
+# Perf: `< 2s` if bazel doesn't permit tree artifact symlinks (for copying the base layers)
+# Perf: `< 0.5s` if bazel permits tree artifact symlinks (for linking the base layers)
+# Perf: `< 20s` for adding the new 5 layers, 3gib each.
+N_LAYERS = 5
+
+[
+    tar(
+        name = "layer_%s" % i,
+        srcs = ["3gib_file"],
+        tags = ["manual"],
+    )
+    for i in range(N_LAYERS)
+]
+
+oci_image(
+    name = "extended",
+    base = ":base",
+    # Tell Bazel to reserve more than the default 250MB of RAM for the OCIImage action
+    resource_set = "mem_8g",
+    tags = ["manual"],
+    tars = [":layer_%s" % i for i in range(N_LAYERS)],
+)

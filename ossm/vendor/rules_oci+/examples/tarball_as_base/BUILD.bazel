@@ -1,0 +1,46 @@
+load("@aspect_bazel_lib//lib:run_binary.bzl", "run_binary")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+
+# Pluck out the regctl tool from the toolchain.
+filegroup(
+    name = "regctl",
+    srcs = ["@oci_regctl_toolchains//:current_toolchain"],
+)
+
+# This run_binary rule extracts the tarball into an oci-layout directory using
+# the regctl tool that we use internally.
+# Output will look like this:
+#
+#  ├── blobs
+#  │   ├── sha256
+#  │   │   ├── 0xdeadbeef
+#  ├── index.json
+#  └── oci-layout
+# that can be used as a base for the oci_image rule.
+run_binary(
+    name = "base",
+    srcs = ["tarball.tar"],
+    args = [
+        "image",
+        "import",
+        "ocidir://$@",
+        "$(location :tarball.tar)",
+    ],
+    execution_requirements = {"local": "1"},
+    mnemonic = "ExtractTarball",
+    out_dirs = ["base"],
+    tool = ":regctl",
+)
+
+# Use the tarball as a base for the oci_image rule.
+oci_image(
+    name = "image",
+    base = ":base",
+)
+
+# And use this target load the resulting image into the local docker daemon for testing.
+oci_load(
+    name = "load",
+    image = ":image",
+    repo_tags = ["example:latest"],
+)

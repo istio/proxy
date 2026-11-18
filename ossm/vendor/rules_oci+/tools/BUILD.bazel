@@ -1,0 +1,9 @@
+load("@multitool//:tools.bzl", MULTITOOLS = "TOOLS")
+load("@bazel_env.bzl", "bazel_env")
+
+bazel_env(
+    name = "bazel_env",
+    tools = MULTITOOLS | {
+        "go": "@io_bazel_rules_go//go",
+    },
+)
