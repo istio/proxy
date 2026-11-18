@@ -1,0 +1,140 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load(":windows_utils.bzl", "is_exec_platform_windows")
+
+is_exec_platform_windows(
+    name = "is_exec_platform_windows",
+    visibility = ["//visibility:public"],
+)
+
+exports_files(
+    glob(["*.bzl"]),
+    visibility = ["//docs:__pkg__"],
+)
+
+exports_files(glob([
+    "*.tpl",
+    "*.sh",
+]) + ["empty.tar"])
+
+bzl_library(
+    name = "load",
+    srcs = ["load.bzl"],
+    visibility = [
+        "//docs:__pkg__",
+        "//oci:__subpackages__",
+    ],
+    deps = [
+        ":util",
+        "@aspect_bazel_lib//lib:paths",
+    ],
+)
+
+bzl_library(
+    name = "image",
+    srcs = ["image.bzl"],
+    visibility = [
+        "//docs:__pkg__",
+        "//oci:__subpackages__",
+    ],
+    deps = [
+        ":util",
+        "@aspect_bazel_lib//lib:resource_sets",
+        "@bazel_features//:features",
+    ],
+)
+
+bzl_library(
+    name = "image_index",
+    srcs = ["image_index.bzl"],
+    visibility = [
+        "//docs:__pkg__",
+        "//oci:__subpackages__",
+    ],
+)
+
+# package_metadata doesn't have any bzl_library targets
+# so one is made here.
+bzl_library(
+    name = "package_metadata",
+    srcs = [
+        "@package_metadata//rules:srcs",
+    ],
+)
+
+bzl_library(
+    name = "pull",
+    srcs = ["pull.bzl"],
+    visibility = [
+        "//docs:__pkg__",
+        "//oci:__subpackages__",
+    ],
+    deps = [
+        ":package_metadata",
+        "//oci/private:authn",
+        "//oci/private:util",
+        "@aspect_bazel_lib//lib:copy_to_directory",
+        "@bazel_skylib//lib:dicts",
+    ],
+)
+
+bzl_library(
+    name = "push",
+    srcs = ["push.bzl"],
+    visibility = [
+        "//docs:__pkg__",
+        "//oci:__subpackages__",
+    ],
+    deps = [
+        "//oci/private:util",
+    ],
+)
+
+bzl_library(
+    name = "toolchains_repo",
+    srcs = ["toolchains_repo.bzl"],
+    visibility = [
+        "//cosign:__subpackages__",
+        "//oci:__subpackages__",
+    ],
+    deps = [
+        ":util",
+    ],
+)
+
+bzl_library(
+    name = "versions",
+    srcs = ["versions.bzl"],
+    visibility = ["//oci:__subpackages__"],
+)
+
+bzl_library(
+    name = "authn",
+    srcs = ["authn.bzl"],
+    visibility = ["//oci:__subpackages__"],
+    deps = [
+        "//oci/private:util",
+        "@aspect_bazel_lib//lib:base64",
+        "@aspect_bazel_lib//lib:repo_utils",
+        "@bazel_skylib//lib:versions",
+    ],
+)
+
+bzl_library(
+    name = "util",
+    srcs = ["util.bzl"],
+    visibility = [
+        "//cosign:__subpackages__",
+        "//oci:__subpackages__",
+    ],
+    deps = [
+        ":windows_utils",
+        "@bazel_skylib//lib:paths",
+        "@bazel_skylib//lib:versions",
+    ],
+)
+
+bzl_library(
+    name = "windows_utils",
+    srcs = ["windows_utils.bzl"],
+    visibility = ["//oci:__subpackages__"],
+)

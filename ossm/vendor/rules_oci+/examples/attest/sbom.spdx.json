@@ -1,0 +1,77 @@
+{
+  "spdxVersion": "SPDX-2.2",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "hello",
+  "documentNamespace": "https://swinslow.net/spdx-examples/example1/hello-v3",
+  "creationInfo": {
+    "created": "2021-08-26T01:46:00Z",
+    "creators": [
+      "Person: Steve Winslow (steve@swinslow.net)",
+      "Tool: github.com/spdx/tools-golang/builder",
+      "Tool: github.com/spdx/tools-golang/idsearcher"
+    ]
+  },
+  "packages": [
+    {
+      "name": "hello",
+      "SPDXID": "SPDXRef-Package-hello",
+      "downloadLocation": "git+https://github.com/swinslow/spdx-examples.git#example1/content",
+      "filesAnalyzed": true,
+      "packageVerificationCode": {
+        "packageVerificationCodeValue": "9d20237bb72087e87069f96afb41c6ca2fa2a342"
+      },
+      "licenseConcluded": "GPL-3.0-or-later",
+      "licenseInfoFromFiles": ["GPL-3.0-or-later"],
+      "licenseDeclared": "GPL-3.0-or-later",
+      "copyrightText": "NOASSERTION"
+    }
+  ],
+  "files": [
+    {
+      "fileName": "/build/hello",
+      "SPDXID": "SPDXRef-hello-binary",
+      "fileTypes": ["BINARY"],
+      "checksums": [
+        {"algorithm": "SHA1", "checksumValue": "20291a81ef065ff891b537b64d4fdccaf6f5ac02"},
+        {"algorithm": "SHA256", "checksumValue": "83a33ff09648bb5fc5272baca88cf2b59fd81ac4cc6817b86998136af368708e"},
+        {"algorithm": "MD5", "checksumValue": "08a12c966d776864cc1eb41fd03c3c3d"}
+      ],
+      "licenseConcluded": "GPL-3.0-or-later",
+      "licenseInfoInFiles": ["NOASSERTION"],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "/src/Makefile",
+      "SPDXID": "SPDXRef-Makefile",
+      "fileTypes": ["SOURCE"],
+      "checksums": [
+        {"algorithm": "SHA1", "checksumValue": "69a2e85696fff1865c3f0686d6c3824b59915c80"},
+        {"algorithm": "SHA256", "checksumValue": "5da19033ba058e322e21c90e6d6d859c90b1b544e7840859c12cae5da005e79c"},
+        {"algorithm": "MD5", "checksumValue": "559424589a4f3f75fd542810473d8bc1"}
+      ],
+      "licenseConcluded": "GPL-3.0-or-later",
+      "licenseInfoInFiles": ["GPL-3.0-or-later"],
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "/src/hello.c",
+      "SPDXID": "SPDXRef-hello-src",
+      "fileTypes": ["SOURCE"],
+      "checksums": [
+        {"algorithm": "SHA1", "checksumValue": "20862a6d08391d07d09344029533ec644fac6b21"},
+        {"algorithm": "SHA256", "checksumValue": "b4e5ca56d1f9110ca94ed0bf4e6d9ac11c2186eb7cd95159c6fdb50e8db5a823"},
+        {"algorithm": "MD5", "checksumValue": "935054fe899ca782e11003bbae5e166c"}
+      ],
+      "licenseConcluded": "GPL-3.0-or-later",
+      "licenseInfoInFiles": ["GPL-3.0-or-later"],
+      "copyrightText": "Copyright Contributors to the spdx-examples project."
+    }
+  ],
+  "relationships": [
+    {"spdxElementId": "SPDXRef-DOCUMENT", "relationshipType": "DESCRIBES", "relatedSpdxElement": "SPDXRef-Package-hello"},
+    {"spdxElementId": "SPDXRef-hello-binary", "relationshipType": "GENERATED_FROM", "relatedSpdxElement": "SPDXRef-hello-src"},
+    {"spdxElementId": "SPDXRef-hello-binary", "relationshipType": "GENERATED_FROM", "relatedSpdxElement": "SPDXRef-Makefile"},
+    {"spdxElementId": "SPDXRef-Makefile", "relationshipType": "BUILD_TOOL_OF", "relatedSpdxElement": "SPDXRef-Package-hello"}
+  ]
+}

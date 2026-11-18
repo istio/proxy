@@ -1,0 +1,42 @@
+# This load statement must be in the docs/ package rather than anything users depend on
+# so that the dependency on stardoc doesn't leak to them.
+load("@aspect_bazel_lib//lib:docs.bzl", "stardoc_with_diff_test", "update_docs")
+
+stardoc_with_diff_test(
+    name = "image",
+    bzl_library_target = "//oci:defs",
+    symbol_names = [
+        "oci_image_rule",
+        "oci_image",
+    ],
+)
+
+stardoc_with_diff_test(
+    name = "load",
+    bzl_library_target = "//oci/private:load",
+)
+
+stardoc_with_diff_test(
+    name = "image_index",
+    bzl_library_target = "//oci:defs",
+    symbol_names = [
+        "oci_image_index_rule",
+        "oci_image_index",
+    ],
+)
+
+stardoc_with_diff_test(
+    name = "push",
+    bzl_library_target = "//oci:defs",
+    symbol_names = [
+        "oci_push_rule",
+        "oci_push",
+    ],
+)
+
+stardoc_with_diff_test(
+    name = "pull",
+    bzl_library_target = "//oci:pull",
+)
+
+update_docs(name = "update")

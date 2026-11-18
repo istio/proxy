@@ -1,6 +1,6 @@
-load("@aspect_bazel_lib//lib:copy_directory.bzl", "copy_directory")
-load("@aspect_bazel_lib//lib:diff_test.bzl", "diff_test")
-load("@aspect_bazel_lib//lib:testing.bzl", "assert_archive_contains")
+load("@bazel_lib//lib:copy_directory.bzl", "copy_directory")
+load("@bazel_lib//lib:diff_test.bzl", "diff_test")
+load("@bazel_lib//lib:testing.bzl", "assert_archive_contains")
 load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
@@ -528,8 +528,8 @@ assert_tar_listing(
     actual = "tar_strip_prefix16",
     expected = [
         "drwxr-xr-x  0 0      0           0 Jan  1  2023 tests/",
-        "-rwxr-xr-x  0 0      0          21 Jan  1  2023 tests/src_file",
         "-rwxr-xr-x  0 0      0           7 Jan  1  2023 tests/generated.txt",
+        "-rwxr-xr-x  0 0      0          21 Jan  1  2023 tests/src_file",
     ],
 )
 
@@ -614,6 +614,11 @@ assert_tar_listing(
         "drwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/",
         "drwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/",
         "drwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/",
+        "drwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/dir/",
+        "-rwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/dir/a",
+        "lrwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/dir/b -> ../a",
+        "-rwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/executable.sh",
+        "lrwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/native_binary_bin -> ../executable.sh",
         "drwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/node_modules/",
         "drwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/node_modules/.pnpm/",
         "drwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/node_modules/.pnpm/a@0.0.0/",
@@ -626,11 +631,6 @@ assert_tar_listing(
         "lrwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/node_modules/.pnpm/b@0.0.0/node_modules/a/package.json -> ../../../../a@0.0.0/node_modules/a/package.json",
         "drwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/node_modules/a/",
         "lrwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/node_modules/a/package.json -> ../../.pnpm/a@0.0.0/node_modules/a/package.json",
-        "drwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/dir/",
-        "-rwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/dir/a",
-        "lrwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/dir/b -> ../a",
-        "-rwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/executable.sh",
-        "lrwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_main/tar/tests/native_binary_bin -> ../executable.sh",
         "-rwxr-xr-x  0 0      0           0 Jan  1  2023 tar/tests/native_binary_bin.runfiles/_repo_mapping",
     ],
 )

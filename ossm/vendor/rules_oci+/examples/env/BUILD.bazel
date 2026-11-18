@@ -1,0 +1,33 @@
+load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
+load("@rules_oci//oci:defs.bzl", "oci_image")
+load("@tar.bzl", "tar")
+load("//examples:assert.bzl", "assert_oci_image_command")
+
+tar(
+    name = "app",
+    srcs = ["test.bash"],
+)
+
+# Use the value of --embed_label under --stamp, otherwise use a deterministic constant
+# value to ensure cache hits for actions that depend on this.
+expand_template(
+    name = "env",
+    out = "env.txt",
+    stamp_substitutions = {"1.2.3": "{{BUILD_EMBED_LABEL}}"},
+    template = ["BUILD_VERSION=1.2.3"],
+)
+
+oci_image(
+    name = "image",
+    base = "@debian",
+    cmd = ["/examples/env/test.bash"],
+    env = ":env",
+    tars = [":app"],
+)
+
+assert_oci_image_command(
+    name = "assert_version_is_correct",
+    exit_code_eq = 0,
+    image = ":image",
+    output_eq = "version: 1.2.3",
+)

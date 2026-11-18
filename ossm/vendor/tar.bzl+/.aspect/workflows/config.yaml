@@ -9,6 +9,9 @@ workspaces:
       tasks:
         - workspace:
             without: true
+        # TODO(alexeagle): fix
+        - bazel-9:
+            without: true
 bazel:
   flags:
     - --config=ci
@@ -35,6 +38,6 @@ tasks:
       name: Test (Bazel 9.x)
       id: bazel-9
       env:
-        USE_BAZEL_VERSION: rolling
+        USE_BAZEL_VERSION: 9.*
 notifications:
   github: {}

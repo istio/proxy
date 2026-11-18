@@ -1,0 +1,117 @@
+load("@aspect_bazel_lib//lib:diff_test.bzl", "diff_test")
+load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
+load("@aspect_bazel_lib//lib:testing.bzl", "assert_json_matches")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+
+expand_template(
+    name = "created",
+    out = "created.txt",
+    stamp_substitutions = {"2000-01-01T01:02:03Z": "{{BUILD_ISO8601}}"},  # BUILD_ISO8601 is an imaginary stamp var
+    template = ["2000-01-01T01:02:03Z"],
+)
+
+# SMOKE TEST: oci_image
+oci_image(
+    name = "image",
+    base = "@distroless_base",
+    cmd = [
+        "--arg1",
+        "--arg2",
+    ],
+    created = ":created",
+    entrypoint = ["/custom_bin"],
+    env = {
+        "ENV": "/test",
+    },
+)
+
+# SMOKE TEST: oci_tarball
+tags = [
+    "my/image:some-tag",
+    "my/image:latest",
+]
+
+oci_load(
+    name = "load",
+    image = ":image",
+    repo_tags = tags,
+)
+
+filegroup(
+    name = "tarball.tar",
+    srcs = [":load"],
+    output_group = "tarball",
+)
+
+container_structure_test(
+    name = "test",
+    configs = ["test.yaml"],
+    image = ":image",
+)
+
+# BCR workers have no Docker CLI/daemon. Exercise the exported image there too.
+container_structure_test(
+    name = "test_tar",
+    configs = ["test.yaml"],
+    driver = "tar",
+    image = ":tarball.tar",
+)
+
+genrule(
+    name = "tar_manifest",
+    srcs = [":tarball.tar"],
+    outs = ["manifest.json"],
+    cmd = "tar -xOf ./$(location :tarball.tar) manifest.json > $@",
+)
+
+write_file(
+    name = "expected_RepoTags",
+    out = "expected_RepoTags.json",
+    content = [str(tags)],
+)
+
+assert_json_matches(
+    name = "check_tags",
+    file1 = ":tar_manifest",
+    file2 = ":expected_RepoTags",
+    filter1 = ".[0].RepoTags",
+)
+
+genrule(
+    name = "tar_created",
+    srcs = [":tarball.tar"],
+    outs = ["tar_created.txt"],
+    cmd = """
+        config=$$(tar -xOf $(location :tarball.tar) manifest.json | $(JQ_BIN) -r '.[0].Config')
+        tar -xOf $(location :tarball.tar) "$$config" | $(JQ_BIN) -r '.created' > $@
+    """,
+    toolchains = ["@jq_toolchains//:resolved_toolchain"],
+)
+
+diff_test(
+    name = "test_tar_created",
+    file1 = ":tar_created",
+    file2 = "expected_created.txt",
+)
+
+genrule(
+    name = "docker_created",
+    srcs = [":tarball.tar"],
+    outs = ["docker_created.txt"],
+    cmd = "docker load -i $(location :tarball.tar) && docker inspect --format='{{{{.Created}}}}' {} > $@".format(tags[0]),
+)
+
+diff_test(
+    name = "test_created",
+    file1 = ":docker_created",
+    file2 = "expected_created.txt",
+)
+
+# SMOKE TEST: oci_image from an external repo
+build_test(
+    name = "test_external",
+    targets = ["@rules_oci//examples/assertion/empty"],
+)

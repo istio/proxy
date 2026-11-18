@@ -26,6 +26,13 @@ http_archive(
     url = "https://github.com/bazel-contrib/bazel-lib/releases/download/v2.19.3/bazel-lib-v2.19.3.tar.gz",
 )
 
+http_archive(
+    name = "bazel_lib",
+    sha256 = "6fd3b1e1a38ca744f9664be4627ced80895c7d2ee353891c172f1ab61309c933",
+    strip_prefix = "bazel-lib-3.0.0",
+    url = "https://github.com/bazel-contrib/bazel-lib/releases/download/v3.0.0/bazel-lib-v3.0.0.tar.gz",
+)
+
 # Back-port https://github.com/bazelbuild/bazel-central-registry/blob/main/modules/gawk/5.3.2.bcr.1/source.json
 # to WORKSPACE semantics
 http_archive(
@@ -58,15 +65,11 @@ create_repositories()
 
 register_toolchains("@bsd_tar_toolchains//:all")
 
-load("@aspect_bazel_lib//lib:repositories.bzl", "aspect_bazel_lib_dependencies", "aspect_bazel_lib_register_toolchains")
+load("@bazel_lib//lib:repositories.bzl", "bazel_lib_dependencies", "bazel_lib_register_toolchains")
 
-# Required bazel-lib dependencies
+bazel_lib_dependencies()
 
-aspect_bazel_lib_dependencies()
-
-# Register bazel-lib toolchains
-
-aspect_bazel_lib_register_toolchains()
+bazel_lib_register_toolchains()
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 load("@platforms//host:extension.bzl", "host_platform_repo")

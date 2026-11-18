@@ -1,0 +1,55 @@
+load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+load("@rules_rust//rust:defs.bzl", "rust_binary")
+load("@tar.bzl", "tar")
+
+package(default_visibility = ["//visibility:public"])
+
+rust_binary(
+    name = "binary",
+    srcs = ["main.rs"],
+    edition = "2018",
+)
+
+platform_transition_filegroup(
+    name = "wasi_binary",
+    srcs = ["binary"],
+    target_platform = "@rules_rust//rust/platform:wasi",
+)
+
+tar(
+    name = "wasi_layer",
+    srcs = ["wasi_binary"],
+)
+
+oci_image(
+    name = "image",
+    annotations = {
+        "module.wasm.image/variant": "compat",
+        "run.oci.handler": "wasm",
+    },
+    architecture = "wasm32",
+    cmd = ["/binary.wasm"],
+    os = "wasi",
+    tars = [
+        ":wasi_layer",
+    ],
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        ":image",
+    ],
+)
+
+# In order to run the image you need to follow instructions at https://docs.docker.com/desktop/wasm/ first.
+# then run the following;
+#  `bazel run :tarball``
+#  `docker run --runtime=io.containerd.wasmedge.v1 --platform=wasi/wasm32 --pull=never gcr.io/wasm:latest`
+oci_load(
+    name = "tarball",
+    image = ":image",
+    repo_tags = ["gcr.io/wasm:latest"],
+)

@@ -1,7 +1,7 @@
 "Make shorter assertions"
 
-load("@aspect_bazel_lib//lib:diff_test.bzl", "diff_test")
 load("@bazel_features//:features.bzl", "bazel_features")
+load("@bazel_lib//lib:diff_test.bzl", "diff_test")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 
 # buildifier: disable=function-docstring
@@ -100,7 +100,7 @@ def assert_tars_match(name, actual, expected, sort_listing = False):
         extract += " | $(COREUTILS_BIN) sort"
 
         if bazel_features.toolchains.genrule_accepts_toolchain_types:
-            toolchains.append(Label("@aspect_bazel_lib//lib:coreutils_toolchain_type"))
+            toolchains.append(Label("@bazel_lib//lib:coreutils_toolchain_type"))
         else:
             toolchains.append(Label("@coreutils_toolchains//:resolved_toolchain"))
 

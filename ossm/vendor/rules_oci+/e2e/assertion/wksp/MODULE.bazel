@@ -1,0 +1,72 @@
+"Bazel dependencies"
+
+bazel_dep(name = "rules_oci", version = "0.0.0")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "external_wksp", version = "1.0")
+
+local_path_override(
+    module_name = "rules_oci",
+    path = "../../..",
+)
+
+# Define external library for oci_load testing
+local_path_override(
+    module_name = "external_wksp",
+    path = "./external_wksp",
+)
+
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "empty_image",
+    image = "localhost:1447/empty_image",
+    tag = "latest",
+)
+oci.pull(
+    name = "empty_image_with_custom_auth",
+    image = "localhost:1447/empty_image",
+    tag = "latest",
+    www_authenticate_challenges = {
+        "localhost:1447": 'Bearer realm="localhost:1447/token",service="localhost",scope="repository:empty_image:pull"',
+    },
+)
+use_repo(oci, "empty_image", "empty_image_with_custom_auth")
+
+oci.pull(
+    name = "distroless_base_with_tag",
+    image = "gcr.io/distroless/cc-debian12",
+    platforms = [
+        "linux/amd64",
+    ],
+    tag = "latest",
+)
+oci.pull(
+    name = "distroless_base_single_arch_no_platforms_attr",
+    digest = "sha256:71b79745bb79377e88d936fd362bf505ad9f278f6a613233f0be2f10b96b1b21",
+    image = "gcr.io/distroless/base",
+)
+oci.pull(
+    name = "distroless_base_single_arch_correct_arm64_platforms_attr",
+    digest = "sha256:71b79745bb79377e88d936fd362bf505ad9f278f6a613233f0be2f10b96b1b21",
+    image = "gcr.io/distroless/base",
+    platforms = [
+        "linux/arm64",
+    ],
+)
+oci.pull(
+    name = "distroless_base_single_arch_wrong_amd64_platforms_attr",
+    digest = "sha256:71b79745bb79377e88d936fd362bf505ad9f278f6a613233f0be2f10b96b1b21",
+    image = "gcr.io/distroless/base",
+    platforms = [
+        "linux/amd64",
+    ],
+)
+use_repo(
+    oci,
+    "distroless_base_single_arch_correct_arm64_platforms_attr",
+    "distroless_base_single_arch_correct_arm64_platforms_attr_linux_arm64",
+    "distroless_base_single_arch_no_platforms_attr",
+    "distroless_base_single_arch_wrong_amd64_platforms_attr",
+    "distroless_base_single_arch_wrong_amd64_platforms_attr_linux_amd64",
+    "distroless_base_with_tag",
+    "distroless_base_with_tag_linux_amd64",
+)

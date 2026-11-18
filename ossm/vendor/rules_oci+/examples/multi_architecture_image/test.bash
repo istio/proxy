@@ -1,0 +1,1 @@
+echo "This is rules_oci!"

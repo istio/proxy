@@ -1,0 +1,621 @@
+load("@aspect_bazel_lib//lib:testing.bzl", "assert_json_matches")
+load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+load("@tar.bzl", "tar")
+load("//examples:assert.bzl", "assert_oci_config")
+
+# Case 1: image name containing a capital case.
+oci_image(
+    name = "imagE",
+    architecture = "amd64",
+    cmd = ["noop"],
+    os = "linux",
+)
+
+# Case 2: existing layer added again.
+tar(
+    name = "empty_tar",
+    srcs = [],
+)
+
+oci_image(
+    name = "same_tar_multiple_times",
+    architecture = "amd64",
+    cmd = ["noop"],
+    os = "linux",
+    tars = [
+        ":empty_tar",
+    ],
+)
+
+oci_image(
+    name = "case2",
+    base = ":same_tar_multiple_times",
+    tars = [
+        ":empty_tar",
+    ],
+)
+
+# Case 3: Adding an identical tar from another directory multiple times
+oci_image(
+    name = "case3",
+    architecture = "arm64",
+    os = "linux",
+    tars = [
+        # layer_0 and layer_1 is identical
+        "//examples/just_tar:layer_0",
+        "//examples/just_tar:layer_1",
+    ],
+)
+
+# Case 4: Transition an oci_image and feed to oci_tarball
+oci_image(
+    name = "case4",
+    architecture = "arm64",
+    os = "linux",
+)
+
+platform_transition_filegroup(
+    name = "case4_transition",
+    srcs = [":case4"],
+    target_platform = "//examples:linux_arm64",
+)
+
+oci_load(
+    name = "case4_load",
+    image = ":case4_transition",
+    repo_tags = ["case4:example"],
+)
+
+filegroup(
+    name = "case4_tar",
+    srcs = [":case4_load"],
+    output_group = "tarball",
+)
+
+# Case 5: An oci_image directly fed into oci_tarball
+oci_image(
+    name = "case5",
+    architecture = "arm64",
+    os = "linux",
+)
+
+oci_load(
+    name = "case5_load",
+    image = ":case5",
+    repo_tags = ["case5:example"],
+)
+
+filegroup(
+    name = "case5_tar",
+    srcs = [":case5_load"],
+    output_group = "tarball",
+)
+
+# Case 6: test all cases that might break
+oci_image(
+    name = "case6",
+    architecture = "arm64",
+    env = {
+        "TEST": "VALUE=",
+        "TEST2": "=VALUE=",
+        "TEST3": "=VALUE",
+        "TEST4": "=V=VALUE",
+        # an env that includes previously set $TEST env with a leading `=`
+        "LEAD_WITH_REF": "=$TEST",
+        "JUST_EQUALS": "======$$$$",
+        "1": "VAL",
+        # referencing non-existent env vars is just empty string.
+        "REFS": "$1:${1}:${NONEXISTENT}",
+    },
+    os = "linux",
+)
+
+assert_oci_config(
+    name = "test_case6",
+    env_eq = {
+        "TEST": "VALUE=",
+        "TEST2": "=VALUE=",
+        "TEST3": "=VALUE",
+        "TEST4": "=V=VALUE",
+        "LEAD_WITH_REF": "=VALUE=",
+        "JUST_EQUALS": "======$$$$",
+        "1": "VAL",
+        "REFS": "VAL:VAL:",
+    },
+    image = ":case6",
+)
+
+# Case 7: oci_image inheriting env from the base and appending to it.
+oci_image(
+    name = "case7_base",
+    architecture = "arm64",
+    env = {
+        "PATH": "/usr/local/bin",
+    },
+    os = "linux",
+)
+
+oci_image(
+    name = "case7",
+    base = ":case7_base",
+    env = {
+        "PATH": "${PATH}:/usr/bin",
+        "PATH1": "$PATH:/test",
+        "PATH2": "/prepend:${PATH}:/test2",
+        "PATH3": "key1=value1 key2=value2",
+    },
+)
+
+assert_oci_config(
+    name = "test_case7",
+    env_eq = {
+        "PATH": "/usr/local/bin:/usr/bin",
+        "PATH1": "/usr/local/bin:/usr/bin:/test",
+        "PATH2": "/prepend:/usr/local/bin:/usr/bin:/test2",
+        "PATH3": "key1=value1 key2=value2",
+    },
+    image = ":case7",
+)
+
+# Case 8: Test all attributes of oci_image
+
+# buildifier: leave-alone
+oci_image(
+    name = "case8_base",
+    # platform attributes
+    os = "linux",
+    architecture = "amd64",
+    variant = "v8",
+    # entrypoint and args
+    entrypoint = ["/custom_bin"],
+    cmd = [
+        "--arg1",
+        "--arg2",
+    ],
+    # env
+    env = {
+        "ENV": "/test",  # ENV=/test
+        "ENV2": "/test:$ENV",  # ENV=/test:/test
+        "PATH": "/usr/local/bin:$PATH",  # PATH=/usr/local/bin:
+    },
+    # exposed_ports
+    exposed_ports = [
+        "1234/tcp",
+        "5678/udp",
+        "5000",
+    ],
+    volumes = ["/srv/data"],
+    # user & workdir
+    user = "root",
+    workdir = "/root",
+    # labels & annotations
+    labels = {
+        "org.opencontainers.image.version": "0.0.0",
+        "org.opencontainers.image.source": "https://github.com/bazel-contrib/rules_oci=",
+    },
+    annotations = {
+        "org.opencontainers.image.version": "0.0.0",
+        "org.opencontainers.image.source": "https://github.com/bazel-contrib/rules_oci=",
+    },
+)
+
+oci_image(
+    name = "case8",
+    base = ":case8_base",
+    # adding a new env should preserve the previously set envs!
+    env = {
+        "LOCAL": "true",  # LOCAL=/test
+    },
+)
+
+assert_oci_config(
+    name = "test_case8",
+    cmd_eq = [
+        "--arg1",
+        "--arg2",
+    ],
+    entrypoint_eq = [
+        "/custom_bin",
+    ],
+    env_eq = {
+        "ENV": "/test",
+        "ENV2": "/test:/test",
+        "PATH": "/usr/local/bin:",
+        "LOCAL": "true",
+    },
+    exposed_ports_eq = [
+        "1234/tcp",
+        "5678/udp",
+        "5000",
+    ],
+    image = ":case8",
+    labels_eq = {
+        "org.opencontainers.image.version": "0.0.0",
+        "org.opencontainers.image.source": "https://github.com/bazel-contrib/rules_oci=",
+    },
+    user_eq = "root",
+    volumes_eq = [
+        "/srv/data",
+    ],
+    workdir_eq = "/root",
+)
+
+# Case 9: Test oci_tarball repotags
+
+repo_tags = [
+    "gcr.io/empty_base:latest",
+    "two:is_a_company",
+    "three:is_a_crowd",  # Used to test support for more than two repo_tags.
+]
+
+oci_image(
+    name = "case9_image",
+    architecture = "amd64",
+    os = "linux",
+)
+
+# Intended to be `bazel run` to load the image into a container runtime.
+# Produces only an mtree specification as the default output.
+oci_load(
+    name = "case9_tarball",
+    image = ":case9_image",
+    repo_tags = repo_tags,
+)
+
+# Not typically recommended: ask the tarball rule to write the .tar file
+# that would have been created when `bazel run`.
+filegroup(
+    name = "case9_tarball.tar",
+    srcs = [":case9_tarball"],
+    output_group = "tarball",
+)
+
+genrule(
+    name = "case9_manifest",
+    srcs = [":case9_tarball.tar"],
+    outs = ["case9_manifest.json"],
+    cmd = "$(BSDTAR_BIN) -xOf ./$(location :case9_tarball.tar) manifest.json > $@",
+    toolchains = ["@bsd_tar_toolchains//:resolved_toolchain"],
+)
+
+write_file(
+    name = "case9_expected_repo_tags",
+    out = "case9_expected_repo_tags.json",
+    content = [str(repo_tags)],
+)
+
+assert_json_matches(
+    name = "test_case9",
+    file1 = ":case9_manifest",
+    file2 = ":case9_expected_repo_tags",
+    filter1 = ".[0].RepoTags",
+)
+
+# Case 10: an oci_tarball run as part of a genrule
+oci_image(
+    name = "case10",
+    architecture = "arm64",
+    os = "linux",
+)
+
+oci_load(
+    name = "case10_tarball",
+    image = ":case10",
+    repo_tags = ["case10:example"],
+)
+
+genrule(
+    name = "case10_run",
+    outs = ["out.txt"],
+    cmd = """
+$(location :case10_tarball) && echo "worked" > $@
+""",
+    tools = [":case10_tarball"],
+)
+
+# Case 11: an oci_tarball run as part of sh_test
+oci_image(
+    name = "case11",
+    architecture = "arm64",
+    os = "linux",
+)
+
+oci_load(
+    name = "case11_tarball",
+    image = ":case11",
+    repo_tags = ["case11:example"],
+)
+
+write_file(
+    name = "case11_test_sh",
+    out = "case11_test.sh",
+    content = [
+        "output=$($1)",
+        'if [[ "$output" != "Loaded image: case11:example" ]]; then',
+        '   echo "failed to load: $output"',
+        "   exit 1",
+        "fi",
+    ],
+)
+
+sh_test(
+    name = "case11_test",
+    srcs = ["case11_test.sh"],
+    args = ["$(location :case11_tarball)"],
+    data = [":case11_tarball"],
+)
+
+# Case 12: oci_push an image that has transitive deps
+tar(
+    name = "case12_empty_dir",
+    mtree = [
+        "./empty type=dir",
+    ],
+)
+
+oci_image(
+    name = "case12_base",
+    architecture = "arm64",
+    os = "linux",
+    tars = [":case12_empty_dir"],
+)
+
+tar(
+    name = "case12_empty_dir2",
+    mtree = [
+        "./empty2 type=dir",
+    ],
+)
+
+oci_image(
+    name = "case12",
+    base = ":case12_base",
+    tars = [":case12_empty_dir2"],
+)
+
+sh_test(
+    name = "case12_test",
+    srcs = ["assert_push_transitive_deps.sh"],
+    args = [
+        "$(location :case12)",
+    ],
+    data = [":case12"],
+)
+
+# Case 13: image should have history entries
+tar(
+    name = "case13_empty_tar",
+    srcs = [],
+)
+
+tar(
+    name = "case13_empty_tar2",
+    srcs = [],
+)
+
+oci_image(
+    name = "case13",
+    architecture = "arm64",
+    os = "linux",
+    tars = [
+        ":case13_empty_tar",
+        ":case13_empty_tar2",
+    ],
+)
+
+assert_oci_config(
+    name = "test_case13",
+    history_eq = [
+        {
+            "created": "1970-01-01T00:00:00Z",
+            "created_by": "bazel build //examples/assertion:case13_empty_tar",
+        },
+        {
+            "created": "1970-01-01T00:00:00Z",
+            "created_by": "bazel build //examples/assertion:case13_empty_tar2",
+        },
+    ],
+    image = ":case13",
+)
+
+# Case 14: created property should be epoch start
+oci_image(
+    name = "case14",
+    architecture = "arm64",
+    os = "linux",
+)
+
+assert_oci_config(
+    name = "test_case14",
+    created_eq = "1970-01-01T00:00:00Z",
+    image = ":case14",
+)
+
+# Case 15: Setting entrypoint resets cmd
+oci_image(
+    name = "case15_base",
+    architecture = "arm64",
+    cmd = [
+        "-c",
+        "test",
+    ],
+    os = "linux",
+)
+
+assert_oci_config(
+    name = "test_case15_base",
+    cmd_eq = [
+        "-c",
+        "test",
+    ],
+    image = ":case15_base",
+)
+
+oci_image(
+    name = "case15",
+    base = ":case15_base",
+    entrypoint = ["/custom_bin"],
+)
+
+assert_oci_config(
+    name = "test_case15",
+    cmd_eq = None,  # cmd should not exist
+    entrypoint_eq = [
+        "/custom_bin",
+    ],
+    image = ":case15",
+)
+
+oci_image(
+    name = "case15_cmd",
+    base = ":case15_base",
+    cmd = ["--arg"],
+    entrypoint = ["/custom_bin"],
+)
+
+assert_oci_config(
+    name = "test_case15_cmd",
+    cmd_eq = ["--arg"],
+    entrypoint_eq = ["/custom_bin"],
+    image = ":case15_cmd",
+)
+
+# Case 16: allow setting entrypoint to `[]`
+# See: https://github.com/bazel-contrib/rules_oci/issues/336
+oci_image(
+    name = "case16_base",
+    architecture = "arm64",
+    cmd = [
+        "-c",
+        "test",
+    ],
+    entrypoint = ["/bin/bash"],
+    os = "linux",
+)
+
+assert_oci_config(
+    name = "test_case16_base",
+    cmd_eq = [
+        "-c",
+        "test",
+    ],
+    entrypoint_eq = ["/bin/bash"],
+    image = ":case16_base",
+)
+
+oci_image(
+    name = "case16",
+    base = ":case16_base",
+    entrypoint = [],
+)
+
+assert_oci_config(
+    name = "test_case16",
+    cmd_eq = None,
+    entrypoint_eq = [],
+    image = ":case16",
+)
+
+# Case 17: an entrypoint and cmd with , in it
+oci_image(
+    name = "case17",
+    architecture = "arm64",
+    cmd = [
+        '--permitted-system-keys="MY_HOST_V1,MY_HOST_V2"',
+    ],
+    entrypoint = [
+        "/docker-entrypoint.sh",
+        '--permitted-system-keys="MY_HOST_V1,MY_HOST_V2"',
+    ],
+    os = "linux",
+)
+
+assert_oci_config(
+    name = "test_case17",
+    cmd_eq = [
+        '--permitted-system-keys="MY_HOST_V1,MY_HOST_V2"',
+    ],
+    entrypoint_eq = [
+        "/docker-entrypoint.sh",
+        '--permitted-system-keys="MY_HOST_V1,MY_HOST_V2"',
+    ],
+    image = ":case17",
+)
+
+# Case 18: an entrypoint and with \n in it
+oci_image(
+    name = "case18",
+    architecture = "arm64",
+    cmd = ['--permitted-system-keys="MY_HOST_V1\nMY_HOST_V2"'],
+    entrypoint = ["/docker-entrypoint.sh"],
+    os = "linux",
+)
+
+assert_oci_config(
+    name = "test_case18",
+    cmd_eq = ['--permitted-system-keys="MY_HOST_V1\nMY_HOST_V2"'],
+    entrypoint_eq = ["/docker-entrypoint.sh"],
+    image = ":case18",
+)
+
+# Case 19: an entrypoint with escaped \n in it
+oci_image(
+    name = "case19",
+    architecture = "arm64",
+    entrypoint = [
+        "/docker-entrypoint.sh",
+        '--permitted-system-keys="MY_HOST_V1\\nMY_HOST_V2"',
+    ],
+    os = "linux",
+)
+
+assert_oci_config(
+    name = "test_case19",
+    entrypoint_eq = [
+        "/docker-entrypoint.sh",
+        '--permitted-system-keys="MY_HOST_V1\\nMY_HOST_V2"',
+    ],
+    image = ":case19",
+)
+
+# Case 20: an entrypoint with \t and \n in it
+case20_shell = '''
+#!/usr/bin/env bash
+set -o pipefail -o errexit -o nounset
+string="\t\t\n\n\\n"
+'''
+
+oci_image(
+    name = "case20",
+    architecture = "arm64",
+    entrypoint = [
+        "bash",
+        case20_shell,
+    ],
+    os = "linux",
+)
+
+assert_oci_config(
+    name = "test_case20",
+    entrypoint_eq = [
+        "bash",
+        case20_shell,
+    ],
+    image = ":case20",
+)
+
+# build them as test.
+build_test(
+    name = "test",
+    targets = [
+        ":imagE",
+        ":case2",
+        ":case3",
+        ":case4_tar",
+        ":case5_tar",
+        ":case10_run",
+    ],
+)

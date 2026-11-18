@@ -1,0 +1,33 @@
+load("//cosign:defs.bzl", "cosign_sign")
+
+exports_files(["BUILD.template"])
+
+cosign_sign(
+    name = "sign",
+    image = "@empty_image",
+    repository = "test",
+)
+
+sh_test(
+    name = "test",
+    srcs = ["test.bash"],
+    args = [
+        "$(JQ_BIN)",
+        "$(CRANE_BIN)",
+        "$(COSIGN_BIN)",
+        "$(location :sign)",
+        "$(location @empty_image)",
+    ],
+    data = [
+        ":sign",
+        "@empty_image",
+        "@jq_toolchains//:resolved_toolchain",
+        "@oci_cosign_toolchains//:current_toolchain",
+        "@oci_crane_toolchains//:current_toolchain",
+    ],
+    toolchains = [
+        "@oci_cosign_toolchains//:current_toolchain",
+        "@oci_crane_toolchains//:current_toolchain",
+        "@jq_toolchains//:resolved_toolchain",
+    ],
+)

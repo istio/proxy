@@ -1,0 +1,6 @@
+docs/cosign*.md
+docs/image*.md
+docs/structure*.md
+docs/pull.md
+docs/push.md
+docs/load.md

@@ -1,4 +1,4 @@
-load("@aspect_bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 
 bool_flag(
@@ -26,8 +26,8 @@ bzl_library(
     deps = [
         ":mtree",
         "//tar/private:tar",
-        "@aspect_bazel_lib//lib:expand_template",
-        "@aspect_bazel_lib//lib:utils",
+        "@bazel_lib//lib:expand_template",
+        "@bazel_lib//lib:utils",
         "@bazel_skylib//lib:partial",
         "@bazel_skylib//lib:types",
     ],

@@ -1,0 +1,47 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@buildx//:defs.bzl", "buildx", "context")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+
+buildx(
+    name = "base_image",
+    build_context = [
+        # replaces FROM python:3.11.18-trixie with @ubuntu from oci_pull
+        context.oci_layout(
+            "python:3.11.18-trixie",
+            "@python_3_11_18-trixie",
+        ),
+        # make lib1 available as COPY --from=lib1 in the dockerfile
+        context.sources(
+            "lib1",
+            ["//libs/lib1:lib1"],
+            override_path = "libs/lib1",
+        ),
+        context.sources(
+            "bins_hi",
+            ["//bins/hi:hi"],
+            override_path = "$(BINDIR)/bins/hi",
+        ),
+        context.sources(
+            "root",
+            glob(["src/*"]),
+            override_path = "src",
+        ),
+    ],
+    dockerfile = ":Dockerfile",
+)
+
+oci_image(
+    name = "image",
+    base = ":base_image",
+)
+
+oci_load(
+    name = "load",
+    image = ":image",
+    repo_tags = ["example:latest"],
+)
+
+build_test(
+    name = "test",
+    targets = [":image"],
+)

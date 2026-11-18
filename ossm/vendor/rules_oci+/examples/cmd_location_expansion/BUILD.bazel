@@ -1,0 +1,67 @@
+load("@rules_oci//oci:defs.bzl", "oci_image")
+load("@tar.bzl", "tar")
+load("//examples:assert.bzl", "assert_oci_config", "assert_oci_image_command")
+
+tar(
+    name = "app",
+    srcs = [":app.bash"],
+)
+
+genrule(
+    name = "app_cmd",
+    outs = ["app_cmd.txt"],
+    cmd = """
+    echo $(rootpaths :app.bash) > "$@"
+    echo "a1" >> "$@"
+    echo "a2 b2" >> "$@"
+    echo " a3\tb3 " >> "$@"
+    """,
+    tools = [
+        ":app.bash",
+    ],
+)
+
+oci_image(
+    name = "image",
+    base = "@ubuntu",
+    cmd = ":app_cmd",
+    entrypoint = [
+        "env",
+        "bash",
+    ],
+    tars = [":app"],
+)
+
+assert_oci_image_command(
+    name = "assert_cmd_is_escaped",
+    args = [
+        "examples/cmd_location_expansion/app.bash",
+        "x",
+        "y",
+        "l1\nl2",
+    ],
+    exit_code_eq = 0,
+    image = ":image",
+    output_eq = """\
+hello world!
+arg 0:x
+arg 1:y
+arg 2:l1
+l2
+""",
+)
+
+assert_oci_config(
+    name = "assert_image_metadata",
+    cmd_eq = [
+        "examples/cmd_location_expansion/app.bash",
+        "a1",
+        "a2 b2",
+        " a3\tb3 ",
+    ],
+    entrypoint_eq = [
+        "env",
+        "bash",
+    ],
+    image = ":image",
+)

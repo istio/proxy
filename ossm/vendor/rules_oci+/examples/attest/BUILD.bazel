@@ -1,0 +1,90 @@
+load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
+load("//cosign:defs.bzl", "cosign_attest")
+load("//oci:defs.bzl", "oci_image")
+
+copy_file(
+    name = "sbom",
+    src = "sbom.spdx.json",
+    out = "sbom_generated.spdx.json",
+)
+
+oci_image(
+    name = "image",
+    architecture = "amd64",
+    cmd = ["noop"],
+    os = "linux",
+)
+
+cosign_attest(
+    name = "attest",
+    image = ":image",
+    predicate = ":sbom_generated.spdx.json",
+    repository = "test",
+    type = "spdxjson",
+)
+
+sh_test(
+    name = "test",
+    srcs = ["test.bash"],
+    args = [
+        "$(JQ_BIN)",
+        "$(COSIGN_BIN)",
+        "$(CRANE_BIN)",
+        "$(location :attest)",
+        "$(location :image)",
+        "$(location sbom.spdx.json)",
+    ],
+    data = [
+        "sbom.spdx.json",
+        ":attest",
+        ":image",
+        "@jq_toolchains//:resolved_toolchain",
+        "@oci_cosign_toolchains//:current_toolchain",
+        "@oci_crane_toolchains//:current_toolchain",
+    ],
+    toolchains = [
+        "@oci_cosign_toolchains//:current_toolchain",
+        "@oci_crane_toolchains//:current_toolchain",
+        "@jq_toolchains//:resolved_toolchain",
+    ],
+)
+
+cosign_attest(
+    name = "attest_no_repo",
+    image = ":image",
+    predicate = ":sbom_generated.spdx.json",
+    type = "spdxjson",
+)
+
+sh_test(
+    name = "test_attest_no_repo_fails",
+    srcs = ["test_attest_no_repo_fails.bash"],
+    args = ["$(location :attest_no_repo)"],
+    data = [":attest_no_repo"],
+)
+
+sh_test(
+    name = "test_attest_no_repo_passes",
+    srcs = ["test_attest_no_repo_passes.bash"],
+    args = [
+        "$(JQ_BIN)",
+        "$(COSIGN_BIN)",
+        "$(CRANE_BIN)",
+        "$(location :attest_no_repo)",
+        "$(location :image)",
+        "$(location sbom.spdx.json)",
+    ],
+    data = [
+        "sbom.spdx.json",
+        ":attest_no_repo",
+        ":image",
+        "@jq_toolchains//:resolved_toolchain",
+        "@oci_cosign_toolchains//:current_toolchain",
+        "@oci_crane_toolchains//:current_toolchain",
+    ],
+    toolchains = [
+        "@oci_cosign_toolchains//:current_toolchain",
+        "@oci_crane_toolchains//:current_toolchain",
+        "@jq_toolchains//:resolved_toolchain",
+    ],
+)

@@ -1,0 +1,35 @@
+load("//cosign:defs.bzl", "cosign_attest")
+
+cosign_attest(
+    name = "attest",
+    image = "@empty_image",
+    predicate = "@example_sbom",
+    repository = "test",
+    type = "spdxjson",
+)
+
+sh_test(
+    name = "test",
+    srcs = ["test.bash"],
+    args = [
+        "$(JQ_BIN)",
+        "$(COSIGN_BIN)",
+        "$(CRANE_BIN)",
+        "$(location :attest)",
+        "$(location @empty_image)",
+        "$(location @example_sbom)",
+    ],
+    data = [
+        ":attest",
+        "@empty_image",
+        "@example_sbom",
+        "@jq_toolchains//:resolved_toolchain",
+        "@oci_cosign_toolchains//:current_toolchain",
+        "@oci_crane_toolchains//:current_toolchain",
+    ],
+    toolchains = [
+        "@oci_cosign_toolchains//:current_toolchain",
+        "@oci_crane_toolchains//:current_toolchain",
+        "@jq_toolchains//:resolved_toolchain",
+    ],
+)

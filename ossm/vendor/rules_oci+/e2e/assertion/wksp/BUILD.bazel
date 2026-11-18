@@ -1,0 +1,14 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+
+oci_image(
+    name = "local_img",
+    architecture = "amd64",
+    os = "linux",
+    tars = [],
+)
+
+oci_load(
+    name = "local_load",
+    image = ":local_img",
+    repo_tags = ["local:latest"],
+)

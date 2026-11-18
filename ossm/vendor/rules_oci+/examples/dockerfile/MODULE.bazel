@@ -1,0 +1,31 @@
+"Dockerfile example using BuildX and OCI"
+
+module(name = "dockerfile")
+
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "aspect_bazel_lib", version = "2.21.1")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_oci", version = "2.2.5")
+bazel_dep(name = "rules_go", version = "0.53.0")
+
+local_path_override(
+    module_name = "rules_oci",
+    path = "../..",
+)
+
+buildx = use_extension(":buildx.bzl", "buildx")
+buildx.toolchains()
+use_repo(buildx, "buildx")
+
+# Fetch the base image to be used for the build.
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "python_3_11_18-trixie",
+    digest = "sha256:d498b21cd3969367397f636a653b3a0a723b318a39fd4aa4f35f611efeea4732",
+    image = "python:3.11.18-trixie",
+    platforms = [
+        "linux/arm64/v8",
+        "linux/amd64",
+    ],
+)
+use_repo(oci, "python_3_11_18-trixie", "python_3_11_18-trixie_linux_amd64", "python_3_11_18-trixie_linux_arm64_v8")

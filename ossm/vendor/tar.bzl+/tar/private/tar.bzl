@@ -1,6 +1,6 @@
 "Implementation of tar rule"
 
-load("@aspect_bazel_lib//lib:paths.bzl", "to_repository_relative_path")
+load("@bazel_lib//lib:paths.bzl", "to_repository_relative_path")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 
 TAR_TOOLCHAIN_TYPE = "@tar.bzl//tar/toolchain:type"
@@ -155,7 +155,7 @@ _mutate_mtree_attrs = {
     ),
     "awk_script": attr.label(
         allow_single_file = True,
-        default = "@aspect_bazel_lib//lib/private:modify_mtree.awk",
+        default = "@tar.bzl//lib/private:modify_mtree.awk",
         doc = "Path to an AWK script used to modify the mtree file. By default, it uses the modify_mtree.awk script.",
     ),
     "srcs": attr.label_list(
@@ -280,7 +280,7 @@ def _configured_unused_inputs_file(ctx, srcs, keep):
     if not _is_unused_inputs_enabled(ctx.attr):
         return None
 
-    coreutils = ctx.toolchains["@aspect_bazel_lib//lib:coreutils_toolchain_type"].coreutils_info.bin
+    coreutils = ctx.toolchains["@bazel_lib//lib:coreutils_toolchain_type"].coreutils_info.bin
 
     prunable_inputs = ctx.actions.declare_file(ctx.attr.name + ".prunable_inputs.txt")
     keep_inputs = ctx.actions.declare_file(ctx.attr.name + ".keep_inputs.txt")
@@ -340,7 +340,7 @@ def _configured_unused_inputs_file(ctx, srcs, keep):
             "UNUSED_INPUTS": unused_inputs.path,
         },
         mnemonic = "UnusedTarInputs",
-        toolchain = "@aspect_bazel_lib//lib:coreutils_toolchain_type",
+        toolchain = "@bazel_lib//lib:coreutils_toolchain_type",
     )
 
     return unused_inputs
@@ -441,7 +441,7 @@ def _mtree_line(file, type, content = None, uid = "0", gid = "0", time = "167256
         spec.append("content=" + content)
     return " ".join(spec)
 
-# This function exactly same as the one from "@aspect_bazel_lib//lib:paths.bzl"
+# This function exactly same as the one from "@bazel_lib//lib:paths.bzl"
 # except that it takes workspace_name directly instead of the ctx object.
 # Reason is the performance of Args.add_all closures where we use this function.
 # https://bazel.build/rules/lib/builtins/Args#add_all `allow_closure` explains this.
@@ -608,7 +608,7 @@ def _mtree_mutate_impl(ctx):
     inputs.append(ctx.file.awk_script)
     ctx.actions.run_shell(
         command = """
-        {awk} $@ > {out_mtree}
+        {awk} $@ | sort > {out_mtree}
         """.format(
             awk = ctx.executable._awk.path,
             out_mtree = out_mtree.path,
@@ -649,6 +649,6 @@ tar = rule(
     attrs = tar_lib.attrs,
     toolchains = [
         tar_lib.toolchain_type,
-        "@aspect_bazel_lib//lib:coreutils_toolchain_type",
+        "@bazel_lib//lib:coreutils_toolchain_type",
     ],
 )

@@ -1,0 +1,8 @@
+load("@rules_oci//oci:defs.bzl", "oci_image")
+
+oci_image(
+    name = "empty_image",
+    architecture = "arm64",
+    os = "linux",
+    visibility = ["//visibility:public"],
+)

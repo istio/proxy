@@ -1,0 +1,156 @@
+load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
+load("@aspect_bazel_lib//lib:testing.bzl", "assert_contains")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_image_index")
+load("@tar.bzl", "tar")
+
+platform(
+    name = "linux_arm64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:arm64",
+    ],
+)
+
+platform(
+    name = "linux_amd64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+config_setting(
+    name = "platform_linux_arm64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:arm64",
+    ],
+)
+
+config_setting(
+    name = "platform_linux_amd64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+copy_file(
+    name = "entrypoint_sh",
+    src = select({
+        ":platform_linux_arm64": "say_hello_arm64.sh",
+        ":platform_linux_amd64": "say_hello_amd64.sh",
+    }),
+    out = "entrypoint.sh",
+    target_compatible_with = [
+        "@platforms//os:linux",
+    ],
+)
+
+tar(
+    name = "say_hello",
+    srcs = [":entrypoint.sh"],
+)
+
+oci_image(
+    name = "app",
+    base = "@debian",
+    cmd = ["/examples/image_index/entrypoint.sh"],
+    tars = [":say_hello"],
+)
+
+oci_image_index(
+    name = "app_all",
+    images = [":app"],
+    platforms = [
+        ":linux_amd64",
+        ":linux_arm64",
+    ],
+)
+
+# Exercises the `annotations` attribute (inline-dict form, just like
+# oci_image accepts). The annotations end up on the image-index manifest
+# blob's top-level `.annotations`.
+oci_image_index(
+    name = "app_all_annotated",
+    annotations = {
+        "org.opencontainers.image.source": "https://github.com/bazel-contrib/rules_oci",
+        "org.opencontainers.image.revision": "deadbeef",
+    },
+    images = [":app"],
+    platforms = [
+        ":linux_amd64",
+        ":linux_arm64",
+    ],
+)
+
+# Extract the index manifest blob from the layout so we can grep it.
+genrule(
+    name = "app_all_annotated_manifest",
+    srcs = [":app_all_annotated"],
+    outs = ["app_all_annotated_manifest.json"],
+    cmd = """
+        set -euo pipefail
+        digest=$$($(JQ_BIN) -r '.manifests[0].digest | sub(":"; "/")' $(location :app_all_annotated)/index.json)
+        cp $(location :app_all_annotated)/blobs/$$digest $@
+    """,
+    toolchains = ["@jq_toolchains//:resolved_toolchain"],
+)
+
+assert_contains(
+    name = "check_index_source_annotation",
+    actual = ":app_all_annotated_manifest",
+    expected = "https://github.com/bazel-contrib/rules_oci",
+)
+
+assert_contains(
+    name = "check_index_revision_annotation",
+    actual = ":app_all_annotated_manifest",
+    expected = "deadbeef",
+)
+
+# Same test again, using the file-label form for `annotations` (a key=value
+# text file). Mirrors the pattern in examples/labels/BUILD.bazel.
+write_file(
+    name = "annotations_file",
+    out = "annotations.txt",
+    content = [
+        "org.opencontainers.image.source=https://github.com/bazel-contrib/rules_oci",
+        "org.opencontainers.image.revision=deadbeef",
+    ],
+)
+
+oci_image_index(
+    name = "app_all_annotated_from_file",
+    annotations = ":annotations_file",
+    images = [":app"],
+    platforms = [
+        ":linux_amd64",
+        ":linux_arm64",
+    ],
+)
+
+genrule(
+    name = "app_all_annotated_from_file_manifest",
+    srcs = [":app_all_annotated_from_file"],
+    outs = ["app_all_annotated_from_file_manifest.json"],
+    cmd = """
+        set -euo pipefail
+        digest=$$($(JQ_BIN) -r '.manifests[0].digest | sub(":"; "/")' $(location :app_all_annotated_from_file)/index.json)
+        cp $(location :app_all_annotated_from_file)/blobs/$$digest $@
+    """,
+    toolchains = ["@jq_toolchains//:resolved_toolchain"],
+)
+
+assert_contains(
+    name = "check_index_source_annotation_from_file",
+    actual = ":app_all_annotated_from_file_manifest",
+    expected = "https://github.com/bazel-contrib/rules_oci",
+)
+
+assert_contains(
+    name = "check_index_revision_annotation_from_file",
+    actual = ":app_all_annotated_from_file_manifest",
+    expected = "deadbeef",
+)

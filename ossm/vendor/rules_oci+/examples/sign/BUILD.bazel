@@ -1,0 +1,81 @@
+load("@tar.bzl", "tar")
+load("//cosign:defs.bzl", "cosign_sign")
+load("//oci:defs.bzl", "oci_image")
+
+tar(
+    name = "app",
+    srcs = ["app.bash"],
+)
+
+oci_image(
+    name = "image",
+    base = "@ubuntu",
+    cmd = ["examples/sign/app.bash"],
+    tars = [":app"],
+)
+
+cosign_sign(
+    name = "sign",
+    image = ":image",
+    repository = "test",
+)
+
+sh_test(
+    name = "test",
+    srcs = ["test.bash"],
+    args = [
+        "$(JQ_BIN)",
+        "$(CRANE_BIN)",
+        "$(COSIGN_BIN)",
+        "$(location :sign)",
+        "$(location :image)",
+    ],
+    data = [
+        ":image",
+        ":sign",
+        "@jq_toolchains//:resolved_toolchain",
+        "@oci_cosign_toolchains//:current_toolchain",
+        "@oci_crane_toolchains//:current_toolchain",
+    ],
+    toolchains = [
+        "@oci_cosign_toolchains//:current_toolchain",
+        "@oci_crane_toolchains//:current_toolchain",
+        "@jq_toolchains//:resolved_toolchain",
+    ],
+)
+
+cosign_sign(
+    name = "sign_no_repo",
+    image = ":image",
+)
+
+sh_test(
+    name = "test_sign_no_repo_fails",
+    srcs = ["test_sign_no_repo_fails.bash"],
+    args = ["$(location :sign_no_repo)"],
+    data = [":sign_no_repo"],
+)
+
+sh_test(
+    name = "test_sign_no_repo_passes",
+    srcs = ["test_sign_no_repo_passes.bash"],
+    args = [
+        "$(JQ_BIN)",
+        "$(CRANE_BIN)",
+        "$(COSIGN_BIN)",
+        "$(location :sign_no_repo)",
+        "$(location :image)",
+    ],
+    data = [
+        ":image",
+        ":sign_no_repo",
+        "@jq_toolchains//:resolved_toolchain",
+        "@oci_cosign_toolchains//:current_toolchain",
+        "@oci_crane_toolchains//:current_toolchain",
+    ],
+    toolchains = [
+        "@jq_toolchains//:resolved_toolchain",
+        "@oci_crane_toolchains//:current_toolchain",
+        "@oci_cosign_toolchains//:current_toolchain",
+    ],
+)

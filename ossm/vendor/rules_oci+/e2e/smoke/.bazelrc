@@ -1,0 +1,3 @@
+common --enable_platform_specific_config
+test:macos --action_env=DOCKER_HOST
+test  --test_env=DOCKER_HOST

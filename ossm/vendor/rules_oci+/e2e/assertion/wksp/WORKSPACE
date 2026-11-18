@@ -1,0 +1,67 @@
+local_repository(
+    name = "rules_oci",
+    path = "../../../",
+)
+
+local_repository(
+    name = "external_wksp",
+    path = "./external_wksp",
+)
+
+load("@rules_oci//oci:dependencies.bzl", "rules_oci_dependencies")
+
+rules_oci_dependencies()
+
+load("@rules_oci//oci:repositories.bzl", "oci_register_toolchains")
+
+oci_register_toolchains(name = "oci")
+
+load("@rules_oci//oci:pull.bzl", "oci_pull")
+
+oci_pull(
+    name = "empty_image",
+    image = "localhost:1447/empty_image",
+    tag = "latest",
+)
+
+oci_pull(
+    name = "empty_image_with_custom_auth",
+    image = "localhost:1447/empty_image",
+    tag = "latest",
+    www_authenticate_challenges = {
+        "localhost:1447": 'Bearer realm="localhost:1447/token",service="localhost",scope="repository:empty_image:pull"',
+    },
+)
+
+oci_pull(
+    name = "distroless_base_single_arch_no_platforms_attr",
+    digest = "sha256:71b79745bb79377e88d936fd362bf505ad9f278f6a613233f0be2f10b96b1b21",
+    image = "gcr.io/distroless/base",
+)
+
+oci_pull(
+    name = "distroless_base_single_arch_correct_arm64_platforms_attr",
+    digest = "sha256:71b79745bb79377e88d936fd362bf505ad9f278f6a613233f0be2f10b96b1b21",
+    image = "gcr.io/distroless/base",
+    platforms = [
+        "linux/arm64",
+    ],
+)
+
+oci_pull(
+    name = "distroless_base_single_arch_wrong_amd64_platforms_attr",
+    digest = "sha256:71b79745bb79377e88d936fd362bf505ad9f278f6a613233f0be2f10b96b1b21",
+    image = "gcr.io/distroless/base",
+    platforms = [
+        "linux/amd64",
+    ],
+)
+
+oci_pull(
+    name = "distroless_base_with_tag",
+    image = "gcr.io/distroless/cc-debian12",
+    platforms = [
+        "linux/amd64",
+    ],
+    tag = "latest",
+)

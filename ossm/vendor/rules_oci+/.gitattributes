@@ -1,0 +1,10 @@
+# Don't show generated deltas in code reviews
+docs/image_index.md linguist-generated=true
+docs/image.md linguist-generated=true
+docs/pull.md linguist-generated=true
+docs/push.md linguist-generated=true
+docs/load.md linguist-generated=true
+
+#################################
+# Configuration for 'git archive'
+# See https://git-scm.com/docs/git-archive#ATTRIBUTES

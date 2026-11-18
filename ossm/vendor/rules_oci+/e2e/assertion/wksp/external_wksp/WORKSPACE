@@ -1,0 +1,6 @@
+workspace(name = "external_wksp")
+
+local_repository(
+    name = "rules_oci",
+    path = "../../../..",
+)

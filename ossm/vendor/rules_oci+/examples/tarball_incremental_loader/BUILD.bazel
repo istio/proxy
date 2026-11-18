@@ -1,0 +1,21 @@
+load("@tar.bzl", "tar")
+load("//oci:defs.bzl", "oci_image", "oci_load")
+
+tar(
+    name = "app",
+    srcs = ["test.bash"],
+)
+
+oci_image(
+    name = "image",
+    base = "@ubuntu",
+    cmd = ["examples/tarball_incremental_loader/test.sh"],
+    tars = [":app"],
+)
+
+oci_load(
+    name = "load",
+    image = ":image",
+    loader = "loader.sh",
+    repo_tags = ["test:test"],
+)

@@ -1,0 +1,8 @@
+load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
+
+copy_file(
+    name = "example_sbom",
+    src = "sbom.spdx.json",
+    out = "sbom_generated.spdx.json",
+    visibility = ["//visibility:public"],
+)

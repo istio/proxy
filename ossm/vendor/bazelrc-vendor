@@ -118,6 +118,9 @@ common --override_repository=rules_m4++default_toolchain_ext+m4=%workspace%/ossm
 common --override_repository=rules_m4+=%workspace%/ossm/vendor/rules_m4+
 common --override_repository=rules_nodejs++node+nodejs_toolchains=%workspace%/ossm/vendor/rules_nodejs++node+nodejs_toolchains
 common --override_repository=rules_nodejs+=%workspace%/ossm/vendor/rules_nodejs+
+common --override_repository=rules_oci++oci+oci_crane_toolchains=%workspace%/ossm/vendor/rules_oci++oci+oci_crane_toolchains
+common --override_repository=rules_oci++oci+oci_regctl_toolchains=%workspace%/ossm/vendor/rules_oci++oci+oci_regctl_toolchains
+common --override_repository=rules_oci+=%workspace%/ossm/vendor/rules_oci+
 common --override_repository=rules_pkg+=%workspace%/ossm/vendor/rules_pkg+
 common --override_repository=rules_proto+=%workspace%/ossm/vendor/rules_proto+
 common --override_repository=rules_python++pip+v8_python_deps=%workspace%/ossm/vendor/rules_python++pip+v8_python_deps
