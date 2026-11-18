@@ -6,6 +6,7 @@ on:
     types: [opened, synchronize, reopened]
     branches:
       - master
+      - release-1.32
       - release-1.31
       - release-1.30
       - release-1.28
