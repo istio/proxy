@@ -61,8 +61,6 @@ var excludedExtensions = map[string]string{
 	// WASM runtimes gated behind envoy_select_wasm_wamr / envoy_select_wasm_wasmtime
 	"envoy.wasm.runtime.wamr":     "requires wasm_wamr build flag",
 	"envoy.wasm.runtime.wasmtime": "requires wasm_wasmtime build flag",
-	// Extra extension requiring ENVOY_HAS_EXTRA_EXTENSIONS=true at build time
-	"envoy.filters.http.kill_request": "extra extension, not built by default",
 	// Registers as ProactiveResourceMonitorFactory, not included in /server_info extension listing
 	"envoy.resource_monitors.downstream_connections": "proactive resource monitor, not in /server_info",
 }
