@@ -496,6 +496,18 @@ ENVOY_CONTRIB_EXTENSIONS = {
     "envoy.filters.network.peer_metadata":                      "//contrib/istio/filters/network/peer_metadata/source:config",
 
     #
+    # Transport sockets
+    #
+
+    "envoy.transport_sockets.istio_hbone":                      "//contrib/istio/filters/network/hbone/source:upstream_config",
+
+    #
+    # Upstreams
+    #
+
+    "envoy.upstreams.istio_hbone":                              "//contrib/istio/filters/network/hbone/source:pool_config",
+
+    #
     # Sip proxy
     #
 
@@ -550,6 +562,8 @@ ISTIO_ENABLED_CONTRIB_EXTENSIONS = [
     "envoy.filters.http.alpn",
     "envoy.filters.http.peer_metadata",
     "envoy.filters.http.istio_stats",
+    "envoy.transport_sockets.istio_hbone",
+    "envoy.upstreams.istio_hbone",
 ]
 
 OPENSSL_INCOMPATIBLE_CONTRIB_EXTENSIONS = [
